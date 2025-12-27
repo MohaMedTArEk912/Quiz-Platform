@@ -31,10 +31,10 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, onSelectQuiz, onView
     });
     const getDifficultyColor = (difficulty: string) => {
         switch (difficulty.toLowerCase()) {
-            case 'beginner': return 'bg-green-100 text-green-700';
-            case 'intermediate': return 'bg-yellow-100 text-yellow-700';
-            case 'advanced': return 'bg-red-100 text-red-700';
-            default: return 'bg-gray-100 text-gray-700';
+            case 'beginner': return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300';
+            case 'intermediate': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300';
+            case 'advanced': return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300';
+            default: return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
         }
     };
 
@@ -61,14 +61,14 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, onSelectQuiz, onView
                             </button>
                             <button
                                 onClick={onViewProfile}
-                                className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-xl hover:bg-purple-200 transition-colors font-semibold"
+                                className="flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors font-semibold"
                             >
                                 <User className="w-5 h-5" />
                                 Profile
                             </button>
                             <button
                                 onClick={onLogout}
-                                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-red-600 transition-colors"
+                                className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                             >
                                 <LogOut className="w-5 h-5" />
                                 Logout

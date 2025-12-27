@@ -1,6 +1,4 @@
-@import "tailwindcss/theme" layer(theme);
-@import "tailwindcss/preflight" layer(base);
-@import "tailwindcss/utilities" layer(utilities);
+@import "tailwindcss";
 
 @theme {
   --color-background-light: #f9fafb;
@@ -8,6 +6,8 @@
   --color-text-light: #111827;
   --color-text-dark: #f3f4f6;
 }
+
+@variant dark (&:where(.dark, .dark *));
 
 body {
   background-color: var(--color-background-light);
