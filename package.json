@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "client": "vite",
+    "server": "node --watch server/index.js",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -12,7 +14,12 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
     "@tailwindcss/postcss": "^4.1.18",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
     "lucide-react": "^0.562.0",
+    "mongoose": "^9.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
