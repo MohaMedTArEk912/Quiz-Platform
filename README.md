@@ -141,12 +141,41 @@ create table attempts (
      ```
    - For Vercel deployment, add these in Settings → Environment Variables
 
-## 🔐 Admin Access
+## 🔐 Authentication
 
+### Regular Users
+- Login with **email and password only**
+- Accounts are **created automatically** on first login
+- Username is derived from your email address
+- All data is tracked per user
+
+### Admin Access
+
+**Default Credentials:**
 - **Email**: `admin@quiz.com`
 - **Password**: `admin123`
 
-⚠️ **Important**: Change these credentials in production!
+**Customizing Admin Credentials:**
+
+For better security, you can change the admin credentials:
+
+1. Create a `.env` file (copy from `.env.example`):
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Add your custom admin credentials:
+   ```env
+   VITE_ADMIN_EMAIL=your-admin@example.com
+   VITE_ADMIN_PASSWORD=your-secure-password
+   ```
+
+3. Restart your development server
+
+⚠️ **Important**: 
+- Always change default credentials in production!
+- Never commit your `.env` file to version control
+- Admin users are automatically routed to the dashboard upon login
 
 ## 📦 Project Structure
 

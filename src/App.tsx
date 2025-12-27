@@ -9,6 +9,10 @@ import QuizResults from './components/QuizResults.tsx';
 import AdminDashboard from './components/AdminDashboard.tsx';
 import UserProfile from './components/UserProfile.tsx';
 
+// Admin credentials from environment variables (with defaults)
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@quiz.com';
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
+
 const App = () => {
   const [screen, setScreen] = useState<'login' | 'quizList' | 'quiz' | 'results' | 'admin' | 'profile'>('login');
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
@@ -75,12 +79,15 @@ const App = () => {
     }
   };
 
-  const handleLogin = async (name: string, email: string, password: string) => {
+  const handleLogin = async (email: string, password: string) => {
     const userId = email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    // Derive name from email (part before @)
+    const defaultName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-    if (email === 'admin@quiz.com' && password === 'admin123') {
+    // Check for admin credentials
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
       setIsAdmin(true);
-      setCurrentUser({ name: 'Admin', email, userId });
+      setCurrentUser({ name: 'Admin', email, userId, totalScore: 0, totalAttempts: 0 });
       setScreen('admin');
       await loadData();
       return;
@@ -105,7 +112,7 @@ const App = () => {
         } else {
           userData = {
             userId,
-            name,
+            name: defaultName,
             email,
             password,
             totalScore: 0,
@@ -137,7 +144,7 @@ const App = () => {
         } catch {
           userData = {
             userId,
-            name,
+            name: defaultName,
             email,
             password,
             totalScore: 0,
