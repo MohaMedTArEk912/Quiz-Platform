@@ -3,6 +3,7 @@ import type { Quiz, UserData, AttemptData } from './types/index.ts';
 import { storage } from './utils/storage.ts';
 import { supabase, isValidSupabaseConfig } from './lib/supabase.ts';
 import LoginScreen from './components/LoginScreen.tsx';
+import RegisterScreen from './components/RegisterScreen.tsx';
 import QuizList from './components/QuizList.tsx';
 import QuizTaking from './components/QuizTaking.tsx';
 import QuizResults from './components/QuizResults.tsx';
@@ -14,7 +15,7 @@ const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@quiz.com';
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
 
 const App = () => {
-  const [screen, setScreen] = useState<'login' | 'quizList' | 'quiz' | 'results' | 'admin' | 'profile'>('login');
+  const [screen, setScreen] = useState<'login' | 'register' | 'quizList' | 'quiz' | 'results' | 'admin' | 'profile'>('login');
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([]);
@@ -22,6 +23,22 @@ const App = () => {
   const [quizResult, setQuizResult] = useState<any>(null);
   const [allUsers, setAllUsers] = useState<UserData[]>([]);
   const [allAttempts, setAllAttempts] = useState<AttemptData[]>([]);
+
+  // Load session on mount
+  useEffect(() => {
+    const savedSession = localStorage.getItem('userSession');
+    if (savedSession) {
+      try {
+        const session = JSON.parse(savedSession);
+        setCurrentUser(session.user);
+        setIsAdmin(session.isAdmin);
+        setScreen(session.isAdmin ? 'admin' : 'quizList');
+      } catch (error) {
+        console.error('Failed to load session:', error);
+        localStorage.removeItem('userSession');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     loadQuizzes();
@@ -80,15 +97,17 @@ const App = () => {
   };
 
   const handleLogin = async (email: string, password: string) => {
-    const userId = email.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    // Derive name from email (part before @)
-    const defaultName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const normalizedEmail = email.toLowerCase().trim();
+    const userId = normalizedEmail.replace(/[^a-z0-9]/g, '_');
 
     // Check for admin credentials
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+    if (normalizedEmail === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
+      const adminUser = { name: 'Admin', email: normalizedEmail, userId, totalScore: 0, totalAttempts: 0 };
       setIsAdmin(true);
-      setCurrentUser({ name: 'Admin', email, userId, totalScore: 0, totalAttempts: 0 });
+      setCurrentUser(adminUser);
       setScreen('admin');
+      // Save session
+      localStorage.setItem('userSession', JSON.stringify({ user: adminUser, isAdmin: true }));
       await loadData();
       return;
     }
@@ -98,67 +117,124 @@ const App = () => {
         const { data: existingUser } = await supabase
           .from('users')
           .select('*')
-          .eq('email', email)
+          .ilike('email', normalizedEmail)
           .single();
 
-        let userData: UserData;
-
-        if (existingUser) {
-          if (existingUser.password !== password) {
-            alert('Incorrect password!');
-            return;
-          }
-          userData = existingUser;
-        } else {
-          userData = {
-            userId,
-            name: defaultName,
-            email,
-            password,
-            totalScore: 0,
-            totalAttempts: 0,
-            createdAt: new Date().toISOString()
-          };
-          await supabase.from('users').insert([userData]);
+        if (!existingUser) {
+          alert('User not found. Please register first.');
+          return;
         }
 
-        setCurrentUser(userData);
+        if (existingUser.password !== password) {
+          alert('Incorrect password!');
+          return;
+        }
+
+        setCurrentUser(existingUser);
         setScreen('quizList');
+        // Save session
+        localStorage.setItem('userSession', JSON.stringify({ user: existingUser, isAdmin: false }));
       } catch (error) {
         console.error('Login error:', error);
-        alert('Login failed.');
+        alert('Login failed. Please check your credentials.');
       }
     } else {
       try {
         const userKey = `user:${userId}`;
-        let userData: UserData;
+        const existing = await storage.get(userKey, true);
 
-        try {
-          const existing = await storage.get(userKey, true);
-          userData = JSON.parse(existing.value);
+        if (!existing) {
+          alert('User not found. Please register first.');
+          return;
+        }
 
-          if (userData.password !== password) {
-            alert('Incorrect password!');
-            return;
-          }
-        } catch {
-          userData = {
-            userId,
-            name: defaultName,
-            email,
-            password,
-            totalScore: 0,
-            totalAttempts: 0,
-            createdAt: new Date().toISOString()
-          };
-          await storage.set(userKey, JSON.stringify(userData), true);
+        const userData: UserData = JSON.parse(existing.value);
+
+        if (userData.password !== password) {
+          alert('Incorrect password!');
+          return;
         }
 
         setCurrentUser(userData);
         setScreen('quizList');
+        // Save session
+        localStorage.setItem('userSession', JSON.stringify({ user: userData, isAdmin: false }));
       } catch (error) {
         console.error(error);
-        alert('Login failed.');
+        alert('Login failed. Please check your credentials.');
+      }
+    }
+  };
+
+  const handleRegister = async (name: string, email: string, password: string) => {
+    const normalizedEmail = email.toLowerCase().trim();
+    const userId = normalizedEmail.replace(/[^a-z0-9]/g, '_');
+
+    if (isValidSupabaseConfig() && supabase) {
+      try {
+        // Check if user already exists (case-insensitive)
+        const { data: existingUsers } = await supabase
+          .from('users')
+          .select('email')
+          .ilike('email', normalizedEmail);
+
+        if (existingUsers && existingUsers.length > 0) {
+          alert('An account with this email already exists. Please login instead.');
+          return;
+        }
+
+        const userData: UserData = {
+          userId,
+          name: name.trim(),
+          email: normalizedEmail,
+          password,
+          totalScore: 0,
+          totalAttempts: 0,
+          createdAt: new Date().toISOString()
+        };
+
+        await supabase.from('users').insert([userData]);
+        setCurrentUser(userData);
+        setScreen('quizList');
+        // Save session
+        localStorage.setItem('userSession', JSON.stringify({ user: userData, isAdmin: false }));
+      } catch (error) {
+        console.error('Registration error:', error);
+        alert('Registration failed. Please try again.');
+      }
+    } else {
+      try {
+        const userKey = `user:${userId}`;
+
+        // Check if user already exists
+        try {
+          const existing = await storage.get(userKey, true);
+          if (existing) {
+            alert('User already exists. Please login instead.');
+            return;
+          }
+        } catch {
+          // User doesn't exist, continue with registration
+        }
+
+        const userData: UserData = {
+          userId,
+          name: name.trim(),
+          email: normalizedEmail,
+          password,
+          totalScore: 0,
+          totalAttempts: 0,
+          createdAt: new Date().toISOString()
+        };
+
+        await storage.set(userKey, JSON.stringify(userData), true);
+        setCurrentUser(userData);
+        setScreen('quizList');
+        // Save session
+        localStorage.setItem('userSession', JSON.stringify({ user: userData, isAdmin: false }));
+      } catch (error) {
+        console.error(error);
+        alert('Registration failed. Please try again.');
       }
     }
   };
@@ -227,10 +303,16 @@ const App = () => {
     setScreen('login');
     setSelectedQuiz(null);
     setQuizResult(null);
+    // Clear session
+    localStorage.removeItem('userSession');
   };
 
   if (screen === 'login') {
-    return <LoginScreen onLogin={handleLogin} />;
+    return <LoginScreen onLogin={handleLogin} onSwitchToRegister={() => setScreen('register')} />;
+  }
+
+  if (screen === 'register') {
+    return <RegisterScreen onRegister={handleRegister} onSwitchToLogin={() => setScreen('login')} />;
   }
 
   if (screen === 'quizList' && currentUser) {

@@ -53,9 +53,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, onLogo
     };
 
     const handleUpdateUser = async (user: UserData) => {
+        // Normalize email and name
+        const normalizedEmail = user.email.toLowerCase().trim();
+        const trimmedName = user.name.trim();
+
+        // Check if email is being changed to one that already exists
+        if (normalizedEmail !== originalUser?.email.toLowerCase()) {
+            if (isValidSupabaseConfig() && supabase) {
+                const { data: existingUsers } = await supabase
+                    .from('users')
+                    .select('email')
+                    .ilike('email', normalizedEmail);
+
+                if (existingUsers && existingUsers.length > 0) {
+                    alert('This email is already in use by another account.');
+                    return;
+                }
+            }
+        }
+
         // If password field is empty, use the original password
         const updatedUser = {
             ...user,
+            name: trimmedName,
+            email: normalizedEmail,
             password: user.password && user.password.trim() !== ''
                 ? user.password
                 : originalUser?.password || user.password
