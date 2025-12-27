@@ -31,3 +31,8 @@ dist-ssr
 # Build outputs
 build
 .cache
+
+# Documentation (local only)
+docs/
+*.md
+!README.md

@@ -15,6 +15,7 @@ interface AdminDashboardProps {
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, onLogout, onRefresh }) => {
     const [selectedTab, setSelectedTab] = useState<'users' | 'attempts'>('users');
     const [editingUser, setEditingUser] = useState<UserData | null>(null);
+    const [originalUser, setOriginalUser] = useState<UserData | null>(null);
 
     const stats = {
         totalUsers: users.length,
@@ -52,10 +53,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, onLogo
     };
 
     const handleUpdateUser = async (user: UserData) => {
+        // If password field is empty, use the original password
+        const updatedUser = {
+            ...user,
+            password: user.password && user.password.trim() !== ''
+                ? user.password
+                : originalUser?.password || user.password
+        };
+
         if (isValidSupabaseConfig() && supabase) {
             try {
-                await supabase.from('users').update(user).eq('userId', user.userId);
+                await supabase.from('users').update(updatedUser).eq('userId', user.userId);
                 setEditingUser(null);
+                setOriginalUser(null);
                 onRefresh();
             } catch (error) {
                 console.error('Update error:', error);
@@ -63,8 +73,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, onLogo
             }
         } else {
             try {
-                await storage.set(`user:${user.userId}`, JSON.stringify(user), true);
+                await storage.set(`user:${user.userId}`, JSON.stringify(updatedUser), true);
                 setEditingUser(null);
+                setOriginalUser(null);
                 onRefresh();
             } catch (error) {
                 console.error('Update error:', error);
@@ -194,8 +205,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, onLogo
                                                 <td className="px-6 py-4">
                                                     <div className="flex gap-2">
                                                         <button
-                                                            onClick={() => setEditingUser(user)}
+                                                            onClick={() => {
+                                                                setOriginalUser({ ...user });
+                                                                setEditingUser({ ...user, password: '' });
+                                                            }}
                                                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            title="Edit user"
                                                         >
                                                             <Edit2 className="w-4 h-4" />
                                                         </button>
@@ -290,9 +305,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, onLogo
                                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Password
+                                    <span className="text-xs text-gray-500 ml-2">(Leave blank to keep current)</span>
+                                </label>
+                                <input
+                                    type="password"
+                                    value={editingUser.password || ''}
+                                    onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
+                                    placeholder="Enter new password"
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none"
+                                />
+                            </div>
                             <div className="flex gap-4 mt-6">
                                 <button
-                                    onClick={() => setEditingUser(null)}
+                                    onClick={() => {
+                                        setEditingUser(null);
+                                        setOriginalUser(null);
+                                    }}
                                     className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
                                 >
                                     Cancel
@@ -301,7 +332,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, onLogo
                                     onClick={() => handleUpdateUser(editingUser)}
                                     className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all"
                                 >
-                                    Save
+                                    Save Changes
                                 </button>
                             </div>
                         </div>

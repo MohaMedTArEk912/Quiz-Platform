@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Quiz, UserData } from '../types/index.ts';
-import { ArrowLeft, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Clock } from 'lucide-react';
 
 interface QuizTakingProps {
     quiz: Quiz;
@@ -11,10 +11,7 @@ interface QuizTakingProps {
 
 const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, onComplete, onBack }) => {
     const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-    const [showResult, setShowResult] = useState(false);
-    const [score, setScore] = useState(0);
-    const [answers, setAnswers] = useState<Record<number, any>>({});
+    const [answers, setAnswers] = useState<Record<number, number>>({});
     const [timeLeft, setTimeLeft] = useState(quiz.timeLimit * 60);
     const [startTime] = useState(Date.now());
 
@@ -33,36 +30,47 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, onComplete, onBack }) => 
     }, []);
 
     const handleAnswer = (index: number) => {
-        setSelectedAnswer(index);
-        const isCorrect = index === quiz.questions[currentQuestion].correctAnswer;
-
         setAnswers({
             ...answers,
-            [currentQuestion]: {
-                selected: index,
-                correct: isCorrect
-            }
+            [currentQuestion]: index
         });
-
-        if (isCorrect) {
-            setScore(score + quiz.questions[currentQuestion].points);
-        }
-
-        setShowResult(true);
     };
 
     const nextQuestion = () => {
         if (currentQuestion < quiz.questions.length - 1) {
             setCurrentQuestion(currentQuestion + 1);
-            setSelectedAnswer(null);
-            setShowResult(false);
         } else {
             handleQuizComplete();
         }
     };
 
+    const previousQuestion = () => {
+        if (currentQuestion > 0) {
+            setCurrentQuestion(currentQuestion - 1);
+        }
+    };
+
     const handleQuizComplete = () => {
         const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+
+        // Calculate score
+        let score = 0;
+        const detailedAnswers: Record<number, any> = {};
+
+        quiz.questions.forEach((question, index) => {
+            const selectedAnswer = answers[index];
+            const isCorrect = selectedAnswer === question.correctAnswer;
+
+            if (isCorrect) {
+                score += question.points;
+            }
+
+            detailedAnswers[index] = {
+                selected: selectedAnswer,
+                correct: isCorrect
+            };
+        });
+
         const totalPoints = quiz.questions.reduce((sum, q) => sum + q.points, 0);
         const percentage = Math.round((score / totalPoints) * 100);
 
@@ -71,7 +79,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, onComplete, onBack }) => 
             totalQuestions: quiz.questions.length,
             percentage,
             timeTaken,
-            answers,
+            answers: detailedAnswers,
             passed: percentage >= quiz.passingScore
         });
     };
@@ -84,6 +92,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, onComplete, onBack }) => 
 
     const q = quiz.questions[currentQuestion];
     const progress = ((currentQuestion + 1) / quiz.questions.length) * 100;
+    const selectedAnswer = answers[currentQuestion];
+    const answeredCount = Object.keys(answers).length;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6">
@@ -112,8 +122,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, onComplete, onBack }) => 
                                 <div className="text-xs text-gray-600">Time Left</div>
                             </div>
                             <div className="text-center">
-                                <div className="text-2xl font-bold text-blue-600">{score}</div>
-                                <div className="text-xs text-gray-600">Score</div>
+                                <div className="text-2xl font-bold text-blue-600">{answeredCount}/{quiz.questions.length}</div>
+                                <div className="text-xs text-gray-600">Answered</div>
                             </div>
                         </div>
                     </div>
@@ -141,59 +151,52 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, onComplete, onBack }) => 
                     <div className="space-y-4 mb-6">
                         {q.options.map((option, index) => {
                             const isSelected = selectedAnswer === index;
-                            const isCorrect = index === q.correctAnswer;
-                            const showCorrect = showResult && isCorrect;
-                            const showIncorrect = showResult && isSelected && !isCorrect;
 
                             return (
                                 <button
                                     key={index}
-                                    onClick={() => !showResult && handleAnswer(index)}
-                                    disabled={showResult}
-                                    className={`w-full p-5 rounded-xl text-left transition-all flex items-center gap-4 font-medium text-lg ${showCorrect ? 'bg-green-100 border-2 border-green-500 text-green-800' :
-                                        showIncorrect ? 'bg-red-100 border-2 border-red-500 text-red-800' :
-                                            isSelected ? 'bg-purple-100 border-2 border-purple-500' :
-                                                'bg-gray-50 border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50'
+                                    onClick={() => handleAnswer(index)}
+                                    className={`w-full p-5 rounded-xl text-left transition-all flex items-center gap-4 font-medium text-lg ${isSelected
+                                            ? 'bg-purple-100 border-2 border-purple-500 text-purple-900'
+                                            : 'bg-gray-50 border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50'
                                         }`}
                                 >
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold ${showCorrect ? 'bg-green-500 text-white' :
-                                        showIncorrect ? 'bg-red-500 text-white' :
-                                            'bg-gray-300 text-gray-700'
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold ${isSelected ? 'bg-purple-500 text-white' : 'bg-gray-300 text-gray-700'
                                         }`}>
                                         {String.fromCharCode(65 + index)}
                                     </div>
                                     <span className="flex-1">{option}</span>
-                                    {showCorrect && <CheckCircle className="w-6 h-6 text-green-500" />}
-                                    {showIncorrect && <XCircle className="w-6 h-6 text-red-500" />}
                                 </button>
                             );
                         })}
                     </div>
 
-                    {showResult && (
-                        <div className={`p-6 rounded-xl mb-6 ${selectedAnswer === q.correctAnswer
-                            ? 'bg-green-50 border-2 border-green-300'
-                            : 'bg-blue-50 border-2 border-blue-300'
-                            }`}>
-                            <div className="flex items-start gap-3">
-                                <div className="text-2xl">{selectedAnswer === q.correctAnswer ? '✅' : '💡'}</div>
-                                <div>
-                                    <div className="font-bold text-lg mb-2">
-                                        {selectedAnswer === q.correctAnswer ? 'Correct!' : 'Explanation:'}
-                                    </div>
-                                    <p className="text-gray-700">{q.explanation}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {showResult && (
+                    {/* Navigation Buttons */}
+                    <div className="flex gap-4">
+                        {currentQuestion > 0 && (
+                            <button
+                                onClick={previousQuestion}
+                                className="flex-1 bg-gray-200 text-gray-700 py-4 rounded-xl font-bold text-xl hover:bg-gray-300 transition-all"
+                            >
+                                Previous
+                            </button>
+                        )}
                         <button
                             onClick={nextQuestion}
-                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-xl font-bold text-xl hover:from-indigo-700 hover:to-purple-700 transition-all"
+                            disabled={selectedAnswer === undefined}
+                            className={`flex-1 py-4 rounded-xl font-bold text-xl transition-all ${selectedAnswer !== undefined
+                                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
                         >
-                            {currentQuestion < quiz.questions.length - 1 ? 'Next Question' : 'See Results'}
+                            {currentQuestion < quiz.questions.length - 1 ? 'Next Question' : 'Submit Quiz'}
                         </button>
+                    </div>
+
+                    {selectedAnswer === undefined && (
+                        <p className="text-center text-sm text-gray-500 mt-4">
+                            Please select an answer to continue
+                        </p>
                     )}
                 </div>
             </div>
