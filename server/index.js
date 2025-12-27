@@ -27,17 +27,36 @@ if (!uri) {
   process.exit(1);
 }
 
-mongoose.connect(uri)
-  .then(async () => {
+// Global connection state for serverless caching
+let cachedConnection = null;
+
+async function connectToDatabase() {
+  if (cachedConnection) {
+    return cachedConnection;
+  }
+
+  try {
+    const opts = {
+      bufferCommands: false, // Disable Mongoose buffering to fail fast if not connected
+    };
+    
+    cachedConnection = await mongoose.connect(uri, opts);
     console.log('Connected to MongoDB');
-    await seedQuizzes();
-  })
-  .catch(err => console.error('MongoDB connection error:', err));
+    
+    // Only seed if NOT in production (Vercel) to avoid filesystem issues
+    // Run locally once to seed the database!
+    if (process.env.NODE_ENV !== 'production') {
+      await seedQuizzes();
+    }
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+    throw err;
+  }
+}
 
 // Seed Quizzes
 async function seedQuizzes() {
   try {
-    console.log('Checking quizzes...');
     const quizzesDir = path.join(__dirname, '../public/quizzes');
     
     // Check if directory exists
@@ -68,6 +87,16 @@ async function seedQuizzes() {
     console.error('Seeding error:', error);
   }
 }
+
+// Middleware to ensure DB connection
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    res.status(500).json({ message: 'Database connection failed', error: error.message });
+  }
+});
 
 // Routes
 
