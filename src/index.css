@@ -1,1 +1,22 @@
-@import "tailwindcss";
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/preflight" layer(base);
+@import "tailwindcss/utilities" layer(utilities);
+
+@theme {
+  --color-background-light: #f9fafb;
+  --color-background-dark: #111827;
+  --color-text-light: #111827;
+  --color-text-dark: #f3f4f6;
+}
+
+body {
+  background-color: var(--color-background-light);
+  color: var(--color-text-light);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+:root.dark body,
+html.dark body {
+  background-color: var(--color-background-dark);
+  color: var(--color-text-dark);
+}

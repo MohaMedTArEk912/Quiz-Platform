@@ -37,7 +37,7 @@ async function connectToDatabase() {
 
   try {
     const opts = {
-      bufferCommands: false, // Disable Mongoose buffering to fail fast if not connected
+      // bufferCommands: false, // Re-enable buffering to avoid race conditions
     };
     
     cachedConnection = await mongoose.connect(uri, opts);

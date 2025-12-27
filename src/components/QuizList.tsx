@@ -81,38 +81,38 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, onSelectQuiz, onView
             {/* Stats Cards */}
             <div className="max-w-7xl mx-auto px-6 py-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-100 rounded-xl">
-                                <Trophy className="w-6 h-6 text-blue-600" />
+                            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                                <Trophy className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                             </div>
                             <div>
-                                <div className="text-2xl font-bold text-gray-900">{user.totalScore || 0}</div>
-                                <div className="text-sm text-gray-600">Total Score</div>
+                                <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.totalScore || 0}</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Total Score</div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-purple-100 rounded-xl">
-                                <Clock className="w-6 h-6 text-purple-600" />
+                            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+                                <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                             </div>
                             <div>
-                                <div className="text-2xl font-bold text-gray-900">{user.totalAttempts || 0}</div>
-                                <div className="text-sm text-gray-600">Quizzes Taken</div>
+                                <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.totalAttempts || 0}</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Quizzes Taken</div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-green-100 rounded-xl">
-                                <User className="w-6 h-6 text-green-600" />
+                            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                                <User className="w-6 h-6 text-green-600 dark:text-green-400" />
                             </div>
                             <div>
-                                <div className="text-2xl font-bold text-gray-900">#{user.rank || '-'}</div>
-                                <div className="text-sm text-gray-600">Global Rank</div>
+                                <div className="text-2xl font-bold text-gray-900 dark:text-white">#{user.rank || '-'}</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Global Rank</div>
                             </div>
                         </div>
                     </div>
@@ -184,26 +184,26 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, onSelectQuiz, onView
                         {filteredQuizzes.map((quiz) => (
                             <div
                                 key={quiz.id}
-                                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-all cursor-pointer transform hover:scale-105"
+                                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer transform hover:scale-105"
                                 onClick={() => onSelectQuiz(quiz)}
                             >
                                 <div className="text-5xl mb-4">{quiz.icon}</div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">{quiz.title}</h3>
-                                <p className="text-gray-600 text-sm mb-4">{quiz.description}</p>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{quiz.title}</h3>
+                                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{quiz.description}</p>
 
                                 <div className="flex flex-wrap gap-2 mb-4">
                                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(quiz.difficulty)}`}>
                                         {quiz.difficulty}
                                     </span>
-                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                                         {quiz.questions.length} Questions
                                     </span>
-                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                                         {quiz.timeLimit} min
                                     </span>
                                 </div>
 
-                                <button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all">
+                                <button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md">
                                     Start Quiz
                                 </button>
                             </div>

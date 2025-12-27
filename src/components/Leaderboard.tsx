@@ -1,6 +1,7 @@
 import React from 'react';
 import type { UserData } from '../types/index.ts';
-import { Trophy, Medal, Award, ArrowLeft } from 'lucide-react';
+import { Trophy, Medal, Award } from 'lucide-react';
+import Navbar from './Navbar.tsx';
 
 interface LeaderboardProps {
     users: UserData[];
@@ -37,23 +38,20 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
-            <div className="max-w-4xl mx-auto">
-                {/* Header */}
+            <Navbar
+                user={currentUser}
+                onBack={onBack}
+                showBack={true}
+                title="Leaderboard"
+                onViewProfile={() => { }}
+                onViewLeaderboard={() => { }}
+                onLogout={() => { }}
+                showActions={false}
+            />
+            <div className="max-w-4xl mx-auto mt-6">
+                {/* Header Card Removed - Title handled by Navbar */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-6">
-                    <div className="flex items-center gap-4 mb-4">
-                        <button
-                            onClick={onBack}
-                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                        >
-                            <ArrowLeft className="w-6 h-6 dark:text-gray-300" />
-                        </button>
-                        <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
-                                🏆 Leaderboard
-                            </h1>
-                            <p className="text-gray-600 dark:text-gray-300 mt-1">Top performers across all quizzes</p>
-                        </div>
-                    </div>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4 text-center">Top performers across all quizzes</p>
 
                     {/* Current User Rank */}
                     {currentUserRank && (
