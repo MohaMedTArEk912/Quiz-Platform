@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { UserData, AttemptData, Quiz, Question, BadgeDefinition, BadgeCriteria } from '../types/index.ts';
-import { LogOut, Users, BarChart3, Award, Trash2, Edit2, Plus, X, Check, Upload } from 'lucide-react';
+import { LogOut, Users, BarChart3, Award, Trash2, Edit2, Plus, X, Check, Upload, Download } from 'lucide-react';
 import { api } from '../lib/api.ts';
 import { supabase, isValidSupabaseConfig } from '../lib/supabase.ts';
 import { storage } from '../utils/storage.ts';
@@ -56,6 +56,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
         averageScore: attempts.length > 0
             ? Math.round(attempts.reduce((sum, a) => sum + a.percentage, 0) / attempts.length)
             : 0
+    };
+
+    const handleDownloadQuiz = (quiz: Quiz) => {
+        const dataStr = JSON.stringify(quiz, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${quiz.id || quiz.title.toLowerCase().replace(/\s+/g, '-')}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        setNotification({ type: 'success', message: `Quiz "${quiz.title}" downloaded successfully` });
     };
 
     const handleDeleteQuiz = (quizId: string) => {
@@ -654,6 +668,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                                                 <td className="px-4 sm:px-6 py-4 text-gray-600 dark:text-gray-400">{quiz.timeLimit} mins</td>
                                                 <td className="px-4 sm:px-6 py-4">
                                                     <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleDownloadQuiz(quiz)}
+                                                            className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+                                                            title="Download as JSON"
+                                                        >
+                                                            <Download className="w-4 h-4" />
+                                                        </button>
                                                         <button
                                                             onClick={() => setEditingQuiz(quiz)}
                                                             className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
