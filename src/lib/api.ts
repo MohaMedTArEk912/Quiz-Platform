@@ -29,6 +29,19 @@ export const api = {
         return response.json();
     },
 
+    async googleLogin(googleData: { email: string; name: string; googleId: string }) {
+        const response = await fetch(`${API_URL}/auth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(googleData),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Google login failed');
+        }
+        return response.json();
+    },
+
     async updateUser(userId: string, updates: Partial<UserData>) {
         const response = await fetch(`${API_URL}/users/${userId}`, {
             method: 'PUT',
@@ -165,6 +178,59 @@ export const api = {
             body: JSON.stringify(reviewData),
         });
         if (!response.ok) throw new Error('Failed to submit review');
+        return response.json();
+    },
+
+    // Password Management
+    async forgotPassword(email: string) {
+        const response = await fetch(`${API_URL}/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to verify email');
+        }
+        return response.json();
+    },
+
+    async resetPassword(email: string, newPassword: string) {
+        const response = await fetch(`${API_URL}/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, newPassword }),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to reset password');
+        }
+        return response.json();
+    },
+
+    async changePassword(email: string, currentPassword: string, newPassword: string) {
+        const response = await fetch(`${API_URL}/change-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, currentPassword, newPassword }),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to change password');
+        }
+        return response.json();
+    },
+
+    async adminChangeUserPassword(userId: string, newPassword: string) {
+        const response = await fetch(`${API_URL}/admin/change-user-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, newPassword }),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to change user password');
+        }
         return response.json();
     }
 };

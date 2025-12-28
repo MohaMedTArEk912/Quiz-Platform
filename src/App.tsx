@@ -6,6 +6,7 @@ import { api } from './lib/api.ts';
 import { calculateXPForQuiz, calculateLevel, checkNewBadges } from './utils/gamification.ts';
 import LoginScreen from './components/LoginScreen.tsx';
 import RegisterScreen from './components/RegisterScreen.tsx';
+import ForgotPassword from './components/ForgotPassword.tsx';
 import QuizList from './components/QuizList.tsx';
 import InstallPWA from './components/InstallPWA.tsx';
 
@@ -61,7 +62,7 @@ const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@quiz.com';
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
 
 const App = () => {
-  const [screen, setScreen] = useState<'login' | 'register' | 'quizList' | 'quiz' | 'results' | 'admin' | 'profile' | 'leaderboard'>('login');
+  const [screen, setScreen] = useState<'login' | 'register' | 'forgotPassword' | 'quizList' | 'quiz' | 'results' | 'admin' | 'profile' | 'leaderboard'>('login');
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([]);
@@ -203,6 +204,56 @@ const App = () => {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      // Determine the correct redirect URI based on environment
+      const redirectUri = window.location.hostname === 'localhost'
+        ? 'http://localhost:5173/auth/google/callback'
+        : 'https://quiz-lovat-seven.vercel.app/auth/google/callback';
+
+      // Open Google OAuth popup
+      const googleWindow = window.open(
+        'https://accounts.google.com/o/oauth2/v2/auth?' +
+        new URLSearchParams({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+          redirect_uri: redirectUri,
+          response_type: 'token',
+          scope: 'email profile',
+        }),
+        'Google Sign In',
+        'width=500,height=600'
+      );
+
+      // Listen for the OAuth callback
+      const handleMessage = async (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+
+        if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+          const { email, name, sub } = event.data.profile;
+
+          try {
+            const user = await api.googleLogin({ email, name, googleId: sub });
+            setCurrentUser(user);
+            setScreen('quizList');
+            sessionStorage.setItem('userSession', JSON.stringify({ user, isAdmin: false }));
+            showNotification('success', 'Successfully signed in with Google!');
+          } catch (error) {
+            console.error('Google login error:', error);
+            showNotification('error', 'Failed to sign in with Google. Please try again.');
+          }
+
+          window.removeEventListener('message', handleMessage);
+          googleWindow?.close();
+        }
+      };
+
+      window.addEventListener('message', handleMessage);
+    } catch (error) {
+      console.error('Google OAuth error:', error);
+      showNotification('error', 'Failed to initiate Google sign-in.');
+    }
+  };
+
   const handleQuizSelect = (quiz: Quiz) => {
     setSelectedQuiz(quiz);
     setScreen('quiz');
@@ -305,11 +356,15 @@ const App = () => {
 
   const renderContent = () => {
     if (screen === 'login') {
-      return <LoginScreen onLogin={handleLogin} onSwitchToRegister={() => setScreen('register')} />;
+      return <LoginScreen onLogin={handleLogin} onSwitchToRegister={() => setScreen('register')} onSwitchToForgotPassword={() => setScreen('forgotPassword')} onGoogleSignIn={handleGoogleLogin} />;
     }
 
     if (screen === 'register') {
       return <RegisterScreen onRegister={handleRegister} onSwitchToLogin={() => setScreen('login')} />;
+    }
+
+    if (screen === 'forgotPassword') {
+      return <ForgotPassword onBack={() => setScreen('login')} onSuccess={() => setScreen('login')} />;
     }
 
     if (screen === 'quizList' && currentUser) {

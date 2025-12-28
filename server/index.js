@@ -210,7 +210,8 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -220,6 +221,41 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Google OAuth Login
+app.post('/api/auth/google', async (req, res) => {
+  try {
+    const { email, name, googleId } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    // Check if user exists
+    let user = await User.findOne({ email: normalizedEmail });
+    
+    if (!user) {
+      // Create new user with Google account
+      const userId = normalizedEmail.replace(/[^a-z0-9]/g, '_');
+      user = new User({
+        userId,
+        name,
+        email: normalizedEmail,
+        password: googleId, // Use Google ID as password (they won't use it for login)
+        totalScore: 0,
+        totalAttempts: 0,
+        totalTime: 0,
+        xp: 0,
+        level: 1,
+        streak: 0,
+        lastLoginDate: new Date(),
+        badges: []
+      });
+      await user.save();
+    }
+    
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -409,6 +445,106 @@ app.post('/api/reviews/:attemptId', async (req, res) => {
         res.json(attempt);
     } catch (error) {
         res.status(500).json({ message: 'Error submitting review', error: error.message });
+    }
+});
+
+// --- Password Management Routes ---
+
+// Forgot Password - Verify email and allow password reset
+app.post('/api/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        const user = await User.findOne({ email: normalizedEmail });
+        if (!user) {
+            return res.status(404).json({ message: 'No account found with this email address' });
+        }
+        
+        // In a real app, you would send an email with a reset token
+        // For now, we'll just confirm the email exists and allow direct reset
+        res.json({ 
+            message: 'Email verified. You can now reset your password.',
+            userId: user.userId 
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error processing request', error: error.message });
+    }
+});
+
+// Reset Password - Update password after forgot password flow
+app.post('/api/reset-password', async (req, res) => {
+    try {
+        const { email, newPassword } = req.body;
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+        }
+        
+        const user = await User.findOne({ email: normalizedEmail });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        user.password = newPassword; // In production, hash this!
+        await user.save();
+        
+        res.json({ message: 'Password reset successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error resetting password', error: error.message });
+    }
+});
+
+// Change Password - For logged-in users (including admin)
+app.post('/api/change-password', async (req, res) => {
+    try {
+        const { email, currentPassword, newPassword } = req.body;
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+        }
+        
+        const user = await User.findOne({ email: normalizedEmail });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        // Verify current password
+        if (user.password !== currentPassword) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+        
+        user.password = newPassword; // In production, hash this!
+        await user.save();
+        
+        res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error changing password', error: error.message });
+    }
+});
+
+// Admin Change User Password - Admin can reset any user's password
+app.post('/api/admin/change-user-password', async (req, res) => {
+    try {
+        const { userId, newPassword } = req.body;
+        
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+        }
+        
+        const user = await User.findOne({ userId });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        user.password = newPassword; // In production, hash this!
+        await user.save();
+        
+        res.json({ message: 'User password changed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error changing user password', error: error.message });
     }
 });
 
