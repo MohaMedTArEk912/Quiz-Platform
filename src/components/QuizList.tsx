@@ -202,7 +202,7 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, attempts, onSelectQu
                         {filteredQuizzes.map((quiz) => (
                             <div
                                 key={quiz.id}
-                                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer transform hover:scale-105 relative overflow-hidden"
+                                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer transform hover:scale-105 relative overflow-hidden flex flex-col h-full"
                                 onClick={() => onSelectQuiz(quiz)}
                             >
                                 {/* Attempted Badge */}
@@ -213,40 +213,42 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, attempts, onSelectQu
                                     </div>
                                 )}
 
-                                <div className="text-5xl mb-4">{quiz.icon}</div>
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{quiz.title}</h3>
-                                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{quiz.description}</p>
+                                <div className="flex-grow">
+                                    <div className="text-5xl mb-4">{quiz.icon}</div>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{quiz.title}</h3>
+                                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{quiz.description}</p>
 
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(quiz.difficulty)}`}>
-                                        {quiz.difficulty}
-                                    </span>
-                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                                        {quiz.questions.length} Questions
-                                    </span>
-                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                                        {quiz.timeLimit} min
-                                    </span>
+                                    <div className="flex flex-wrap gap-2 mb-4">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(quiz.difficulty)}`}>
+                                            {quiz.difficulty}
+                                        </span>
+                                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                            {quiz.questions.length} Questions
+                                        </span>
+                                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                                            {quiz.timeLimit} min
+                                        </span>
+                                    </div>
+
+                                    {/* Best Score Display */}
+                                    {hasAttempted(quiz.id) && (
+                                        <div className="mb-6 p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-semibold text-green-700 dark:text-green-300">Best Score:</span>
+                                                <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                                                    {getBestScore(quiz.id)}%
+                                                </span>
+                                            </div>
+                                            <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                                {getQuizAttempts(quiz.id).length} attempt{getQuizAttempts(quiz.id).length > 1 ? 's' : ''}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Best Score Display */}
-                                {hasAttempted(quiz.id) && (
-                                    <div className="mb-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-semibold text-green-700 dark:text-green-300">Best Score:</span>
-                                            <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                                                {getBestScore(quiz.id)}%
-                                            </span>
-                                        </div>
-                                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                            {getQuizAttempts(quiz.id).length} attempt{getQuizAttempts(quiz.id).length > 1 ? 's' : ''}
-                                        </div>
-                                    </div>
-                                )}
-
                                 <button className={`w-full py-3 rounded-xl font-semibold transition-all shadow-md flex items-center justify-center gap-2 ${hasAttempted(quiz.id)
-                                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'
-                                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
+                                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'
+                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
                                     }`}>
                                     {hasAttempted(quiz.id) ? (
                                         <>
