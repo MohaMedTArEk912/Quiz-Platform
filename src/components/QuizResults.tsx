@@ -1,16 +1,50 @@
-import React from 'react';
-import type { Quiz } from '../types/index.ts';
-import { Award, RotateCcw, Home, Clock } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import type { Quiz, UserData } from '../types/index.ts';
+import { Award, RotateCcw, Home, Clock, Download, Loader2 } from 'lucide-react';
 import Navbar from './Navbar.tsx';
+import { Certificate } from './Certificate.tsx';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import confetti from 'canvas-confetti';
 
 interface QuizResultsProps {
     result: any;
     quiz: Quiz;
+    user: UserData;
     onBackToQuizzes: () => void;
     onRetake: () => void;
 }
 
-const QuizResults: React.FC<QuizResultsProps> = ({ result, onBackToQuizzes, onRetake }) => {
+const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQuizzes, onRetake }) => {
+    const certificateRef = useRef<HTMLDivElement>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    useEffect(() => {
+        if (result.passed) {
+            const duration = 3 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+            const interval: any = setInterval(function () {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+
+                // since particles fall down, start a bit higher than random
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+            }, 250);
+
+            return () => clearInterval(interval);
+        }
+    }, [result.passed]);
+
     const getScoreColor = (percentage: number) => {
         if (percentage >= 80) return 'text-green-600';
         if (percentage >= 60) return 'text-yellow-600';
@@ -23,10 +57,42 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, onBackToQuizzes, onRe
         return `${mins}m ${secs}s`;
     };
 
+    const handleDownloadCertificate = async () => {
+        if (!certificateRef.current) return;
+
+        setIsGenerating(true);
+        try {
+            // Wait a bit to ensure rendering
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const canvas = await html2canvas(certificateRef.current, {
+                scale: 2, // Higher resolution
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'px',
+                format: [1000, 700] // Match the component dimensions
+            });
+
+            pdf.addImage(imgData, 'PNG', 0, 0, 1000, 700);
+            pdf.save(`${quiz.title.replace(/\s+/g, '_')}_Certificate.pdf`);
+        } catch (error) {
+            console.error('Error generating certificate:', error);
+            alert('Failed to generate certificate. Please try again.');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 flex flex-col transition-colors">
             <Navbar
-                user={{ name: 'User', email: '', userId: '', totalScore: 0, totalAttempts: 0 }} // We might need to pass user prop or fetch from context? App.tsx has currentUser.
+                user={user}
                 onBack={onBackToQuizzes}
                 showBack={true}
                 title="Quiz Results"
@@ -87,24 +153,60 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, onBackToQuizzes, onRe
                         )}
 
                         {/* Actions */}
-                        <div className="flex gap-4">
-                            <button
-                                onClick={onBackToQuizzes}
-                                className="flex-1 flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-6 py-4 rounded-xl font-bold text-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
-                            >
-                                <Home className="w-6 h-6" />
-                                Back to Quizzes
-                            </button>
-                            <button
-                                onClick={onRetake}
-                                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all"
-                            >
-                                <RotateCcw className="w-6 h-6" />
-                                Try Again
-                            </button>
+                        <div className="flex flex-col gap-4">
+                            {/* Certificate Button */}
+                            {result.passed && (
+                                <button
+                                    onClick={handleDownloadCertificate}
+                                    disabled={isGenerating}
+                                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-6 py-4 rounded-xl font-bold text-lg hover:from-yellow-600 hover:to-amber-600 transition-all shadow-lg transform hover:-translate-y-1"
+                                >
+                                    {isGenerating ? (
+                                        <>
+                                            <Loader2 className="w-6 h-6 animate-spin" />
+                                            Generating Certificate...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Download className="w-6 h-6" />
+                                            Download Certificate
+                                        </>
+                                    )}
+                                </button>
+                            )}
+
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={onBackToQuizzes}
+                                    className="flex-1 flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-6 py-4 rounded-xl font-bold text-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                                >
+                                    <Home className="w-6 h-6" />
+                                    Back to Quizzes
+                                </button>
+                                <button
+                                    onClick={onRetake}
+                                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all"
+                                >
+                                    <RotateCcw className="w-6 h-6" />
+                                    Try Again
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Hidden Certificate Component */}
+            <div style={{ position: 'absolute', top: -10000, left: -10000 }}>
+                <Certificate
+                    ref={certificateRef}
+                    userName={user.name}
+                    courseTitle={quiz.title}
+                    score={result.score}
+                    totalQuestions={result.totalQuestions}
+                    date={new Date().toLocaleDateString()}
+                    certificateId={Date.now().toString(36)}
+                />
             </div>
         </div>
     );

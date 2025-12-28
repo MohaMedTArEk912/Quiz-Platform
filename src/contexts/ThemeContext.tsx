@@ -18,8 +18,8 @@ export const useTheme = () => {
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const [isDark, setIsDark] = useState(() => {
-        // Check localStorage first
-        const saved = localStorage.getItem('theme');
+        // Check sessionStorage first
+        const saved = sessionStorage.getItem('theme');
         if (saved) {
             return saved === 'dark';
         }
@@ -38,8 +38,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
             document.documentElement.classList.remove('dark');
         }
         // Save preference
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        console.log('💾 Saved theme to localStorage:', isDark ? 'dark' : 'light');
+        sessionStorage.setItem('theme', isDark ? 'dark' : 'light');
+        console.log('💾 Saved theme to sessionStorage:', isDark ? 'dark' : 'light');
         console.log('📋 Current html classes:', document.documentElement.className);
     }, [isDark]);
 

@@ -27,6 +27,19 @@ export const api = {
         return response.json();
     },
 
+    async updateUser(userId: string, updates: any) {
+        const response = await fetch(`${API_URL}/users/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to update user');
+        }
+        return response.json();
+    },
+
     async saveAttempt(attemptData: any) {
         const response = await fetch(`${API_URL}/attempts`, {
             method: 'POST',
@@ -48,11 +61,69 @@ export const api = {
         return response.json();
     },
 
+    async createQuiz(quizData: any) {
+        const response = await fetch(`${API_URL}/quizzes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(quizData),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to create quiz');
+        }
+        return response.json();
+    },
+
+    async updateQuiz(id: string, updates: any) {
+        const response = await fetch(`${API_URL}/quizzes/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to update quiz');
+        }
+        return response.json();
+    },
+
+    async deleteQuiz(id: string) {
+        const response = await fetch(`${API_URL}/quizzes/${id}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) {
+            throw new Error('Failed to delete quiz');
+        }
+        return response.json();
+    },
+
     async getData() {
         const response = await fetch(`${API_URL}/data`);
         if (!response.ok) {
             throw new Error('Failed to load data');
         }
+        return response.json();
+    },
+
+    async getBadges() {
+        const response = await fetch(`${API_URL}/badges`);
+        if (!response.ok) throw new Error('Failed to fetch badges');
+        return response.json();
+    },
+
+    async createBadge(badgeData: any) {
+        const response = await fetch(`${API_URL}/badges`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(badgeData),
+        });
+        if (!response.ok) throw new Error('Failed to create badge');
+        return response.json();
+    },
+
+    async deleteBadge(id: string) {
+        const response = await fetch(`${API_URL}/badges/${id}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to delete badge');
         return response.json();
     }
 };

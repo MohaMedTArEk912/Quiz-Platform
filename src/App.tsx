@@ -1,15 +1,26 @@
-import { useState, useEffect } from 'react';
-import type { Quiz, UserData, AttemptData } from './types/index.ts';
+import { useState, useEffect, Suspense, lazy } from 'react';
+import type { Quiz, UserData, AttemptData, BadgeDefinition } from './types/index.ts';
+import { Loader2 } from 'lucide-react';
 
 import { api } from './lib/api.ts';
+import { calculateXPForQuiz, calculateLevel, checkNewBadges } from './utils/gamification.ts';
 import LoginScreen from './components/LoginScreen.tsx';
 import RegisterScreen from './components/RegisterScreen.tsx';
 import QuizList from './components/QuizList.tsx';
-import QuizTaking from './components/QuizTaking.tsx';
-import QuizResults from './components/QuizResults.tsx';
-import AdminDashboard from './components/AdminDashboard.tsx';
-import UserProfile from './components/UserProfile.tsx';
-import Leaderboard from './components/Leaderboard.tsx';
+import InstallPWA from './components/InstallPWA.tsx';
+
+// Lazy load secondary components
+const QuizTaking = lazy(() => import('./components/QuizTaking.tsx'));
+const QuizResults = lazy(() => import('./components/QuizResults.tsx'));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard.tsx'));
+const UserProfile = lazy(() => import('./components/UserProfile.tsx'));
+const Leaderboard = lazy(() => import('./components/Leaderboard.tsx'));
+
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+  </div>
+);
 
 // Admin credentials from environment variables (with defaults)
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@quiz.com';
@@ -24,10 +35,11 @@ const App = () => {
   const [quizResult, setQuizResult] = useState<any>(null);
   const [allUsers, setAllUsers] = useState<UserData[]>([]);
   const [allAttempts, setAllAttempts] = useState<AttemptData[]>([]);
+  const [allBadges, setAllBadges] = useState<BadgeDefinition[]>([]);
 
   // Load session on mount
   useEffect(() => {
-    const savedSession = localStorage.getItem('userSession');
+    const savedSession = sessionStorage.getItem('userSession');
     if (savedSession) {
       try {
         const session = JSON.parse(savedSession);
@@ -36,10 +48,25 @@ const App = () => {
         setScreen(session.isAdmin ? 'admin' : 'quizList');
       } catch (error) {
         console.error('Failed to load session:', error);
-        localStorage.removeItem('userSession');
+        sessionStorage.removeItem('userSession');
       }
     }
   }, []);
+
+  // Update Page Title
+  useEffect(() => {
+    const titleMap: Record<string, string> = {
+      login: 'Login - Quiz Platform',
+      register: 'Register - Quiz Platform',
+      quizList: 'Dashboard - Quiz Platform',
+      quiz: selectedQuiz ? `${selectedQuiz.title} - Quiz Platform` : 'Quiz - Quiz Platform',
+      results: 'Results - Quiz Platform',
+      admin: 'Admin Dashboard - Quiz Platform',
+      profile: 'User Profile - Quiz Platform',
+      leaderboard: 'Leaderboard - Quiz Platform'
+    };
+    document.title = titleMap[screen] || 'Quiz Platform';
+  }, [screen, selectedQuiz]);
 
   useEffect(() => {
     loadQuizzes();
@@ -57,9 +84,10 @@ const App = () => {
 
   const loadData = async () => {
     try {
-      const { users, attempts } = await api.getData();
+      const { users, attempts, badges } = await api.getData();
       setAllUsers(users);
       setAllAttempts(attempts);
+      setAllBadges(badges || []); // Fallback if old backend
     } catch (error) {
       console.error('Failed to load data:', error);
     }
@@ -71,12 +99,24 @@ const App = () => {
 
     // Check for admin credentials
     if (normalizedEmail === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
-      const adminUser = { name: 'Admin', email: normalizedEmail, userId, totalScore: 0, totalAttempts: 0 };
+      const adminUser: UserData = {
+        name: 'Admin',
+        email: normalizedEmail,
+        userId,
+        totalScore: 0,
+        totalAttempts: 0,
+        totalTime: 0,
+        xp: 99999,
+        level: 100,
+        streak: 999,
+        lastLoginDate: new Date().toISOString(),
+        badges: []
+      };
       setIsAdmin(true);
       setCurrentUser(adminUser);
       setScreen('admin');
       // Save session
-      localStorage.setItem('userSession', JSON.stringify({ user: adminUser, isAdmin: true }));
+      sessionStorage.setItem('userSession', JSON.stringify({ user: adminUser, isAdmin: true }));
       await loadData();
       return;
     }
@@ -85,7 +125,7 @@ const App = () => {
       const user = await api.login({ email: normalizedEmail, password });
       setCurrentUser(user);
       setScreen('quizList');
-      localStorage.setItem('userSession', JSON.stringify({ user, isAdmin: false }));
+      sessionStorage.setItem('userSession', JSON.stringify({ user, isAdmin: false }));
     } catch (error: any) {
       console.error('Login error:', error);
       alert(error.message || 'Login failed. Please check your credentials.');
@@ -97,20 +137,27 @@ const App = () => {
     const userId = normalizedEmail.replace(/[^a-z0-9]/g, '_');
 
     try {
-      const userData = {
+      const baseUserData: UserData = {
         userId,
         name: name.trim(),
         email: normalizedEmail,
-        password,
         totalScore: 0,
         totalAttempts: 0,
-        createdAt: new Date().toISOString()
+        totalTime: 0,
+        xp: 0,
+        level: 1,
+        streak: 0,
+        lastLoginDate: new Date().toISOString(),
+        badges: []
       };
 
-      await api.register(userData);
-      setCurrentUser(userData);
+      // api.register expects the user object + password? The previous code was sending the whole object.
+      // We will cast/extend to include password for the API call.
+      await api.register({ ...baseUserData, password } as any);
+
+      setCurrentUser(baseUserData);
       setScreen('quizList');
-      localStorage.setItem('userSession', JSON.stringify({ user: userData, isAdmin: false }));
+      sessionStorage.setItem('userSession', JSON.stringify({ user: baseUserData, isAdmin: false }));
     } catch (error: any) {
       console.error('Registration error:', error);
       alert(error.message || 'Registration failed. Please try again.');
@@ -129,33 +176,81 @@ const App = () => {
     if (!currentUser || !selectedQuiz) return;
 
     const attempt: AttemptData = {
-      attemptId: `${currentUser.userId}_${Date.now()}`,
+      attemptId: crypto.randomUUID(),
       userId: currentUser.userId,
-      userName: currentUser.name,
-      userEmail: currentUser.email,
+      userName: currentUser.name, // Keep existing fields
+      userEmail: currentUser.email, // Keep existing fields
       quizId: selectedQuiz.id,
       quizTitle: selectedQuiz.title,
       score: result.score,
-      totalQuestions: result.totalQuestions,
+      totalQuestions: result.totalQuestions, // Keep existing fields
       percentage: result.percentage,
-      timeTaken: result.timeTaken,
-      answers: result.answers,
-      completedAt: new Date().toISOString()
+      timeTaken: result.timeSpent || 0, // Use timeSpent from result
+      answers: result.answers, // Keep existing fields
+      completedAt: new Date().toISOString(),
+      passed: result.passed // Add passed status
     };
 
     try {
+      // 1. Save Attempt
       await api.saveAttempt(attempt);
 
-      // Speculate update local state for immediate feedback
-      if (currentUser) {
-        const newTotalScore = (currentUser.totalScore || 0) + result.score;
-        const newTotalAttempts = (currentUser.totalAttempts || 0) + 1;
-        setCurrentUser({ ...currentUser, totalScore: newTotalScore, totalAttempts: newTotalAttempts });
+      // 2. Calculate Gamification Updates
+      const maxQuizScore = selectedQuiz.questions.reduce((sum, q) => sum + q.points, 0);
+      const xpGained = calculateXPForQuiz(
+        result.score || 0, // Points gained in this quiz
+        maxQuizScore, // Max possible points
+        result.timeSpent || 0
+      );
+
+      const currentXP = currentUser.xp || 0;
+      const newXP = currentXP + xpGained;
+      const newLevel = calculateLevel(newXP);
+
+      // Check for badges
+      // We need to pass the updated user state to checkNewBadges to see if they met thresholds
+      // Construct a temporary updated user object
+      const tempUserForBadges = {
+        ...currentUser,
+        totalScore: (currentUser.totalScore || 0) + result.score,
+        totalAttempts: (currentUser.totalAttempts || 0) + 1,
+        totalTime: (currentUser.totalTime || 0) + (result.timeSpent || 0),
+        xp: newXP,
+        level: newLevel,
+        streak: currentUser.streak // Streak update is handled on login/home usually? Or here if daily? Let's leave streak for login.
+      };
+
+      const newBadges = checkNewBadges(tempUserForBadges, allBadges, {
+        score: result.score,
+        maxScore: maxQuizScore,
+        timeSpent: result.timeSpent || 0
+      });
+
+      // 3. Update User Data (Local & Server)
+      const userUpdates = {
+        totalScore: tempUserForBadges.totalScore,
+        totalAttempts: tempUserForBadges.totalAttempts,
+        totalTime: tempUserForBadges.totalTime,
+        xp: newXP,
+        level: newLevel,
+        badges: [...(currentUser.badges || []), ...newBadges]
+      };
+
+      // Optimistic update
+      setCurrentUser({ ...currentUser, ...userUpdates });
+
+      await api.updateUser(currentUser.userId, userUpdates);
+
+      // Notify if badge earned? (Result screen might handle this by diffing user, or we pass it)
+      if (newBadges.length > 0) {
+        // Could set a global "new badge" state to show a modal?
+        // For now just logging it, UserProfile will show it.
+        console.log('New badges earned:', newBadges);
       }
 
       await loadData();
     } catch (error) {
-      console.error('Failed to save attempt:', error);
+      console.error('Failed to save attempt/update user:', error);
     }
   };
 
@@ -166,7 +261,7 @@ const App = () => {
     setSelectedQuiz(null);
     setQuizResult(null);
     // Clear session
-    localStorage.removeItem('userSession');
+    sessionStorage.removeItem('userSession');
   };
 
   if (screen === 'login') {
@@ -179,69 +274,84 @@ const App = () => {
 
   if (screen === 'quizList' && currentUser) {
     return (
-      <QuizList
-        quizzes={availableQuizzes}
-        user={currentUser}
-        onSelectQuiz={handleQuizSelect}
-        onViewProfile={() => setScreen('profile')}
-        onViewLeaderboard={() => setScreen('leaderboard')}
-        onLogout={handleLogout}
-      />
+      <>
+        <InstallPWA />
+        <QuizList
+          quizzes={availableQuizzes}
+          user={currentUser}
+          onSelectQuiz={handleQuizSelect}
+          onViewProfile={() => setScreen('profile')}
+          onViewLeaderboard={() => setScreen('leaderboard')}
+          onLogout={handleLogout}
+        />
+      </>
     );
   }
 
   if (screen === 'leaderboard' && currentUser) {
     return (
-      <Leaderboard
-        users={allUsers}
-        currentUser={currentUser}
-        onBack={() => setScreen('quizList')}
-      />
+      <Suspense fallback={<PageLoader />}>
+        <Leaderboard
+          users={allUsers}
+          currentUser={currentUser}
+          onBack={() => setScreen('quizList')}
+        />
+      </Suspense>
     );
   }
 
   if (screen === 'quiz' && selectedQuiz && currentUser) {
     return (
-      <QuizTaking
-        quiz={selectedQuiz}
-        user={currentUser}
-        onComplete={handleQuizComplete}
-        onBack={() => setScreen('quizList')}
-      />
+      <Suspense fallback={<PageLoader />}>
+        <QuizTaking
+          quiz={selectedQuiz}
+          user={currentUser}
+          onComplete={handleQuizComplete}
+          onBack={() => setScreen('quizList')}
+        />
+      </Suspense>
     );
   }
 
   if (screen === 'results' && quizResult && selectedQuiz) {
     return (
-      <QuizResults
-        result={quizResult}
-        quiz={selectedQuiz}
-        onBackToQuizzes={() => setScreen('quizList')}
-        onRetake={() => setScreen('quiz')}
-      />
+      <Suspense fallback={<PageLoader />}>
+        <QuizResults
+          result={quizResult}
+          quiz={selectedQuiz}
+          user={currentUser!}
+          onBackToQuizzes={() => setScreen('quizList')}
+          onRetake={() => setScreen('quiz')}
+        />
+      </Suspense>
     );
   }
 
   if (screen === 'admin' && isAdmin) {
     return (
-      <AdminDashboard
-        users={allUsers}
-        attempts={allAttempts}
-        quizzes={availableQuizzes}
-        onLogout={handleLogout}
-        onRefresh={loadData}
-      />
+      <Suspense fallback={<PageLoader />}>
+        <AdminDashboard
+          users={allUsers}
+          attempts={allAttempts}
+          quizzes={availableQuizzes}
+          badges={allBadges}
+          onLogout={handleLogout}
+          onRefresh={loadData}
+        />
+      </Suspense>
     );
   }
 
   if (screen === 'profile' && currentUser) {
     return (
-      <UserProfile
-        user={currentUser}
-        attempts={allAttempts.filter(a => a.userId === currentUser.userId)}
-        allUsers={allUsers}
-        onBack={() => setScreen('quizList')}
-      />
+      <Suspense fallback={<PageLoader />}>
+        <UserProfile
+          user={currentUser}
+          attempts={allAttempts.filter(a => a.userId === currentUser.userId)}
+          allUsers={allUsers}
+          onBack={() => setScreen('quizList')}
+        />
+      </Suspense>
     );
   }
 

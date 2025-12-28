@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { User } from './models/User.js';
 import { Attempt } from './models/Attempt.js';
 import { Quiz } from './models/Quiz.js';
+import { Badge } from './models/Badge.js';
 
 dotenv.config();
 
@@ -45,9 +46,9 @@ async function connectToDatabase() {
     
     // Only seed if NOT in production (Vercel) to avoid filesystem issues
     // Run locally once to seed the database!
-    if (process.env.NODE_ENV !== 'production') {
-      await seedQuizzes();
-    }
+    // if (process.env.NODE_ENV !== 'production') {
+    //   await seedQuizzes();
+    // }
   } catch (err) {
     console.error('MongoDB connection error:', err);
     throw err;
@@ -110,6 +111,50 @@ app.get('/api/quizzes', async (req, res) => {
   }
 });
 
+// Create Quiz
+app.post('/api/quizzes', async (req, res) => {
+  try {
+    const quizData = req.body;
+    // Basic validation could go here
+    const newQuiz = new Quiz(quizData);
+    await newQuiz.save();
+    res.status(201).json(newQuiz);
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating quiz', error: error.message });
+  }
+});
+
+// Update Quiz
+app.put('/api/quizzes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const updatedQuiz = await Quiz.findOneAndUpdate({ id: id }, updates, { new: true });
+    
+    if (!updatedQuiz) {
+        return res.status(404).json({ message: 'Quiz not found' });
+    }
+    res.json(updatedQuiz);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating quiz', error: error.message });
+  }
+});
+
+// Delete Quiz
+app.delete('/api/quizzes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedQuiz = await Quiz.findOneAndDelete({ id: id });
+    
+    if (!deletedQuiz) {
+        return res.status(404).json({ message: 'Quiz not found' });
+    }
+    res.json({ message: 'Quiz deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting quiz', error: error.message });
+  }
+});
+
 // Register
 app.post('/api/register', async (req, res) => {
   try {
@@ -156,6 +201,31 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Update User (Gamification & Admin)
+app.put('/api/users/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const updates = req.body;
+    
+    // Prevent updating userId or email to existing one (simple check)
+    // For now, trust the frontend logic or add validation if needed
+    
+    const user = await User.findOneAndUpdate(
+      { userId },
+      { $set: updates },
+      { new: true }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating user', error: error.message });
+  }
+});
+
 // Save Attempt
 app.post('/api/attempts', async (req, res) => {
   try {
@@ -164,12 +234,14 @@ app.post('/api/attempts', async (req, res) => {
     await newAttempt.save();
 
     // Update user stats
-    const user = await User.findOne({ userId: attemptData.userId });
-    if (user) {
-      user.totalScore += attemptData.score;
-      user.totalAttempts += 1;
-      await user.save();
-    }
+    // Handled by specific user update call from Frontend now
+    
+    // const user = await User.findOne({ userId: attemptData.userId });
+    // if (user) {
+    //   user.totalScore += attemptData.score;
+    //   user.totalAttempts += 1;
+    //   await user.save();
+    // }
 
     res.status(201).json(newAttempt);
   } catch (error) {
@@ -183,11 +255,52 @@ app.get('/api/data', async (req, res) => {
     const users = await User.find({});
     const attempts = await Attempt.find({});
     // Optionally return quizzes here too if the Dashboard needs them
-    const quizzes = await Quiz.find({}); 
-    res.json({ users, attempts, quizzes }); 
+    
+    // Also fetch badges for dynamic gamification
+    const badges = await Badge.find({});
+
+    res.json({ users, attempts, badges });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
+});
+
+// --- Badge Routes ---
+
+// Get Badges
+app.get('/api/badges', async (req, res) => {
+    try {
+        const badges = await Badge.find({});
+        res.json(badges);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching badges', error: error.message });
+    }
+});
+
+// Create Badge
+app.post('/api/badges', async (req, res) => {
+    try {
+        const badgeData = req.body;
+        const newBadge = new Badge(badgeData);
+        await newBadge.save();
+        res.status(201).json(newBadge);
+    } catch (error) {
+        res.status(500).json({ message: 'Error creating badge', error: error.message });
+    }
+});
+
+// Delete Badge
+app.delete('/api/badges/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await Badge.findOneAndDelete({ id });
+        if (!result) {
+            return res.status(404).json({ message: 'Badge not found' });
+        }
+        res.json({ message: 'Badge deleted' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting badge', error: error.message });
+    }
 });
 
 if (process.env.NODE_ENV !== 'production') {

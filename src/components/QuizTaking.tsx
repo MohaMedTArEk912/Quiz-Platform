@@ -16,7 +16,62 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack 
     const [timeLeft, setTimeLeft] = useState(quiz.timeLimit * 60);
     const [startTime] = useState(Date.now());
 
+    // Resume State
+    const [showResumePrompt, setShowResumePrompt] = useState(false);
+    const [savedState, setSavedState] = useState<any>(null);
+
+    const storageKey = `quiz_progress_${user.userId}_${quiz.id}`;
+
+    // Load saved state on mount
     useEffect(() => {
+        const saved = sessionStorage.getItem(storageKey);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                // Basic validation
+                if (parsed.quizId === quiz.id && parsed.timeLeft > 0) {
+                    setSavedState(parsed);
+                    setShowResumePrompt(true);
+                }
+            } catch (e) {
+                console.error("Failed to parse saved state", e);
+                sessionStorage.removeItem(storageKey);
+            }
+        }
+    }, [quiz.id, storageKey]);
+
+    // Save state on change
+    useEffect(() => {
+        if (showResumePrompt) return; // Don't save while prompting
+
+        const state = {
+            quizId: quiz.id,
+            currentQuestion,
+            answers,
+            timeLeft,
+            lastUpdated: Date.now()
+        };
+        sessionStorage.setItem(storageKey, JSON.stringify(state));
+    }, [currentQuestion, answers, timeLeft, quiz.id, storageKey, showResumePrompt]);
+
+    const handleResume = () => {
+        if (savedState) {
+            setCurrentQuestion(savedState.currentQuestion);
+            setAnswers(savedState.answers);
+            setTimeLeft(savedState.timeLeft);
+        }
+        setShowResumePrompt(false);
+    };
+
+    const handleStartNew = () => {
+        sessionStorage.removeItem(storageKey);
+        setSavedState(null);
+        setShowResumePrompt(false);
+    };
+
+    useEffect(() => {
+        if (showResumePrompt) return; // Pause timer while prompting
+
         const timer = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
@@ -28,7 +83,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack 
         }, 1000);
 
         return () => clearInterval(timer);
-    }, []);
+    }, [showResumePrompt]);
 
     const handleAnswer = (index: number) => {
         setAnswers({
@@ -52,6 +107,9 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack 
     };
 
     const handleQuizComplete = () => {
+        // Clear saved progress
+        sessionStorage.removeItem(storageKey);
+
         const timeTaken = Math.floor((Date.now() - startTime) / 1000);
 
         // Calculate score
@@ -119,12 +177,17 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack 
                             </div>
                         </div>
                         <div className="flex items-center gap-6">
-                            <div className="text-center">
-                                <div className="flex items-center gap-2 text-lg font-bold text-purple-600 dark:text-purple-400">
-                                    <Clock className="w-5 h-5" />
+                            <div className={`text-center transition-colors duration-300 ${timeLeft < 60 ? 'animate-pulse' : ''}`}>
+                                <div className={`flex items-center gap-2 text-lg font-bold ${timeLeft < 60
+                                    ? 'text-red-600 dark:text-red-400 scale-110'
+                                    : 'text-purple-600 dark:text-purple-400'
+                                    } transition-all duration-300`}>
+                                    <Clock className={`w-5 h-5 ${timeLeft < 60 ? 'animate-bounce' : ''}`} />
                                     {formatTime(timeLeft)}
                                 </div>
-                                <div className="text-xs text-gray-600 dark:text-gray-400">Time Left</div>
+                                <div className={`text-xs ${timeLeft < 60 ? 'text-red-500' : 'text-gray-600 dark:text-gray-400'}`}>
+                                    {timeLeft < 60 ? 'Hurry up!' : 'Time Left'}
+                                </div>
                             </div>
                             <div className="text-center">
                                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{answeredCount}/{quiz.questions.length}</div>
@@ -135,7 +198,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack 
 
                     <div className="relative h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                         <div
-                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300"
+                            className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${timeLeft < 60 ? 'bg-red-500' : 'bg-gradient-to-r from-indigo-500 to-purple-500'
+                                }`}
                             style={{ width: `${progress}%` }}
                         />
                     </div>
@@ -205,6 +269,44 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack 
                     )}
                 </div>
             </div>
+
+            {/* Resume Prompt Modal */}
+            {showResumePrompt && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                                <Clock className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Resume Quiz?</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    We found an unfinished attempt from {savedState ? new Date(savedState.lastUpdated).toLocaleDateString() : ''}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p className="text-gray-600 dark:text-gray-300 mb-8">
+                            Would you like to continue where you left off or start over from the beginning?
+                        </p>
+
+                        <div className="flex gap-4">
+                            <button
+                                onClick={handleStartNew}
+                                className="flex-1 px-4 py-3 rounded-xl font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            >
+                                Start Over
+                            </button>
+                            <button
+                                onClick={handleResume}
+                                className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-purple-500/25"
+                            >
+                                Resume
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
