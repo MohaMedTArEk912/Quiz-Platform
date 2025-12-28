@@ -12,6 +12,8 @@ const attemptSchema = new mongoose.Schema({
   percentage: { type: Number, required: true },
   timeTaken: { type: Number, required: true },
   answers: { type: Object, required: true }, // Storing answers as loose Object
+  reviewStatus: { type: String, enum: ['completed', 'pending', 'reviewed'], default: 'completed' },
+  feedback: { type: Object, default: {} }, // Map of questionId/index to feedback
   completedAt: { type: Date, default: Date.now }
 });
 

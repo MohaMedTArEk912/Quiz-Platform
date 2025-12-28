@@ -12,13 +12,15 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
         if (name.trim() && email.trim() && password.trim()) {
             onRegister(name, email, password);
         } else {
-            alert('Please fill in all fields');
+            setError('Please fill in all fields');
         }
     };
 
@@ -42,6 +44,12 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400">Join our quiz platform today</p>
                 </div>
+
+                {error && (
+                    <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-xl flex items-center gap-2 animate-in slide-in-from-top-2">
+                        <span className="font-semibold">{error}</span>
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>

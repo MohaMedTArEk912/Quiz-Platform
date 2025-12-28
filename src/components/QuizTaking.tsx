@@ -6,13 +6,13 @@ import Navbar from './Navbar.tsx';
 interface QuizTakingProps {
     quiz: Quiz;
     user: UserData;
-    onComplete: (result: any) => void;
+    onComplete: (result: { score: number; totalQuestions: number; percentage: number; timeTaken: number; answers: Record<string, any>; passed: boolean; reviewStatus?: 'completed' | 'pending' | 'reviewed' }) => void;
     onBack: () => void;
 }
 
 const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack }) => {
     const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [answers, setAnswers] = useState<Record<number, number>>({});
+    const [answers, setAnswers] = useState<Record<number, string | number>>({});
     const [timeLeft, setTimeLeft] = useState(quiz.timeLimit * 60);
     const [startTime] = useState(Date.now());
 
@@ -85,10 +85,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack 
         return () => clearInterval(timer);
     }, [showResumePrompt]);
 
-    const handleAnswer = (index: number) => {
+    const handleAnswer = (answer: string | number) => {
         setAnswers({
             ...answers,
-            [currentQuestion]: index
+            [currentQuestion]: answer
         });
     };
 
@@ -114,23 +114,34 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack 
 
         // Calculate score
         let score = 0;
-        const detailedAnswers: Record<number, any> = {};
+        const detailedAnswers: Record<number, { selected: string | number; isCorrect: boolean; type: string }> = {};
 
         quiz.questions.forEach((question, index) => {
             const selectedAnswer = answers[index];
-            const isCorrect = selectedAnswer === question.correctAnswer;
+            const isText = question.type === 'text';
+            let isCorrect = false;
 
-            if (isCorrect) {
-                score += question.points;
+            if (isText) {
+                // For text questions, we don't auto-grade. Mark as correct only if exact match? 
+                // No, usually requires manual review. For now count as 0 points until reviewed.
+                isCorrect = false;
+            } else {
+                isCorrect = selectedAnswer === question.correctAnswer;
+                if (isCorrect) {
+                    score += question.points;
+                }
             }
 
             detailedAnswers[index] = {
                 selected: selectedAnswer,
-                correct: isCorrect
+                isCorrect: isCorrect,
+                type: question.type || 'multiple-choice'
             };
         });
 
         const totalPoints = quiz.questions.reduce((sum, q) => sum + q.points, 0);
+        // Calculate percentage based on auto-graded questions initially? 
+        // Or just show current score. User asked for manual review.
         const percentage = Math.round((score / totalPoints) * 100);
 
         onComplete({
@@ -138,8 +149,9 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack 
             totalQuestions: quiz.questions.length,
             percentage,
             timeTaken,
-            answers: detailedAnswers,
-            passed: percentage >= quiz.passingScore
+            answers: detailedAnswers as unknown as Record<string, unknown>,
+            passed: percentage >= quiz.passingScore,
+            reviewStatus: quiz.questions.some(q => q.type === 'text') ? 'pending' : 'completed'
         });
     };
 
@@ -153,6 +165,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack 
     const progress = ((currentQuestion + 1) / quiz.questions.length) * 100;
     const selectedAnswer = answers[currentQuestion];
     const answeredCount = Object.keys(answers).length;
+    const isTextQuestion = q.type === 'text';
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
@@ -218,26 +231,35 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack 
                     </div>
 
                     <div className="space-y-4 mb-6">
-                        {q.options.map((option, index) => {
-                            const isSelected = selectedAnswer === index;
+                        {isTextQuestion ? (
+                            <textarea
+                                value={selectedAnswer as string || ''}
+                                onChange={(e) => handleAnswer(e.target.value)}
+                                placeholder="Type your answer here..."
+                                className="w-full p-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none min-h-[150px]"
+                            />
+                        ) : (
+                            q.options?.map((option, index) => {
+                                const isSelected = selectedAnswer === index;
 
-                            return (
-                                <button
-                                    key={index}
-                                    onClick={() => handleAnswer(index)}
-                                    className={`w-full p-5 rounded-xl text-left transition-all flex items-center gap-4 font-medium text-lg ${isSelected
-                                        ? 'bg-purple-100 dark:bg-purple-900/40 border-2 border-purple-500 text-purple-900 dark:text-purple-100'
-                                        : 'bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 text-gray-700 dark:text-gray-200'
-                                        }`}
-                                >
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold ${isSelected ? 'bg-purple-500 text-white' : 'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
-                                        }`}>
-                                        {String.fromCharCode(65 + index)}
-                                    </div>
-                                    <span className="flex-1">{option}</span>
-                                </button>
-                            );
-                        })}
+                                return (
+                                    <button
+                                        key={index}
+                                        onClick={() => handleAnswer(index)}
+                                        className={`w-full p-5 rounded-xl text-left transition-all flex items-center gap-4 font-medium text-lg ${isSelected
+                                            ? 'bg-purple-100 dark:bg-purple-900/40 border-2 border-purple-500 text-purple-900 dark:text-purple-100'
+                                            : 'bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 text-gray-700 dark:text-gray-200'
+                                            }`}
+                                    >
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold ${isSelected ? 'bg-purple-500 text-white' : 'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
+                                            }`}>
+                                            {String.fromCharCode(65 + index)}
+                                        </div>
+                                        <span className="flex-1">{option}</span>
+                                    </button>
+                                );
+                            })
+                        )}
                     </div>
 
                     {/* Navigation Buttons */}

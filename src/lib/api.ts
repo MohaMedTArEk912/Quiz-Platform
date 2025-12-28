@@ -1,7 +1,9 @@
+import type { UserData, AttemptData, Quiz, BadgeDefinition } from '../types';
+
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const api = {
-    async register(userData: any) {
+    async register(userData: Partial<UserData>) {
         const response = await fetch(`${API_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -14,7 +16,7 @@ export const api = {
         return response.json();
     },
 
-    async login(credentials: any) {
+    async login(credentials: { email: string; password: string }) {
         const response = await fetch(`${API_URL}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -27,7 +29,7 @@ export const api = {
         return response.json();
     },
 
-    async updateUser(userId: string, updates: any) {
+    async updateUser(userId: string, updates: Partial<UserData>) {
         const response = await fetch(`${API_URL}/users/${userId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -40,7 +42,7 @@ export const api = {
         return response.json();
     },
 
-    async saveAttempt(attemptData: any) {
+    async saveAttempt(attemptData: AttemptData) {
         const response = await fetch(`${API_URL}/attempts`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -61,7 +63,7 @@ export const api = {
         return response.json();
     },
 
-    async createQuiz(quizData: any) {
+    async createQuiz(quizData: Partial<Quiz>) {
         const response = await fetch(`${API_URL}/quizzes`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -73,7 +75,19 @@ export const api = {
         return response.json();
     },
 
-    async updateQuiz(id: string, updates: any) {
+    async importQuizzes(quizData: unknown) {
+        const response = await fetch(`${API_URL}/quizzes/import`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(quizData),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to import quizzes');
+        }
+        return response.json();
+    },
+
+    async updateQuiz(id: string, updates: Partial<Quiz>) {
         const response = await fetch(`${API_URL}/quizzes/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -109,7 +123,7 @@ export const api = {
         return response.json();
     },
 
-    async createBadge(badgeData: any) {
+    async createBadge(badgeData: BadgeDefinition) {
         const response = await fetch(`${API_URL}/badges`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -124,6 +138,22 @@ export const api = {
             method: 'DELETE',
         });
         if (!response.ok) throw new Error('Failed to delete badge');
+        return response.json();
+    },
+
+    async getPendingReviews() {
+        const response = await fetch(`${API_URL}/reviews/pending`);
+        if (!response.ok) throw new Error('Failed to fetch pending reviews');
+        return response.json();
+    },
+
+    async submitReview(attemptId: string, reviewData: { feedback: Record<string, unknown>; scoreAdjustment: number }) {
+        const response = await fetch(`${API_URL}/reviews/${attemptId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(reviewData),
+        });
+        if (!response.ok) throw new Error('Failed to submit review');
         return response.json();
     }
 };

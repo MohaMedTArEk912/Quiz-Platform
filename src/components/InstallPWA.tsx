@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { Download } from 'lucide-react';
 
+interface BeforeInstallPromptEvent extends Event {
+    prompt: () => Promise<void>;
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 const InstallPWA = () => {
     const [supportsPWA, setSupportsPWA] = useState(false);
-    const [promptInstall, setPromptInstall] = useState<any>(null);
+    const [promptInstall, setPromptInstall] = useState<BeforeInstallPromptEvent | null>(null);
 
     useEffect(() => {
-        const handler = (e: any) => {
+        const handler = (e: Event) => {
             e.preventDefault();
             setSupportsPWA(true);
-            setPromptInstall(e);
+            setPromptInstall(e as BeforeInstallPromptEvent);
         };
         window.addEventListener('beforeinstallprompt', handler);
 

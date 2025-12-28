@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import type { UserData, AttemptData, Quiz, Question, BadgeDefinition } from '../types/index.ts';
-import { LogOut, Users, BarChart3, Award, Trash2, Edit2, Plus, X, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import type { UserData, AttemptData, Quiz, Question, BadgeDefinition, BadgeCriteria } from '../types/index.ts';
+import { LogOut, Users, BarChart3, Award, Trash2, Edit2, Plus, X, Check, Upload } from 'lucide-react';
 import { api } from '../lib/api.ts';
 import { supabase, isValidSupabaseConfig } from '../lib/supabase.ts';
 import { storage } from '../utils/storage.ts';
@@ -16,7 +16,7 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizzes, badges, onLogout, onRefresh }) => {
-    const [selectedTab, setSelectedTab] = useState<'users' | 'attempts' | 'quizzes' | 'gamification'>('users');
+    const [selectedTab, setSelectedTab] = useState<'users' | 'attempts' | 'quizzes' | 'gamification' | 'reviews'>('users');
     const [editingUser, setEditingUser] = useState<UserData | null>(null);
     const [originalUser, setOriginalUser] = useState<UserData | null>(null);
     const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
@@ -24,6 +24,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
     const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
     const [isquestionFormOpen, setIsQuestionFormOpen] = useState(false);
     const [editingBadge, setEditingBadge] = useState<BadgeDefinition | null>(null);
+    const [pendingReviews, setPendingReviews] = useState<AttemptData[]>([]);
+    const [reviewingAttempt, setReviewingAttempt] = useState<AttemptData | null>(null);
+    const [reviewFeedback, setReviewFeedback] = useState<Record<string, any>>({});
+    const [reviewScores, setReviewScores] = useState<Record<string, number>>({});
+
+    // New states for standardizing UI interaction
+    const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; type: 'quiz' | 'user' | 'badge'; id: string } | null>(null);
+    const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+    // Auto-dismiss notification
+    useEffect(() => {
+        if (notification) {
+            const timer = setTimeout(() => setNotification(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [notification]);
+
+    useEffect(() => {
+        if (selectedTab === 'reviews') {
+            api.getPendingReviews()
+                .then(setPendingReviews)
+                .catch(err => console.error('Failed to load reviews', err));
+        }
+    }, [selectedTab]);
+
 
     const stats = {
         totalUsers: users.length,
@@ -33,14 +58,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
             : 0
     };
 
-    const handleDeleteQuiz = async (quizId: string) => {
-        if (!confirm('Are you sure you want to delete this quiz?')) return;
+    const handleDeleteQuiz = (quizId: string) => {
+        setDeleteConfirmation({ isOpen: true, type: 'quiz', id: quizId });
+    };
+
+    const confirmDeleteQuiz = async () => {
+        if (!deleteConfirmation || deleteConfirmation.type !== 'quiz') return;
         try {
-            await api.deleteQuiz(quizId);
+            await api.deleteQuiz(deleteConfirmation.id);
+            setNotification({ type: 'success', message: 'Quiz deleted successfully' });
             onRefresh();
         } catch (error) {
             console.error('Delete error:', error);
-            alert('Failed to delete quiz');
+            setNotification({ type: 'error', message: 'Failed to delete quiz' });
+        } finally {
+            setDeleteConfirmation(null);
         }
     };
 
@@ -50,17 +82,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
         try {
             if (editingQuiz.id && quizzes.some(q => q.id === editingQuiz.id)) {
                 await api.updateQuiz(editingQuiz.id, editingQuiz);
+                setNotification({ type: 'success', message: 'Quiz updated successfully' });
             } else {
                 // Ensure ID is generated if not present (though Backend usually handles ID, our frontend types expect it)
                 const newQuiz = { ...editingQuiz, id: editingQuiz.id || crypto.randomUUID() };
                 await api.createQuiz(newQuiz);
+                setNotification({ type: 'success', message: 'Quiz created successfully' });
             }
             setEditingQuiz(null);
             onRefresh();
         } catch (error) {
             console.error('Save quiz error:', error);
-            alert('Failed to save quiz');
+            setNotification({ type: 'error', message: 'Failed to save quiz' });
         }
+    };
+
+    const handleImportQuiz = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const json = JSON.parse(e.target?.result as string);
+                const result = await api.importQuizzes(json);
+                setNotification({ type: 'success', message: result.message || 'Quizzes imported successfully' });
+                onRefresh();
+            } catch (error) {
+                console.error('Import error:', error);
+                setNotification({ type: 'error', message: 'Failed to import quizzes. Invalid JSON or server error.' });
+            }
+        };
+        reader.readAsText(file);
     };
 
     const handleQuestionUpdate = (updatedQuestion: Question) => {
@@ -90,32 +143,63 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
         });
     };
 
-    const handleDeleteUser = async (userId: string) => {
-        if (!confirm('Are you sure you want to delete this user?')) return;
+    const handleDeleteUser = (userId: string) => {
+        setDeleteConfirmation({ isOpen: true, type: 'user', id: userId });
+    };
 
+    const confirmDeleteUser = async () => {
+        if (!deleteConfirmation || deleteConfirmation.type !== 'user') return;
+
+        const userId = deleteConfirmation.id;
         if (isValidSupabaseConfig() && supabase) {
             try {
                 await supabase.from('users').delete().eq('userId', userId);
                 await supabase.from('attempts').delete().eq('userId', userId);
+                setNotification({ type: 'success', message: 'User deleted successfully' });
                 onRefresh();
             } catch (error) {
-                console.error('Delete error:', error);
-                alert('Failed to delete user');
+                console.error('Delete user error:', error);
+                setNotification({ type: 'error', message: 'Failed to delete user' });
             }
         } else {
-            try {
-                await storage.set(`user:${userId}`, '', true);
-                // Delete attempts
-                const attemptsToDelete = attempts.filter(a => a.userId === userId);
-                for (const attempt of attemptsToDelete) {
-                    await storage.set(`attempt:${attempt.attemptId}`, '', true);
-                }
-                onRefresh();
-            } catch (error) {
-                console.error('Delete error:', error);
+            console.warn('Backend deletion not implemented locally');
+            setNotification({ type: 'error', message: 'Delete user functionality requires Supabase or Backend implementation' });
+        }
+        setDeleteConfirmation(null);
+    };
+
+    const handleReviewSubmit = async () => {
+        if (!reviewingAttempt) return;
+
+        // Calculate additional points from manual grading
+        const additionalPoints = Object.values(reviewScores).reduce((sum, score) => sum + score, 0);
+
+        try {
+            await api.submitReview(reviewingAttempt.attemptId, {
+                feedback: reviewFeedback,
+                scoreAdjustment: additionalPoints
+            });
+
+            // Success
+            setReviewingAttempt(null);
+            setReviewFeedback({});
+            setReviewScores({});
+            setNotification({ type: 'success', message: 'Review submitted successfully' });
+            if (selectedTab === 'reviews') {
+                const reviews = await api.getPendingReviews();
+                setPendingReviews(reviews);
             }
+            onRefresh(); // Refresh main stats
+        } catch (error) {
+            console.error('Submit review error:', error);
+            setNotification({ type: 'error', message: 'Failed to submit review' });
         }
     };
+
+    const getQuizForAttempt = (attempt: AttemptData) => {
+        return quizzes.find(q => q.id === attempt.quizId);
+    };
+
 
     const handleUpdateUser = async (user: UserData) => {
         // Normalize email and name
@@ -131,7 +215,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                     .ilike('email', normalizedEmail);
 
                 if (existingUsers && existingUsers.length > 0) {
-                    alert('This email is already in use by another account.');
+                    setNotification({ type: 'error', message: 'This email is already in use by another account.' });
                     return;
                 }
             }
@@ -152,19 +236,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                 await supabase.from('users').update(updatedUser).eq('userId', user.userId);
                 setEditingUser(null);
                 setOriginalUser(null);
+                setNotification({ type: 'success', message: 'User updated successfully' });
                 onRefresh();
             } catch (error) {
                 console.error('Update error:', error);
-                alert('Failed to update user');
+                setNotification({ type: 'error', message: 'Failed to update user' });
             }
         } else {
             try {
                 await storage.set(`user:${user.userId}`, JSON.stringify(updatedUser), true);
                 setEditingUser(null);
                 setOriginalUser(null);
+                setNotification({ type: 'success', message: 'User updated successfully' });
                 onRefresh();
             } catch (error) {
                 console.error('Update error:', error);
+                setNotification({ type: 'error', message: 'Failed to update user locally' });
             }
         }
     };
@@ -173,14 +260,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
         (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
     );
 
-    const handleDeleteBadge = async (badgeId: string) => {
-        if (!confirm('Are you sure you want to delete this badge?')) return;
+    const handleDeleteBadge = (badgeId: string) => {
+        setDeleteConfirmation({ isOpen: true, type: 'badge', id: badgeId });
+    };
+
+    const confirmDeleteBadge = async () => {
+        if (!deleteConfirmation || deleteConfirmation.type !== 'badge') return;
         try {
-            await api.deleteBadge(badgeId);
+            await api.deleteBadge(deleteConfirmation.id);
+            setNotification({ type: 'success', message: 'Badge deleted successfully' });
             onRefresh();
         } catch (error) {
             console.error('Delete badge error:', error);
-            alert('Failed to delete badge');
+            setNotification({ type: 'error', message: 'Failed to delete badge' });
+        } finally {
+            setDeleteConfirmation(null);
         }
     };
 
@@ -189,10 +283,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
         try {
             await api.createBadge(editingBadge);
             setEditingBadge(null);
+            setNotification({ type: 'success', message: 'Badge saved successfully' });
             onRefresh();
         } catch (error) {
             console.error('Save badge error:', error);
-            alert('Failed to save badge');
+            setNotification({ type: 'error', message: 'Failed to save badge' });
         }
     };
 
@@ -340,7 +435,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                 </div>
 
                 {/* Tabs */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden grid grid-cols-2 md:flex">
                     <button
                         onClick={() => setSelectedTab('users')}
                         className={`flex-1 px-4 sm:px-6 py-4 font-semibold transition-colors text-sm sm:text-base ${selectedTab === 'users'
@@ -376,6 +471,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                             }`}
                     >
                         Gamification
+                    </button>
+                    <button
+                        onClick={() => setSelectedTab('reviews')}
+                        className={`flex-1 px-4 sm:px-6 py-4 font-semibold transition-colors text-sm sm:text-base ${selectedTab === 'reviews'
+                            ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
+                    >
+                        Reviews
+                        {pendingReviews.length > 0 && (
+                            <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                                {pendingReviews.length}
+                            </span>
+                        )}
                     </button>
                 </div>
 
@@ -508,6 +617,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                                     <Plus className="w-4 h-4" />
                                     Create Quiz
                                 </button>
+                                <label className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
+                                    <Upload className="w-4 h-4" />
+                                    Import JSON
+                                    <input
+                                        type="file"
+                                        accept=".json"
+                                        className="hidden"
+                                        onChange={handleImportQuiz}
+                                    />
+                                </label>
                             </div>
                             <div className="overflow-x-auto -mx-4 sm:mx-0">
                                 <table className="w-full min-w-[640px]">
@@ -762,12 +881,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Difficulty</label>
                                                 <select
                                                     value={editingQuiz.difficulty}
-                                                    onChange={(e) => setEditingQuiz({ ...editingQuiz, difficulty: e.target.value as any })}
+                                                    onChange={(e) => setEditingQuiz({ ...editingQuiz, difficulty: e.target.value })}
                                                     className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                 >
-                                                    <option value="Beginner">Beginner</option>
-                                                    <option value="Intermediate">Intermediate</option>
-                                                    <option value="Advanced">Advanced</option>
+                                                    <option value="beginner">Beginner</option>
+                                                    <option value="intermediate">Intermediate</option>
+                                                    <option value="advanced">Advanced</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -804,49 +923,64 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                                                     </button>
                                                 </div>
 
-                                                <div>
-                                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Question Text</label>
-                                                    <textarea
-                                                        value={editingQuestion?.question || ''}
-                                                        onChange={(e) => setEditingQuestion(curr => curr ? ({ ...curr, question: e.target.value }) : null)}
-                                                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                                        rows={3}
-                                                    />
+                                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                                    <div className="md:col-span-1">
+                                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Type</label>
+                                                        <select
+                                                            value={editingQuestion?.type || 'multiple-choice'}
+                                                            onChange={(e) => setEditingQuestion(curr => curr ? ({ ...curr, type: e.target.value as Question['type'] }) : null)}
+                                                            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                        >
+                                                            <option value="multiple-choice">Multiple Choice</option>
+                                                            <option value="text">Written Answer</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="md:col-span-3">
+                                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Question Text</label>
+                                                        <textarea
+                                                            value={editingQuestion?.question || ''}
+                                                            onChange={(e) => setEditingQuestion(curr => curr ? ({ ...curr, question: e.target.value }) : null)}
+                                                            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                            rows={3}
+                                                        />
+                                                    </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    {[0, 1, 2, 3].map((idx) => (
-                                                        <div key={idx}>
-                                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Option {String.fromCharCode(65 + idx)}</label>
-                                                            <div className="flex gap-2">
-                                                                <input
-                                                                    type="text"
-                                                                    value={editingQuestion?.options[idx] || ''}
-                                                                    onChange={(e) => {
-                                                                        if (!editingQuestion) return;
-                                                                        const newOptions = [...editingQuestion.options];
-                                                                        newOptions[idx] = e.target.value;
-                                                                        setEditingQuestion({ ...editingQuestion, options: newOptions });
-                                                                    }}
-                                                                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${editingQuestion?.correctAnswer === idx
-                                                                        ? 'border-green-500 dark:border-green-500'
-                                                                        : 'border-gray-200 dark:border-gray-700 focus:border-purple-500'
-                                                                        }`}
-                                                                />
-                                                                <button
-                                                                    onClick={() => setEditingQuestion(curr => curr ? ({ ...curr, correctAnswer: idx }) : null)}
-                                                                    className={`p-2 rounded-lg transition-colors ${editingQuestion?.correctAnswer === idx
-                                                                        ? 'bg-green-500 text-white'
-                                                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-gray-200'
-                                                                        }`}
-                                                                    title="Mark as correct"
-                                                                >
-                                                                    <Check className="w-5 h-5" />
-                                                                </button>
+                                                {(editingQuestion?.type === 'multiple-choice' || !editingQuestion?.type) && (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        {[0, 1, 2, 3].map((idx) => (
+                                                            <div key={idx}>
+                                                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Option {String.fromCharCode(65 + idx)}</label>
+                                                                <div className="flex gap-2">
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editingQuestion?.options?.[idx] || ''}
+                                                                        onChange={(e) => {
+                                                                            if (!editingQuestion) return;
+                                                                            const newOptions = [...(editingQuestion.options || [])];
+                                                                            newOptions[idx] = e.target.value;
+                                                                            setEditingQuestion({ ...editingQuestion, options: newOptions });
+                                                                        }}
+                                                                        className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${editingQuestion?.correctAnswer === idx
+                                                                            ? 'border-green-500 dark:border-green-500'
+                                                                            : 'border-gray-200 dark:border-gray-700 focus:border-purple-500'
+                                                                            }`}
+                                                                    />
+                                                                    <button
+                                                                        onClick={() => setEditingQuestion(curr => curr ? ({ ...curr, correctAnswer: idx }) : null)}
+                                                                        className={`p-2 rounded-lg transition-colors ${editingQuestion?.correctAnswer === idx
+                                                                            ? 'bg-green-500 text-white'
+                                                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-gray-200'
+                                                                            }`}
+                                                                        title="Mark as correct"
+                                                                    >
+                                                                        <Check className="w-5 h-5" />
+                                                                    </button>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                                        ))}
+                                                    </div>
+                                                )}
 
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
@@ -901,6 +1035,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                                                     onClick={() => {
                                                         setEditingQuestion({
                                                             id: 0, // Flag for new
+                                                            type: 'multiple-choice',
                                                             part: 'A', // Default?
                                                             question: '',
                                                             options: ['', '', '', ''],
@@ -961,7 +1096,134 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                         </div>
                     )
                 }
-                {/* Edit Badge Modal */}
+
+                {/* Reviews Tab Content */}
+                {selectedTab === 'reviews' && (
+                    <div className="space-y-6">
+                        {!reviewingAttempt ? (
+                            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                                <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+                                    <h3 className="text-lg font-bold text-gray-800 dark:text-white">Pending Reviews</h3>
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm">Attempts waiting for manual grading</p>
+                                </div>
+                                {pendingReviews.length === 0 ? (
+                                    <div className="p-12 text-center text-gray-500 dark:text-gray-400">
+                                        <Check className="w-12 h-12 mx-auto mb-4 text-green-500" />
+                                        <p>All caught up! No pending reviews.</p>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                                        {pendingReviews.map((attempt) => (
+                                            <div key={attempt.attemptId} className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                                <div>
+                                                    <h4 className="font-bold text-gray-900 dark:text-white">{attempt.quizTitle}</h4>
+                                                    <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                                        <span>User: {attempt.userName}</span>
+                                                        <span>•</span>
+                                                        <span>Score: {attempt.score} (Provisional)</span>
+                                                        <span>•</span>
+                                                        <span>{new Date(attempt.completedAt).toLocaleDateString()}</span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => setReviewingAttempt(attempt)}
+                                                    className="px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 font-semibold transition-colors"
+                                                >
+                                                    Review
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                                <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-800 dark:text-white">Reviewing: {reviewingAttempt.userName}</h3>
+                                        <p className="text-gray-500 dark:text-gray-400 text-sm">{reviewingAttempt.quizTitle}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setReviewingAttempt(null)}
+                                        className="text-gray-500 hover:text-gray-700"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                                <div className="p-6 space-y-8">
+                                    {(() => {
+                                        const quiz = getQuizForAttempt(reviewingAttempt);
+                                        if (!quiz) return <div className="text-red-500">Quiz not found for this attempt</div>;
+
+                                        return quiz.questions.map((q, idx) => {
+                                            const answer = reviewingAttempt.answers[idx];
+                                            // Handle case where answer might be object or simple value
+                                            const answerText = typeof answer === 'object' ? (answer as { selected: string | number }).selected : answer;
+                                            const isText = q.type === 'text';
+
+                                            if (!isText) return null; // Skip multiple choice for manual review focus (or show them read-only if desired)
+
+                                            // Actually, showing all is better context, but let's focus on text for now or show all
+                                            return (
+                                                <div key={q.id} className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-200 dark:border-gray-700">
+                                                    <div className="mb-2">
+                                                        <span className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Question {idx + 1}</span>
+                                                        <p className="mt-1 font-medium text-gray-900 dark:text-white">{q.question}</p>
+                                                    </div>
+
+                                                    <div className="mb-4">
+                                                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">User Answer</span>
+                                                        <div className="mt-1 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-200">
+                                                            {answerText || <span className="italic text-gray-400">No answer provided</span>}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                                                        <div>
+                                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Score (Max: {q.points})</label>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max={q.points}
+                                                                value={reviewScores[idx] || 0}
+                                                                onChange={(e) => setReviewScores(curr => ({ ...curr, [idx]: parseInt(e.target.value) || 0 }))}
+                                                                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Feedback</label>
+                                                            <input
+                                                                type="text"
+                                                                value={reviewFeedback[idx] || ''}
+                                                                onChange={(e) => setReviewFeedback(curr => ({ ...curr, [idx]: e.target.value }))}
+                                                                placeholder="Good job! / Needs improvement..."
+                                                                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
+                                </div>
+                                <div className="p-6 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-4">
+                                    <button
+                                        onClick={() => setReviewingAttempt(null)}
+                                        className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleReviewSubmit}
+                                        className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-lg transition-all"
+                                    >
+                                        Submit Grading
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
                 {
                     editingBadge && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 sm:p-6 z-50">
@@ -1017,7 +1279,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                                                 value={editingBadge.criteria.type}
                                                 onChange={(e) => setEditingBadge({
                                                     ...editingBadge,
-                                                    criteria: { ...editingBadge.criteria, type: e.target.value as any }
+                                                    criteria: { ...editingBadge.criteria, type: e.target.value as BadgeCriteria['type'] }
                                                 })}
                                                 className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                             >
@@ -1063,6 +1325,53 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                     )
                 }
             </div>
+
+            {/* Notification Toast */}
+            {notification && (
+                <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 z-50 flex items-center gap-3 ${notification.type === 'success' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border border-green-200 dark:border-green-800' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-800'
+                    }`}>
+                    {notification.type === 'success' ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                    <span className="font-semibold">{notification.message}</span>
+                    <button onClick={() => setNotification(null)} className="ml-2 hover:opacity-75">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirmation && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
+                    <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+                        <div className="text-center">
+                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 mb-6">
+                                <Trash2 className="h-8 w-8 text-red-600 dark:text-red-500" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Delete {deleteConfirmation.type === 'quiz' ? 'Quiz' : deleteConfirmation.type === 'user' ? 'User' : 'Badge'}?</h3>
+                            <p className="text-gray-500 dark:text-gray-400 mb-8">
+                                Are you sure you want to delete this {deleteConfirmation.type}? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setDeleteConfirmation(null)}
+                                    className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (deleteConfirmation.type === 'quiz') confirmDeleteQuiz();
+                                        else if (deleteConfirmation.type === 'user') confirmDeleteUser();
+                                        else if (deleteConfirmation.type === 'badge') confirmDeleteBadge();
+                                    }}
+                                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-500/30"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

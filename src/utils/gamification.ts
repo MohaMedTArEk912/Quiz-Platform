@@ -36,12 +36,13 @@ export function checkNewBadges(user: UserData, allBadges: BadgeDefinition[], cur
         const { type, threshold } = badge.criteria;
 
         switch (type) {
-            case 'total_attempts':
+            case 'total_attempts': {
                 // Check if user has reach attempts
                 // Include current attempt if coming from quiz complete
                 const currentAttempts = user.totalAttempts; // User object should already have updated attempts if optimistic, or check flow
                 if (currentAttempts >= threshold) earned = true;
                 break;
+            }
             case 'total_score':
                 if (user.totalScore >= threshold) earned = true;
                 break;

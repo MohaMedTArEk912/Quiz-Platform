@@ -27,6 +27,7 @@ const BadgeIcon = ({ icon, className }: { icon: string, className?: string }) =>
 const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onBack }) => {
     const certificateRef = useRef<HTMLDivElement>(null);
     const [downloadingAttemptId, setDownloadingAttemptId] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     // Calculate rank
     const sortedUsers = [...allUsers].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
@@ -43,6 +44,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
 
     const handleDownloadCertificate = async (attempt: AttemptData) => {
         setDownloadingAttemptId(attempt.attemptId);
+        setError(null);
 
         try {
             // Wait a bit to ensure rendering
@@ -68,7 +70,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
             pdf.save(`${attempt.quizTitle.replace(/\s+/g, '_')}_Certificate.pdf`);
         } catch (error) {
             console.error('Error generating certificate:', error);
-            alert('Failed to generate certificate');
+            setError('Failed to generate certificate');
         } finally {
             setDownloadingAttemptId(null);
         }
@@ -202,8 +204,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
 
                 {/* Recent Attempts */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                    <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+                    <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
                         <h2 className="text-xl font-bold text-gray-800 dark:text-white">Recent Quiz Attempts</h2>
+                        {error && <span className="text-red-500 text-sm font-semibold animate-pulse bg-red-50 dark:bg-red-900/20 px-3 py-1 rounded-full">{error}</span>}
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full">

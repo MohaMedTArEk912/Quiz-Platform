@@ -2,11 +2,12 @@ import mongoose from 'mongoose';
 
 const questionSchema = new mongoose.Schema({
   id: { type: Number, required: true },
+  type: { type: String, enum: ['multiple-choice', 'text'], default: 'multiple-choice' },
   part: { type: String, required: true },
   question: { type: String, required: true },
-  options: [{ type: String, required: true }],
-  correctAnswer: { type: Number, required: true }, // Index of the correct option
-  explanation: { type: String, required: true },
+  options: { type: [String], default: [] },
+  correctAnswer: { type: Number },
+  explanation: { type: String, default: '' },
   points: { type: Number, default: 1 }
 });
 

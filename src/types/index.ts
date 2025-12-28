@@ -12,10 +12,11 @@ export interface Quiz {
 
 export interface Question {
     id: number;
+    type?: 'multiple-choice' | 'text';
     part: string;
     question: string;
-    options: string[];
-    correctAnswer: number;
+    options?: string[];
+    correctAnswer?: number;
     explanation: string;
     points: number;
 }
@@ -71,7 +72,9 @@ export interface AttemptData {
     totalQuestions: number;
     percentage: number;
     timeTaken: number;
-    answers: Record<string, string>; // questionId -> optionId
+    answers: Record<string, any>; // questionId -> optionId (for multiple choice) or answer text or answer object
+    reviewStatus?: 'completed' | 'pending' | 'reviewed';
+    feedback?: Record<string, unknown>;
     completedAt: string;
     passed: boolean;
 }

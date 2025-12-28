@@ -27,7 +27,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
 
             const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
-            const interval: any = setInterval(function () {
+            const interval = setInterval(function () {
                 const timeLeft = animationEnd - Date.now();
 
                 if (timeLeft <= 0) {
@@ -57,10 +57,13 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
         return `${mins}m ${secs}s`;
     };
 
+    const [error, setError] = useState<string | null>(null);
+
     const handleDownloadCertificate = async () => {
         if (!certificateRef.current) return;
 
         setIsGenerating(true);
+        setError(null);
         try {
             // Wait a bit to ensure rendering
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -83,7 +86,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
             pdf.save(`${quiz.title.replace(/\s+/g, '_')}_Certificate.pdf`);
         } catch (error) {
             console.error('Error generating certificate:', error);
-            alert('Failed to generate certificate. Please try again.');
+            setError('Failed to generate certificate. Please try again.');
         } finally {
             setIsGenerating(false);
         }
@@ -173,6 +176,11 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                         </>
                                     )}
                                 </button>
+                            )}
+                            {error && (
+                                <div className="text-red-500 text-sm font-semibold animate-pulse mt-2">
+                                    {error}
+                                </div>
                             )}
 
                             <div className="flex gap-4">

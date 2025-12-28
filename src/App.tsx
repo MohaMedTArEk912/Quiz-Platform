@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import type { Quiz, UserData, AttemptData, BadgeDefinition } from './types/index.ts';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X, Check, AlertCircle } from 'lucide-react';
 
 import { api } from './lib/api.ts';
 import { calculateXPForQuiz, calculateLevel, checkNewBadges } from './utils/gamification.ts';
@@ -22,6 +22,40 @@ const PageLoader = () => (
   </div>
 );
 
+interface Notification {
+  type: 'success' | 'error' | 'info';
+  message: string;
+}
+
+const NotificationToast = ({ notification, onClose }: { notification: Notification; onClose: () => void }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [notification, onClose]);
+
+  const bgColors = {
+    success: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200 border-green-200 dark:border-green-800',
+    error: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 border-red-200 dark:border-red-800',
+    info: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border-blue-200 dark:border-blue-800'
+  };
+
+  const icons = {
+    success: <Check className="w-5 h-5" />,
+    error: <AlertCircle className="w-5 h-5" />,
+    info: <AlertCircle className="w-5 h-5" />
+  };
+
+  return (
+    <div className={`fixed bottom-4 right-4 z-[100] px-4 py-3 rounded-xl shadow-lg border flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-300 ${bgColors[notification.type]}`}>
+      {icons[notification.type]}
+      <span className="font-medium text-sm md:text-base pr-2">{notification.message}</span>
+      <button onClick={onClose} className="hover:opacity-70 transition-opacity">
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
+
 // Admin credentials from environment variables (with defaults)
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@quiz.com';
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
@@ -36,6 +70,11 @@ const App = () => {
   const [allUsers, setAllUsers] = useState<UserData[]>([]);
   const [allAttempts, setAllAttempts] = useState<AttemptData[]>([]);
   const [allBadges, setAllBadges] = useState<BadgeDefinition[]>([]);
+  const [notification, setNotification] = useState<Notification | null>(null);
+
+  const showNotification = (type: Notification['type'], message: string) => {
+    setNotification({ type, message });
+  };
 
   // Load session on mount
   useEffect(() => {
@@ -126,9 +165,9 @@ const App = () => {
       setCurrentUser(user);
       setScreen('quizList');
       sessionStorage.setItem('userSession', JSON.stringify({ user, isAdmin: false }));
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login error:', error);
-      alert(error.message || 'Login failed. Please check your credentials.');
+      showNotification('error', (error as Error).message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -158,9 +197,9 @@ const App = () => {
       setCurrentUser(baseUserData);
       setScreen('quizList');
       sessionStorage.setItem('userSession', JSON.stringify({ user: baseUserData, isAdmin: false }));
-    } catch (error: any) {
+    } catch (error) {
       console.error('Registration error:', error);
-      alert(error.message || 'Registration failed. Please try again.');
+      showNotification('error', (error as Error).message || 'Registration failed. Please try again.');
     }
   };
 
@@ -169,7 +208,7 @@ const App = () => {
     setScreen('quiz');
   };
 
-  const handleQuizComplete = async (result: any) => {
+  const handleQuizComplete = async (result: { score: number; totalQuestions: number; percentage: number; timeTaken: number; answers: Record<string, any>; passed: boolean; reviewStatus?: 'completed' | 'pending' | 'reviewed' }) => {
     setQuizResult(result);
     setScreen('results');
 
@@ -185,7 +224,7 @@ const App = () => {
       score: result.score,
       totalQuestions: result.totalQuestions, // Keep existing fields
       percentage: result.percentage,
-      timeTaken: result.timeSpent || 0, // Use timeSpent from result
+      timeTaken: result.timeTaken || 0, // Use timeTaken from result
       answers: result.answers, // Keep existing fields
       completedAt: new Date().toISOString(),
       passed: result.passed // Add passed status
@@ -200,7 +239,7 @@ const App = () => {
       const xpGained = calculateXPForQuiz(
         result.score || 0, // Points gained in this quiz
         maxQuizScore, // Max possible points
-        result.timeSpent || 0
+        result.timeTaken || 0
       );
 
       const currentXP = currentUser.xp || 0;
@@ -214,7 +253,7 @@ const App = () => {
         ...currentUser,
         totalScore: (currentUser.totalScore || 0) + result.score,
         totalAttempts: (currentUser.totalAttempts || 0) + 1,
-        totalTime: (currentUser.totalTime || 0) + (result.timeSpent || 0),
+        totalTime: (currentUser.totalTime || 0) + (result.timeTaken || 0),
         xp: newXP,
         level: newLevel,
         streak: currentUser.streak // Streak update is handled on login/home usually? Or here if daily? Let's leave streak for login.
@@ -223,7 +262,7 @@ const App = () => {
       const newBadges = checkNewBadges(tempUserForBadges, allBadges, {
         score: result.score,
         maxScore: maxQuizScore,
-        timeSpent: result.timeSpent || 0
+        timeSpent: result.timeTaken || 0
       });
 
       // 3. Update User Data (Local & Server)
@@ -264,98 +303,110 @@ const App = () => {
     sessionStorage.removeItem('userSession');
   };
 
-  if (screen === 'login') {
-    return <LoginScreen onLogin={handleLogin} onSwitchToRegister={() => setScreen('register')} />;
-  }
+  const renderContent = () => {
+    if (screen === 'login') {
+      return <LoginScreen onLogin={handleLogin} onSwitchToRegister={() => setScreen('register')} />;
+    }
 
-  if (screen === 'register') {
-    return <RegisterScreen onRegister={handleRegister} onSwitchToLogin={() => setScreen('login')} />;
-  }
+    if (screen === 'register') {
+      return <RegisterScreen onRegister={handleRegister} onSwitchToLogin={() => setScreen('login')} />;
+    }
 
-  if (screen === 'quizList' && currentUser) {
-    return (
-      <>
-        <InstallPWA />
-        <QuizList
-          quizzes={availableQuizzes}
-          user={currentUser}
-          onSelectQuiz={handleQuizSelect}
-          onViewProfile={() => setScreen('profile')}
-          onViewLeaderboard={() => setScreen('leaderboard')}
-          onLogout={handleLogout}
-        />
-      </>
-    );
-  }
+    if (screen === 'quizList' && currentUser) {
+      return (
+        <>
+          <InstallPWA />
+          <QuizList
+            quizzes={availableQuizzes}
+            user={currentUser}
+            onSelectQuiz={handleQuizSelect}
+            onViewProfile={() => setScreen('profile')}
+            onViewLeaderboard={() => setScreen('leaderboard')}
+            onLogout={handleLogout}
+          />
+        </>
+      );
+    }
 
-  if (screen === 'leaderboard' && currentUser) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <Leaderboard
-          users={allUsers}
-          currentUser={currentUser}
-          onBack={() => setScreen('quizList')}
-        />
-      </Suspense>
-    );
-  }
+    if (screen === 'leaderboard' && currentUser) {
+      return (
+        <Suspense fallback={<PageLoader />}>
+          <Leaderboard
+            users={allUsers}
+            currentUser={currentUser}
+            onBack={() => setScreen('quizList')}
+          />
+        </Suspense>
+      );
+    }
 
-  if (screen === 'quiz' && selectedQuiz && currentUser) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <QuizTaking
-          quiz={selectedQuiz}
-          user={currentUser}
-          onComplete={handleQuizComplete}
-          onBack={() => setScreen('quizList')}
-        />
-      </Suspense>
-    );
-  }
+    if (screen === 'quiz' && selectedQuiz && currentUser) {
+      return (
+        <Suspense fallback={<PageLoader />}>
+          <QuizTaking
+            quiz={selectedQuiz}
+            user={currentUser}
+            onComplete={handleQuizComplete}
+            onBack={() => setScreen('quizList')}
+          />
+        </Suspense>
+      );
+    }
 
-  if (screen === 'results' && quizResult && selectedQuiz) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <QuizResults
-          result={quizResult}
-          quiz={selectedQuiz}
-          user={currentUser!}
-          onBackToQuizzes={() => setScreen('quizList')}
-          onRetake={() => setScreen('quiz')}
-        />
-      </Suspense>
-    );
-  }
+    if (screen === 'results' && quizResult && selectedQuiz) {
+      return (
+        <Suspense fallback={<PageLoader />}>
+          <QuizResults
+            result={quizResult}
+            quiz={selectedQuiz}
+            user={currentUser!}
+            onBackToQuizzes={() => setScreen('quizList')}
+            onRetake={() => setScreen('quiz')}
+          />
+        </Suspense>
+      );
+    }
 
-  if (screen === 'admin' && isAdmin) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <AdminDashboard
-          users={allUsers}
-          attempts={allAttempts}
-          quizzes={availableQuizzes}
-          badges={allBadges}
-          onLogout={handleLogout}
-          onRefresh={loadData}
-        />
-      </Suspense>
-    );
-  }
+    if (screen === 'admin' && isAdmin) {
+      return (
+        <Suspense fallback={<PageLoader />}>
+          <AdminDashboard
+            users={allUsers}
+            attempts={allAttempts}
+            quizzes={availableQuizzes}
+            badges={allBadges}
+            onLogout={handleLogout}
+            onRefresh={loadData}
+          />
+        </Suspense>
+      );
+    }
 
-  if (screen === 'profile' && currentUser) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <UserProfile
-          user={currentUser}
-          attempts={allAttempts.filter(a => a.userId === currentUser.userId)}
-          allUsers={allUsers}
-          onBack={() => setScreen('quizList')}
-        />
-      </Suspense>
-    );
-  }
+    if (screen === 'profile' && currentUser) {
+      return (
+        <Suspense fallback={<PageLoader />}>
+          <UserProfile
+            user={currentUser}
+            attempts={allAttempts.filter(a => a.userId === currentUser.userId)}
+            allUsers={allUsers}
+            onBack={() => setScreen('quizList')}
+          />
+        </Suspense>
+      );
+    }
 
-  return null;
+    return null;
+  };
+
+  return (
+    <>
+      {renderContent()}
+
+      {notification && (
+        <NotificationToast notification={notification} onClose={() => setNotification(null)} />
+      )}
+    </>
+  );
 };
 
 export default App;

@@ -124,6 +124,31 @@ app.post('/api/quizzes', async (req, res) => {
   }
 });
 
+// Import Quizzes
+app.post('/api/quizzes/import', async (req, res) => {
+  try {
+    const importData = req.body;
+    const quizzes = Array.isArray(importData) ? importData : [importData];
+    
+    const results = [];
+    for (const quiz of quizzes) {
+        // Basic validation
+        if (!quiz.id || !quiz.title) continue;
+        
+        const updated = await Quiz.findOneAndUpdate(
+            { id: quiz.id },
+            quiz,
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        results.push(updated);
+    }
+    
+    res.json({ message: `Imported ${results.length} quizzes successfully`, count: results.length });
+  } catch (error) {
+    res.status(500).json({ message: 'Error importing quizzes', error: error.message });
+  }
+});
+
 // Update Quiz
 app.put('/api/quizzes/:id', async (req, res) => {
   try {
@@ -300,6 +325,69 @@ app.delete('/api/badges/:id', async (req, res) => {
         res.json({ message: 'Badge deleted' });
     } catch (error) {
         res.status(500).json({ message: 'Error deleting badge', error: error.message });
+    }
+});
+
+// --- Review System Routes ---
+
+// Get Pending Reviews
+app.get('/api/reviews/pending', async (req, res) => {
+    try {
+        const pendingAttempts = await Attempt.find({ reviewStatus: 'pending' });
+        res.json(pendingAttempts);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching pending reviews', error: error.message });
+    }
+});
+
+// Submit Review
+app.post('/api/reviews/:attemptId', async (req, res) => {
+    try {
+        const { attemptId } = req.params;
+        const { feedback, scoreAdjustment, questionScores } = req.body;
+        // questionScores: { [questionId/index]: score }
+
+        const attempt = await Attempt.findOne({ attemptId });
+        if (!attempt) {
+            return res.status(404).json({ message: 'Attempt not found' });
+        }
+
+        attempt.feedback = feedback;
+        attempt.reviewStatus = 'reviewed';
+        
+        // Recalculate score based on admin input
+        // Assuming questionScores contains final scores for manually graded questions
+        // Or we might just add/subtract points.
+        // Let's assume questionScores maps index to points awarded.
+        
+        let newScore = 0;
+        // We need the original quiz to know max points per question... 
+        // ideally we stored the point values in attempt or fetch quiz.
+        // For now, let's update score based on the body provided (admin calculates it or frontend does)
+        if (scoreAdjustment !== undefined) {
+             attempt.score = attempt.score + scoreAdjustment; // Simple adjustment
+        } else if (req.body.finalScore !== undefined) {
+            attempt.score = req.body.finalScore;
+        }
+
+        // Recalculate percentage
+        const quiz = await Quiz.findOne({ id: attempt.quizId });
+        if (quiz) {
+             const totalPoints = quiz.questions.reduce((sum, q) => sum + q.points, 0);
+             attempt.percentage = Math.round((attempt.score / totalPoints) * 100);
+             attempt.passed = attempt.percentage >= quiz.passingScore;
+        }
+        
+        await attempt.save();
+        
+        // Update user stats if needed?
+        // User stats might need partial update if previous score was provisional.
+        // Complex to handle without more robust user service. 
+        // For now, we update attempt. User total score logic might be slightly off until next aggregation.
+        
+        res.json(attempt);
+    } catch (error) {
+        res.status(500).json({ message: 'Error submitting review', error: error.message });
     }
 });
 
