@@ -44,9 +44,6 @@ async function connectToDatabase() {
     cachedConnection = await mongoose.connect(uri, opts);
     console.log('Connected to MongoDB');
     
-    // Seed admin user on every connection to ensure it exists
-    await seedAdminUser();
-    
     // Only seed if NOT in production (Vercel) to avoid filesystem issues
     // Run locally once to seed the database!
     // if (process.env.NODE_ENV !== 'production') {
@@ -92,42 +89,6 @@ async function seedQuizzes() {
   }
 }
 
-// Seed Admin User
-async function seedAdminUser() {
-  try {
-    const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL || 'admin@quiz.com';
-    const ADMIN_PASSWORD = process.env.VITE_ADMIN_PASSWORD || 'admin123';
-    const adminUserId = ADMIN_EMAIL.toLowerCase().replace(/[^a-z0-9]/g, '_');
-
-    // Check if admin user exists
-    let adminUser = await User.findOne({ email: ADMIN_EMAIL.toLowerCase() });
-
-    if (!adminUser) {
-      // Create admin user
-      adminUser = new User({
-        userId: adminUserId,
-        name: 'Admin',
-        email: ADMIN_EMAIL.toLowerCase(),
-        password: ADMIN_PASSWORD,
-        totalScore: 0,
-        totalAttempts: 0,
-        totalTime: 0,
-        xp: 99999,
-        level: 100,
-        streak: 999,
-        lastLoginDate: new Date(),
-        badges: []
-      });
-      await adminUser.save();
-      console.log('✅ Admin user created successfully');
-    } else {
-      console.log('✅ Admin user already exists');
-    }
-  } catch (error) {
-    console.error('Error seeding admin user:', error);
-  }
-}
-
 // Middleware to ensure DB connection
 app.use(async (req, res, next) => {
   try {
@@ -137,6 +98,34 @@ app.use(async (req, res, next) => {
     res.status(500).json({ message: 'Database connection failed', error: error.message });
   }
 });
+
+// Middleware to verify admin access
+const verifyAdmin = async (req, res, next) => {
+  try {
+    // Check for userId in headers for better security/compatibility with all request types
+    const requesterId = req.headers['x-user-id'];
+    
+    if (!requesterId) {
+      return res.status(401).json({ message: 'Unauthorized: Admin user ID required in headers' });
+    }
+    
+    const adminUser = await User.findOne({ userId: requesterId });
+    
+    if (!adminUser) {
+      return res.status(404).json({ message: 'Authorized user not found' });
+    }
+    
+    if (adminUser.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to perform this action' });
+    }
+    
+    // Attach admin info to request for use in route
+    req.admin = adminUser;
+    next();
+  } catch (error) {
+    res.status(500).json({ message: 'Authorization error', error: error.message });
+  }
+};
 
 // Routes
 
@@ -151,7 +140,7 @@ app.get('/api/quizzes', async (req, res) => {
 });
 
 // Create Quiz
-app.post('/api/quizzes', async (req, res) => {
+app.post('/api/quizzes', verifyAdmin, async (req, res) => {
   try {
     const quizData = req.body;
     // Basic validation could go here
@@ -189,7 +178,7 @@ app.post('/api/quizzes/import', async (req, res) => {
 });
 
 // Update Quiz
-app.put('/api/quizzes/:id', async (req, res) => {
+app.put('/api/quizzes/:id', verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -205,7 +194,7 @@ app.put('/api/quizzes/:id', async (req, res) => {
 });
 
 // Delete Quiz
-app.delete('/api/quizzes/:id', async (req, res) => {
+app.delete('/api/quizzes/:id', verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const deletedQuiz = await Quiz.findOneAndDelete({ id: id });
@@ -301,14 +290,53 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
+// Verify Session - Check if user is authenticated and get their role
+app.post('/api/verify-session', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized: No user ID provided' });
+    }
+    
+    const user = await User.findOne({ userId });
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Return user data with role
+    res.json({
+      valid: true,
+      user: {
+        userId: user.userId,
+        name: user.name,
+        email: user.email,
+        role: user.role || 'user',
+        isAdmin: user.role === 'admin'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Update User (Gamification & Admin)
 app.put('/api/users/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const updates = req.body;
     
-    // Prevent updating userId or email to existing one (simple check)
-    // For now, trust the frontend logic or add validation if needed
+    // SECURITY: Prevent role changes through this endpoint
+    // Role can only be changed through database directly
+    if (updates.role !== undefined) {
+      delete updates.role;
+    }
+    
+    // Prevent updating userId
+    if (updates.userId !== undefined) {
+      delete updates.userId;
+    }
     
     const user = await User.findOneAndUpdate(
       { userId },
@@ -327,7 +355,7 @@ app.put('/api/users/:userId', async (req, res) => {
 });
 
 // Delete User
-app.delete('/api/users/:userId', async (req, res) => {
+app.delete('/api/users/:userId', verifyAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
     
@@ -371,7 +399,7 @@ app.post('/api/attempts', async (req, res) => {
 });
 
 // Get all data (for Admin/Leaderboard)
-app.get('/api/data', async (req, res) => {
+app.get('/api/data', verifyAdmin, async (req, res) => {
   try {
     const users = await User.find({});
     const attempts = await Attempt.find({});
@@ -399,7 +427,7 @@ app.get('/api/badges', async (req, res) => {
 });
 
 // Create Badge
-app.post('/api/badges', async (req, res) => {
+app.post('/api/badges', verifyAdmin, async (req, res) => {
     try {
         const badgeData = req.body;
         const newBadge = new Badge(badgeData);
@@ -411,7 +439,7 @@ app.post('/api/badges', async (req, res) => {
 });
 
 // Delete Badge
-app.delete('/api/badges/:id', async (req, res) => {
+app.delete('/api/badges/:id', verifyAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const result = await Badge.findOneAndDelete({ id });
@@ -437,7 +465,7 @@ app.get('/api/reviews/pending', async (req, res) => {
 });
 
 // Submit Review
-app.post('/api/reviews/:attemptId', async (req, res) => {
+app.post('/api/reviews/:attemptId', verifyAdmin, async (req, res) => {
     try {
         const { attemptId } = req.params;
         const { feedback, scoreAdjustment, questionScores } = req.body;
@@ -588,6 +616,7 @@ app.post('/api/admin/change-user-password', async (req, res) => {
         res.status(500).json({ message: 'Error changing user password', error: error.message });
     }
 });
+
 
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {

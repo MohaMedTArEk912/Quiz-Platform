@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { UserData, AttemptData, Quiz, Question, BadgeDefinition, BadgeCriteria } from '../types/index.ts';
-import { LogOut, Users, BarChart3, Award, Trash2, Edit2, Plus, X, Check, Upload, Download, Settings } from 'lucide-react';
+import { LogOut, Users, BarChart3, Award, Trash2, Edit2, Plus, X, Check, Upload, Download, Settings, Eye, EyeOff } from 'lucide-react';
 import { api } from '../lib/api.ts';
 import { supabase, isValidSupabaseConfig } from '../lib/supabase.ts';
 import { storage } from '../utils/storage.ts';
@@ -12,11 +12,12 @@ interface AdminDashboardProps {
     attempts: AttemptData[];
     quizzes: Quiz[];
     badges: BadgeDefinition[];
+    currentUser: UserData;
     onLogout: () => void;
     onRefresh: () => void;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizzes, badges, onLogout, onRefresh }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizzes, badges, currentUser, onLogout, onRefresh }) => {
     const [selectedTab, setSelectedTab] = useState<'users' | 'attempts' | 'quizzes' | 'gamification' | 'reviews'>('users');
     const [editingUser, setEditingUser] = useState<UserData | null>(null);
     const [originalUser, setOriginalUser] = useState<UserData | null>(null);
@@ -30,6 +31,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
     const [reviewFeedback, setReviewFeedback] = useState<Record<string, any>>({});
     const [reviewScores, setReviewScores] = useState<Record<string, number>>({});
     const [showSettings, setShowSettings] = useState(false);
+    const [showEditUserPassword, setShowEditUserPassword] = useState(false);
 
     // Local state for quizzes to enable immediate UI updates
     const [localQuizzes, setLocalQuizzes] = useState<Quiz[]>(quizzes);
@@ -37,9 +39,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
     // New states for standardizing UI interaction
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; type: 'quiz' | 'user' | 'badge'; id: string } | null>(null);
     const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-    // Get admin email from environment variables
-    const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@quiz.com';
 
     // Sync local quizzes with prop changes
     useEffect(() => {
@@ -92,7 +91,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
     const confirmDeleteQuiz = async () => {
         if (!deleteConfirmation || deleteConfirmation.type !== 'quiz') return;
         try {
-            await api.deleteQuiz(deleteConfirmation.id);
+            await api.deleteQuiz(deleteConfirmation.id, currentUser.userId);
             // Update local state immediately
             setLocalQuizzes(prev => prev.filter(q => q.id !== deleteConfirmation.id));
             setNotification({ type: 'success', message: 'Quiz deleted successfully' });
@@ -110,14 +109,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
 
         try {
             if (editingQuiz.id && localQuizzes.some(q => q.id === editingQuiz.id)) {
-                await api.updateQuiz(editingQuiz.id, editingQuiz);
+                await api.updateQuiz(editingQuiz.id, editingQuiz, currentUser.userId);
                 // Update local state immediately
                 setLocalQuizzes(prev => prev.map(q => q.id === editingQuiz.id ? editingQuiz : q));
                 setNotification({ type: 'success', message: 'Quiz updated successfully' });
             } else {
                 // Ensure ID is generated if not present (though Backend usually handles ID, our frontend types expect it)
                 const newQuiz = { ...editingQuiz, id: editingQuiz.id || crypto.randomUUID() };
-                await api.createQuiz(newQuiz);
+                await api.createQuiz(newQuiz, currentUser.userId);
                 // Add to local state immediately
                 setLocalQuizzes(prev => [...prev, newQuiz]);
                 setNotification({ type: 'success', message: 'Quiz created successfully' });
@@ -138,7 +137,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
         reader.onload = async (e) => {
             try {
                 const json = JSON.parse(e.target?.result as string);
-                const result = await api.importQuizzes(json);
+                const result = await api.importQuizzes(json, currentUser.userId);
                 setNotification({ type: 'success', message: result.message || 'Quizzes imported successfully' });
                 // Refresh will update localQuizzes via useEffect
                 onRefresh();
@@ -188,7 +187,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
 
         const userId = deleteConfirmation.id;
         try {
-            await api.deleteUser(userId);
+            await api.deleteUser(userId, currentUser.userId);
             setNotification({ type: 'success', message: 'User deleted successfully' });
             onRefresh();
         } catch (error) {
@@ -209,7 +208,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
             await api.submitReview(reviewingAttempt.attemptId, {
                 feedback: reviewFeedback,
                 scoreAdjustment: additionalPoints
-            });
+            }, currentUser.userId);
 
             // Success
             setReviewingAttempt(null);
@@ -298,7 +297,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
     const confirmDeleteBadge = async () => {
         if (!deleteConfirmation || deleteConfirmation.type !== 'badge') return;
         try {
-            await api.deleteBadge(deleteConfirmation.id);
+            await api.deleteBadge(deleteConfirmation.id, currentUser.userId);
             setNotification({ type: 'success', message: 'Badge deleted successfully' });
             onRefresh();
         } catch (error) {
@@ -312,7 +311,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
     const handleSaveBadge = async () => {
         if (!editingBadge) return;
         try {
-            await api.createBadge(editingBadge);
+            await api.createBadge(editingBadge, currentUser.userId);
             setEditingBadge(null);
             setNotification({ type: 'success', message: 'Badge saved successfully' });
             onRefresh();
@@ -806,13 +805,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                                             Password
                                             <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">(Leave blank to keep current)</span>
                                         </label>
-                                        <input
-                                            type="password"
-                                            value={(editingUser as any).password || ''}
-                                            onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value } as any)}
-                                            placeholder="Enter new password"
-                                            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                type={showEditUserPassword ? 'text' : 'password'}
+                                                value={(editingUser as any).password || ''}
+                                                onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value } as any)}
+                                                placeholder="Enter new password"
+                                                className="w-full px-4 py-3 pr-10 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowEditUserPassword(!showEditUserPassword)}
+                                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                            >
+                                                {showEditUserPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="flex gap-4 mt-6">
                                         <button
@@ -1422,7 +1430,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
             {/* Admin Settings Modal */}
             {showSettings && (
                 <AdminSettings
-                    adminEmail={ADMIN_EMAIL}
+                    adminEmail={currentUser.email}
                     onClose={() => setShowSettings(false)}
                 />
             )}

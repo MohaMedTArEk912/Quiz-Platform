@@ -57,9 +57,6 @@ const NotificationToast = ({ notification, onClose }: { notification: Notificati
   );
 };
 
-// Admin email from environment variables (with default)
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@quiz.com';
-
 const App = () => {
   const [screen, setScreen] = useState<'login' | 'register' | 'forgotPassword' | 'quizList' | 'quiz' | 'results' | 'admin' | 'profile' | 'leaderboard'>('login');
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
@@ -76,20 +73,39 @@ const App = () => {
     setNotification({ type, message });
   };
 
-  // Load session on mount
+  // Load session on mount and verify it with server
   useEffect(() => {
-    const savedSession = sessionStorage.getItem('userSession');
-    if (savedSession) {
-      try {
-        const session = JSON.parse(savedSession);
-        setCurrentUser(session.user);
-        setIsAdmin(session.isAdmin);
-        setScreen(session.isAdmin ? 'admin' : 'quizList');
-      } catch (error) {
-        console.error('Failed to load session:', error);
-        sessionStorage.removeItem('userSession');
+    const verifyAndLoadSession = async () => {
+      const savedSession = sessionStorage.getItem('userSession');
+      if (savedSession) {
+        try {
+          const session = JSON.parse(savedSession);
+          // Verify session with server to prevent unauthorized access via manipulation
+          const { valid, user } = await api.verifySession(session.user.userId);
+
+          if (valid) {
+            setCurrentUser(user);
+            setIsAdmin(user.role === 'admin');
+            setScreen(user.role === 'admin' ? 'admin' : 'quizList');
+            // Refresh data after session is locked in
+            if (user.role === 'admin') {
+              loadData(user.userId);
+            } else {
+              loadData(); // Potentially restricted or different for users
+            }
+          } else {
+            throw new Error('Invalid session');
+          }
+        } catch (error) {
+          console.error('Session verification failed:', error);
+          sessionStorage.removeItem('userSession');
+          setScreen('login');
+        }
       }
-    }
+      loadQuizzes();
+    };
+
+    verifyAndLoadSession();
   }, []);
 
   // Update Page Title
@@ -107,11 +123,6 @@ const App = () => {
     document.title = titleMap[screen] || 'Quiz Platform';
   }, [screen, selectedQuiz]);
 
-  useEffect(() => {
-    loadQuizzes();
-    loadData();
-  }, []);
-
   const loadQuizzes = async () => {
     try {
       const quizzes = await api.getQuizzes();
@@ -121,14 +132,20 @@ const App = () => {
     }
   };
 
-  const loadData = async () => {
+  const loadData = async (userId?: string) => {
     try {
-      const { users, attempts, badges } = await api.getData();
+      // Pass userId if available for authorized fetching (needed for admin data)
+      const dataUserId = userId || currentUser?.userId;
+      const { users, attempts, badges } = await api.getData(dataUserId || '');
       setAllUsers(users);
       setAllAttempts(attempts);
       setAllBadges(badges || []); // Fallback if old backend
     } catch (error) {
       console.error('Failed to load data:', error);
+      if ((error as Error).message.includes('Forbidden')) {
+        // If data load fails due to permissions, logout for safety
+        handleLogout();
+      }
     }
   };
 
@@ -138,20 +155,17 @@ const App = () => {
     try {
       const user = await api.login({ email: normalizedEmail, password });
 
-      // Check if this is an admin user (by email)
-      if (normalizedEmail === ADMIN_EMAIL.toLowerCase()) {
-        setIsAdmin(true);
-        setCurrentUser(user);
-        setScreen('admin');
-        sessionStorage.setItem('userSession', JSON.stringify({ user, isAdmin: true }));
-        await loadData();
-        return;
-      }
+      // Check if this is an admin user (by role)
+      const isAdminUser = user.role === 'admin';
 
-      // Regular user login
+      setIsAdmin(isAdminUser);
       setCurrentUser(user);
-      setScreen('quizList');
-      sessionStorage.setItem('userSession', JSON.stringify({ user, isAdmin: false }));
+      setScreen(isAdminUser ? 'admin' : 'quizList');
+      sessionStorage.setItem('userSession', JSON.stringify({ user, isAdmin: isAdminUser }));
+
+      if (isAdminUser) {
+        await loadData();
+      }
     } catch (error) {
       console.error('Login error:', error);
       showNotification('error', (error as Error).message || 'Login failed. Please check your credentials.');
@@ -417,6 +431,7 @@ const App = () => {
             attempts={allAttempts}
             quizzes={availableQuizzes}
             badges={allBadges}
+            currentUser={currentUser!}
             onLogout={handleLogout}
             onRefresh={loadData}
           />
