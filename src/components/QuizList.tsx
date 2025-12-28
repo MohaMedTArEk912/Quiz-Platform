@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Quiz, UserData, AttemptData } from '../types/index.ts';
-import { LogOut, User, Trophy, Clock, Award, Search, Filter, RefreshCw, Play, CheckCircle } from 'lucide-react';
+import { LogOut, User, Trophy, Clock, Award, Search, Filter, RefreshCw, Play, CheckCircle, BarChart3, TrendingUp } from 'lucide-react';
 import ThemeToggle from './ThemeToggle.tsx';
 
 interface QuizListProps {
@@ -18,11 +18,9 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, attempts, onSelectQu
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
 
-    // Get unique categories and difficulties
     const categories = ['all', ...new Set(quizzes.map(q => q.category))];
     const difficulties = ['all', ...new Set(quizzes.map(q => q.difficulty))];
 
-    // Filter quizzes
     const filteredQuizzes = quizzes.filter(quiz => {
         const matchesSearch = quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             quiz.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -30,243 +28,194 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, attempts, onSelectQu
         const matchesDifficulty = difficultyFilter === 'all' || quiz.difficulty === difficultyFilter;
         return matchesSearch && matchesCategory && matchesDifficulty;
     });
+
     const getDifficultyColor = (difficulty: string) => {
         switch (difficulty.toLowerCase()) {
-            case 'beginner': return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300';
-            case 'intermediate': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300';
-            case 'advanced': return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300';
-            default: return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+            case 'beginner': return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300';
+            case 'intermediate': return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300';
+            case 'advanced': return 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300';
+            default: return 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300';
         }
     };
 
-    // Helper function to get user's attempts for a specific quiz
-    const getQuizAttempts = (quizId: string) => {
-        return attempts.filter(attempt => attempt.quizId === quizId);
-    };
-
-    // Helper function to get best score for a quiz
+    const getQuizAttempts = (quizId: string) => attempts.filter(a => a.quizId === quizId);
     const getBestScore = (quizId: string) => {
-        const quizAttempts = getQuizAttempts(quizId);
-        if (quizAttempts.length === 0) return null;
-        return Math.max(...quizAttempts.map(a => a.percentage));
+        const qa = getQuizAttempts(quizId);
+        return qa.length === 0 ? null : Math.max(...qa.map(a => a.percentage));
     };
-
-    // Check if user has attempted a quiz
-    const hasAttempted = (quizId: string) => {
-        return getQuizAttempts(quizId).length > 0;
-    };
+    const hasAttempted = (quizId: string) => getQuizAttempts(quizId).length > 0;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0f172a] text-slate-900 dark:text-slate-100">
             {/* Header */}
-            <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-100 dark:border-gray-700">
-                <div className="max-w-7xl mx-auto px-6 py-4">
-                    <div className="flex justify-between items-center">
+            <header className="sticky top-0 z-30 bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                            <Trophy className="w-6 h-6 text-white" />
+                        </div>
+                        <h1 className="text-xl font-black tracking-tight bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent dark:from-indigo-400 dark:to-violet-400">
+                            QUIZLY
+                        </h1>
+                    </div>
+
+                    <div className="flex items-center gap-2 sm:gap-4">
+                        <ThemeToggle />
+                        <button onClick={onViewLeaderboard} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors tooltip" title="Leaderboard">
+                            <TrendingUp className="w-6 h-6 text-slate-500" />
+                        </button>
+                        <div className="h-6 w-[1px] bg-slate-200 dark:bg-white/10 mx-1"></div>
+                        <button onClick={onViewProfile} className="flex items-center gap-2 pl-2 pr-1 py-1 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all">
+                            <span className="hidden sm:block text-sm font-bold">{user.name}</span>
+                            <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-500/30">
+                                {user.name.charAt(0)}
+                            </div>
+                        </button>
+                        <button onClick={onLogout} className="p-2 text-slate-400 hover:text-rose-500 transition-colors">
+                            <LogOut className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+                {/* Hero / Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                    <div className="bg-white dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none flex items-center gap-5 group">
+                        <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <BarChart3 className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+                        </div>
                         <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent dark:from-indigo-400 dark:to-purple-400">
-                                Quiz Platform
-                            </h1>
-                            <p className="text-gray-600 dark:text-gray-300 mt-1">Welcome back, {user.name}!</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <ThemeToggle />
-                            <button
-                                onClick={onViewLeaderboard}
-                                className="flex items-center gap-2 px-4 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-xl hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors font-semibold"
-                            >
-                                <Award className="w-5 h-5" />
-                                Leaderboard
-                            </button>
-                            <button
-                                onClick={onViewProfile}
-                                className="flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors font-semibold"
-                            >
-                                <User className="w-5 h-5" />
-                                Profile
-                            </button>
-                            <button
-                                onClick={onLogout}
-                                className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                            >
-                                <LogOut className="w-5 h-5" />
-                                Logout
-                            </button>
+                            <div className="text-sm font-bold text-slate-400 uppercase tracking-wider">Total Score</div>
+                            <div className="text-3xl font-black">{user.totalScore || 0}</div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="max-w-7xl mx-auto px-6 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                                <Trophy className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div>
-                                <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.totalScore || 0}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Total Score</div>
-                            </div>
+                    <div className="bg-white dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none flex items-center gap-5 group">
+                        <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Clock className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <div>
+                            <div className="text-sm font-bold text-slate-400 uppercase tracking-wider">Quizzes Taken</div>
+                            <div className="text-3xl font-black">{user.totalAttempts || 0}</div>
                         </div>
                     </div>
-
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
-                                <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                            </div>
-                            <div>
-                                <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.totalAttempts || 0}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Quizzes Taken</div>
-                            </div>
+                    <div className="bg-white dark:bg-indigo-600 p-6 rounded-[2rem] border border-slate-200 dark:border-indigo-500 shadow-xl shadow-indigo-200 dark:shadow-indigo-500/20 flex items-center gap-5 group">
+                        <div className="w-14 h-14 bg-indigo-500 dark:bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Award className="w-7 h-7 text-white" />
                         </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                                <User className="w-6 h-6 text-green-600 dark:text-green-400" />
-                            </div>
-                            <div>
-                                <div className="text-2xl font-bold text-gray-900 dark:text-white">#{user.rank || '-'}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Global Rank</div>
-                            </div>
+                        <div>
+                            <div className="text-sm font-bold text-indigo-100/70 dark:text-indigo-200 uppercase tracking-wider">Global Rank</div>
+                            <div className="text-3xl font-black text-indigo-600 dark:text-white">#{user.rank || '-'}</div>
                         </div>
                     </div>
                 </div>
 
-                {/* Search and Filters */}
-                <div className="mb-6 space-y-4">
-                    {/* Search Bar */}
-                    <div className="relative">
-                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                {/* Filters */}
+                <div className="bg-white dark:bg-slate-800/50 p-4 rounded-3xl border border-slate-200 dark:border-white/5 mb-12 flex flex-col md:flex-row gap-4">
+                    <div className="relative flex-grow">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                         <input
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search quizzes by title or description..."
-                            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none transition-colors text-gray-900 dark:text-gray-100"
+                            placeholder="Find your next challenge..."
+                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-900/50 border-none rounded-2xl focus:ring-2 ring-indigo-500/20 outline-none transition-all dark:text-white"
                         />
                     </div>
-
-                    {/* Filters */}
-                    <div className="flex gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                <Filter className="w-4 h-4 inline mr-1" />
-                                Category
-                            </label>
-                            <select
-                                value={categoryFilter}
-                                onChange={(e) => setCategoryFilter(e.target.value)}
-                                className="w-full px-4 py-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none transition-colors text-gray-900 dark:text-gray-100"
-                            >
-                                {categories.map(cat => (
-                                    <option key={cat} value={cat}>
-                                        {cat === 'all' ? 'All Categories' : cat}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="flex-1">
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                <Filter className="w-4 h-4 inline mr-1" />
-                                Difficulty
-                            </label>
-                            <select
-                                value={difficultyFilter}
-                                onChange={(e) => setDifficultyFilter(e.target.value)}
-                                className="w-full px-4 py-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none transition-colors text-gray-900 dark:text-gray-100"
-                            >
-                                {difficulties.map(diff => (
-                                    <option key={diff} value={diff}>
-                                        {diff === 'all' ? 'All Levels' : diff}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Results Count */}
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Showing {filteredQuizzes.length} of {quizzes.length} quizzes
+                    <div className="flex gap-3">
+                        <select
+                            value={categoryFilter}
+                            onChange={(e) => setCategoryFilter(e.target.value)}
+                            className="px-4 py-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-none outline-none text-sm font-bold dark:text-white"
+                        >
+                            {categories.map(cat => (
+                                <option key={cat} value={cat}>{cat === 'all' ? 'All Categories' : cat}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={difficultyFilter}
+                            onChange={(e) => setDifficultyFilter(e.target.value)}
+                            className="px-4 py-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-none outline-none text-sm font-bold dark:text-white"
+                        >
+                            {difficulties.map(diff => (
+                                <option key={diff} value={diff}>{diff === 'all' ? 'All Levels' : diff}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 
                 {/* Quiz Grid */}
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Available Quizzes</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredQuizzes.map((quiz) => (
-                            <div
-                                key={quiz.id}
-                                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer transform hover:scale-105 relative overflow-hidden flex flex-col h-full"
-                                onClick={() => onSelectQuiz(quiz)}
-                            >
-                                {/* Attempted Badge */}
+                <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
+                    Available Challenges
+                    <span className="text-sm font-bold px-3 py-1 bg-slate-100 dark:bg-white/5 rounded-full text-slate-500">
+                        {filteredQuizzes.length}
+                    </span>
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {filteredQuizzes.map((quiz) => (
+                        <div
+                            key={quiz.id}
+                            onClick={() => onSelectQuiz(quiz)}
+                            className="group bg-white dark:bg-slate-800/50 rounded-[2.5rem] p-8 border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer flex flex-col min-h-[460px]"
+                        >
+                            <div className="flex justify-between items-start mb-6">
+                                <span className="text-5xl group-hover:scale-110 transition-transform duration-500">{quiz.icon}</span>
                                 {hasAttempted(quiz.id) && (
-                                    <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
-                                        <CheckCircle className="w-3 h-3" />
-                                        Attempted
+                                    <div className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-2 rounded-xl">
+                                        <CheckCircle className="w-5 h-5" />
                                     </div>
                                 )}
+                            </div>
 
-                                <div className="flex-grow">
-                                    <div className="text-5xl mb-4">{quiz.icon}</div>
-                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{quiz.title}</h3>
-                                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{quiz.description}</p>
+                            <div className="flex-grow">
+                                <h3 className="text-2xl font-black mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors uppercase tracking-tight">
+                                    {quiz.title}
+                                </h3>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6 line-clamp-3">
+                                    {quiz.description}
+                                </p>
 
-                                    <div className="flex flex-wrap gap-2 mb-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(quiz.difficulty)}`}>
-                                            {quiz.difficulty}
-                                        </span>
-                                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                                            {quiz.questions.length} Questions
-                                        </span>
-                                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                                            {quiz.timeLimit} min
-                                        </span>
-                                    </div>
-
-                                    {/* Best Score Display */}
-                                    {hasAttempted(quiz.id) && (
-                                        <div className="mb-6 p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm font-semibold text-green-700 dark:text-green-300">Best Score:</span>
-                                                <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                                                    {getBestScore(quiz.id)}%
-                                                </span>
-                                            </div>
-                                            <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                                {getQuizAttempts(quiz.id).length} attempt{getQuizAttempts(quiz.id).length > 1 ? 's' : ''}
-                                            </div>
-                                        </div>
-                                    )}
+                                <div className="flex flex-wrap gap-2 mb-8">
+                                    <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${getDifficultyColor(quiz.difficulty)}`}>
+                                        {quiz.difficulty}
+                                    </span>
+                                    <span className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                        {quiz.questions.length} Items
+                                    </span>
+                                    <span className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                                        {quiz.timeLimit} Min
+                                    </span>
                                 </div>
 
-                                <button className={`w-full py-3 rounded-xl font-semibold transition-all shadow-md flex items-center justify-center gap-2 ${hasAttempted(quiz.id)
-                                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'
-                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
-                                    }`}>
-                                    {hasAttempted(quiz.id) ? (
-                                        <>
-                                            <RefreshCw className="w-5 h-5" />
-                                            Attempt Again
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Play className="w-5 h-5" />
-                                            Start Quiz
-                                        </>
-                                    )}
-                                </button>
+                                {hasAttempted(quiz.id) && (
+                                    <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                        <div>
+                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Personal Best</div>
+                                            <div className="text-emerald-500 font-black text-xl">{getBestScore(quiz.id)}%</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tries</div>
+                                            <div className="font-bold">{getQuizAttempts(quiz.id).length}</div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        ))}
-                    </div>
+
+                            <button className={`mt-8 w-full py-4 rounded-[1.5rem] font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 shadow-lg ${hasAttempted(quiz.id)
+                                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
+                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
+                                }`}>
+                                {hasAttempted(quiz.id) ? (
+                                    <><RefreshCw className="w-4 h-4" /> Go Again</>
+                                ) : (
+                                    <><Play className="w-4 h-4 fill-white" /> Start Quiz</>
+                                )}
+                            </button>
+                        </div>
+                    ))}
                 </div>
-            </div>
+            </main>
         </div>
     );
 };
