@@ -57,9 +57,8 @@ const NotificationToast = ({ notification, onClose }: { notification: Notificati
   );
 };
 
-// Admin credentials from environment variables (with defaults)
+// Admin email from environment variables (with default)
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@quiz.com';
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
 
 const App = () => {
   const [screen, setScreen] = useState<'login' | 'register' | 'forgotPassword' | 'quizList' | 'quiz' | 'results' | 'admin' | 'profile' | 'leaderboard'>('login');
@@ -135,34 +134,21 @@ const App = () => {
 
   const handleLogin = async (email: string, password: string) => {
     const normalizedEmail = email.toLowerCase().trim();
-    const userId = normalizedEmail.replace(/[^a-z0-9]/g, '_');
-
-    // Check for admin credentials
-    if (normalizedEmail === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
-      const adminUser: UserData = {
-        name: 'Admin',
-        email: normalizedEmail,
-        userId,
-        totalScore: 0,
-        totalAttempts: 0,
-        totalTime: 0,
-        xp: 99999,
-        level: 100,
-        streak: 999,
-        lastLoginDate: new Date().toISOString(),
-        badges: []
-      };
-      setIsAdmin(true);
-      setCurrentUser(adminUser);
-      setScreen('admin');
-      // Save session
-      sessionStorage.setItem('userSession', JSON.stringify({ user: adminUser, isAdmin: true }));
-      await loadData();
-      return;
-    }
 
     try {
       const user = await api.login({ email: normalizedEmail, password });
+
+      // Check if this is an admin user (by email)
+      if (normalizedEmail === ADMIN_EMAIL.toLowerCase()) {
+        setIsAdmin(true);
+        setCurrentUser(user);
+        setScreen('admin');
+        sessionStorage.setItem('userSession', JSON.stringify({ user, isAdmin: true }));
+        await loadData();
+        return;
+      }
+
+      // Regular user login
       setCurrentUser(user);
       setScreen('quizList');
       sessionStorage.setItem('userSession', JSON.stringify({ user, isAdmin: false }));

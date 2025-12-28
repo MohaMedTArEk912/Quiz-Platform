@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import type { UserData, AttemptData, Quiz, Question, BadgeDefinition, BadgeCriteria } from '../types/index.ts';
-import { LogOut, Users, BarChart3, Award, Trash2, Edit2, Plus, X, Check, Upload, Download } from 'lucide-react';
+import { LogOut, Users, BarChart3, Award, Trash2, Edit2, Plus, X, Check, Upload, Download, Settings } from 'lucide-react';
 import { api } from '../lib/api.ts';
 import { supabase, isValidSupabaseConfig } from '../lib/supabase.ts';
 import { storage } from '../utils/storage.ts';
 import ThemeToggle from './ThemeToggle.tsx';
+import AdminSettings from './AdminSettings.tsx';
 
 interface AdminDashboardProps {
     users: UserData[];
@@ -28,6 +29,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
     const [reviewingAttempt, setReviewingAttempt] = useState<AttemptData | null>(null);
     const [reviewFeedback, setReviewFeedback] = useState<Record<string, any>>({});
     const [reviewScores, setReviewScores] = useState<Record<string, number>>({});
+    const [showSettings, setShowSettings] = useState(false);
 
     // Local state for quizzes to enable immediate UI updates
     const [localQuizzes, setLocalQuizzes] = useState<Quiz[]>(quizzes);
@@ -35,6 +37,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
     // New states for standardizing UI interaction
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; type: 'quiz' | 'user' | 'badge'; id: string } | null>(null);
     const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+    // Get admin email from environment variables
+    const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@quiz.com';
 
     // Sync local quizzes with prop changes
     useEffect(() => {
@@ -331,6 +336,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                         </div>
                         <div className="flex items-center gap-3">
                             <ThemeToggle />
+                            <button
+                                onClick={() => setShowSettings(true)}
+                                className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors font-semibold"
+                                title="Admin Settings"
+                            >
+                                <Settings className="w-5 h-5" />
+                                <span className="hidden sm:inline">Settings</span>
+                            </button>
                             <button
                                 onClick={onLogout}
                                 className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-semibold"
@@ -1404,6 +1417,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Admin Settings Modal */}
+            {showSettings && (
+                <AdminSettings
+                    adminEmail={ADMIN_EMAIL}
+                    onClose={() => setShowSettings(false)}
+                />
             )}
         </div>
     );

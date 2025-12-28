@@ -44,6 +44,9 @@ async function connectToDatabase() {
     cachedConnection = await mongoose.connect(uri, opts);
     console.log('Connected to MongoDB');
     
+    // Seed admin user on every connection to ensure it exists
+    await seedAdminUser();
+    
     // Only seed if NOT in production (Vercel) to avoid filesystem issues
     // Run locally once to seed the database!
     // if (process.env.NODE_ENV !== 'production') {
@@ -86,6 +89,42 @@ async function seedQuizzes() {
     console.log('Quizzes seeded/updated successfully.');
   } catch (error) {
     console.error('Seeding error:', error);
+  }
+}
+
+// Seed Admin User
+async function seedAdminUser() {
+  try {
+    const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL || 'admin@quiz.com';
+    const ADMIN_PASSWORD = process.env.VITE_ADMIN_PASSWORD || 'admin123';
+    const adminUserId = ADMIN_EMAIL.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+    // Check if admin user exists
+    let adminUser = await User.findOne({ email: ADMIN_EMAIL.toLowerCase() });
+
+    if (!adminUser) {
+      // Create admin user
+      adminUser = new User({
+        userId: adminUserId,
+        name: 'Admin',
+        email: ADMIN_EMAIL.toLowerCase(),
+        password: ADMIN_PASSWORD,
+        totalScore: 0,
+        totalAttempts: 0,
+        totalTime: 0,
+        xp: 99999,
+        level: 100,
+        streak: 999,
+        lastLoginDate: new Date(),
+        badges: []
+      });
+      await adminUser.save();
+      console.log('✅ Admin user created successfully');
+    } else {
+      console.log('✅ Admin user already exists');
+    }
+  } catch (error) {
+    console.error('Error seeding admin user:', error);
   }
 }
 
@@ -506,6 +545,7 @@ app.post('/api/change-password', async (req, res) => {
             return res.status(400).json({ message: 'New password must be at least 6 characters long' });
         }
         
+        // Find user (works for both regular users and admin)
         const user = await User.findOne({ email: normalizedEmail });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -516,6 +556,7 @@ app.post('/api/change-password', async (req, res) => {
             return res.status(400).json({ message: 'Current password is incorrect' });
         }
         
+        // Update password
         user.password = newPassword; // In production, hash this!
         await user.save();
         
