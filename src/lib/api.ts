@@ -42,6 +42,17 @@ export const api = {
         return response.json();
     },
 
+    async deleteUser(userId: string) {
+        const response = await fetch(`${API_URL}/users/${userId}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to delete user');
+        }
+        return response.json();
+    },
+
     async saveAttempt(attemptData: AttemptData) {
         const response = await fetch(`${API_URL}/attempts`, {
             method: 'POST',

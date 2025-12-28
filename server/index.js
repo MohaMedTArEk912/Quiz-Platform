@@ -251,6 +251,27 @@ app.put('/api/users/:userId', async (req, res) => {
   }
 });
 
+// Delete User
+app.delete('/api/users/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Delete user
+    const deletedUser = await User.findOneAndDelete({ userId });
+    
+    if (!deletedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Also delete all attempts by this user
+    await Attempt.deleteMany({ userId });
+    
+    res.json({ message: 'User and associated attempts deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting user', error: error.message });
+  }
+});
+
 // Save Attempt
 app.post('/api/attempts', async (req, res) => {
   try {

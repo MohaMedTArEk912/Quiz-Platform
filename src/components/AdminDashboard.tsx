@@ -165,21 +165,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
         if (!deleteConfirmation || deleteConfirmation.type !== 'user') return;
 
         const userId = deleteConfirmation.id;
-        if (isValidSupabaseConfig() && supabase) {
-            try {
-                await supabase.from('users').delete().eq('userId', userId);
-                await supabase.from('attempts').delete().eq('userId', userId);
-                setNotification({ type: 'success', message: 'User deleted successfully' });
-                onRefresh();
-            } catch (error) {
-                console.error('Delete user error:', error);
-                setNotification({ type: 'error', message: 'Failed to delete user' });
-            }
-        } else {
-            console.warn('Backend deletion not implemented locally');
-            setNotification({ type: 'error', message: 'Delete user functionality requires Supabase or Backend implementation' });
+        try {
+            await api.deleteUser(userId);
+            setNotification({ type: 'success', message: 'User deleted successfully' });
+            onRefresh();
+        } catch (error) {
+            console.error('Delete user error:', error);
+            setNotification({ type: 'error', message: 'Failed to delete user' });
+        } finally {
+            setDeleteConfirmation(null);
         }
-        setDeleteConfirmation(null);
     };
 
     const handleReviewSubmit = async () => {
