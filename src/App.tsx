@@ -374,6 +374,7 @@ const App = () => {
           <QuizList
             quizzes={availableQuizzes}
             user={currentUser}
+            attempts={allAttempts.filter(a => a.userId === currentUser.userId)}
             onSelectQuiz={handleQuizSelect}
             onViewProfile={() => setScreen('profile')}
             onViewLeaderboard={() => setScreen('leaderboard')}
@@ -445,6 +446,11 @@ const App = () => {
             attempts={allAttempts.filter(a => a.userId === currentUser.userId)}
             allUsers={allUsers}
             onBack={() => setScreen('quizList')}
+            onUserUpdate={(updatedUser) => {
+              setCurrentUser(updatedUser);
+              // Update session storage
+              sessionStorage.setItem('userSession', JSON.stringify({ user: updatedUser, isAdmin: false }));
+            }}
           />
         </Suspense>
       );

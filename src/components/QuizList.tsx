@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
-import type { Quiz, UserData } from '../types/index.ts';
-import { LogOut, User, Trophy, Clock, Award, Search, Filter } from 'lucide-react';
+import type { Quiz, UserData, AttemptData } from '../types/index.ts';
+import { LogOut, User, Trophy, Clock, Award, Search, Filter, RefreshCw, Play, CheckCircle } from 'lucide-react';
 import ThemeToggle from './ThemeToggle.tsx';
 
 interface QuizListProps {
     quizzes: Quiz[];
     user: UserData;
+    attempts: AttemptData[];
     onSelectQuiz: (quiz: Quiz) => void;
     onViewProfile: () => void;
     onViewLeaderboard: () => void;
     onLogout: () => void;
 }
 
-const QuizList: React.FC<QuizListProps> = ({ quizzes, user, onSelectQuiz, onViewProfile, onViewLeaderboard, onLogout }) => {
+const QuizList: React.FC<QuizListProps> = ({ quizzes, user, attempts, onSelectQuiz, onViewProfile, onViewLeaderboard, onLogout }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
@@ -36,6 +37,23 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, onSelectQuiz, onView
             case 'advanced': return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300';
             default: return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
         }
+    };
+
+    // Helper function to get user's attempts for a specific quiz
+    const getQuizAttempts = (quizId: string) => {
+        return attempts.filter(attempt => attempt.quizId === quizId);
+    };
+
+    // Helper function to get best score for a quiz
+    const getBestScore = (quizId: string) => {
+        const quizAttempts = getQuizAttempts(quizId);
+        if (quizAttempts.length === 0) return null;
+        return Math.max(...quizAttempts.map(a => a.percentage));
+    };
+
+    // Check if user has attempted a quiz
+    const hasAttempted = (quizId: string) => {
+        return getQuizAttempts(quizId).length > 0;
     };
 
     return (
@@ -184,9 +202,17 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, onSelectQuiz, onView
                         {filteredQuizzes.map((quiz) => (
                             <div
                                 key={quiz.id}
-                                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer transform hover:scale-105"
+                                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer transform hover:scale-105 relative overflow-hidden"
                                 onClick={() => onSelectQuiz(quiz)}
                             >
+                                {/* Attempted Badge */}
+                                {hasAttempted(quiz.id) && (
+                                    <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
+                                        <CheckCircle className="w-3 h-3" />
+                                        Attempted
+                                    </div>
+                                )}
+
                                 <div className="text-5xl mb-4">{quiz.icon}</div>
                                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{quiz.title}</h3>
                                 <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{quiz.description}</p>
@@ -203,8 +229,36 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, onSelectQuiz, onView
                                     </span>
                                 </div>
 
-                                <button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md">
-                                    Start Quiz
+                                {/* Best Score Display */}
+                                {hasAttempted(quiz.id) && (
+                                    <div className="mb-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-semibold text-green-700 dark:text-green-300">Best Score:</span>
+                                            <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                                                {getBestScore(quiz.id)}%
+                                            </span>
+                                        </div>
+                                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                            {getQuizAttempts(quiz.id).length} attempt{getQuizAttempts(quiz.id).length > 1 ? 's' : ''}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button className={`w-full py-3 rounded-xl font-semibold transition-all shadow-md flex items-center justify-center gap-2 ${hasAttempted(quiz.id)
+                                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'
+                                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
+                                    }`}>
+                                    {hasAttempted(quiz.id) ? (
+                                        <>
+                                            <RefreshCw className="w-5 h-5" />
+                                            Attempt Again
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Play className="w-5 h-5" />
+                                            Start Quiz
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         ))}

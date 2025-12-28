@@ -29,9 +29,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
     const [reviewFeedback, setReviewFeedback] = useState<Record<string, any>>({});
     const [reviewScores, setReviewScores] = useState<Record<string, number>>({});
 
+    // Local state for quizzes to enable immediate UI updates
+    const [localQuizzes, setLocalQuizzes] = useState<Quiz[]>(quizzes);
+
     // New states for standardizing UI interaction
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; type: 'quiz' | 'user' | 'badge'; id: string } | null>(null);
     const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+    // Sync local quizzes with prop changes
+    useEffect(() => {
+        setLocalQuizzes(quizzes);
+    }, [quizzes]);
 
     // Auto-dismiss notification
     useEffect(() => {
@@ -80,6 +88,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
         if (!deleteConfirmation || deleteConfirmation.type !== 'quiz') return;
         try {
             await api.deleteQuiz(deleteConfirmation.id);
+            // Update local state immediately
+            setLocalQuizzes(prev => prev.filter(q => q.id !== deleteConfirmation.id));
             setNotification({ type: 'success', message: 'Quiz deleted successfully' });
             onRefresh();
         } catch (error) {
@@ -94,13 +104,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
         if (!editingQuiz) return;
 
         try {
-            if (editingQuiz.id && quizzes.some(q => q.id === editingQuiz.id)) {
+            if (editingQuiz.id && localQuizzes.some(q => q.id === editingQuiz.id)) {
                 await api.updateQuiz(editingQuiz.id, editingQuiz);
+                // Update local state immediately
+                setLocalQuizzes(prev => prev.map(q => q.id === editingQuiz.id ? editingQuiz : q));
                 setNotification({ type: 'success', message: 'Quiz updated successfully' });
             } else {
                 // Ensure ID is generated if not present (though Backend usually handles ID, our frontend types expect it)
                 const newQuiz = { ...editingQuiz, id: editingQuiz.id || crypto.randomUUID() };
                 await api.createQuiz(newQuiz);
+                // Add to local state immediately
+                setLocalQuizzes(prev => [...prev, newQuiz]);
                 setNotification({ type: 'success', message: 'Quiz created successfully' });
             }
             setEditingQuiz(null);
@@ -121,6 +135,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                 const json = JSON.parse(e.target?.result as string);
                 const result = await api.importQuizzes(json);
                 setNotification({ type: 'success', message: result.message || 'Quizzes imported successfully' });
+                // Refresh will update localQuizzes via useEffect
                 onRefresh();
             } catch (error) {
                 console.error('Import error:', error);
@@ -128,6 +143,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
             }
         };
         reader.readAsText(file);
+        // Reset file input
+        event.target.value = '';
     };
 
     const handleQuestionUpdate = (updatedQuestion: Question) => {
@@ -649,7 +666,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                        {quizzes.map((quiz) => (
+                                        {localQuizzes.map((quiz) => (
                                             <tr key={quiz.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                                 <td className="px-4 sm:px-6 py-4">
                                                     <span className="font-medium text-gray-900 dark:text-white">{quiz.title}</span>
