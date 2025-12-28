@@ -99,27 +99,38 @@ app.use(async (req, res, next) => {
   }
 });
 
+// Middleware to verify any authenticated user
+const verifyUser = async (req, res, next) => {
+  try {
+    const requesterId = req.headers['x-user-id'];
+    if (!requesterId) {
+      return res.status(401).json({ message: 'Unauthorized: User ID required in headers' });
+    }
+    const user = await User.findOne({ userId: requesterId });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(500).json({ message: 'Authentication error', error: error.message });
+  }
+};
+
 // Middleware to verify admin access
 const verifyAdmin = async (req, res, next) => {
   try {
-    // Check for userId in headers for better security/compatibility with all request types
     const requesterId = req.headers['x-user-id'];
-    
     if (!requesterId) {
       return res.status(401).json({ message: 'Unauthorized: Admin user ID required in headers' });
     }
-    
     const adminUser = await User.findOne({ userId: requesterId });
-    
     if (!adminUser) {
       return res.status(404).json({ message: 'Authorized user not found' });
     }
-    
     if (adminUser.role !== 'admin') {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to perform this action' });
     }
-    
-    // Attach admin info to request for use in route
     req.admin = adminUser;
     next();
   } catch (error) {
@@ -399,13 +410,24 @@ app.post('/api/attempts', async (req, res) => {
 });
 
 // Get all data (for Admin/Leaderboard)
-app.get('/api/data', verifyAdmin, async (req, res) => {
+app.get('/api/data', verifyUser, async (req, res) => {
   try {
-    const users = await User.find({});
-    const attempts = await Attempt.find({});
-    // Optionally return quizzes here too if the Dashboard needs them
+    const isAdmin = req.user.role === 'admin';
     
-    // Also fetch badges for dynamic gamification
+    // If admin, they can see EVERYTHING. If user, only public info.
+    let users;
+    let attempts;
+    
+    if (isAdmin) {
+      users = await User.find({});
+      attempts = await Attempt.find({});
+    } else {
+      // Filter out passwords and sensitive emails for general users
+      users = await User.find({}, 'userId name totalScore totalAttempts xp level streak rank lastLoginDate createdAt badges');
+      // Only return the user's own attempts for privacy
+      attempts = await Attempt.find({ userId: req.user.userId });
+    }
+
     const badges = await Badge.find({});
 
     res.json({ users, attempts, badges });

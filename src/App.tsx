@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, lazy } from 'react';
+import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import type { Quiz, UserData, AttemptData, BadgeDefinition } from './types/index.ts';
 import { Loader2, X, Check, AlertCircle } from 'lucide-react';
 
@@ -354,6 +354,13 @@ const App = () => {
     sessionStorage.removeItem('userSession');
   };
 
+  const userWithRank = useMemo(() => {
+    if (!currentUser || allUsers.length === 0) return currentUser;
+    const sortedUsers = [...allUsers].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+    const rank = sortedUsers.findIndex(u => u.userId === currentUser.userId) + 1;
+    return { ...currentUser, rank: rank > 0 ? rank : undefined };
+  }, [currentUser, allUsers]);
+
   const renderContent = () => {
     if (screen === 'login') {
       return <LoginScreen onLogin={handleLogin} onSwitchToRegister={() => setScreen('register')} onSwitchToForgotPassword={() => setScreen('forgotPassword')} onGoogleSignIn={handleGoogleLogin} />;
@@ -373,7 +380,7 @@ const App = () => {
           <InstallPWA />
           <QuizList
             quizzes={availableQuizzes}
-            user={currentUser}
+            user={userWithRank || currentUser}
             attempts={allAttempts.filter(a => a.userId === currentUser.userId)}
             onSelectQuiz={handleQuizSelect}
             onViewProfile={() => setScreen('profile')}
@@ -389,7 +396,7 @@ const App = () => {
         <Suspense fallback={<PageLoader />}>
           <Leaderboard
             users={allUsers}
-            currentUser={currentUser}
+            currentUser={userWithRank || currentUser}
             onBack={() => setScreen('quizList')}
           />
         </Suspense>
@@ -401,7 +408,7 @@ const App = () => {
         <Suspense fallback={<PageLoader />}>
           <QuizTaking
             quiz={selectedQuiz}
-            user={currentUser}
+            user={userWithRank || currentUser}
             onComplete={handleQuizComplete}
             onBack={() => setScreen('quizList')}
           />
@@ -415,7 +422,7 @@ const App = () => {
           <QuizResults
             result={quizResult}
             quiz={selectedQuiz}
-            user={currentUser!}
+            user={userWithRank || currentUser!}
             onBackToQuizzes={() => setScreen('quizList')}
             onRetake={() => setScreen('quiz')}
           />
@@ -443,7 +450,7 @@ const App = () => {
       return (
         <Suspense fallback={<PageLoader />}>
           <UserProfile
-            user={currentUser}
+            user={userWithRank || currentUser}
             attempts={allAttempts.filter(a => a.userId === currentUser.userId)}
             allUsers={allUsers}
             onBack={() => setScreen('quizList')}
