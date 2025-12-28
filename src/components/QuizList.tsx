@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
 import type { Quiz, UserData, AttemptData } from '../types/index.ts';
-import { LogOut, User, Trophy, Clock, Award, Search, Filter, RefreshCw, Play, CheckCircle, BarChart3, TrendingUp } from 'lucide-react';
+import {
+    LogOut,
+    Trophy,
+    Clock,
+    Award,
+    Search,
+    RefreshCw,
+    Play,
+    CheckCircle,
+    BarChart3,
+    TrendingUp
+} from 'lucide-react';
 import ThemeToggle from './ThemeToggle.tsx';
+
 
 interface QuizListProps {
     quizzes: Quiz[];
@@ -203,8 +215,8 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, attempts, onSelectQu
                             </div>
 
                             <button className={`mt-8 w-full py-4 rounded-[1.5rem] font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 shadow-lg ${hasAttempted(quiz.id)
-                                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
-                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
+                                ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
                                 }`}>
                                 {hasAttempted(quiz.id) ? (
                                     <><RefreshCw className="w-4 h-4" /> Go Again</>
