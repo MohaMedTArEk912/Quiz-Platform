@@ -7,7 +7,7 @@ import { api } from '../lib/api';
 import type { AttemptData } from '../lib/api';
 import type { QuizResult } from '../types';
 import { calculateLevel, checkNewBadges } from '../lib/gamification';
-import RichMediaHint from '../components/engage/RichMediaHint';
+
 
 const QuizTakingPage: React.FC = () => {
     const { quizId: encodedQuizId } = useParams<{ quizId: string }>();
@@ -175,7 +175,7 @@ const QuizTakingPage: React.FC = () => {
                 powerUps={currentUser.powerUps}
                 onPowerUpUsed={handlePowerUpUsed}
             />
-            <RichMediaHint />
+
         </>
     );
 };

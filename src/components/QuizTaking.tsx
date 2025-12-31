@@ -287,9 +287,9 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                 onLogout={() => { }}
                 showActions={false}
             />
-            <div className="max-w-4xl mx-auto p-6">
+            <div className="w-full px-4 md:px-8 py-6">
                 {/* Header */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-6 border border-gray-100 dark:border-gray-700">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 md:p-6 mb-4 md:mb-6 border border-gray-100 dark:border-gray-700">
                     <div className="flex justify-between items-center mb-4">
                         <div className="flex items-center gap-4">
                             <div>
@@ -454,7 +454,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                     )}
 
                     {/* Question Card */}
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 md:p-8 border border-gray-100 dark:border-gray-700">
                         <div className="mb-6">
                             <div className="inline-block bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-4 py-2 rounded-full font-semibold mb-4">
                                 Question {q.id}
@@ -496,7 +496,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                                             onClick={() => handleAnswer(index)}
                                             className={`w-full p-5 rounded-xl text-left transition-all flex items-center gap-4 font-medium text-lg ${isSelected
                                                 ? 'bg-purple-100 dark:bg-purple-900/40 border-2 border-purple-500 text-purple-900 dark:text-purple-100'
-                                                : 'bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 text-gray-700 dark:text-gray-200'
+                                                : 'bg-gray-100 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 hover:bg-gray-200 dark:hover:bg-purple-900/20 text-gray-700 dark:text-gray-200'
                                                 }`}
                                         >
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold ${isSelected ? 'bg-purple-500 text-white' : 'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300'

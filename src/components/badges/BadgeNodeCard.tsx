@@ -69,10 +69,10 @@ const BadgeNodeCard: React.FC<BadgeNodeCardProps> = ({
             {/* Main badge circle */}
             <div
                 className={`relative ${sizeClasses[size]} rounded-full border-4 flex items-center justify-center transition-all duration-300 ${isUnlocked
-                        ? `bg-gradient-to-br ${getRarityColor(badge.rarity)} border-white/30 shadow-lg group-hover:scale-105`
-                        : canUnlock
-                            ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-green-500/50 group-hover:border-green-500'
-                            : 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 opacity-60'
+                    ? `bg-gradient-to-br ${getRarityColor(badge.rarity)} border-white/30 shadow-lg group-hover:scale-105`
+                    : canUnlock
+                        ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-green-500/50 group-hover:border-green-500'
+                        : 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 opacity-60'
                     }`}
                 style={{ backgroundColor: badge.color }}
             >
@@ -104,7 +104,7 @@ const BadgeNodeCard: React.FC<BadgeNodeCardProps> = ({
             {/* Badge name */}
             {size !== 'small' && (
                 <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                    <p className={`text-sm font-bold text-center ${isUnlocked ? 'text-white' : 'text-gray-400'}`}>
+                    <p className={`text-sm font-bold text-center ${isUnlocked ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                         {badge.name}
                     </p>
                 </div>
@@ -114,12 +114,12 @@ const BadgeNodeCard: React.FC<BadgeNodeCardProps> = ({
             {size === 'large' && (isUnlocked || canUnlock) && (
                 <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 flex gap-2 text-xs">
                     {badge.rewards.xp > 0 && (
-                        <span className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">
+                        <span className="bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 px-2 py-1 rounded">
                             +{badge.rewards.xp} XP
                         </span>
                     )}
                     {badge.rewards.coins > 0 && (
-                        <span className="bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded">
+                        <span className="bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded">
                             +{badge.rewards.coins} 🪙
                         </span>
                     )}

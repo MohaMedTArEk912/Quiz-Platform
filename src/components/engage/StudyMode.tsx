@@ -56,7 +56,7 @@ const StudyMode: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0b] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-indigo-400 font-bold uppercase tracking-widest animate-pulse">Loading Knowledge Base...</p>
@@ -67,17 +67,17 @@ const StudyMode: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0b] flex items-center justify-center p-6">
         <div className="bg-red-500/10 border border-red-500/20 rounded-3xl p-8 text-center max-w-md backdrop-blur-xl">
-          <p className="text-xl font-bold text-red-400 mb-2">System Error</p>
-          <p className="text-gray-400">{error}</p>
+          <p className="text-xl font-bold text-red-500 dark:text-red-400 mb-2">System Error</p>
+          <p className="text-gray-600 dark:text-gray-400">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white p-6 relative overflow-x-hidden selection:bg-purple-500/30">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0b] text-white p-6 relative overflow-x-hidden selection:bg-purple-500/30">
       {/* Ambient Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-indigo-600/10 rounded-full blur-[128px] mix-blend-screen animate-pulse" />
@@ -86,9 +86,9 @@ const StudyMode: React.FC = () => {
 
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-12 relative z-10">
-        <div className="bg-[#13141f] rounded-[2.5rem] p-8 border border-white/5 shadow-2xl relative overflow-hidden">
+        <div className="bg-white dark:bg-[#13141f] rounded-[2.5rem] p-8 border border-gray-200 dark:border-white/5 shadow-2xl relative overflow-hidden">
           {/* Top Shine */}
-          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-gray-100/50 dark:from-white/5 to-transparent pointer-events-none" />
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
             <div className="flex items-center gap-6">
@@ -96,20 +96,20 @@ const StudyMode: React.FC = () => {
                 <GraduationCap className="w-10 h-10 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-black text-white mb-1 tracking-tight">
+                <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-1 tracking-tight">
                   Study Mode
                 </h1>
-                <p className="text-gray-400 font-medium">Master your subjects with curated materials</p>
+                <p className="text-gray-600 dark:text-gray-400 font-medium">Master your subjects with curated materials</p>
               </div>
             </div>
 
             {/* View Mode Toggle */}
-            <div className="flex p-1 bg-black/20 rounded-2xl border border-white/5">
+            <div className="flex p-1 bg-gray-100 dark:bg-black/20 rounded-2xl border border-gray-200 dark:border-white/5">
               <button
                 onClick={() => setViewMode('card')}
                 className={`px-6 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${viewMode === 'card'
                   ? 'bg-indigo-600 text-white shadow-lg'
-                  : 'text-gray-500 hover:text-white hover:bg-white/5'
+                  : 'text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-white/5'
                   }`}
               >
                 <Grid3x3 className="w-4 h-4" />
@@ -119,7 +119,7 @@ const StudyMode: React.FC = () => {
                 onClick={() => setViewMode('list')}
                 className={`px-6 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${viewMode === 'list'
                   ? 'bg-indigo-600 text-white shadow-lg'
-                  : 'text-gray-500 hover:text-white hover:bg-white/5'
+                  : 'text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-white/5'
                   }`}
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -131,7 +131,7 @@ const StudyMode: React.FC = () => {
           {/* Search and Filters */}
           <div className="mt-10 flex flex-col gap-6 relative z-10">
             <div className="relative group">
-              <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-indigo-400 transition-colors" />
+              <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500 group-focus-within:text-indigo-500 dark:group-focus-within:text-indigo-400 transition-colors" />
               <input
                 type="text"
                 placeholder="Search topics, keywords..."
@@ -140,7 +140,7 @@ const StudyMode: React.FC = () => {
                   setSearchQuery(e.target.value);
                   setCurrentIndex(0);
                 }}
-                className="w-full pl-14 pr-6 py-4 bg-black/20 border border-white/10 rounded-2xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all font-medium"
+                className="w-full pl-14 pr-6 py-4 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all font-medium"
               />
             </div>
 
@@ -154,8 +154,8 @@ const StudyMode: React.FC = () => {
                       setCurrentIndex(0);
                     }}
                     className={`px-5 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all border ${selectedCategory === category
-                      ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-400'
-                      : 'bg-black/20 border-white/5 text-gray-500 hover:bg-white/5 hover:text-white'
+                      ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-600 dark:text-indigo-400'
+                      : 'bg-gray-50 dark:bg-black/20 border-gray-200 dark:border-white/5 text-gray-600 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
                       }`}
                   >
                     {category === 'all' ? 'All Topics' : category}
@@ -163,7 +163,7 @@ const StudyMode: React.FC = () => {
                 ))}
               </div>
 
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none border-l border-white/10 pl-6">
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none border-l border-gray-200 dark:border-white/10 pl-6">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mr-2">Language:</span>
                 {languages.map(lang => (
                   <button
@@ -173,8 +173,8 @@ const StudyMode: React.FC = () => {
                       setCurrentIndex(0);
                     }}
                     className={`px-4 py-2 rounded-lg font-bold text-xs uppercase transition-all border ${selectedLanguage === lang
-                      ? 'bg-purple-500/10 border-purple-500/50 text-purple-400'
-                      : 'bg-black/20 border-white/5 text-gray-500 hover:bg-white/5 hover:text-white'
+                      ? 'bg-purple-500/10 border-purple-500/50 text-purple-600 dark:text-purple-400'
+                      : 'bg-gray-50 dark:bg-black/20 border-gray-200 dark:border-white/5 text-gray-600 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
                       }`}
                   >
                     {lang === 'all' ? 'All' : lang}
@@ -189,10 +189,10 @@ const StudyMode: React.FC = () => {
       {/* Content Area */}
       <div className="max-w-7xl mx-auto relative z-10">
         {filteredCards.length === 0 ? (
-          <div className="bg-[#13141f] rounded-[2.5rem] p-16 border border-white/5 text-center border-dashed">
-            <BrainCircuit className="w-24 h-24 text-gray-800 mx-auto mb-6" />
-            <h3 className="text-3xl font-black text-gray-500 mb-2">No Materials Found</h3>
-            <p className="text-gray-600 text-lg">
+          <div className="bg-white dark:bg-[#13141f] rounded-[2.5rem] p-16 border border-gray-200 dark:border-white/5 text-center border-dashed">
+            <BrainCircuit className="w-24 h-24 text-gray-400 dark:text-gray-800 mx-auto mb-6" />
+            <h3 className="text-3xl font-black text-gray-400 dark:text-gray-500 mb-2">No Materials Found</h3>
+            <p className="text-gray-500 dark:text-gray-600 text-lg">
               {selectedLanguage !== 'all'
                 ? `No cards found for ${selectedLanguage} in this category.`
                 : "Try adjusting your search criteria."}
@@ -203,10 +203,10 @@ const StudyMode: React.FC = () => {
           <div className="flex flex-col gap-6">
             {/* Progress */}
             <div className="flex items-center justify-between px-2">
-              <span className="text-gray-400 font-bold uppercase tracking-widest text-xs">
+              <span className="text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest text-xs">
                 Card {currentIndex + 1} / {filteredCards.length}
               </span>
-              <div className="flex-1 mx-6 h-1 bg-white/10 rounded-full overflow-hidden">
+              <div className="flex-1 mx-6 h-1 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-indigo-500 rounded-full transition-all duration-300"
                   style={{ width: `${((currentIndex + 1) / filteredCards.length) * 100}%` }}
@@ -219,7 +219,7 @@ const StudyMode: React.FC = () => {
               {/* Glow */}
               <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-[3rem] blur opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
 
-              <div className="relative h-full bg-[#13141f] rounded-[3rem] border border-white/5 p-10 md:p-14 flex flex-col justify-between shadow-2xl">
+              <div className="relative h-full bg-white dark:bg-[#13141f] rounded-[3rem] border border-gray-200 dark:border-white/5 p-10 md:p-14 flex flex-col justify-between shadow-2xl">
                 {/* Top Shine */}
                 <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
@@ -227,7 +227,7 @@ const StudyMode: React.FC = () => {
                   <div className="flex items-start justify-between mb-8">
                     <div>
                       <div className="flex items-center gap-3 mb-4">
-                        <span className="px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-black uppercase tracking-widest">
+                        <span className="px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-widest">
                           {currentCard.category}
                         </span>
                         {currentCard.tags?.map(tag => (
@@ -236,7 +236,7 @@ const StudyMode: React.FC = () => {
                           </span>
                         ))}
                       </div>
-                      <h2 className="text-4xl md:text-5xl font-black text-white leading-tight tracking-tight mb-2">
+                      <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white leading-tight tracking-tight mb-2">
                         {currentCard.title}
                       </h2>
                       <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
@@ -244,15 +244,15 @@ const StudyMode: React.FC = () => {
                         Added {new Date(currentCard.createdAt).toLocaleDateString()}
                       </div>
                     </div>
-                    <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5">
-                      <BookOpen className="w-8 h-8 text-gray-400" />
+                    <div className="w-16 h-16 bg-gray-50 dark:bg-white/5 rounded-2xl flex items-center justify-center border border-gray-200 dark:border-white/5">
+                      <BookOpen className="w-8 h-8 text-gray-400 dark:text-gray-400" />
                     </div>
                   </div>
 
-                  <div className="bg-[#0a0a0b] rounded-3xl p-8 border border-white/5 mb-8 relative overflow-hidden group/content">
+                  <div className="bg-gray-50 dark:bg-[#0a0a0b] rounded-3xl p-8 border border-gray-200 dark:border-white/5 mb-8 relative overflow-hidden group/content">
                     <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500/50"></div>
                     <div className="prose prose-invert max-w-none">
-                      <div className="text-gray-300 leading-relaxed whitespace-pre-wrap text-lg font-medium">
+                      <div className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap text-lg font-medium">
                         {currentCard.content}
                       </div>
                     </div>
@@ -275,7 +275,7 @@ const StudyMode: React.FC = () => {
                       <button
                         key={idx}
                         onClick={() => setCurrentIndex(idx)}
-                        className={`h-2 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-8 bg-indigo-500' : 'w-2 bg-white/10 hover:bg-white/30'
+                        className={`h-2 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-8 bg-indigo-500' : 'w-2 bg-gray-300 dark:bg-white/10 hover:bg-gray-400 dark:hover:bg-white/30'
                           }`}
                       />
                     ))}
@@ -306,9 +306,9 @@ const StudyMode: React.FC = () => {
                 className="group relative cursor-pointer"
               >
                 <div className="absolute inset-0 bg-white/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
-                <div className="relative bg-[#13141f] rounded-3xl p-8 border border-white/5 hover:border-indigo-500/30 transition-colors shadow-xl group-hover:-translate-y-1 transform duration-300 h-full flex flex-col">
+                <div className="relative bg-white dark:bg-[#13141f] rounded-3xl p-8 border border-gray-200 dark:border-white/5 hover:border-indigo-500/30 transition-colors shadow-xl group-hover:-translate-y-1 transform duration-300 h-full flex flex-col">
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 text-xs font-black uppercase tracking-widest border border-indigo-500/20">
+                    <span className="px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-widest border border-indigo-500/20">
                       {card.category}
                     </span>
                     <span className="text-xs text-gray-500 font-bold uppercase tracking-wider ml-auto">
@@ -316,16 +316,16 @@ const StudyMode: React.FC = () => {
                     </span>
                   </div>
 
-                  <h3 className="text-2xl font-black text-white mb-3 leading-tight group-hover:text-indigo-400 transition-colors">
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-3 leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {card.title}
                   </h3>
 
-                  <p className="text-gray-400 line-clamp-3 mb-6 text-sm leading-relaxed flex-grow">
+                  <p className="text-gray-600 dark:text-gray-400 line-clamp-3 mb-6 text-sm leading-relaxed flex-grow">
                     {card.content}
                   </p>
 
-                  <div className="flex items-center gap-2 pt-4 border-t border-white/5">
-                    <Tag className="w-4 h-4 text-gray-600" />
+                  <div className="flex items-center gap-2 pt-4 border-t border-gray-100 dark:border-white/5">
+                    <Tag className="w-4 h-4 text-gray-400 dark:text-gray-600" />
                     <div className="flex gap-2">
                       {card.tags?.slice(0, 3).map(tag => (
                         <span key={tag} className="text-xs font-semibold text-gray-500">#{tag}</span>

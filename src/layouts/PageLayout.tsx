@@ -20,7 +20,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children }) => {
     };
 
     return (
-        <div className="min-h-screen bg-[#0a0a0b]">
+        <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0b] transition-colors duration-300">
             <Navbar
                 user={currentUser}
                 onViewProfile={() => navigate('/profile')}

@@ -93,7 +93,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
     const currentCertificateAttempt = attempts.find(a => a.attemptId === downloadingAttemptId);
 
     return (
-        <div className="min-h-screen bg-[#0a0a0b] text-white selection:bg-purple-500/30">
+        <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0b] text-gray-900 dark:text-white selection:bg-purple-500/30">
             {/* Ambient Background */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[128px] mix-blend-screen" />
@@ -113,23 +113,23 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
 
             <div className="relative max-w-7xl mx-auto px-6 py-8 md:py-12">
                 {/* Profile Card */}
-                <div className="relative bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/10 shadow-2xl overflow-hidden mb-12">
+                <div className="relative bg-white dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-gray-200 dark:border-white/10 shadow-2xl dark:shadow-2xl overflow-hidden mb-12">
                     <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-indigo-600/20 to-purple-600/20" />
 
                     <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12 pt-4">
                         <div className="relative group">
-                            <div className="w-32 h-32 rounded-full bg-[#0a0a0b] p-1.5 ring-4 ring-indigo-500/50 shadow-2xl relative z-10 group-hover:scale-105 transition-transform duration-500">
+                            <div className="w-32 h-32 rounded-full bg-white dark:bg-[#0a0a0b] p-1.5 ring-4 ring-indigo-500/50 shadow-2xl relative z-10 group-hover:scale-105 transition-transform duration-500">
                                 <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-5xl font-black text-white">
                                     {currentUser.name.charAt(0)}
                                 </div>
                             </div>
-                            <div className="absolute -bottom-3 -right-3 z-20 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-sm font-black px-4 py-1.5 rounded-full shadow-lg border-2 border-[#0a0a0b]">
+                            <div className="absolute -bottom-3 -right-3 z-20 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-sm font-black px-4 py-1.5 rounded-full shadow-lg border-2 border-white dark:border-[#0a0a0b]">
                                 Lvl {currentUser.level || 1}
                             </div>
                             {/* Settings Button */}
                             <button
                                 onClick={() => setIsSettingsOpen(true)}
-                                className="absolute -top-2 -right-2 z-20 p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10 transition-all hover:rotate-180"
+                                className="absolute -top-2 -right-2 z-20 p-2.5 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-600 dark:text-white rounded-full backdrop-blur-md border border-gray-200 dark:border-white/10 transition-all hover:rotate-180"
                                 title="Account Settings"
                             >
                                 <Settings className="w-5 h-5" />
@@ -138,17 +138,17 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
 
                         <div className="flex-1 text-center md:text-left w-full">
                             <div className="mb-6">
-                                <h2 className="text-4xl font-black text-white mb-2 tracking-tight">{currentUser.name}</h2>
-                                <p className="text-lg text-gray-400 font-medium">{currentUser.email}</p>
+                                <h2 className="text-4xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">{currentUser.name}</h2>
+                                <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">{currentUser.email}</p>
                             </div>
 
                             {/* Level Progress */}
                             <div className="mb-8 max-w-xl mx-auto md:mx-0">
-                                <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                                <div className="flex justify-between text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                                     <span>Progress</span>
                                     <span>{xpToNextLevel} XP to Level {level + 1}</span>
                                 </div>
-                                <div className="h-4 bg-black/40 rounded-full overflow-hidden border border-white/5">
+                                <div className="h-4 bg-gray-200 dark:bg-black/40 rounded-full overflow-hidden border border-gray-300 dark:border-white/5">
                                     <div
                                         className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-all duration-1000 ease-out relative overflow-hidden"
                                         style={{ width: `${levelProgress}%` }}
@@ -161,21 +161,21 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                                 <div className="pl-2 pr-5 py-2 bg-indigo-500/10 rounded-xl border border-indigo-500/20 flex items-center gap-3">
                                     <div className="p-1.5 bg-indigo-500/20 rounded-lg">
-                                        <Trophy className="w-4 h-4 text-indigo-400" />
+                                        <Trophy className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                                     </div>
-                                    <span className="font-bold text-indigo-200">Rank #{rank}</span>
+                                    <span className="font-bold text-indigo-700 dark:text-indigo-200">Rank #{rank}</span>
                                 </div>
                                 <div className="pl-2 pr-5 py-2 bg-orange-500/10 rounded-xl border border-orange-500/20 flex items-center gap-3">
                                     <div className="p-1.5 bg-orange-500/20 rounded-lg">
-                                        <Flame className="w-4 h-4 text-orange-400" />
+                                        <Flame className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                                     </div>
-                                    <span className="font-bold text-orange-200">{currentUser.streak || 0} Day Streak</span>
+                                    <span className="font-bold text-orange-700 dark:text-orange-200">{currentUser.streak || 0} Day Streak</span>
                                 </div>
                                 <div className="pl-2 pr-5 py-2 bg-blue-500/10 rounded-xl border border-blue-500/20 flex items-center gap-3">
                                     <div className="p-1.5 bg-blue-500/20 rounded-lg">
-                                        <Calendar className="w-4 h-4 text-blue-400" />
+                                        <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                     </div>
-                                    <span className="font-bold text-blue-200">Joined {new Date(currentUser.createdAt || currentUser.lastLoginDate || new Date()).toLocaleDateString()}</span>
+                                    <span className="font-bold text-blue-700 dark:text-blue-200">Joined {new Date(currentUser.createdAt || currentUser.lastLoginDate || new Date()).toLocaleDateString()}</span>
                                 </div>
                             </div>
                         </div>
@@ -186,21 +186,21 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                 {currentUser.badges && currentUser.badges.length > 0 && (
                     <div className="mb-12">
                         <div className="flex items-center gap-3 mb-6">
-                            <Award className="w-6 h-6 text-yellow-400" />
-                            <h3 className="text-2xl font-black text-white">Badges Earned</h3>
+                            <Award className="w-6 h-6 text-yellow-500 dark:text-yellow-400" />
+                            <h3 className="text-2xl font-black text-gray-900 dark:text-white">Badges Earned</h3>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             {currentUser.badges.map(badge => (
-                                <div key={badge.id} className="group bg-[#13141f] p-6 rounded-[2rem] border border-white/5 flex flex-col items-center text-center hover:bg-white/10 transition-colors duration-300">
+                                <div key={badge.id} className="group bg-white dark:bg-[#13141f] p-6 rounded-[2rem] border border-gray-200 dark:border-white/5 flex flex-col items-center text-center hover:bg-gray-50 dark:hover:bg-white/10 transition-colors duration-300 shadow-lg dark:shadow-none">
                                     <div className="relative mb-4">
                                         <div className="absolute inset-0 bg-yellow-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
                                         <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-600 flex items-center justify-center text-white shadow-lg transform group-hover:scale-110 transition-transform duration-300">
                                             <BadgeIcon icon={badge.icon} className="w-8 h-8" />
                                         </div>
                                     </div>
-                                    <h4 className="font-bold text-white mb-1">{badge.name}</h4>
-                                    <p className="text-xs text-gray-400 line-clamp-2 mb-3 leading-relaxed">{badge.description}</p>
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-black/20 px-2 py-1 rounded-lg">
+                                    <h4 className="font-bold text-gray-900 dark:text-white mb-1">{badge.name}</h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-3 leading-relaxed">{badge.description}</p>
+                                    <span className="text-[10px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-wider bg-gray-100 dark:bg-black/20 px-2 py-1 rounded-lg">
                                         {new Date(badge.dateEarned).toLocaleDateString()}
                                     </span>
                                 </div>
@@ -212,30 +212,30 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                 {/* Stats & Analytics */}
                 <div className="mb-12">
                     <div className="flex items-center gap-3 mb-6">
-                        <TrendingUp className="w-6 h-6 text-blue-400" />
-                        <h3 className="text-2xl font-black text-white">Performance Analytics</h3>
+                        <TrendingUp className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+                        <h3 className="text-2xl font-black text-gray-900 dark:text-white">Performance Analytics</h3>
                     </div>
                     {/* Assuming AnalyticsPanel can accept dark mode styles or is already styled cleanly */}
-                    <div className="bg-[#13141f] rounded-[2.5rem] p-6 border border-white/5">
+                    <div className="bg-white dark:bg-[#13141f] rounded-[2.5rem] p-6 border border-gray-200 dark:border-white/5 shadow-xl dark:shadow-none">
                         <AnalyticsPanel user={currentUser} />
                     </div>
                 </div>
 
                 {/* Recent Attempts */}
-                <div className="bg-[#13141f] rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl">
-                    <div className="p-8 border-b border-white/5 flex flex-wrap justify-between items-center gap-4 bg-white/5">
+                <div className="bg-white dark:bg-[#13141f] rounded-[2.5rem] border border-gray-200 dark:border-white/5 overflow-hidden shadow-2xl">
+                    <div className="p-8 border-b border-gray-200 dark:border-white/5 flex flex-wrap justify-between items-center gap-4 bg-gray-50 dark:bg-white/5">
                         <div className="flex items-center gap-3">
-                            <History className="w-6 h-6 text-purple-400" />
-                            <h2 className="text-2xl font-black text-white">Recent Activity</h2>
+                            <History className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                            <h2 className="text-2xl font-black text-gray-900 dark:text-white">Recent Activity</h2>
                         </div>
-                        {error && <span className="bg-red-500/10 text-red-400 px-4 py-2 rounded-xl text-sm font-bold border border-red-500/20 flex items-center gap-2">
+                        {error && <span className="bg-red-500/10 text-red-600 dark:text-red-400 px-4 py-2 rounded-xl text-sm font-bold border border-red-500/20 flex items-center gap-2">
                             <Zap className="w-4 h-4" /> {error}
                         </span>}
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="border-b border-white/5 bg-black/20 text-xs font-black text-gray-400 uppercase tracking-wider">
+                                <tr className="border-b border-gray-200 dark:border-white/5 bg-gray-100 dark:bg-black/20 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <th className="px-8 py-5 text-left">Quiz</th>
                                     <th className="px-8 py-5 text-left">Score</th>
                                     <th className="px-8 py-5 text-left">Time</th>
@@ -243,11 +243,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                     <th className="px-8 py-5 text-right">Certificate</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
+                            <tbody className="divide-y divide-gray-200 dark:divide-white/5">
                                 {recentAttempts.map((attempt) => (
-                                    <tr key={attempt.attemptId} className="group hover:bg-white/5 transition-colors">
+                                    <tr key={attempt.attemptId} className="group hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                         <td className="px-8 py-5">
-                                            <span className="font-bold text-white text-lg">{attempt.quizTitle}</span>
+                                            <span className="font-bold text-gray-900 dark:text-white text-lg">{attempt.quizTitle}</span>
                                         </td>
                                         <td className="px-8 py-5">
                                             <span
@@ -259,10 +259,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                                 {attempt.score}/{attempt.totalQuestions} ({attempt.percentage}%)
                                             </span>
                                         </td>
-                                        <td className="px-8 py-5 text-gray-400 font-medium">
+                                        <td className="px-8 py-5 text-gray-600 dark:text-gray-400 font-medium">
                                             {Math.floor(attempt.timeTaken / 60)}m {attempt.timeTaken % 60}s
                                         </td>
-                                        <td className="px-8 py-5 text-gray-500 font-medium">
+                                        <td className="px-8 py-5 text-gray-500 dark:text-gray-500 font-medium">
                                             {new Date(attempt.completedAt).toLocaleDateString()}
                                         </td>
                                         <td className="px-8 py-5 text-right">
@@ -281,7 +281,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                                     Certificate
                                                 </button>
                                             ) : (
-                                                <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">
+                                                <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">
                                                     {attempt.percentage >= 60 ? '100% required' : 'Not earned'}
                                                 </span>
                                             )}

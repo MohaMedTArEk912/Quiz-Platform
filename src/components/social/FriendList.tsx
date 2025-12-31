@@ -66,13 +66,13 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
     };
 
     return (
-        <div className="bg-[#13141f] rounded-[2rem] border border-white/5 shadow-2xl overflow-hidden min-h-[600px] flex flex-col relative select-none">
+        <div className="bg-white dark:bg-[#13141f] rounded-[2rem] border border-gray-200 dark:border-white/5 shadow-2xl overflow-hidden min-h-[600px] flex flex-col relative select-none">
             {/* Top Shine */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-purple-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
 
             {/* Header */}
-            <div className="p-8 border-b border-white/5 relative z-10">
-                <h2 className="text-3xl font-black text-white flex items-center gap-3">
+            <div className="p-8 border-b border-gray-200 dark:border-white/5 relative z-10">
+                <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
                         <Users className="w-5 h-5 text-white" />
                     </div>
@@ -93,7 +93,7 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                         onClick={() => setActiveTab(tab.id as any)}
                         className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id
                             ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20'
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                            : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'
                             }`}
                     >
                         {tab.label} {tab.count !== null && <span className="ml-1 opacity-70">({tab.count})</span>}
@@ -122,16 +122,16 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                             </div>
                         )}
                         {friendsList.map(friend => (
-                            <div key={friend.userId} className="flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-colors group">
+                            <div key={friend.userId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl border border-gray-200 dark:border-white/5 transition-colors group">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-inner">
                                         {friend.name.charAt(0)}
                                     </div>
                                     <div>
-                                        <div className="font-bold text-white text-lg group-hover:text-indigo-400 transition-colors">{friend.name}</div>
+                                        <div className="font-bold text-gray-900 dark:text-white text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{friend.name}</div>
                                         <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider flex items-center gap-2">
                                             <span>Rank #{friend.rank || '-'}</span>
-                                            <span className="w-1 h-1 bg-gray-600 rounded-full" />
+                                            <span className="w-1 h-1 bg-gray-400 dark:bg-gray-600 rounded-full" />
                                             <span>Level {friend.level || 1}</span>
                                         </div>
                                     </div>
@@ -170,13 +170,13 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                             </div>
                         )}
                         {requestList.map(({ request, user }) => (
-                            <div key={request.createdAt} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <div key={request.createdAt} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-black text-lg">
                                         {user?.name.charAt(0) || '?'}
                                     </div>
                                     <div>
-                                        <div className="font-bold text-white text-lg">{user?.name || 'Unknown'}</div>
+                                        <div className="font-bold text-gray-900 dark:text-white text-lg">{user?.name || 'Unknown'}</div>
                                         <div className="text-xs text-gray-500 font-semibold">Wants to act friendly</div>
                                     </div>
                                 </div>
@@ -199,7 +199,7 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Find users by name..."
-                                    className="w-full pl-12 pr-4 py-4 bg-black/20 border border-white/10 rounded-2xl text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-medium"
+                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-medium"
                                 />
                             </div>
                             <button
@@ -218,13 +218,13 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                 const receivedRequest = currentUser.friendRequests?.find(r => r.from === user.userId && r.status === 'pending');
 
                                 return (
-                                    <div key={user.userId} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                    <div key={user.userId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-white font-bold text-lg border border-white/10">
                                                 {user.name?.charAt(0)}
                                             </div>
                                             <div>
-                                                <div className="font-bold text-white text-lg">{user.name}</div>
+                                                <div className="font-bold text-gray-900 dark:text-white text-lg">{user.name}</div>
                                                 <div className="text-xs text-gray-500 font-medium">{user.email}</div>
                                             </div>
                                         </div>
@@ -277,16 +277,16 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                 : hasPlayed ? 'Waiting for opponent' : 'Pending';
 
                             return (
-                                <div key={challenge.token} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                <div key={challenge.token} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-black text-lg">
                                             <Swords className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <div className="font-bold text-white text-lg">vs {opponentUser?.name || 'Unknown'}</div>
+                                            <div className="font-bold text-gray-900 dark:text-white text-lg">vs {opponentUser?.name || 'Unknown'}</div>
                                             <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider flex items-center gap-2">
-                                                <span className={`${hasPlayed ? 'text-yellow-500' : 'text-emerald-400'}`}>{statusLabel}</span>
-                                                <span className="w-1 h-1 bg-gray-600 rounded-full" />
+                                                <span className={`${hasPlayed ? 'text-yellow-600 dark:text-yellow-500' : 'text-emerald-600 dark:text-emerald-400'}`}>{statusLabel}</span>
+                                                <span className="w-1 h-1 bg-gray-400 dark:bg-gray-600 rounded-full" />
                                                 <span>Quiz ID: {challenge.quizId.slice(0, 4)}...</span>
                                             </div>
                                         </div>
@@ -319,8 +319,11 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                     background: transparent;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.1);
+                    background: rgba(156, 163, 175, 0.5);
                     border-radius: 10px;
+                }
+                .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.1);
                 }
             `}} />
         </div>

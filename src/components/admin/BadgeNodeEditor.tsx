@@ -64,15 +64,15 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
                 <form onSubmit={handleSubmit}>
                     {/* Header */}
-                    <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-6 flex items-center justify-between">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                            <Sparkles className="w-6 h-6 text-purple-400" />
-                            {badge ? 'Edit Badge' : 'Create Badge'}
+                    <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between">
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <Sparkles className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                            {badge?.badgeId ? 'Edit Badge' : 'Create Badge'}
                         </h2>
-                        <button type="button" onClick={onClose} className="text-gray-400 hover:text-white">
+                        <button type="button" onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                             <X className="w-6 h-6" />
                         </button>
                     </div>
@@ -81,35 +81,35 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                         {/* Basic Info */}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-300 mb-2">Badge ID</label>
+                                <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">Badge ID</label>
                                 <input
                                     type="text"
                                     value={formData.badgeId}
                                     onChange={(e) => setFormData({ ...formData, badgeId: e.target.value })}
-                                    className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-purple-500 focus:outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none"
                                     required
                                     disabled={!!badge}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-300 mb-2">Name</label>
+                                <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">Name</label>
                                 <input
                                     type="text"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-purple-500 focus:outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none"
                                     required
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-gray-300 mb-2">Description</label>
+                            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">Description</label>
                             <textarea
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-purple-500 focus:outline-none"
+                                className="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none"
                                 rows={3}
                                 required
                             />
@@ -117,22 +117,22 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
 
                         <div className="grid grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-300 mb-2">Icon (Emoji)</label>
+                                <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">Icon (Emoji)</label>
                                 <input
                                     type="text"
                                     value={formData.icon}
                                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                                    className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-purple-500 focus:outline-none text-2xl text-center"
+                                    className="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none text-2xl text-center"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-300 mb-2">Rarity</label>
+                                <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">Rarity</label>
                                 <select
                                     value={formData.rarity}
                                     onChange={(e) => setFormData({ ...formData, rarity: e.target.value as any })}
-                                    className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-purple-500 focus:outline-none"
+                                    className="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none"
                                 >
                                     <option value="common">Common</option>
                                     <option value="rare">Rare</option>
@@ -142,22 +142,22 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-300 mb-2">Color</label>
+                                <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">Color</label>
                                 <input
                                     type="color"
                                     value={formData.color}
                                     onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                                    className="w-full bg-gray-700 rounded-lg px-2 py-1 border border-gray-600 h-10"
+                                    className="w-full bg-gray-50 dark:bg-gray-700 rounded-lg px-2 py-1 border border-gray-200 dark:border-gray-600 h-10"
                                 />
                             </div>
                         </div>
 
                         {/* Rewards */}
                         <div>
-                            <h3 className="text-lg font-bold text-white mb-3">Rewards</h3>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Rewards</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-300 mb-2">XP</label>
+                                    <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">XP</label>
                                     <input
                                         type="number"
                                         value={formData.rewards?.xp}
@@ -165,13 +165,13 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                                             ...formData,
                                             rewards: { ...formData.rewards!, xp: parseInt(e.target.value) || 0 }
                                         })}
-                                        className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-purple-500 focus:outline-none"
+                                        className="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none"
                                         min="0"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-300 mb-2">Coins</label>
+                                    <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">Coins</label>
                                     <input
                                         type="number"
                                         value={formData.rewards?.coins}
@@ -179,7 +179,7 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                                             ...formData,
                                             rewards: { ...formData.rewards!, coins: parseInt(e.target.value) || 0 }
                                         })}
-                                        className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-purple-500 focus:outline-none"
+                                        className="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none"
                                         min="0"
                                     />
                                 </div>
@@ -188,7 +188,7 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
 
                         {/* Unlock Criteria */}
                         <div>
-                            <h3 className="text-lg font-bold text-white mb-3">Unlock Criteria (ALL must be met)</h3>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Unlock Criteria (ALL must be met)</h3>
 
                             {/* Existing Criteria */}
                             <div className="space-y-2 mb-4">
@@ -214,12 +214,12 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                             </div>
 
                             {/* Add New Criterion */}
-                            <div className="bg-gray-700 rounded-lg p-4">
+                            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                                 <div className="grid grid-cols-3 gap-3 mb-3">
                                     <select
                                         value={newCriterion.type}
                                         onChange={(e) => setNewCriterion({ ...newCriterion, type: e.target.value as any })}
-                                        className="bg-gray-600 text-white rounded-lg px-3 py-2 border border-gray-500"
+                                        className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-500"
                                     >
                                         {criteriaTypes.map(type => (
                                             <option key={type.value} value={type.value}>{type.label}</option>
@@ -229,7 +229,7 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                                     <select
                                         value={newCriterion.operator}
                                         onChange={(e) => setNewCriterion({ ...newCriterion, operator: e.target.value as any })}
-                                        className="bg-gray-600 text-white rounded-lg px-3 py-2 border border-gray-500"
+                                        className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-500"
                                     >
                                         <option value=">=">&gt;=</option>
                                         <option value=">">&gt;</option>
@@ -242,7 +242,7 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                                         type="number"
                                         value={newCriterion.threshold}
                                         onChange={(e) => setNewCriterion({ ...newCriterion, threshold: parseInt(e.target.value) || 0 })}
-                                        className="bg-gray-600 text-white rounded-lg px-3 py-2 border border-gray-500"
+                                        className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-500"
                                         placeholder="Threshold"
                                     />
                                 </div>
@@ -260,11 +260,11 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                     </div>
 
                     {/* Footer */}
-                    <div className="sticky bottom-0 bg-gray-800 border-t border-gray-700 p-6 flex gap-3">
+                    <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-6 flex gap-3">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white rounded-lg px-6 py-3 font-semibold"
+                            className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg px-6 py-3 font-semibold"
                         >
                             Cancel
                         </button>

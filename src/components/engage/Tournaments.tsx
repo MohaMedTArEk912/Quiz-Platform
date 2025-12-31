@@ -89,7 +89,7 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white p-6 relative overflow-hidden selection:bg-purple-500/30">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0b] text-gray-900 dark:text-white p-6 relative overflow-hidden selection:bg-purple-500/30">
       {/* Ambient Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[128px] mix-blend-screen animate-pulse" />
@@ -98,9 +98,9 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
 
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-12 relative z-10">
-        <div className="bg-[#13141f] rounded-[2.5rem] p-8 border border-white/5 shadow-2xl relative overflow-hidden">
+        <div className="bg-white dark:bg-[#13141f] rounded-[2.5rem] p-8 border border-gray-200 dark:border-white/5 shadow-2xl relative overflow-hidden">
           {/* Top Shine */}
-          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-gray-100/50 dark:from-white/5 to-transparent pointer-events-none" />
 
           <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
             <div className="relative">
@@ -110,10 +110,10 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
               </div>
             </div>
             <div className="text-center md:text-left">
-              <h1 className="text-5xl font-black text-white mb-2 tracking-tight">
+              <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">
                 TOURNAMENTS
               </h1>
-              <p className="text-lg text-gray-400 font-medium">Compete in scheduled events and win massive prizes!</p>
+              <p className="text-lg text-gray-600 dark:text-gray-400 font-medium">Compete in scheduled events and win massive prizes!</p>
             </div>
           </div>
         </div>
@@ -140,10 +140,10 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
       {/* Tournaments Grid */}
       <div className="max-w-7xl mx-auto relative z-10">
         {items.length === 0 && !error && (
-          <div className="bg-[#13141f] border-dashed border border-white/10 rounded-[2.5rem] p-16 text-center">
-            <Trophy className="w-24 h-24 text-gray-700 mx-auto mb-6" />
-            <h3 className="text-3xl font-black text-gray-500 mb-2">ARENA EMPTY</h3>
-            <p className="text-gray-600 text-lg">Check back later for strictly competitive events.</p>
+          <div className="bg-white dark:bg-[#13141f] border-dashed border border-gray-200 dark:border-white/10 rounded-[2.5rem] p-16 text-center">
+            <Trophy className="w-24 h-24 text-gray-400 dark:text-gray-700 mx-auto mb-6" />
+            <h3 className="text-3xl font-black text-gray-400 dark:text-gray-500 mb-2">ARENA EMPTY</h3>
+            <p className="text-gray-500 dark:text-gray-600 text-lg">Check back later for strictly competitive events.</p>
           </div>
         )}
 
@@ -157,7 +157,7 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
             return (
               <div
                 key={tournament.tournamentId}
-                className={`group relative bg-[#13141f] rounded-[2.5rem] p-8 border hover:border-white/10 shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden ${isLive ? 'border-emerald-500/30 shadow-emerald-500/10' : 'border-white/5'
+                className={`group relative bg-white dark:bg-[#13141f] rounded-[2.5rem] p-8 border hover:border-gray-300 dark:hover:border-white/10 shadow-xl dark:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden ${isLive ? 'border-emerald-500/30 shadow-emerald-500/10' : 'border-gray-200 dark:border-white/5'
                   }`}
               >
                 {/* Background Gradient */}
@@ -177,7 +177,7 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
                         <Crown className="w-8 h-8 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-black text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-gray-400 transition-all">
+                        <h3 className="text-2xl font-black text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-transparent dark:group-hover:bg-clip-text dark:group-hover:bg-gradient-to-r dark:group-hover:from-white dark:group-hover:to-gray-400 transition-all">
                           {tournament.name}
                         </h3>
                         <div className="flex items-center gap-2 mt-1">
@@ -191,32 +191,32 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
 
                   {/* Info Stats */}
                   <div className="grid grid-cols-2 gap-3 mb-8">
-                    <div className="bg-black/20 rounded-2xl p-4 border border-white/5 flex flex-col justify-center">
-                      <div className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">
+                    <div className="bg-gray-50 dark:bg-black/20 rounded-2xl p-4 border border-gray-200 dark:border-white/5 flex flex-col justify-center">
+                      <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">
                         <Calendar className="w-3 h-3" /> Start
                       </div>
-                      <div className="text-white font-bold text-sm">{formatDate(tournament.startsAt)}</div>
+                      <div className="text-gray-900 dark:text-white font-bold text-sm">{formatDate(tournament.startsAt)}</div>
                     </div>
 
-                    <div className="bg-black/20 rounded-2xl p-4 border border-white/5 flex flex-col justify-center">
-                      <div className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">
+                    <div className="bg-gray-50 dark:bg-black/20 rounded-2xl p-4 border border-gray-200 dark:border-white/5 flex flex-col justify-center">
+                      <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">
                         <Clock className="w-3 h-3" /> End
                       </div>
-                      <div className="text-white font-bold text-sm">{formatDate(tournament.endsAt)}</div>
+                      <div className="text-gray-900 dark:text-white font-bold text-sm">{formatDate(tournament.endsAt)}</div>
                     </div>
 
-                    <div className="bg-black/20 rounded-2xl p-4 border border-white/5 flex flex-col justify-center">
-                      <div className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">
+                    <div className="bg-gray-50 dark:bg-black/20 rounded-2xl p-4 border border-gray-200 dark:border-white/5 flex flex-col justify-center">
+                      <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">
                         <Users className="w-3 h-3" /> Players
                       </div>
-                      <div className="text-white font-bold text-sm">{Math.floor(Math.random() * 500) + 50} Entered</div>
+                      <div className="text-gray-900 dark:text-white font-bold text-sm">{Math.floor(Math.random() * 500) + 50} Entered</div>
                     </div>
 
                     <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-2xl p-4 border border-yellow-500/20 flex flex-col justify-center">
-                      <div className="flex items-center gap-2 text-yellow-500 text-xs font-bold uppercase tracking-wider mb-1">
+                      <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-500 text-xs font-bold uppercase tracking-wider mb-1">
                         <Medal className="w-3 h-3" /> Prize
                       </div>
-                      <div className="text-yellow-400 font-black text-lg">{Math.floor(Math.random() * 5000) + 1000}</div>
+                      <div className="text-yellow-600 dark:text-yellow-400 font-black text-lg">{Math.floor(Math.random() * 5000) + 1000}</div>
                     </div>
                   </div>
 

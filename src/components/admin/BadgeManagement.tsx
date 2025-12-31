@@ -151,7 +151,7 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
     if (loading) {
         return (
             <div className="text-center py-12">
-                <p className="text-gray-400">Loading badges...</p>
+                <p className="text-gray-500 dark:text-gray-400">Loading badges...</p>
             </div>
         );
     }
@@ -161,30 +161,30 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-black text-white mb-2">Achievement Badges</h2>
-                    <p className="text-gray-400">Create and manage badges, rewards, and unlock criteria</p>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Achievement Badges</h2>
+                    <p className="text-gray-500 dark:text-gray-400">Create and manage badges, rewards, and unlock criteria</p>
                 </div>
                 <div className="flex gap-3">
                     <div className="relative" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="p-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl font-bold transition-all border border-gray-700"
+                            className="p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-300 rounded-xl font-bold transition-all border border-gray-200 dark:border-gray-700 shadow-sm"
                         >
                             <MoreVertical className="w-5 h-5" />
                         </button>
 
                         {showMenu && (
-                            <div className="absolute right-0 top-full mt-2 w-48 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
                                 <button
                                     onClick={handleDownloadSample}
-                                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-gray-700 text-gray-300 transition-colors"
+                                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
                                 >
                                     <Download className="w-4 h-4" />
                                     Sample JSON
                                 </button>
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-gray-700 text-gray-300 transition-colors"
+                                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
                                 >
                                     <Upload className="w-4 h-4" />
                                     Upload JSON
@@ -224,12 +224,12 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
             </div>
 
             {/* Badges Grid */}
-            <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700">
+            <div className="bg-white dark:bg-gray-800/50 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {badges.map(badge => (
                         <div
                             key={badge.badgeId}
-                            className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 border border-gray-700 hover:border-gray-600 transition-all group"
+                            className="bg-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all group shadow-sm dark:shadow-none"
                         >
                             <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center gap-3">
@@ -237,7 +237,7 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
                                         {badge.icon}
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-white text-sm">{badge.name}</h4>
+                                        <h4 className="font-bold text-gray-900 dark:text-white text-sm">{badge.name}</h4>
                                         <span className={`text-xs px-2 py-0.5 rounded-full bg-gradient-to-r ${getRarityColor(badge.rarity)} text-white font-semibold capitalize`}>
                                             {badge.rarity}
                                         </span>
@@ -249,29 +249,29 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
                                             setEditingBadge(badge);
                                             setShowBadgeEditor(true);
                                         }}
-                                        className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"
+                                        className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded transition-colors"
                                     >
                                         <Edit2 className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={() => handleDeleteBadge(badge.badgeId)}
-                                        className="p-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors"
+                                        className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
 
-                            <p className="text-gray-400 text-xs line-clamp-2 mb-2">{badge.description}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs line-clamp-2 mb-2">{badge.description}</p>
 
                             <div className="flex gap-2">
                                 {badge.rewards.xp > 0 && (
-                                    <span className="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded text-xs font-semibold">
+                                    <span className="bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded text-xs font-semibold">
                                         +{badge.rewards.xp} XP
                                     </span>
                                 )}
                                 {badge.rewards.coins > 0 && (
-                                    <span className="bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded text-xs font-semibold">
+                                    <span className="bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded text-xs font-semibold">
                                         +{badge.rewards.coins} 🪙
                                     </span>
                                 )}
@@ -280,8 +280,8 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
                     ))}
 
                     {badges.length === 0 && (
-                        <div className="col-span-full text-center py-12 border-2 border-dashed border-gray-700 rounded-xl">
-                            <Award className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                        <div className="col-span-full text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
+                            <Award className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
                             <p className="text-gray-500 font-bold">No badges created yet</p>
                         </div>
                     )}

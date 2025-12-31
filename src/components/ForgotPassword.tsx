@@ -66,14 +66,14 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
     };
 
     return (
-        <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-6 relative overflow-hidden">
+        <div className="min-h-screen bg-gray-50 dark:bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] dark:from-indigo-900 dark:via-purple-900 dark:to-pink-900 flex items-center justify-center p-6 relative overflow-hidden">
             {/* Background Decorations */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl animate-pulse"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-200/50 dark:bg-purple-500/30 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-200/50 dark:bg-pink-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
             </div>
 
-            <div className="relative z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-full max-w-md transition-all border border-white/20 dark:border-gray-700/50">
+            <div className="relative z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-full max-w-md transition-all border border-gray-200 dark:border-gray-700/50">
                 <button
                     onClick={onBack}
                     className="mb-4 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"

@@ -52,18 +52,18 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ adminEmail, onClose }) =>
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4">
-            <div className="bg-[#13141f] border border-white/10 rounded-[2rem] shadow-2xl w-full max-w-md p-8 relative">
+        <div className="fixed inset-0 bg-gray-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4">
+            <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] shadow-2xl w-full max-w-md p-8 relative">
                 <button
                     onClick={onClose}
-                    className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors"
+                    className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
                     <X className="w-6 h-6" />
                 </button>
 
                 <div className="mb-8">
-                    <h2 className="text-2xl font-black text-white mb-2">Admin Settings</h2>
-                    <p className="text-gray-400 font-medium">Change your admin password</p>
+                    <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Admin Settings</h2>
+                    <p className="text-gray-600 dark:text-gray-400 font-medium">Change your admin password</p>
                 </div>
 
                 {error && (
@@ -86,18 +86,18 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ adminEmail, onClose }) =>
                             Current Password
                         </label>
                         <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                            <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
                             <input
                                 type={showCurrentPassword ? 'text' : 'password'}
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
-                                className="w-full pl-12 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600 transition-all font-medium"
+                                className="w-full pl-12 pr-12 py-3 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 transition-all font-medium"
                                 required
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white"
+                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
                             >
                                 {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                             </button>
@@ -109,19 +109,19 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ adminEmail, onClose }) =>
                             New Password
                         </label>
                         <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                            <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
                             <input
                                 type={showNewPassword ? 'text' : 'password'}
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                className="w-full pl-12 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600 transition-all font-medium"
+                                className="w-full pl-12 pr-12 py-3 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 transition-all font-medium"
                                 required
                                 minLength={6}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowNewPassword(!showNewPassword)}
-                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white"
+                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
                             >
                                 {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                             </button>
@@ -133,19 +133,19 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ adminEmail, onClose }) =>
                             Confirm New Password
                         </label>
                         <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                            <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
                             <input
                                 type={showConfirmPassword ? 'text' : 'password'}
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="w-full pl-12 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600 transition-all font-medium"
+                                className="w-full pl-12 pr-12 py-3 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 transition-all font-medium"
                                 required
                                 minLength={6}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white"
+                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
                             >
                                 {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                             </button>
@@ -156,7 +156,7 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ adminEmail, onClose }) =>
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-3 bg-white/5 border border-white/10 text-gray-400 rounded-xl font-bold hover:bg-white/10 hover:text-white transition-all"
+                            className="flex-1 px-4 py-3 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-all"
                         >
                             Cancel
                         </button>

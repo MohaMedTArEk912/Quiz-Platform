@@ -175,7 +175,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
   if (error) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 text-red-400">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 text-red-500 dark:text-red-400">
           {error}
         </div>
       </div>
@@ -186,8 +186,8 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8 text-center">
-        <h1 className="text-5xl font-black text-white mb-4">Skill Progression Trees</h1>
-        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+        <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-4">Skill Progression Trees</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto">
           Follow the learning paths, complete modules, and earn badges as you progress through each skill tree.
         </p>
       </div>
@@ -201,7 +201,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
             placeholder="Search skill tracks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+            className="w-full px-4 py-3 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors shadow-sm"
           />
         </div>
 
@@ -212,10 +212,10 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:border-purple-500 focus:outline-none appearance-none"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none appearance-none shadow-sm"
             >
               {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
+                <option key={category} value={category} className="bg-white dark:bg-gray-800">{category}</option>
               ))}
             </select>
           </div>
@@ -226,7 +226,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
               onClick={() => setStatusFilter('all')}
               className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'all'
                 ? 'bg-purple-600 text-white'
-                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
                 }`}
             >
               All
@@ -235,7 +235,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
               onClick={() => setStatusFilter('in-progress')}
               className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'in-progress'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
                 }`}
             >
               In Progress
@@ -244,7 +244,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
               onClick={() => setStatusFilter('completed')}
               className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'completed'
                 ? 'bg-green-600 text-white'
-                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
                 }`}
             >
               Completed
@@ -253,7 +253,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
               onClick={() => setStatusFilter('not-started')}
               className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'not-started'
                 ? 'bg-gray-600 text-white'
-                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
                 }`}
             >
               Not Started
@@ -264,7 +264,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
 
       {/* Success/Error Messages */}
       {message && (
-        <div className="mb-6 bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-400 text-center animate-pulse">
+        <div className="mb-6 bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-600 dark:text-green-400 text-center animate-pulse">
           {message}
         </div>
       )}
@@ -276,7 +276,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
           const earnedBadges = getEarnedBadgeIds();
 
           return (
-            <div key={track.trackId} className="bg-gray-900/50 rounded-3xl p-8 border border-gray-800">
+            <div key={track.trackId} className="bg-white dark:bg-gray-900/50 rounded-3xl p-8 border border-gray-200 dark:border-gray-800 shadow-xl dark:shadow-none">
               <SkillTreeVisualization
                 trackTitle={track.title}
                 trackIcon="📚"
@@ -290,18 +290,18 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
         })}
 
         {filteredTracks.length === 0 && tracks.length > 0 && (
-          <div className="text-center py-20 border-2 border-dashed border-gray-700 rounded-3xl">
-            <Target className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-500 font-bold text-lg">No tracks match your filters</p>
-            <p className="text-gray-600 text-sm mt-2">Try adjusting your search or filters</p>
+          <div className="text-center py-20 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-3xl">
+            <Target className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-500 font-bold text-lg">No tracks match your filters</p>
+            <p className="text-gray-500 dark:text-gray-600 text-sm mt-2">Try adjusting your search or filters</p>
           </div>
         )}
 
         {tracks.length === 0 && (
-          <div className="text-center py-20 border-2 border-dashed border-gray-700 rounded-3xl">
-            <Target className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-500 font-bold text-lg">No skill tracks available yet</p>
-            <p className="text-gray-600 text-sm mt-2">Check back soon for new learning paths!</p>
+          <div className="text-center py-20 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-3xl">
+            <Target className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-500 font-bold text-lg">No skill tracks available yet</p>
+            <p className="text-gray-500 dark:text-gray-600 text-sm mt-2">Check back soon for new learning paths!</p>
           </div>
         )}
       </div>

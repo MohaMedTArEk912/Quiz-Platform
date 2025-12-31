@@ -142,7 +142,7 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
 
       {/* Shop Items Grid */}
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-black text-white mb-6 flex items-center gap-3">
+        <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-3">
           <ShoppingBag className="w-8 h-8" />
           Power-Ups Available
         </h2>
@@ -156,7 +156,7 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
             return (
               <div
                 key={item.itemId}
-                className="group relative bg-slate-800/50 backdrop-blur-xl rounded-3xl overflow-hidden border border-slate-700/50 hover:border-purple-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/20"
+                className="group relative bg-white dark:bg-slate-800/50 backdrop-blur-xl rounded-3xl overflow-hidden border border-gray-200 dark:border-slate-700/50 hover:border-purple-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl dark:shadow-none hover:shadow-purple-500/10 dark:hover:shadow-purple-500/20"
                 style={{
                   animationDelay: `${index * 100}ms`,
                   animation: 'fadeInUp 0.6s ease-out forwards'
@@ -179,25 +179,25 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-2xl font-black text-white mb-3 text-center group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-pink-400 group-hover:bg-clip-text transition-all duration-300">
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-3 text-center group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-500 group-hover:to-pink-500 group-hover:bg-clip-text transition-all duration-300">
                     {item.name}
                   </h3>
 
                   {/* Description */}
-                  <p className="text-slate-400 text-sm mb-6 text-center leading-relaxed min-h-[60px]">
+                  <p className="text-gray-600 dark:text-slate-400 text-sm mb-6 text-center leading-relaxed min-h-[60px]">
                     {item.description}
                   </p>
 
                   {/* Divider */}
-                  <div className="h-px bg-gradient-to-r from-transparent via-slate-600 to-transparent mb-6"></div>
+                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-slate-600 to-transparent mb-6"></div>
 
                   {/* Price and Button */}
                   <div className="space-y-4">
                     {/* Price Tag */}
-                    <div className="flex items-center justify-center gap-3 bg-slate-900/50 backdrop-blur-sm px-6 py-3 rounded-2xl border border-slate-700/50">
-                      <Coins className="w-6 h-6 text-yellow-400 animate-pulse" />
-                      <span className="text-3xl font-black text-white">{item.price}</span>
-                      <span className="text-slate-400 text-sm">coins</span>
+                    <div className="flex items-center justify-center gap-3 bg-gray-50 dark:bg-slate-900/50 backdrop-blur-sm px-6 py-3 rounded-2xl border border-gray-200 dark:border-slate-700/50">
+                      <Coins className="w-6 h-6 text-yellow-500 dark:text-yellow-400 animate-pulse" />
+                      <span className="text-3xl font-black text-gray-900 dark:text-white">{item.price}</span>
+                      <span className="text-gray-500 dark:text-slate-400 text-sm">coins</span>
                     </div>
 
                     {/* Buy Button */}
@@ -206,7 +206,7 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
                       disabled={!canAfford || isPurchasing}
                       className={`w-full px-8 py-4 rounded-2xl font-black text-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl ${canAfford
                         ? `bg-gradient-to-r ${gradient} hover:shadow-2xl hover:shadow-purple-500/50 text-white`
-                        : 'bg-slate-700 text-slate-400'
+                        : 'bg-gray-200 dark:bg-slate-700 text-gray-400 dark:text-slate-400'
                         }`}
                     >
                       {isPurchasing ? (

@@ -66,7 +66,7 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart,
   const streakInfo = getStreakLevel(streak);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0b] text-gray-900 dark:text-white p-6 relative overflow-hidden">
       {/* Ambient Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-orange-600/10 rounded-full blur-[128px] mix-blend-screen animate-pulse" />
@@ -82,9 +82,9 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart,
 
       {/* Header */}
       <div className="max-w-5xl mx-auto mb-12 relative z-10">
-        <div className="bg-[#13141f] rounded-[2.5rem] p-8 border border-white/5 shadow-2xl relative overflow-hidden">
+        <div className="bg-white dark:bg-[#13141f] rounded-[2.5rem] p-8 border border-gray-200 dark:border-white/5 shadow-2xl relative overflow-hidden">
           {/* Top Shine */}
-          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-gray-100/50 dark:from-white/5 to-transparent pointer-events-none" />
 
           <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
             <div className="relative group">
@@ -95,10 +95,10 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart,
             </div>
 
             <div className="flex-1 text-center md:text-left">
-              <h1 className="text-5xl font-black text-white mb-2 tracking-tight uppercase italic">
+              <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-2 tracking-tight uppercase italic">
                 Daily Challenge
               </h1>
-              <p className="text-lg text-gray-400 font-medium max-w-lg">
+              <p className="text-lg text-gray-600 dark:text-gray-400 font-medium max-w-lg">
                 Conquer today's quest to earn bonus XP, Coins, and keep your streak alive!
               </p>
             </div>
@@ -119,16 +119,16 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart,
         {/* Streak Card */}
         <div className="group relative col-span-1 md:col-span-2">
           <div className={`absolute inset-0 bg-gradient-to-r ${streakInfo.color} rounded-[2.5rem] blur opacity-20 group-hover:opacity-30 transition-opacity`}></div>
-          <div className="relative h-full bg-[#13141f] rounded-[2.5rem] border border-white/5 p-8 flex items-center justify-between overflow-hidden">
+          <div className="relative h-full bg-white dark:bg-[#13141f] rounded-[2.5rem] border border-gray-200 dark:border-white/5 p-8 flex items-center justify-between overflow-hidden">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <Flame className={`w-6 h-6 ${streakInfo.shadow} text-orange-500 fill-orange-500 animate-pulse`} />
-                <span className="text-gray-400 font-bold uppercase tracking-wider text-sm">Current Streak</span>
+                <span className="text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider text-sm">Current Streak</span>
               </div>
-              <div className="text-6xl font-black text-white tracking-tighter mb-1">
-                {streak} <span className="text-2xl text-gray-500">DAYS</span>
+              <div className="text-6xl font-black text-gray-900 dark:text-white tracking-tighter mb-1">
+                {streak} <span className="text-2xl text-gray-400 dark:text-gray-500">DAYS</span>
               </div>
-              <div className={`inline-flex px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest bg-white/5 border border-white/10 ${streakInfo.shadow} text-white`}>
+              <div className={`inline-flex px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 ${streakInfo.shadow} text-gray-900 dark:text-white`}>
                 {streakInfo.icon} {streakInfo.level}
               </div>
             </div>
@@ -141,19 +141,19 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart,
         {/* Reward Card */}
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-[2.5rem] blur opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <div className="relative h-full bg-[#13141f] rounded-[2.5rem] border border-white/5 p-8 flex flex-col justify-center items-center text-center">
+          <div className="relative h-full bg-white dark:bg-[#13141f] rounded-[2.5rem] border border-gray-200 dark:border-white/5 p-8 flex flex-col justify-center items-center text-center">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg mb-4 group-hover:scale-110 transition-transform">
               <Trophy className="w-7 h-7 text-white" />
             </div>
-            <div className="text-4xl font-black text-white mb-1">+50</div>
-            <div className="text-sm font-bold text-yellow-500 uppercase tracking-wider">Bonus Coins</div>
+            <div className="text-4xl font-black text-gray-900 dark:text-white mb-1">+50</div>
+            <div className="text-sm font-bold text-yellow-600 dark:text-yellow-500 uppercase tracking-wider">Bonus Coins</div>
           </div>
         </div>
       </div>
 
       {/* Quiz Card */}
       <div className="max-w-5xl mx-auto relative z-10">
-        <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
+        <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-3">
           <Sparkles className="w-6 h-6 text-yellow-500" />
           Today's Mission
         </h2>
@@ -163,37 +163,37 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart,
             {/* Hover Glow */}
             <div className={`absolute -inset-0.5 bg-gradient-to-r from-orange-600 to-red-600 rounded-[3rem] opacity-0 group-hover:opacity-50 blur-xl transition-all duration-500`}></div>
 
-            <div className="relative bg-[#13141f] rounded-[3rem] border border-white/5 p-10 overflow-hidden group-hover:-translate-y-1 transition-transform duration-300">
+            <div className="relative bg-white dark:bg-[#13141f] rounded-[3rem] border border-gray-200 dark:border-white/5 p-10 overflow-hidden group-hover:-translate-y-1 transition-transform duration-300">
               {/* Decorative Background */}
-              <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+              <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-gray-100/50 dark:from-white/5 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
               <div className="relative z-10 flex flex-col md:flex-row items-start gap-8">
-                <div className="w-24 h-24 rounded-3xl bg-[#0a0a0b] border border-white/10 flex items-center justify-center text-5xl shadow-2xl group-hover:scale-105 transition-transform duration-500">
+                <div className="w-24 h-24 rounded-3xl bg-gray-50 dark:bg-[#0a0a0b] border border-gray-200 dark:border-white/10 flex items-center justify-center text-5xl shadow-lg dark:shadow-2xl group-hover:scale-105 transition-transform duration-500">
                   {quiz.icon || '🎯'}
                 </div>
 
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-black text-gray-400 uppercase tracking-widest">
+                    <span className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">
                       {quiz.category || 'General'}
                     </span>
-                    <span className="px-3 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20 text-xs font-black text-orange-400 uppercase tracking-widest">
+                    <span className="px-3 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20 text-xs font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest">
                       {quiz.difficulty || 'Medium'}
                     </span>
                   </div>
-                  <h3 className="text-3xl font-black text-white mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-orange-400 group-hover:to-red-400 transition-all">
+                  <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-orange-500 group-hover:to-red-500 transition-all">
                     {quiz.title}
                   </h3>
-                  <p className="text-lg text-gray-400 leading-relaxed mb-8 max-w-2xl">
+                  <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-8 max-w-2xl">
                     {quiz.description}
                   </p>
 
                   <div className="flex flex-wrap gap-6 mb-8">
-                    <div className="flex items-center gap-2 text-gray-400 font-medium">
-                      <Target className="w-5 h-5 text-gray-500" />
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium">
+                      <Target className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                       {quiz.questions?.length || 0} Questions
                     </div>
-                    <div className="flex items-center gap-2 text-gray-400 font-medium">
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium">
                       <Zap className="w-5 h-5 text-yellow-500" />
                       {quiz.questions?.length * 10} Potential XP
                     </div>
@@ -207,8 +207,8 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart,
                     }}
                     disabled={completing || isCompleted}
                     className={`w-full md:w-auto px-10 py-4 rounded-2xl font-black text-lg uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl transition-all transform active:scale-95 ${isCompleted
-                        ? 'bg-emerald-600 text-white cursor-default'
-                        : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white hover:shadow-orange-500/30'
+                      ? 'bg-emerald-600 text-white cursor-default'
+                      : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white hover:shadow-orange-500/30'
                       }`}
                   >
                     {completing ? (
@@ -224,10 +224,10 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart,
             </div>
           </div>
         ) : (
-          <div className="bg-[#13141f] rounded-[3rem] p-16 border border-white/5 text-center border-dashed">
-            <Calendar className="w-24 h-24 text-gray-700 mx-auto mb-6" />
-            <h3 className="text-3xl font-black text-gray-500 mb-2">No Challenges Active</h3>
-            <p className="text-gray-600 text-lg">Check back tomorrow for a new mission.</p>
+          <div className="bg-white dark:bg-[#13141f] rounded-[3rem] p-16 border border-gray-200 dark:border-white/5 text-center border-dashed">
+            <Calendar className="w-24 h-24 text-gray-400 dark:text-gray-700 mx-auto mb-6" />
+            <h3 className="text-3xl font-black text-gray-400 dark:text-gray-500 mb-2">No Challenges Active</h3>
+            <p className="text-gray-500 dark:text-gray-600 text-lg">Check back tomorrow for a new mission.</p>
           </div>
         )}
       </div>

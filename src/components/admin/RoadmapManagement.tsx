@@ -129,7 +129,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     if (loading) {
         return (
             <div className="text-center py-12">
-                <p className="text-gray-400">Loading...</p>
+                <p className="text-gray-500 dark:text-gray-400">Loading...</p>
             </div>
         );
     }
@@ -139,30 +139,30 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-black text-white mb-2">Skill Roadmaps</h2>
-                    <p className="text-gray-400">Manage learning paths and modules</p>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Skill Roadmaps</h2>
+                    <p className="text-gray-500 dark:text-gray-400">Manage learning paths and modules</p>
                 </div>
                 <div className="flex gap-3">
                     <div className="relative" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="p-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl font-bold transition-all border border-gray-700"
+                            className="p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-300 rounded-xl font-bold transition-all border border-gray-200 dark:border-gray-700 shadow-sm"
                         >
                             <MoreVertical className="w-5 h-5" />
                         </button>
 
                         {showMenu && (
-                            <div className="absolute right-0 top-full mt-2 w-48 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
                                 <button
                                     onClick={handleDownloadSample}
-                                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-gray-700 text-gray-300 transition-colors"
+                                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
                                 >
                                     <Download className="w-4 h-4" />
                                     Sample JSON
                                 </button>
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-gray-700 text-gray-300 transition-colors"
+                                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
                                 >
                                     <Upload className="w-4 h-4" />
                                     Upload JSON
@@ -199,9 +199,9 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
             </div>
 
             {/* Roadmaps Section */}
-            <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                    <Route className="w-5 h-5 text-blue-400" />
+            <div className="bg-white dark:bg-gray-800/50 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Route className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     Skill Roadmaps
                 </h3>
 
@@ -209,7 +209,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                     {tracks.map(track => (
                         <div
                             key={track.trackId}
-                            className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-5 border border-gray-700 hover:border-blue-500/50 transition-all cursor-pointer"
+                            className="bg-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:border-blue-500/50 transition-all cursor-pointer shadow-sm dark:shadow-none"
                             onClick={() => setSelectedTrack(selectedTrack === track.trackId ? null : track.trackId)}
                         >
                             <div className="flex items-start justify-between mb-3">
@@ -217,12 +217,12 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                     <div className="text-3xl">{track.icon || '📚'}</div>
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <h4 className="font-bold text-white">{track.title}</h4>
-                                            <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-gray-700 text-gray-400 border border-gray-600">
+                                            <h4 className="font-bold text-gray-900 dark:text-white">{track.title}</h4>
+                                            <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600">
                                                 {track.category || 'General'}
                                             </span>
                                         </div>
-                                        <p className="text-xs text-gray-400">{track.modules.length} modules</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">{track.modules.length} modules</p>
                                     </div>
                                 </div>
                                 <button
@@ -238,17 +238,17 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                         });
                                         setShowTrackForm(true);
                                     }}
-                                    className="p-2 bg-gray-700 hover:bg-blue-600 rounded-lg text-gray-400 hover:text-white transition-all"
+                                    className="p-2 bg-gray-200 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-600 rounded-lg text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-white transition-all"
                                 >
                                     <Edit className="w-4 h-4" />
                                 </button>
                             </div>
 
                             {selectedTrack === track.trackId && (
-                                <div className="mt-4 pt-4 border-t border-gray-700 space-y-2">
+                                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
                                     {track.modules.map((module, idx) => (
-                                        <div key={module.moduleId} className="text-sm text-gray-300 flex items-center gap-2">
-                                            <span className="text-blue-400">{idx + 1}.</span>
+                                        <div key={module.moduleId} className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                                            <span className="text-blue-600 dark:text-blue-400">{idx + 1}.</span>
                                             {module.title}
                                         </div>
                                     ))}
@@ -258,8 +258,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                     ))}
 
                     {tracks.length === 0 && (
-                        <div className="col-span-full text-center py-12 border-2 border-dashed border-gray-700 rounded-xl">
-                            <Route className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                        <div className="col-span-full text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
+                            <Route className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
                             <p className="text-gray-500 font-bold">No roadmaps created yet</p>
                         </div>
                     )}
@@ -271,15 +271,15 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
             {/* Track Editor Modal */}
             {showTrackForm && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-gray-900 border border-gray-700 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b border-gray-800 flex justify-between items-center sticky top-0 bg-gray-900 z-10">
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                        <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-900 z-10">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                 <Route className="w-6 h-6 text-blue-400" />
                                 {trackForm.trackId ? 'Edit Roadmap' : 'Create New Roadmap'}
                             </h3>
                             <button
                                 onClick={() => setShowTrackForm(false)}
-                                className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -289,12 +289,12 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                             {/* Basic Info */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-400">Track Title</label>
+                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Track Title</label>
                                     <input
                                         type="text"
                                         value={trackForm.title}
                                         onChange={(e) => setTrackForm(prev => ({ ...prev, title: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-blue-500 focus:outline-none"
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none"
                                         placeholder="e.g. Frontend Basics"
                                     />
                                 </div>
@@ -303,16 +303,16 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                         type="text"
                                         value={trackForm.icon}
                                         onChange={(e) => setTrackForm(prev => ({ ...prev, icon: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-blue-500 focus:outline-none"
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none"
                                         placeholder="e.g. 📚"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-400">Category</label>
+                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Category</label>
                                     <select
                                         value={trackForm.category}
                                         onChange={(e) => setTrackForm(prev => ({ ...prev, category: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-blue-500 focus:outline-none"
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none"
                                     >
                                         <option value="General">General</option>
                                         <option value="Frontend">Frontend</option>
@@ -325,11 +325,11 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                     </select>
                                 </div>
                                 <div className="col-span-full space-y-2">
-                                    <label className="text-sm font-medium text-gray-400">Description</label>
+                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Description</label>
                                     <textarea
                                         value={trackForm.description}
                                         onChange={(e) => setTrackForm(prev => ({ ...prev, description: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-blue-500 focus:outline-none h-24"
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none h-24"
                                         placeholder="Brief description of this learning path..."
                                     />
                                 </div>
@@ -338,9 +338,9 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                             {/* Modules */}
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
-                                    <h4 className="font-bold text-white flex items-center gap-2">
+                                    <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                         Modules
-                                        <span className="text-xs bg-gray-800 px-2 py-0.5 rounded-full text-gray-400">
+                                        <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400">
                                             {trackForm.modules.length}
                                         </span>
                                     </h4>
@@ -357,8 +357,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
 
                                 <div className="space-y-3">
                                     {trackForm.modules.map((module, index) => (
-                                        <div key={index} className="bg-gray-800/50 p-4 rounded-xl border border-gray-700 flex gap-4">
-                                            <div className="flex-none flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-gray-400 font-bold text-sm">
+                                        <div key={index} className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex gap-4">
+                                            <div className="flex-none flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 font-bold text-sm">
                                                 {index + 1}
                                             </div>
                                             <div className="flex-1 space-y-3">
@@ -370,7 +370,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                                         newModules[index].title = e.target.value;
                                                         setTrackForm(prev => ({ ...prev, modules: newModules }));
                                                     }}
-                                                    className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
+                                                    className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:border-blue-500 focus:outline-none"
                                                     placeholder="Module Title"
                                                 />
                                                 <input
@@ -381,11 +381,11 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                                         newModules[index].description = e.target.value;
                                                         setTrackForm(prev => ({ ...prev, modules: newModules }));
                                                     }}
-                                                    className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
+                                                    className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:border-blue-500 focus:outline-none"
                                                     placeholder="Module Description (Optional)"
                                                 />
                                                 <div className="flex items-center gap-2">
-                                                    <label className="text-xs text-gray-400 whitespace-nowrap">Required Quiz:</label>
+                                                    <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Required Quiz:</label>
                                                     <select
                                                         value={module.quizId || ''}
                                                         onChange={(e) => {
@@ -393,7 +393,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                                             newModules[index].quizId = e.target.value;
                                                             setTrackForm(prev => ({ ...prev, modules: newModules }));
                                                         }}
-                                                        className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
+                                                        className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:border-blue-500 focus:outline-none"
                                                     >
                                                         <option value="">No Quiz Required</option>
                                                         {quizzes.map(quiz => (
@@ -404,7 +404,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                                     </select>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <label className="text-xs text-gray-400 whitespace-nowrap">Reward Badge:</label>
+                                                    <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Reward Badge:</label>
                                                     <select
                                                         value={module.badgeId || ''}
                                                         onChange={(e) => {
@@ -412,7 +412,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                                             newModules[index].badgeId = e.target.value;
                                                             setTrackForm(prev => ({ ...prev, modules: newModules }));
                                                         }}
-                                                        className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-purple-500 focus:outline-none"
+                                                        className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:border-purple-500 focus:outline-none"
                                                     >
                                                         <option value="">No Badge Reward</option>
                                                         {badges.map(badge => (
@@ -438,10 +438,10 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-gray-800 flex justify-end gap-3 sticky bottom-0 bg-gray-900 z-10">
+                        <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-gray-900 z-10">
                             <button
                                 onClick={() => setShowTrackForm(false)}
-                                className="px-6 py-2 rounded-xl font-semibold text-gray-400 hover:bg-gray-800 transition-all"
+                                className="px-6 py-2 rounded-xl font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
                             >
                                 Cancel
                             </button>

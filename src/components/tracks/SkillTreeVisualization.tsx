@@ -107,7 +107,7 @@ const SkillTreeVisualization: React.FC<SkillTreeVisualizationProps> = ({
                     onClick={() => setModuleFilter('all')}
                     className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${moduleFilter === 'all'
                         ? 'bg-purple-600 text-white shadow-lg'
-                        : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                        : 'bg-gray-200 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-800'
                         }`}
                 >
                     All Modules
@@ -116,7 +116,7 @@ const SkillTreeVisualization: React.FC<SkillTreeVisualizationProps> = ({
                     onClick={() => setModuleFilter('incomplete')}
                     className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${moduleFilter === 'incomplete'
                         ? 'bg-blue-600 text-white shadow-lg'
-                        : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                        : 'bg-gray-200 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-800'
                         }`}
                 >
                     Incomplete
@@ -125,7 +125,7 @@ const SkillTreeVisualization: React.FC<SkillTreeVisualizationProps> = ({
                     onClick={() => setModuleFilter('completed')}
                     className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${moduleFilter === 'completed'
                         ? 'bg-green-600 text-white shadow-lg'
-                        : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                        : 'bg-gray-200 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-800'
                         }`}
                 >
                     Completed
@@ -163,8 +163,8 @@ const SkillTreeVisualization: React.FC<SkillTreeVisualizationProps> = ({
                                                     <CheckCircle2 className="w-6 h-6 text-white" />
                                                 </div>
                                             ) : moduleNode.isLocked ? (
-                                                <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center border-2 border-gray-600">
-                                                    <Lock className="w-6 h-6 text-gray-500" />
+                                                <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600">
+                                                    <Lock className="w-6 h-6 text-gray-400 dark:text-gray-500" />
                                                 </div>
                                             ) : (
                                                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/40 flex items-center justify-center border-2 border-blue-300 animate-pulse">
@@ -176,10 +176,10 @@ const SkillTreeVisualization: React.FC<SkillTreeVisualizationProps> = ({
                                         {/* Module Card */}
                                         <div
                                             className={`relative w-80 rounded-2xl border-2 transition-all duration-300 cursor-pointer overflow-hidden ${moduleNode.isCompleted
-                                                ? 'bg-gradient-to-br from-green-500/30 via-emerald-500/30 to-teal-500/30 border-green-500/70 shadow-2xl shadow-green-500/40'
+                                                ? 'bg-gradient-to-br from-green-500/10 via-emerald-500/10 to-teal-500/10 dark:from-green-500/30 dark:via-emerald-500/30 dark:to-teal-500/30 border-green-500/70 shadow-2xl shadow-green-500/20 dark:shadow-green-500/40 bg-white dark:bg-transparent'
                                                 : moduleNode.isLocked
-                                                    ? 'bg-gradient-to-br from-gray-800/90 to-gray-900/90 border-gray-700/70'
-                                                    : 'bg-gradient-to-br from-blue-500/30 via-purple-500/30 to-pink-500/30 border-blue-500/70 hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-500/50'
+                                                    ? 'bg-gray-50 dark:bg-transparent bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800/90 dark:to-gray-900/90 border-gray-200 dark:border-gray-700/70'
+                                                    : 'bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 dark:from-blue-500/30 dark:via-purple-500/30 dark:to-pink-500/30 border-blue-500/70 hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-500/50 bg-white dark:bg-transparent'
                                                 } ${isHovered ? 'scale-105 -translate-y-2' : ''}`}
                                         >
                                             {/* Shimmer */}
@@ -192,19 +192,19 @@ const SkillTreeVisualization: React.FC<SkillTreeVisualizationProps> = ({
                                                 <div className="flex items-start justify-between mb-3">
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-2 mb-2">
-                                                            <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-sm font-bold text-white">
+                                                            <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-white/20 backdrop-blur-sm flex items-center justify-center text-sm font-bold text-gray-700 dark:text-white">
                                                                 {index + 1}
                                                             </div>
-                                                            <h3 className="text-xl font-bold text-white">{moduleNode.module.title}</h3>
+                                                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{moduleNode.module.title}</h3>
                                                         </div>
-                                                        <p className="text-sm text-gray-300 leading-relaxed">
+                                                        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                                                             {moduleNode.module.description}
                                                         </p>
                                                     </div>
                                                 </div>
 
                                                 {/* Footer */}
-                                                <div className="flex items-center justify-between pt-4 border-t border-white/20">
+                                                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-white/20">
                                                     {hasBadges ? (
                                                         <div className="flex items-center gap-2 text-sm text-purple-300">
                                                             <Sparkles className="w-4 h-4" />
@@ -258,7 +258,7 @@ const SkillTreeVisualization: React.FC<SkillTreeVisualizationProps> = ({
                                                             key={badge.badgeId}
                                                             className={`relative group w-36 h-20 rounded-xl border-2 transition-all duration-300 overflow-hidden ${isEarned
                                                                 ? `bg-gradient-to-br ${rarityColor} border-white/40 shadow-lg hover:shadow-xl hover:scale-105`
-                                                                : 'bg-gray-800/70 border-gray-700/70 grayscale hover:grayscale-0 hover:border-gray-600'
+                                                                : 'bg-gray-100 dark:bg-gray-800/70 border-gray-200 dark:border-gray-700/70 grayscale hover:grayscale-0 hover:border-gray-400 dark:hover:border-gray-600'
                                                                 }`}
                                                             title={badge.description}
                                                         >
@@ -267,18 +267,18 @@ const SkillTreeVisualization: React.FC<SkillTreeVisualizationProps> = ({
                                                             )}
 
                                                             <div className="relative p-2.5 h-full flex items-center gap-2">
-                                                                <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${isEarned ? 'bg-white/25 backdrop-blur-sm' : 'bg-gray-700/70'
+                                                                <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${isEarned ? 'bg-white/25 backdrop-blur-sm' : 'bg-gray-200 dark:bg-gray-700/70'
                                                                     }`}>
                                                                     <span className="text-2xl">{badge.icon}</span>
                                                                 </div>
 
                                                                 <div className="flex-1 min-w-0">
-                                                                    <p className="text-xs font-bold text-white truncate mb-1">
+                                                                    <p className={`text-xs font-bold truncate mb-1 ${isEarned ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                                                                         {badge.name}
                                                                     </p>
                                                                     <div className="flex items-center gap-1">
-                                                                        <BadgeIcon className="w-3 h-3 text-white/80" />
-                                                                        <span className="capitalize text-[10px] text-white/80 font-semibold">
+                                                                        <BadgeIcon className={`w-3 h-3 ${isEarned ? 'text-white/80' : 'text-gray-500 dark:text-white/80'}`} />
+                                                                        <span className={`capitalize text-[10px] font-semibold ${isEarned ? 'text-white/80' : 'text-gray-500 dark:text-white/80'}`}>
                                                                             {badge.rarity}
                                                                         </span>
                                                                     </div>
@@ -302,7 +302,7 @@ const SkillTreeVisualization: React.FC<SkillTreeVisualizationProps> = ({
                     })}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

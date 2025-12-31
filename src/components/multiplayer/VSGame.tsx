@@ -105,45 +105,45 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
             </div>
 
             {/* Right Side: Opponent View */}
-            <div className="flex-1 h-[50vh] md:h-screen bg-slate-800 text-white flex flex-col items-center justify-center p-8 relative">
+            <div className="flex-1 h-[50vh] md:h-screen bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white flex flex-col items-center justify-center p-8 relative">
                 <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
                     OPPONENT
                 </div>
 
                 <div className="text-center space-y-8 animate-in fade-in duration-500">
                     <div className="relative">
-                        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center text-5xl font-bold shadow-2xl border-4 border-white/20">
+                        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center text-5xl font-bold shadow-2xl border-4 border-white dark:border-white/20">
                             {opponent.name.charAt(0)}
                         </div>
-                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 px-4 py-1 rounded-xl border border-slate-700 font-bold whitespace-nowrap">
+                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-900 px-4 py-1 rounded-xl border border-gray-200 dark:border-slate-700 font-bold whitespace-nowrap shadow-sm">
                             {opponent.name}
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-8 w-full max-w-md">
-                        <div className="bg-slate-700/50 p-6 rounded-2xl backdrop-blur-sm border border-slate-600">
+                        <div className="bg-white dark:bg-slate-700/50 p-6 rounded-2xl backdrop-blur-sm border border-gray-200 dark:border-slate-600 shadow-sm dark:shadow-none">
                             <div className="flex flex-col items-center gap-2">
-                                <Trophy className="w-8 h-8 text-yellow-400" />
-                                <span className="text-3xl font-bold">{opponentState.score}</span>
-                                <span className="text-xs text-slate-400 uppercase tracking-wider">Current Score</span>
+                                <Trophy className="w-8 h-8 text-yellow-500 dark:text-yellow-400" />
+                                <span className="text-3xl font-bold text-gray-900 dark:text-white">{opponentState.score}</span>
+                                <span className="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wider">Current Score</span>
                             </div>
                         </div>
-                        <div className="bg-slate-700/50 p-6 rounded-2xl backdrop-blur-sm border border-slate-600">
+                        <div className="bg-white dark:bg-slate-700/50 p-6 rounded-2xl backdrop-blur-sm border border-gray-200 dark:border-slate-600 shadow-sm dark:shadow-none">
                             <div className="flex flex-col items-center gap-2">
-                                <Zap className="w-8 h-8 text-blue-400" />
-                                <span className="text-3xl font-bold">{opponentState.currentQuestion}/{quiz.questions.length}</span>
-                                <span className="text-xs text-slate-400 uppercase tracking-wider">Answered</span>
+                                <Zap className="w-8 h-8 text-blue-500 dark:text-blue-400" />
+                                <span className="text-3xl font-bold text-gray-900 dark:text-white">{opponentState.currentQuestion}/{quiz.questions.length}</span>
+                                <span className="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wider">Answered</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Live Progress Bar */}
                     <div className="w-full max-w-md space-y-2">
-                        <div className="flex justify-between text-xs text-slate-400">
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-slate-400">
                             <span>Progress</span>
                             <span>{Math.round((opponentState.currentQuestion / quiz.questions.length) * 100)}%</span>
                         </div>
-                        <div className="h-4 bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500 ease-out"
                                 style={{ width: `${(opponentState.currentQuestion / quiz.questions.length) * 100}%` }}
