@@ -1,7 +1,22 @@
 import React from 'react';
-import { User, Award, LogOut, ArrowLeft, Menu, X } from 'lucide-react';
+import {
+    User,
+    Award,
+    LogOut,
+    ArrowLeft,
+    Menu,
+    X,
+    Home,
+    ShoppingBag,
+    Calendar,
+    BookOpen,
+    Trophy,
+    TrendingUp,
+    Users
+} from 'lucide-react';
 import ThemeToggle from './ThemeToggle.tsx';
 import type { UserData } from '../types/index.ts';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface NavbarProps {
     user: UserData;
@@ -25,117 +40,206 @@ const Navbar: React.FC<NavbarProps> = ({
     showActions = true
 }) => {
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const navItems = [
+        { path: '/', icon: Home, label: 'Home', color: 'from-blue-500 to-cyan-500' },
+        { path: '/shop', icon: ShoppingBag, label: 'Shop', color: 'from-purple-500 to-indigo-500' },
+        { path: '/daily', icon: Calendar, label: 'Daily', color: 'from-orange-500 to-red-500' },
+        { path: '/study', icon: BookOpen, label: 'Study', color: 'from-indigo-500 to-purple-500' },
+        { path: '/tournaments', icon: Trophy, label: 'Tournaments', color: 'from-yellow-500 to-orange-500' },
+        { path: '/tracks', icon: TrendingUp, label: 'Tracks', color: 'from-blue-500 to-purple-500' },
+        { path: '/social', icon: Users, label: 'Social', color: 'from-pink-500 to-purple-500' },
+    ];
+
+    const isActive = (path: string) => {
+        // Home button should be active for both / and /dashboard
+        if (path === '/') {
+            return location.pathname === '/' || location.pathname === '/dashboard';
+        }
+        return location.pathname === path;
+    };
 
     return (
-        <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-100 dark:border-gray-700 sticky top-0 z-50 transition-colors">
-            <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="bg-[#0a0a0b]/80 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
                 <div className="flex justify-between items-center">
+                    {/* Left Section */}
                     <div className="flex items-center gap-4">
                         {showBack && onBack && (
                             <button
                                 onClick={onBack}
-                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-600 dark:text-gray-300"
+                                className="p-2 hover:bg-white/10 rounded-xl transition-all text-gray-400 hover:text-white"
                             >
-                                <ArrowLeft className="w-6 h-6" />
+                                <ArrowLeft className="w-5 h-5" />
                             </button>
                         )}
                         <div>
-                            <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent truncate max-w-[200px] md:max-w-none">
-                                {title}
-                            </h1>
-                            {!showBack && <p className="hidden md:block text-gray-600 dark:text-gray-300 text-sm mt-1">Welcome back, {user.name}!</p>}
+                            {title === "Quiz Platform" ? (
+                                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500">
+                                        Quiz Platform
+                                    </span>
+                                </h1>
+                            ) : (
+                                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                                    {title}
+                                </h1>
+                            )}
+
+                            {!showBack && (
+                                <p className="hidden sm:block text-gray-400 text-xs font-medium">
+                                    Welcome, <span className="text-white">{user.name}</span>!
+                                </p>
+                            )}
                         </div>
                     </div>
 
+                    {/* Desktop Navigation */}
+                    <div className="hidden lg:flex items-center gap-1 bg-white/5 p-1.5 rounded-2xl border border-white/5">
+                        {navItems.map((item) => {
+                            const Icon = item.icon;
+                            const active = isActive(item.path);
+                            return (
+                                <button
+                                    key={item.path}
+                                    onClick={() => navigate(item.path)}
+                                    className={`relative flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all duration-300 ${active
+                                        ? `bg-gradient-to-r ${item.color} text-white shadow-lg`
+                                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                        }`}
+                                >
+                                    <Icon className={`w-4 h-4 ${active ? 'animate-pulse' : ''}`} />
+                                    <span className="hidden xl:inline">{item.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
                     {/* Desktop Actions */}
-                    <div className="hidden md:flex items-center gap-4">
+                    <div className="hidden md:flex items-center gap-3">
                         <ThemeToggle />
 
                         {showActions && (
                             <>
                                 <button
                                     onClick={onViewLeaderboard}
-                                    className="flex items-center gap-2 px-4 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-xl hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors font-semibold"
+                                    className="group flex items-center gap-2 px-4 py-2 bg-[#13141f] border border-white/10 text-gray-400 rounded-xl hover:border-purple-500/50 hover:text-white hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-all font-bold text-sm"
                                 >
-                                    <Award className="w-5 h-5" />
-                                    Leaderboard
+                                    <Award className="w-4 h-4 group-hover:text-purple-400 transition-colors" />
+                                    <span className="hidden lg:inline">Leaderboard</span>
                                 </button>
 
                                 <button
                                     onClick={onViewProfile}
-                                    className="flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors font-semibold"
+                                    className="group flex items-center gap-2 px-4 py-2 bg-[#13141f] border border-white/10 text-gray-400 rounded-xl hover:border-blue-500/50 hover:text-white hover:shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-all font-bold text-sm"
                                 >
-                                    <User className="w-5 h-5" />
-                                    Profile
+                                    <User className="w-4 h-4 group-hover:text-blue-400 transition-colors" />
+                                    <span className="hidden lg:inline">Profile</span>
                                 </button>
 
                                 <button
                                     onClick={onLogout}
-                                    className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                    className="p-2.5 text-gray-400 hover:text-white hover:bg-red-500/20 rounded-xl transition-all border border-transparent hover:border-red-500/30"
+                                    title="Logout"
                                 >
                                     <LogOut className="w-5 h-5" />
-                                    <span>Logout</span>
                                 </button>
                             </>
                         )}
                     </div>
 
-                    {/* Mobile Actions Toggle */}
-                    <div className="flex md:hidden items-center gap-2">
+                    {/* Mobile Menu Toggle */}
+                    <div className="flex md:hidden items-center gap-3">
                         <ThemeToggle />
                         {showActions && (
                             <button
                                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                className="p-2.5 text-white bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl transition-all"
                             >
-                                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                                {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                             </button>
                         )}
                     </div>
                 </div>
-            </div>
 
-            {/* Mobile Menu */}
-            {isMenuOpen && showActions && (
-                <div className="md:hidden border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 animate-in slide-in-from-top-5 duration-200">
-                    <div className="px-6 py-4 space-y-3">
-                        <div className="pb-3 border-b border-gray-100 dark:border-gray-700">
-                            <p className="text-gray-600 dark:text-gray-300 font-medium">Signed in as</p>
-                            <p className="font-bold text-gray-900 dark:text-white truncate">{user.name}</p>
+                {/* Mobile Navigation */}
+                {isMenuOpen && (
+                    <div className="lg:hidden mt-4 p-4 bg-[#13141f] border border-white/10 rounded-3xl space-y-4 animate-in slide-in-from-top-5 duration-200 shadow-2xl">
+                        {/* Navigation Items */}
+                        <div className="grid grid-cols-2 gap-3">
+                            {navItems.map((item) => {
+                                const Icon = item.icon;
+                                const active = isActive(item.path);
+                                return (
+                                    <button
+                                        key={item.path}
+                                        onClick={() => {
+                                            navigate(item.path);
+                                            setIsMenuOpen(false);
+                                        }}
+                                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl font-bold text-sm transition-all border ${active
+                                            ? `bg-gradient-to-br ${item.color} border-transparent text-white shadow-lg`
+                                            : 'bg-black/20 border-white/5 text-gray-400 hover:bg-white/5 hover:border-white/10 hover:text-white'
+                                            }`}
+                                    >
+                                        <Icon className="w-6 h-6" />
+                                        {item.label}
+                                    </button>
+                                );
+                            })}
                         </div>
 
-                        <button
-                            onClick={() => {
-                                onViewLeaderboard();
-                                setIsMenuOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-xl hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors font-semibold"
-                        >
-                            <Award className="w-5 h-5" />
-                            Leaderboard
-                        </button>
+                        {/* User Actions */}
+                        {showActions && (
+                            <div className="space-y-3 pt-3 border-t border-white/5">
+                                <div className="flex items-center gap-3 p-3 bg-black/20 rounded-2xl border border-white/5">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white text-lg">
+                                        {user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-400 text-xs font-medium">Signed in as</p>
+                                        <p className="font-bold text-white">{user.name}</p>
+                                    </div>
+                                </div>
 
-                        <button
-                            onClick={() => {
-                                onViewProfile();
-                                setIsMenuOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors font-semibold"
-                        >
-                            <User className="w-5 h-5" />
-                            Profile
-                        </button>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => {
+                                            onViewLeaderboard();
+                                            setIsMenuOpen(false);
+                                        }}
+                                        className="flex items-center justify-center gap-2 p-3 bg-white/5 border border-white/5 text-gray-300 rounded-xl hover:bg-white/10 font-bold transition-all"
+                                    >
+                                        <Award className="w-4 h-4" />
+                                        Leaderboard
+                                    </button>
 
-                        <button
-                            onClick={onLogout}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors font-semibold"
-                        >
-                            <LogOut className="w-5 h-5" />
-                            Logout
-                        </button>
+                                    <button
+                                        onClick={() => {
+                                            onViewProfile();
+                                            setIsMenuOpen(false);
+                                        }}
+                                        className="flex items-center justify-center gap-2 p-3 bg-white/5 border border-white/5 text-gray-300 rounded-xl hover:bg-white/10 font-bold transition-all"
+                                    >
+                                        <User className="w-4 h-4" />
+                                        Profile
+                                    </button>
+                                </div>
+
+                                <button
+                                    onClick={onLogout}
+                                    className="w-full flex items-center justify-center gap-2 p-3 text-red-400 hover:bg-red-500/10 rounded-xl transition-all font-bold"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Logout
+                                </button>
+                            </div>
+                        )}
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };

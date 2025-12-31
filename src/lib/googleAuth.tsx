@@ -20,6 +20,7 @@ export const GoogleAuthWrapper: React.FC<GoogleAuthWrapperProps> = ({ children }
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useGoogleAuth = () => {
     return useGoogleLogin;
 };

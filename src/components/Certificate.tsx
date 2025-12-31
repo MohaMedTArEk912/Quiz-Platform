@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
-import { Award } from 'lucide-react';
+
+import { Award, CheckCircle, ShieldCheck } from 'lucide-react';
 
 interface CertificateProps {
     userName: string;
@@ -16,154 +16,282 @@ export const Certificate = forwardRef<HTMLDivElement, CertificateProps>(({
     courseTitle,
     score,
     totalQuestions,
-    date,
-    certificateId
+    date
 }, ref) => {
     const percentage = Math.round((score / totalQuestions) * 100);
 
     return (
-        <div> {/* Removed hidden class to allow html2canvas capture; visibility handled by parent */}
+        <div>
             <div
                 ref={ref}
-                className="w-[1000px] h-[700px] p-10 relative overflow-hidden"
                 style={{
-                    fontFamily: 'Georgia, serif',
+                    width: '1000px',
+                    height: '700px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                     backgroundColor: '#ffffff',
-                    color: '#111827' // gray-900
+                    color: '#1a202c',
+                    boxSizing: 'border-box'
                 }}
             >
-                {/* Decorative Border */}
+                {/* --- Background & Border Elements --- */}
+
+                {/* Main Gold Border Frame */}
                 <div
-                    className="absolute inset-4 border-4 border-double z-10"
-                    style={{ borderColor: '#312e81' }} // indigo-900
-                ></div>
-                <div
-                    className="absolute inset-6 border z-10"
-                    style={{ borderColor: '#c7d2fe' }} // indigo-200
+                    style={{
+                        position: 'absolute',
+                        inset: '16px',
+                        zIndex: 20,
+                        pointerEvents: 'none',
+                        border: '4px solid #D4AF37',
+                        boxSizing: 'border-box'
+                    }}
                 ></div>
 
-                {/* Corner Decorations */}
-                <div className="absolute top-4 left-4 w-16 h-16 border-t-4 border-l-4 z-20" style={{ borderColor: '#312e81' }}></div>
-                <div className="absolute top-4 right-4 w-16 h-16 border-t-4 border-r-4 z-20" style={{ borderColor: '#312e81' }}></div>
-                <div className="absolute bottom-4 left-4 w-16 h-16 border-b-4 border-l-4 z-20" style={{ borderColor: '#312e81' }}></div>
-                <div className="absolute bottom-4 right-4 w-16 h-16 border-b-4 border-r-4 z-20" style={{ borderColor: '#312e81' }}></div>
+                {/* Secondary Inner Border */}
+                <div
+                    style={{
+                        position: 'absolute',
+                        inset: '24px',
+                        zIndex: 20,
+                        pointerEvents: 'none',
+                        border: '1px solid #0F172A',
+                        boxSizing: 'border-box'
+                    }}
+                ></div>
 
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-5 z-0 flex items-center justify-center">
-                    <Award className="w-[500px] h-[500px]" color="#000000" />
+                {/* Corner Accents (Top-Left) */}
+                <div style={{
+                    position: 'absolute',
+                    top: '16px',
+                    left: '16px',
+                    zIndex: 30,
+                    width: '128px',
+                    height: '128px',
+                    borderTop: '8px solid #0F172A',
+                    borderLeft: '8px solid #0F172A',
+                    boxSizing: 'border-box'
+                }}></div>
+
+                {/* Corner Accents (Bottom-Right) */}
+                <div style={{
+                    position: 'absolute',
+                    bottom: '16px',
+                    right: '16px',
+                    zIndex: 30,
+                    width: '128px',
+                    height: '128px',
+                    borderBottom: '8px solid #D4AF37',
+                    borderRight: '8px solid #D4AF37',
+                    boxSizing: 'border-box'
+                }}></div>
+
+                {/* Background Texture/Gradient */}
+                <div
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 0,
+                        background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
+                        opacity: 0.5
+                    }}
+                ></div>
+
+                {/* Watermark */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: 0.03
+                }}>
+                    <ShieldCheck size={600} color="#000000" />
                 </div>
 
-                {/* Content */}
-                <div className="relative z-30 h-full flex flex-col items-center justify-center text-center space-y-6">
-                    <div className="flex items-center gap-3 mb-4">
-                        <Award className="w-12 h-12" color="#4338ca" /> {/* indigo-700 */}
-                        <span
-                            className="text-2xl font-bold tracking-widest uppercase"
-                            style={{ color: '#312e81' }} // indigo-900
-                        >
+
+                {/* --- Header Section --- */}
+                <div style={{
+                    position: 'relative',
+                    zIndex: 10,
+                    width: '100%',
+                    textAlign: 'center',
+                    paddingTop: '80px'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '12px',
+                        marginBottom: '24px'
+                    }}>
+                        <Award size={40} color="#D4AF37" />
+                        <span style={{
+                            fontSize: '20px',
+                            fontWeight: 'bold',
+                            letterSpacing: '0.3em',
+                            textTransform: 'uppercase',
+                            color: '#0F172A'
+                        }}>
                             Quiz Platform Academy
                         </span>
+                        <Award size={40} color="#D4AF37" />
                     </div>
 
-                    <h1
-                        className="text-6xl font-bold mb-2"
-                        style={{ color: '#312e81' }} // indigo-900
-                    >
-                        Certificate of Achievement
+                    <h1 style={{
+                        fontSize: '72px',
+                        fontWeight: 'bold',
+                        marginBottom: '16px',
+                        color: '#0F172A',
+                        fontFamily: 'serif'
+                    }}>
+                        Certificate of Excellence
                     </h1>
 
-                    <p
-                        className="text-xl italic"
-                        style={{ color: '#4b5563' }} // gray-600
-                    >
-                        This is to certify that
+                    <p style={{
+                        fontSize: '18px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        color: '#64748B'
+                    }}>
+                        This certificate is proudly presented to
                     </p>
+                </div>
 
-                    <div
-                        className="text-5xl font-bold border-b-2 pb-2 px-12 min-w-[400px]"
-                        style={{
-                            color: '#4338ca', // indigo-700
-                            borderColor: '#c7d2fe' // indigo-200
-                        }}
+                {/* --- Candidate Name Section --- */}
+                <div style={{
+                    position: 'relative',
+                    zIndex: 10,
+                    width: '100%',
+                    textAlign: 'center',
+                    padding: '24px 0'
+                }}>
+                    <div style={{
+                        fontSize: '60px',
+                        fontWeight: 'bold',
+                        padding: '16px 48px',
+                        display: 'inline-block',
+                        fontStyle: 'italic',
+                        color: '#D4AF37',
+                        borderBottom: '2px solid #E2E8F0',
+                        minWidth: '600px',
+                        fontFamily: 'serif'
+                    }}
                     >
                         {userName}
                     </div>
+                </div>
 
-                    <p
-                        className="text-xl italic mt-4"
-                        style={{ color: '#4b5563' }} // gray-600
-                    >
-                        has successfully completed the quiz
+                {/* --- Body Text Section --- */}
+                <div style={{
+                    position: 'relative',
+                    zIndex: 10,
+                    width: '100%',
+                    textAlign: 'center',
+                    maxWidth: '768px',
+                    margin: '0 auto',
+                    padding: '0 48px'
+                }}>
+                    <p style={{
+                        fontSize: '20px',
+                        lineHeight: '1.625',
+                        color: '#334155'
+                    }}>
+                        For successfully completing the comprehensive assessment for
+                        <br />
+                        <span style={{
+                            fontSize: '30px',
+                            fontWeight: 'bold',
+                            display: 'block',
+                            marginTop: '12px',
+                            marginBottom: '12px',
+                            color: '#0F172A'
+                        }}>
+                            {courseTitle}
+                        </span>
+                        Demonstrating exceptional proficiency with a score of
+                        <strong style={{
+                            fontSize: '24px',
+                            marginLeft: '8px',
+                            color: '#D4AF37'
+                        }}>{percentage}%</strong>
                     </p>
+                </div>
 
-                    <div
-                        className="text-4xl font-bold my-2"
-                        style={{ color: '#1f2937' }} // gray-800
-                    >
-                        {courseTitle}
+                {/* --- Footer / Verification Section --- */}
+                <div style={{
+                    position: 'relative',
+                    zIndex: 50,
+                    width: '100%',
+                    padding: '0 96px 160px 96px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-end',
+                    marginTop: 'auto'
+                }}>
+
+                    {/* Date Signature */}
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            marginBottom: '8px',
+                            color: '#0F172A'
+                        }}>
+                            {date}
+                        </div>
+                        <div style={{ height: '1px', width: '160px', backgroundColor: '#9CA3AF', marginBottom: '8px' }}></div>
+                        <div style={{
+                            fontSize: '12px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            fontWeight: 'bold',
+                            color: '#94A3B8'
+                        }}>
+                            Date Issued
+                        </div>
                     </div>
 
-                    <p
-                        className="text-lg"
-                        style={{ color: '#4b5563' }} // gray-600
-                    >
-                        with a score of <span className="font-bold" style={{ color: '#4338ca' }}>{percentage}%</span>
-                        <br />
-                        ({score} out of {totalQuestions} correct)
-                    </p>
-
-                    <div className="flex justify-between items-end w-full px-20 mt-12">
-                        <div className="text-center">
-                            <div
-                                className="text-lg font-bold border-t pt-2 px-8"
-                                style={{
-                                    color: '#312e81', // indigo-900
-                                    borderColor: '#9ca3af' // gray-400
-                                }}
-                            >
-                                {date}
-                            </div>
-                            <div
-                                className="text-sm uppercase tracking-wider mt-1"
-                                style={{ color: '#6b7280' }} // gray-500
-                            >
-                                Date
-                            </div>
+                    {/* Instructor Signature */}
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{
+                            fontSize: '24px',
+                            marginBottom: '8px',
+                            fontStyle: 'italic',
+                            fontFamily: '"Dancing Script", cursive, serif',
+                            color: '#0F172A'
+                        }}
+                        >
+                            Quiz Master
                         </div>
-
-                        <div className="flex flex-col items-center">
-                            {/* QR Code for verification */}
-                            <div className="border-4 bg-white shadow-lg" style={{ borderColor: '#ffffff' }}>
-                                <QRCodeSVG value={`https://quiz-platform.app/verify/${certificateId}`} size={80} level="H" />
-                            </div>
-                            <div
-                                className="text-[10px] mt-2 font-mono"
-                                style={{ color: '#9ca3af' }} // gray-400
-                            >
-                                ID: {certificateId}
-                            </div>
-                        </div>
-
-                        <div className="text-center">
-                            <div
-                                className="text-lg font-bold border-t pt-2 px-8"
-                                style={{
-                                    fontFamily: 'Cursive',
-                                    color: '#312e81', // indigo-900
-                                    borderColor: '#9ca3af' // gray-400
-                                }}
-                            >
-                                Quiz Master
-                            </div>
-                            <div
-                                className="text-sm uppercase tracking-wider mt-1"
-                                style={{ color: '#6b7280' }} // gray-500
-                            >
-                                Instructor
-                            </div>
+                        <div style={{ height: '1px', width: '160px', backgroundColor: '#9CA3AF', marginBottom: '8px' }}></div>
+                        <div style={{
+                            fontSize: '12px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            fontWeight: 'bold',
+                            color: '#94A3B8'
+                        }}>
+                            Certified Instructor
                         </div>
                     </div>
                 </div>
+
+                {/* Ribbon/Badge Decoration (Bottom Center-ish or corner) */}
+                <div style={{
+                    position: 'absolute',
+                    bottom: '80px',
+                    right: '208px',
+                    zIndex: 20
+                }}>
+                    <CheckCircle size={64} color="#D4AF37" style={{ opacity: 0.2 }} />
+                </div>
+
             </div>
         </div>
     );

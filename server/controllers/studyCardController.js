@@ -1,0 +1,57 @@
+import StudyCard from '../models/StudyCard.js';
+
+// Simple UUID generator to avoid dependency issues or Node version constraints
+const generateUUID = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+};
+
+export const getAllCards = async (req, res) => {
+    try {
+        const cards = await StudyCard.find();
+        res.json(cards);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const createCard = async (req, res) => {
+    try {
+        const newCard = new StudyCard({
+            ...req.body,
+            id: generateUUID(),
+            createdBy: req.user ? req.user.userId : 'admin', // Middleware should provide user
+            createdAt: new Date()
+        });
+        const savedCard = await newCard.save();
+        res.status(201).json(savedCard);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+export const updateCard = async (req, res) => {
+    try {
+        const updatedCard = await StudyCard.findOneAndUpdate(
+            { id: req.params.id },
+            { ...req.body, updatedAt: new Date() },
+            { new: true }
+        );
+        if (!updatedCard) return res.status(404).json({ message: 'Card not found' });
+        res.json(updatedCard);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+export const deleteCard = async (req, res) => {
+    try {
+        const deleted = await StudyCard.findOneAndDelete({ id: req.params.id });
+        if (!deleted) return res.status(404).json({ message: 'Card not found' });
+        res.json({ message: 'Card deleted' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

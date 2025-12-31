@@ -1,93 +1,43 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { User } from './models/User.js';
-import { Attempt } from './models/Attempt.js';
-import { Quiz } from './models/Quiz.js';
-import { Badge } from './models/Badge.js';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import { connectToDatabase } from './middleware/dbMiddleware.js';
+
+// Routes
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/users.js';
+import quizRoutes from './routes/quizzes.js';
+import attemptRoutes from './routes/attempts.js';
+import reviewRoutes from './routes/reviews.js';
+import challengeRoutes from './routes/challenges.js';
+import shopRoutes from './routes/shop.js';
+import engagementRoutes from './routes/engagement.js';
+import analyticsRoutes from './routes/analytics.js';
+import badgeRoutes from './routes/badges.js';
+import badgeNodesRoutes from './routes/badgeNodes.js';
+import badgeTreesRoutes from './routes/badgeTrees.js';
+import studyCardsRoutes from './routes/studyCards.js';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+ cors: {
+   origin: "*", // Allow all connections for development
+   methods: ["GET", "POST"]
+ }
+});
+
+// Attach IO to app for controllers
+app.set('io', io);
+
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
-
-// MongoDB Connection
-const uri = process.env.MONGODB_URI;
-if (!uri) {
-  console.error('MONGODB_URI is not defined in .env');
-  process.exit(1);
-}
-
-// Global connection state for serverless caching
-let cachedConnection = null;
-
-async function connectToDatabase() {
-  if (cachedConnection) {
-    return cachedConnection;
-  }
-
-  try {
-    const opts = {
-      // bufferCommands: false, // Re-enable buffering to avoid race conditions
-    };
-    
-    cachedConnection = await mongoose.connect(uri, opts);
-    console.log('Connected to MongoDB');
-    
-    // Only seed if NOT in production (Vercel) to avoid filesystem issues
-    // Run locally once to seed the database!
-    // if (process.env.NODE_ENV !== 'production') {
-    //   await seedQuizzes();
-    // }
-  } catch (err) {
-    console.error('MongoDB connection error:', err);
-    throw err;
-  }
-}
-
-// Seed Quizzes
-async function seedQuizzes() {
-  try {
-    const quizzesDir = path.join(__dirname, '../public/quizzes');
-    
-    // Check if directory exists
-    if (!fs.existsSync(quizzesDir)) {
-        console.warn('Quizzes directory not found for seeding:', quizzesDir);
-        return;
-    }
-
-    const files = fs.readdirSync(quizzesDir).filter(file => file !== 'index.json' && file.endsWith('.json'));
-
-    for (const file of files) {
-      const filePath = path.join(quizzesDir, file);
-      const content = fs.readFileSync(filePath, 'utf-8');
-      try {
-        const quiz = JSON.parse(content);
-        // Upsert: Update if exists, Insert if not
-        await Quiz.findOneAndUpdate(
-          { id: quiz.id },
-          quiz,
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-      } catch (err) {
-        console.error(`Error parsing or saving ${file}:`, err);
-      }
-    }
-    console.log('Quizzes seeded/updated successfully.');
-  } catch (error) {
-    console.error('Seeding error:', error);
-  }
-}
 
 // Middleware to ensure DB connection
 app.use(async (req, res, next) => {
@@ -99,551 +49,63 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Middleware to verify any authenticated user
-const verifyUser = async (req, res, next) => {
-  try {
-    const requesterId = req.headers['x-user-id'];
-    if (!requesterId) {
-      return res.status(401).json({ message: 'Unauthorized: User ID required in headers' });
-    }
-    const user = await User.findOne({ userId: requesterId });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    req.user = user;
-    next();
-  } catch (error) {
-    res.status(500).json({ message: 'Authentication error', error: error.message });
-  }
-};
+// Mount Routes
+app.use('/api', authRoutes);
+app.use('/api', userRoutes); // mounts /users/:userId etc.
+app.use('/api/quizzes', quizRoutes);
+app.use('/api/attempts', attemptRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/challenges', challengeRoutes);
+app.use('/api/shop', shopRoutes);
+app.use('/api', engagementRoutes); // mounts /daily-challenge, /skill-tracks, /tournaments
+app.use('/api', analyticsRoutes); // mounts /analytics/summary, /data
+app.use('/api/study-cards', studyCardsRoutes);
 
-// Middleware to verify admin access
-const verifyAdmin = async (req, res, next) => {
-  try {
-    const requesterId = req.headers['x-user-id'];
-    if (!requesterId) {
-      return res.status(401).json({ message: 'Unauthorized: Admin user ID required in headers' });
-    }
-    const adminUser = await User.findOne({ userId: requesterId });
-    if (!adminUser) {
-      return res.status(404).json({ message: 'Authorized user not found' });
-    }
-    if (adminUser.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden: You do not have permission to perform this action' });
-    }
-    req.admin = adminUser;
-    next();
-  } catch (error) {
-    res.status(500).json({ message: 'Authorization error', error: error.message });
-  }
-};
+app.use('/api/badges', badgeRoutes);
+app.use('/api/badge-nodes', badgeNodesRoutes);
+app.use('/api/badge-trees', badgeTreesRoutes);
 
-// Routes
 
-// Get Quizzes
-app.get('/api/quizzes', async (req, res) => {
-  try {
-    const quizzes = await Quiz.find({});
-    res.json(quizzes);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
+// Socket.io Logic
+io.on('connection', (socket) => {
+  socket.on('join_user', (userId) => {
+    socket.join(userId);
+  });
 
-// Create Quiz
-app.post('/api/quizzes', verifyAdmin, async (req, res) => {
-  try {
-    const quizData = req.body;
-    // Basic validation could go here
-    const newQuiz = new Quiz(quizData);
-    await newQuiz.save();
-    res.status(201).json(newQuiz);
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating quiz', error: error.message });
-  }
-});
+  socket.on('invite_friend', ({ fromId, toId, fromName, quizId }) => {
+    io.to(toId).emit('game_invite', {
+      fromId,
+      fromName,
+      quizId,
+      roomId: `room_${fromId}_${toId}_${Date.now()}`
+    });
+  });
 
-// Import Quizzes
-app.post('/api/quizzes/import', async (req, res) => {
-  try {
-    const importData = req.body;
-    const quizzes = Array.isArray(importData) ? importData : [importData];
-    
-    const results = [];
-    for (const quiz of quizzes) {
-        // Basic validation
-        if (!quiz.id || !quiz.title) continue;
-        
-        const updated = await Quiz.findOneAndUpdate(
-            { id: quiz.id },
-            quiz,
-            { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-        results.push(updated);
-    }
-    
-    res.json({ message: `Imported ${results.length} quizzes successfully`, count: results.length });
-  } catch (error) {
-    res.status(500).json({ message: 'Error importing quizzes', error: error.message });
-  }
-});
+  socket.on('join_game_room', (roomId) => {
+    socket.join(roomId);
+  });
 
-// Update Quiz
-app.put('/api/quizzes/:id', verifyAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-    const updatedQuiz = await Quiz.findOneAndUpdate({ id: id }, updates, { new: true });
-    
-    if (!updatedQuiz) {
-        return res.status(404).json({ message: 'Quiz not found' });
-    }
-    res.json(updatedQuiz);
-  } catch (error) {
-    res.status(500).json({ message: 'Error updating quiz', error: error.message });
-  }
-});
-
-// Delete Quiz
-app.delete('/api/quizzes/:id', verifyAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deletedQuiz = await Quiz.findOneAndDelete({ id: id });
-    
-    if (!deletedQuiz) {
-        return res.status(404).json({ message: 'Quiz not found' });
-    }
-    res.json({ message: 'Quiz deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting quiz', error: error.message });
-  }
-});
-
-// Register
-app.post('/api/register', async (req, res) => {
-  try {
-    const { userId, name, email, password, createdAt } = req.body;
-    
-    // Check if user exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    const newUser = new User({
+  socket.on('update_progress', ({ roomId, userId, score, currentQuestion, percentage }) => {
+    socket.to(roomId).emit('opponent_progress', {
       userId,
-      name,
-      email,
-      password, // In a real app, hash this!
-      createdAt
+      score,
+      currentQuestion,
+      percentage
     });
-
-    await newUser.save();
-    res.status(201).json(newUser);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
+  });
+  
+  socket.on('disconnect', () => {
+  });
 });
 
-// Login
-app.post('/api/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const normalizedEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: normalizedEmail });
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (user.password !== password) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// Google OAuth Login
-app.post('/api/auth/google', async (req, res) => {
-  try {
-    const { email, name, googleId } = req.body;
-    const normalizedEmail = email.toLowerCase().trim();
-    
-    // Check if user exists
-    let user = await User.findOne({ email: normalizedEmail });
-    
-    if (!user) {
-      // Create new user with Google account
-      const userId = normalizedEmail.replace(/[^a-z0-9]/g, '_');
-      user = new User({
-        userId,
-        name,
-        email: normalizedEmail,
-        password: googleId, // Use Google ID as password (they won't use it for login)
-        totalScore: 0,
-        totalAttempts: 0,
-        totalTime: 0,
-        xp: 0,
-        level: 1,
-        streak: 0,
-        lastLoginDate: new Date(),
-        badges: []
-      });
-      await user.save();
-    }
-    
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// Verify Session - Check if user is authenticated and get their role
-app.post('/api/verify-session', async (req, res) => {
-  try {
-    const { userId } = req.body;
-    
-    if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized: No user ID provided' });
-    }
-    
-    const user = await User.findOne({ userId });
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    // Return user data with role
-    res.json({
-      valid: true,
-      user: {
-        userId: user.userId,
-        name: user.name,
-        email: user.email,
-        role: user.role || 'user',
-        isAdmin: user.role === 'admin'
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// Update User (Gamification & Admin)
-app.put('/api/users/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const updates = req.body;
-    
-    // SECURITY: Prevent role changes through this endpoint
-    // Role can only be changed through database directly
-    if (updates.role !== undefined) {
-      delete updates.role;
-    }
-    
-    // Prevent updating userId
-    if (updates.userId !== undefined) {
-      delete updates.userId;
-    }
-    
-    const user = await User.findOneAndUpdate(
-      { userId },
-      { $set: updates },
-      { new: true }
-    );
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: 'Error updating user', error: error.message });
-  }
-});
-
-// Delete User
-app.delete('/api/users/:userId', verifyAdmin, async (req, res) => {
-  try {
-    const { userId } = req.params;
-    
-    // Delete user
-    const deletedUser = await User.findOneAndDelete({ userId });
-    
-    if (!deletedUser) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    // Also delete all attempts by this user
-    await Attempt.deleteMany({ userId });
-    
-    res.json({ message: 'User and associated attempts deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting user', error: error.message });
-  }
-});
-
-// Save Attempt
-app.post('/api/attempts', async (req, res) => {
-  try {
-    const attemptData = req.body;
-    const newAttempt = new Attempt(attemptData);
-    await newAttempt.save();
-
-    // Update user stats
-    // Handled by specific user update call from Frontend now
-    
-    // const user = await User.findOne({ userId: attemptData.userId });
-    // if (user) {
-    //   user.totalScore += attemptData.score;
-    //   user.totalAttempts += 1;
-    //   await user.save();
-    // }
-
-    res.status(201).json(newAttempt);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// Get all data (for Admin/Leaderboard)
-app.get('/api/data', verifyUser, async (req, res) => {
-  try {
-    const isAdmin = req.user.role === 'admin';
-    
-    // If admin, they can see EVERYTHING. If user, only public info.
-    let users;
-    let attempts;
-    
-    if (isAdmin) {
-      users = await User.find({});
-      attempts = await Attempt.find({});
-    } else {
-      // Filter out passwords and sensitive emails for general users
-      users = await User.find({}, 'userId name totalScore totalAttempts xp level streak rank lastLoginDate createdAt badges');
-      // Only return the user's own attempts for privacy
-      attempts = await Attempt.find({ userId: req.user.userId });
-    }
-
-    const badges = await Badge.find({});
-
-    res.json({ users, attempts, badges });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// --- Badge Routes ---
-
-// Get Badges
-app.get('/api/badges', async (req, res) => {
-    try {
-        const badges = await Badge.find({});
-        res.json(badges);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching badges', error: error.message });
-    }
-});
-
-// Create Badge
-app.post('/api/badges', verifyAdmin, async (req, res) => {
-    try {
-        const badgeData = req.body;
-        const newBadge = new Badge(badgeData);
-        await newBadge.save();
-        res.status(201).json(newBadge);
-    } catch (error) {
-        res.status(500).json({ message: 'Error creating badge', error: error.message });
-    }
-});
-
-// Delete Badge
-app.delete('/api/badges/:id', verifyAdmin, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const result = await Badge.findOneAndDelete({ id });
-        if (!result) {
-            return res.status(404).json({ message: 'Badge not found' });
-        }
-        res.json({ message: 'Badge deleted' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting badge', error: error.message });
-    }
-});
-
-// --- Review System Routes ---
-
-// Get Pending Reviews
-app.get('/api/reviews/pending', async (req, res) => {
-    try {
-        const pendingAttempts = await Attempt.find({ reviewStatus: 'pending' });
-        res.json(pendingAttempts);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching pending reviews', error: error.message });
-    }
-});
-
-// Submit Review
-app.post('/api/reviews/:attemptId', verifyAdmin, async (req, res) => {
-    try {
-        const { attemptId } = req.params;
-        const { feedback, scoreAdjustment, questionScores } = req.body;
-        // questionScores: { [questionId/index]: score }
-
-        const attempt = await Attempt.findOne({ attemptId });
-        if (!attempt) {
-            return res.status(404).json({ message: 'Attempt not found' });
-        }
-
-        attempt.feedback = feedback;
-        attempt.reviewStatus = 'reviewed';
-        
-        // Recalculate score based on admin input
-        // Assuming questionScores contains final scores for manually graded questions
-        // Or we might just add/subtract points.
-        // Let's assume questionScores maps index to points awarded.
-        
-        let newScore = 0;
-        // We need the original quiz to know max points per question... 
-        // ideally we stored the point values in attempt or fetch quiz.
-        // For now, let's update score based on the body provided (admin calculates it or frontend does)
-        if (scoreAdjustment !== undefined) {
-             attempt.score = attempt.score + scoreAdjustment; // Simple adjustment
-        } else if (req.body.finalScore !== undefined) {
-            attempt.score = req.body.finalScore;
-        }
-
-        // Recalculate percentage
-        const quiz = await Quiz.findOne({ id: attempt.quizId });
-        if (quiz) {
-             const totalPoints = quiz.questions.reduce((sum, q) => sum + q.points, 0);
-             attempt.percentage = Math.round((attempt.score / totalPoints) * 100);
-             attempt.passed = attempt.percentage >= quiz.passingScore;
-        }
-        
-        await attempt.save();
-        
-        // Update user stats if needed?
-        // User stats might need partial update if previous score was provisional.
-        // Complex to handle without more robust user service. 
-        // For now, we update attempt. User total score logic might be slightly off until next aggregation.
-        
-        res.json(attempt);
-    } catch (error) {
-        res.status(500).json({ message: 'Error submitting review', error: error.message });
-    }
-});
-
-// --- Password Management Routes ---
-
-// Forgot Password - Verify email and allow password reset
-app.post('/api/forgot-password', async (req, res) => {
-    try {
-        const { email } = req.body;
-        const normalizedEmail = email.toLowerCase().trim();
-        
-        const user = await User.findOne({ email: normalizedEmail });
-        if (!user) {
-            return res.status(404).json({ message: 'No account found with this email address' });
-        }
-        
-        // In a real app, you would send an email with a reset token
-        // For now, we'll just confirm the email exists and allow direct reset
-        res.json({ 
-            message: 'Email verified. You can now reset your password.',
-            userId: user.userId 
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Error processing request', error: error.message });
-    }
-});
-
-// Reset Password - Update password after forgot password flow
-app.post('/api/reset-password', async (req, res) => {
-    try {
-        const { email, newPassword } = req.body;
-        const normalizedEmail = email.toLowerCase().trim();
-        
-        if (!newPassword || newPassword.length < 6) {
-            return res.status(400).json({ message: 'Password must be at least 6 characters long' });
-        }
-        
-        const user = await User.findOne({ email: normalizedEmail });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        
-        user.password = newPassword; // In production, hash this!
-        await user.save();
-        
-        res.json({ message: 'Password reset successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error resetting password', error: error.message });
-    }
-});
-
-// Change Password - For logged-in users (including admin)
-app.post('/api/change-password', async (req, res) => {
-    try {
-        const { email, currentPassword, newPassword } = req.body;
-        const normalizedEmail = email.toLowerCase().trim();
-        
-        if (!newPassword || newPassword.length < 6) {
-            return res.status(400).json({ message: 'New password must be at least 6 characters long' });
-        }
-        
-        // Find user (works for both regular users and admin)
-        const user = await User.findOne({ email: normalizedEmail });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        
-        // Verify current password
-        if (user.password !== currentPassword) {
-            return res.status(400).json({ message: 'Current password is incorrect' });
-        }
-        
-        // Update password
-        user.password = newPassword; // In production, hash this!
-        await user.save();
-        
-        res.json({ message: 'Password changed successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error changing password', error: error.message });
-    }
-});
-
-// Admin Change User Password - Admin can reset any user's password
-app.post('/api/admin/change-user-password', async (req, res) => {
-    try {
-        const { userId, newPassword } = req.body;
-        
-        if (!newPassword || newPassword.length < 6) {
-            return res.status(400).json({ message: 'Password must be at least 6 characters long' });
-        }
-        
-        const user = await User.findOne({ userId });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        
-        user.password = newPassword; // In production, hash this!
-        await user.save();
-        
-        res.json({ message: 'User password changed successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error changing user password', error: error.message });
-    }
-});
-
+// Initialize DB
+connectToDatabase();
 
 if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
+  httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 }
 
 export default app;
+// Force restart 2

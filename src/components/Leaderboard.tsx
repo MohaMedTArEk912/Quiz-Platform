@@ -1,6 +1,6 @@
 import React from 'react';
 import type { UserData } from '../types/index.ts';
-import { Trophy, Medal, Award, Star, TrendingUp, Users } from 'lucide-react';
+import { Trophy, Medal, Star, TrendingUp, Users, Crown } from 'lucide-react';
 import Navbar from './Navbar.tsx';
 
 interface LeaderboardProps {
@@ -22,45 +22,56 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
 
     const getRankIcon = (rank: number) => {
         switch (rank) {
-            case 1: return <Trophy className="w-10 h-10 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" />;
-            case 2: return <Medal className="w-9 h-9 text-slate-300 drop-shadow-[0_0_10px_rgba(203,213,225,0.5)]" />;
-            case 3: return <Medal className="w-8 h-8 text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]" />;
-            default: return <Award className="w-5 h-5 text-indigo-400" />;
+            case 1: return <Crown className="w-8 h-8 text-yellow-300 drop-shadow-[0_0_15px_rgba(253,224,71,0.6)] animate-pulse" />;
+            case 2: return <Medal className="w-8 h-8 text-slate-300 drop-shadow-[0_0_15px_rgba(203,213,225,0.4)]" />;
+            case 3: return <Medal className="w-8 h-8 text-amber-600 drop-shadow-[0_0_15px_rgba(217,119,6,0.4)]" />;
+            default: return null;
         }
     };
 
     const PodiumUser = ({ user, rank }: { user: UserData & { rank: number }, rank: number }) => {
-        const heightMap = { 1: 'h-48 md:h-56', 2: 'h-40 md:h-48', 3: 'h-32 md:h-40' };
+        const heightMap = { 1: 'h-64', 2: 'h-52', 3: 'h-44' }; // Taller podiums
         const orderMap = { 1: 'order-2', 2: 'order-1', 3: 'order-3' };
-        const shadowMap = {
-            1: 'shadow-[0_0_50px_-12px_rgba(234,179,8,0.4)]',
-            2: 'shadow-[0_0_50px_-12px_rgba(148,163,184,0.4)]',
-            3: 'shadow-[0_0_50px_-12px_rgba(180,83,9,0.4)]'
+
+        // Premium Gradients for columns
+        const podiumGradient = {
+            1: 'bg-gradient-to-t from-yellow-600 via-yellow-500 to-yellow-400 border-yellow-400/30',
+            2: 'bg-gradient-to-t from-slate-600 via-slate-500 to-slate-400 border-slate-400/30',
+            3: 'bg-gradient-to-t from-amber-700 via-amber-600 to-amber-500 border-amber-500/30'
+        };
+
+        const avatarBorder = {
+            1: 'ring-4 ring-yellow-400 shadow-yellow-500/50',
+            2: 'ring-4 ring-slate-300 shadow-slate-400/50',
+            3: 'ring-4 ring-amber-600 shadow-amber-600/50'
         };
 
         return (
-            <div className={`flex flex-col items-center justify-end ${orderMap[rank as 1 | 2 | 3]} flex-1 min-w-[100px] transition-all duration-500 hover:transform hover:scale-105`}>
-                <div className="mb-4 text-center">
-                    <div className="relative inline-block mb-3">
-                        <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-white to-indigo-50 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center text-2xl md:text-3xl font-bold text-indigo-600 dark:text-indigo-400 border-4 ${rank === 1 ? 'border-yellow-400' : rank === 2 ? 'border-slate-300' : 'border-amber-600'} ${shadowMap[rank as 1 | 2 | 3]}`}>
+            <div className={`flex flex-col items-center justify-end ${orderMap[rank as 1 | 2 | 3]} w-1/3 md:w-40 group cursor-pointer`}>
+                {/* User Info above podium */}
+                <div className="mb-4 flex flex-col items-center transform transition-transform duration-300 group-hover:-translate-y-2">
+                    <div className="relative mb-3">
+                        <div className={`w-20 h-20 rounded-full bg-[#1e293b] flex items-center justify-center text-3xl font-black text-white shadow-2xl ${avatarBorder[rank as 1 | 2 | 3]} ring-offset-4 ring-offset-[#0f172a]`}>
                             {user.name.charAt(0)}
                         </div>
                         <div className="absolute -top-6 left-1/2 -translate-x-1/2">
                             {getRankIcon(rank)}
                         </div>
                     </div>
-                    <div className="font-bold text-gray-900 dark:text-white truncate max-w-[120px]">{user.name}</div>
-                    <div className="text-sm font-black text-indigo-600 dark:text-indigo-400">{user.totalScore} PTS</div>
+                    <div className="text-center">
+                        <div className="font-bold text-white truncate max-w-[120px] mb-1">{user.name}</div>
+                        <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 border border-white/5 backdrop-blur-sm">
+                            <span className="text-xs font-black text-white">{user.totalScore}</span>
+                            <span className="text-[10px] uppercase text-gray-400">PTS</span>
+                        </div>
+                    </div>
                 </div>
-                <div className={`w-full relative ${heightMap[rank as 1 | 2 | 3]} rounded-t-2xl flex flex-col items-center justify-start p-4 transition-all duration-700 ${rank === 1
-                        ? 'bg-gradient-to-b from-yellow-400 to-yellow-600 shadow-[0_-10px_40px_-10px_rgba(234,179,8,0.4)]'
-                        : rank === 2
-                            ? 'bg-gradient-to-b from-slate-300 to-slate-500'
-                            : 'bg-gradient-to-b from-amber-600 to-amber-800'
-                    }`}>
-                    <span className="text-4xl md:text-6xl font-black text-white/40">{rank}</span>
+
+                {/* The Podium Column */}
+                <div className={`w-full relative ${heightMap[rank as 1 | 2 | 3]} rounded-t-3xl flex flex-col items-center justify-start pt-6 border-t border-x ${podiumGradient[rank as 1 | 2 | 3]} shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:brightness-110`}>
+                    <span className="text-6xl font-black text-white/20 select-none mix-blend-overlay">{rank}</span>
                     {rank === 1 && (
-                        <Star className="w-8 h-8 text-white/50 absolute bottom-4 animate-pulse" />
+                        <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-yellow-500/20 to-transparent animate-pulse" />
                     )}
                 </div>
             </div>
@@ -68,7 +79,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
     };
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0f172a] text-slate-900 dark:text-slate-100">
+        <div className="min-h-screen bg-[#0a0a0b] text-white selection:bg-indigo-500/30 overflow-x-hidden">
+            {/* Ambient Background */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-yellow-600/10 rounded-full blur-[128px] mix-blend-screen" />
+                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[128px] mix-blend-screen" />
+            </div>
+
             <Navbar
                 user={currentUser}
                 onBack={onBack}
@@ -80,95 +97,108 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                 showActions={false}
             />
 
-            <main className="max-w-6xl mx-auto px-4 py-8 md:py-12">
+            <main className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12">
                 {/* Stats Header */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div className="bg-white dark:bg-slate-800/50 backdrop-blur-xl p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl shadow-slate-200/50 dark:shadow-none flex items-center gap-4">
-                        <div className="p-3 bg-indigo-100 dark:bg-indigo-500/20 rounded-2xl">
-                            <Users className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+                    <div className="bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-white/10 flex items-center gap-5">
+                        <div className="p-4 bg-indigo-500/20 rounded-2xl text-indigo-400">
+                            <Users className="w-8 h-8" />
                         </div>
                         <div>
-                            <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">Participants</div>
-                            <div className="text-2xl font-black">{users.length}</div>
+                            <div className="text-sm text-gray-400 font-bold uppercase tracking-wider">Participants</div>
+                            <div className="text-3xl font-black text-white">{users.length}</div>
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-slate-800/50 backdrop-blur-xl p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl shadow-slate-200/50 dark:shadow-none flex items-center gap-4">
-                        <div className="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-2xl">
-                            <TrendingUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    <div className="bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-white/10 flex items-center gap-5">
+                        <div className="p-4 bg-emerald-500/20 rounded-2xl text-emerald-400">
+                            <TrendingUp className="w-8 h-8" />
                         </div>
                         <div>
-                            <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">Total Activity</div>
-                            <div className="text-2xl font-black">{users.reduce((acc, u) => acc + (u.totalAttempts || 0), 0)}</div>
+                            <div className="text-sm text-gray-400 font-bold uppercase tracking-wider">Total Attempts</div>
+                            <div className="text-3xl font-black text-white">{users.reduce((acc, u) => acc + (u.totalAttempts || 0), 0)}</div>
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-indigo-600 p-6 rounded-3xl border border-slate-200 dark:border-indigo-500 shadow-xl shadow-indigo-200 dark:shadow-indigo-500/20 flex items-center gap-4 group transition-all duration-300 hover:scale-105">
-                        <div className="p-3 bg-indigo-500 dark:bg-white/20 rounded-2xl">
-                            <Trophy className="w-6 h-6 text-white" />
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 rounded-3xl shadow-xl shadow-indigo-500/20 flex items-center gap-5 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="p-4 bg-white/20 rounded-2xl text-white backdrop-blur-sm">
+                            <Trophy className="w-8 h-8" />
                         </div>
-                        <div>
-                            <div className="text-sm text-indigo-100/70 dark:text-indigo-200 font-medium">Your Rank</div>
-                            <div className="text-2xl font-black text-indigo-600 dark:text-white">#{currentUserRank?.rank || 'N/A'}</div>
+                        <div className="relative z-10">
+                            <div className="text-sm text-indigo-100 font-bold uppercase tracking-wider">Your Rank</div>
+                            <div className="text-3xl font-black text-white">#{currentUserRank?.rank || 'N/A'}</div>
                         </div>
                     </div>
                 </div>
 
                 {rankedUsers.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-800/50 backdrop-blur-xl rounded-[2.5rem] p-16 text-center border border-slate-200 dark:border-white/10 border-dashed">
-                        <Trophy className="w-24 h-24 text-slate-200 dark:text-slate-700 mx-auto mb-6" />
-                        <h2 className="text-2xl font-bold mb-2">The arena is empty!</h2>
-                        <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                            Be the first champion to claim the gold. Take a quiz and start your journey.
-                        </p>
+                    <div className="text-center py-20 bg-white/5 rounded-[3rem] border border-white/10 border-dashed">
+                        <Trophy className="w-24 h-24 text-gray-700 mx-auto mb-6" />
+                        <h2 className="text-3xl font-bold text-gray-500">The Arena is Empty</h2>
+                        <p className="text-gray-600 mt-2">Check back later for rankings.</p>
                     </div>
                 ) : (
                     <div className="space-y-12">
-                        {/* Podium Section */}
-                        <div className="flex flex-row items-end justify-center gap-2 md:gap-8 bg-white/50 dark:bg-white/5 p-8 rounded-[2.5rem] border border-white/20 min-h-[400px] shadow-[inset_0_0_100px_rgba(79,70,229,0.05)]">
-                            {topThree.map((user) => (
-                                <PodiumUser key={user.userId} user={user} rank={user.rank} />
-                            ))}
-                        </div>
+                        {/* Podium */}
+                        {topThree.length >= 1 && (
+                            <div className="relative pt-8 pb-12">
+                                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-indigo-500/5 to-transparent rounded-full blur-3xl" />
+                                <div className="flex flex-row items-end justify-center gap-4 md:gap-8 min-h-[400px]">
+                                    {topThree.map((user) => (
+                                        <PodiumUser key={user.userId} user={user} rank={user.rank} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Leaderboard List */}
-                        <div className="bg-white/40 dark:bg-white/5 backdrop-blur-sm rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl">
-                            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/40 dark:bg-white/5">
-                                <h3 className="font-black text-xl uppercase tracking-wider text-slate-400">All Rankings</h3>
-                                <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                        <div className="bg-[#13141f] rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl">
+                            <div className="p-8 border-b border-white/10 flex justify-between items-center bg-white/5 backdrop-blur-md">
+                                <div className="flex items-center gap-3">
+                                    <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
+                                    <h3 className="font-black text-xl uppercase tracking-widest text-white">Challengers</h3>
+                                </div>
+                                <span className="px-4 py-1.5 rounded-full bg-white/10 text-xs font-bold text-gray-400 border border-white/5">
+                                    {restOfUsers.length} Remaining
+                                </span>
                             </div>
-                            <div className="divide-y divide-slate-100 dark:divide-white/5">
+
+                            <div className="divide-y divide-white/5">
                                 {restOfUsers.length === 0 && topThree.length > 0 && (
-                                    <div className="p-12 text-center text-slate-400 font-medium">
-                                        End of the leaderboard. More champions needed!
+                                    <div className="p-16 text-center text-gray-500 font-medium">
+                                        Top {topThree.length} have claimed all the glory!
                                     </div>
                                 )}
                                 {restOfUsers.map((user) => (
                                     <div
                                         key={user.userId}
-                                        className={`group p-6 flex items-center gap-6 transition-all duration-300 hover:bg-white/60 dark:hover:bg-white/[0.07] ${user.userId === currentUser.userId ? 'bg-indigo-50/50 dark:bg-indigo-500/10' : ''
+                                        className={`group p-6 flex items-center gap-6 transition-all duration-300 hover:bg-white/5 ${user.userId === currentUser.userId ? 'bg-indigo-500/10 border-l-4 border-indigo-500' : 'border-l-4 border-transparent'
                                             }`}
                                     >
-                                        <div className="w-12 h-12 flex items-center justify-center font-black text-2xl text-slate-300 dark:text-slate-600 group-hover:text-indigo-400 group-hover:scale-110 transition-all">
+                                        <div className="w-12 text-center font-black text-2xl text-gray-600 group-hover:text-white transition-colors">
                                             #{user.rank}
                                         </div>
-                                        <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xl text-slate-500 border border-slate-200 dark:border-white/10 group-hover:bg-white dark:group-hover:bg-slate-700 transition-colors">
+
+                                        <div className="w-12 h-12 rounded-xl bg-gray-800 flex items-center justify-center font-bold text-xl text-gray-400 border border-white/10 group-hover:border-white/30 group-hover:text-white transition-all">
                                             {user.name.charAt(0)}
                                         </div>
+
                                         <div className="flex-grow">
-                                            <div className="font-black text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                                {user.name}
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-bold text-lg text-gray-200 group-hover:text-white transition-colors">{user.name}</span>
                                                 {user.userId === currentUser.userId && (
-                                                    <span className="ml-3 px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-indigo-100 dark:bg-indigo-500 text-indigo-700 dark:text-white rounded-lg">
-                                                        Hero
+                                                    <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-500 text-white">
+                                                        You
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="text-sm font-medium text-slate-400 uppercase tracking-tighter">
-                                                {user.totalAttempts || 0} Attempts • {user.level || 1} Level
+                                            <div className="text-sm font-medium text-gray-500 group-hover:text-gray-400">
+                                                Lvl {user.level || 1} • {user.totalAttempts || 0} Attempts
                                             </div>
                                         </div>
+
                                         <div className="text-right">
-                                            <div className="text-2xl font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{user.totalScore}</div>
-                                            <div className="text-[10px] font-black text-indigo-500 uppercase">Points</div>
+                                            <div className="text-2xl font-black text-white">{user.totalScore}</div>
+                                            <div className="text-[10px] font-black text-indigo-400 uppercase tracking-wider">Points</div>
                                         </div>
                                     </div>
                                 ))}
@@ -177,31 +207,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                     </div>
                 )}
             </main>
-
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                @keyframes float {
-                    0% { transform: translateY(0px); }
-                    50% { transform: translateY(-10px); }
-                    100% { transform: translateY(0px); }
-                }
-                .animate-float {
-                    animation: float 3s ease-in-out infinite;
-                }
-                ::-webkit-scrollbar {
-                    width: 8px;
-                }
-                ::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                ::-webkit-scrollbar-thumb {
-                    background: rgba(99, 102, 241, 0.2);
-                    border-radius: 10px;
-                }
-                ::-webkit-scrollbar-thumb:hover {
-                    background: rgba(99, 102, 241, 0.4);
-                }
-            `}} />
         </div>
     );
 };

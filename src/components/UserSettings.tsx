@@ -88,11 +88,12 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onClose, onUpdate }) 
             setTimeout(() => {
                 onClose();
             }, 1500);
-        } catch (error: any) {
+        } catch (error) {
             console.error('Update error:', error);
+            const message = error instanceof Error ? error.message : 'Failed to update settings. Please try again.';
             setNotification({
                 type: 'error',
-                message: error.message || 'Failed to update settings. Please try again.'
+                message
             });
         } finally {
             setIsLoading(false);
@@ -100,188 +101,159 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onClose, onUpdate }) 
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-300">
-                {/* Header */}
-                <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center z-10">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Account Settings</h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[150] animate-in fade-in duration-200">
+            <div className="bg-[#13141f] border border-white/10 rounded-[2rem] shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto relative animate-in zoom-in-95 duration-200">
+                <button
+                    onClick={onClose}
+                    className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors z-20"
+                >
+                    <X className="w-6 h-6" />
+                </button>
 
-                {/* Notification */}
-                {notification && (
-                    <div className={`mx-6 mt-4 p-4 rounded-xl flex items-center gap-3 ${notification.type === 'success'
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-                        } animate-in slide-in-from-top-2`}>
-                        {notification.type === 'success' ? (
-                            <Check className="w-5 h-5 flex-shrink-0" />
-                        ) : (
-                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                        )}
-                        <span className="font-medium text-sm">{notification.message}</span>
-                    </div>
-                )}
-
-                {/* Form */}
-                <div className="p-6 space-y-6">
-                    {/* Profile Information Section */}
-                    <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                            <UserIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                            Profile Information
-                        </h3>
-
-                        {/* Name Field */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                Full Name
-                            </label>
-                            <div className="relative">
-                                <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                <input
-                                    type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
-                                    placeholder="Enter your name"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Email Field */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                Email Address
-                            </label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
-                                    placeholder="your.email@example.com"
-                                />
-                            </div>
-                        </div>
+                <div className="p-8">
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-black text-white mb-2">Account Settings</h2>
+                        <p className="text-gray-400 font-medium">Manage your profile and security</p>
                     </div>
 
-                    {/* Password Section */}
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                            <Lock className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                            Change Password
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                            Leave blank if you don't want to change your password
-                        </p>
+                    {notification && (
+                        <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 border ${notification.type === 'success'
+                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                : 'bg-red-500/10 border-red-500/20 text-red-400'
+                            } animate-in slide-in-from-top-2`}>
+                            {notification.type === 'success' ? <Check className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
+                            <span className="font-bold text-sm">{notification.message}</span>
+                        </div>
+                    )}
 
-                        {/* Current Password */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                Current Password
-                            </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                <input
-                                    type={showCurrentPassword ? 'text' : 'password'}
-                                    value={currentPassword}
-                                    onChange={(e) => setCurrentPassword(e.target.value)}
-                                    className="w-full pl-11 pr-12 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
-                                    placeholder="Enter current password"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                >
-                                    {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                </button>
+                    <div className="space-y-6">
+                        {/* Profile Info */}
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                <UserIcon className="w-4 h-4 text-purple-400" /> Profile Info
+                            </h3>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="sr-only">Full Name</label>
+                                    <div className="relative">
+                                        <UserIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                                        <input
+                                            type="text"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            className="w-full pl-12 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600 font-medium transition-all"
+                                            placeholder="Full Name"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="sr-only">Email Address</label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="w-full pl-12 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600 font-medium transition-all"
+                                            placeholder="Email Address"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* New Password */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                New Password
-                            </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                <input
-                                    type={showNewPassword ? 'text' : 'password'}
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    className="w-full pl-11 pr-12 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
-                                    placeholder="Enter new password"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowNewPassword(!showNewPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                >
-                                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                </button>
+                        {/* Security */}
+                        <div className="pt-6 border-t border-white/5 space-y-4">
+                            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                <Lock className="w-4 h-4 text-purple-400" /> Security
+                            </h3>
+                            <p className="text-xs text-gray-500 font-medium mb-2">Leave blank to keep current password</p>
+
+                            <div className="space-y-4">
+                                <div className="relative">
+                                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                                    <input
+                                        type={showCurrentPassword ? 'text' : 'password'}
+                                        value={currentPassword}
+                                        onChange={(e) => setCurrentPassword(e.target.value)}
+                                        className="w-full pl-12 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600 font-medium transition-all"
+                                        placeholder="Current Password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white"
+                                    >
+                                        {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
+
+                                <div className="relative">
+                                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                                    <input
+                                        type={showNewPassword ? 'text' : 'password'}
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        className="w-full pl-12 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600 font-medium transition-all"
+                                        placeholder="New Password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNewPassword(!showNewPassword)}
+                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white"
+                                    >
+                                        {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
+
+                                <div className="relative">
+                                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                                    <input
+                                        type={showConfirmPassword ? 'text' : 'password'}
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="w-full pl-12 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-white placeholder-gray-600 font-medium transition-all"
+                                        placeholder="Confirm New Password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white"
+                                    >
+                                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Confirm Password */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                Confirm New Password
-                            </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                <input
-                                    type={showConfirmPassword ? 'text' : 'password'}
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full pl-11 pr-12 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
-                                    placeholder="Confirm new password"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                >
-                                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                </button>
-                            </div>
+                        <div className="flex gap-4 pt-4">
+                            <button
+                                onClick={onClose}
+                                disabled={isLoading}
+                                className="flex-1 px-4 py-3 bg-white/5 border border-white/10 text-gray-400 rounded-xl font-bold hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={isLoading}
+                                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg shadow-purple-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check className="w-4 h-4" />
+                                        Save Changes
+                                    </>
+                                )}
+                            </button>
                         </div>
                     </div>
-                </div>
-
-                {/* Footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex gap-3">
-                    <button
-                        onClick={onClose}
-                        disabled={isLoading}
-                        className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={isLoading}
-                        className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                        {isLoading ? (
-                            <>
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                Saving...
-                            </>
-                        ) : (
-                            <>
-                                <Check className="w-5 h-5" />
-                                Save Changes
-                            </>
-                        )}
-                    </button>
                 </div>
             </div>
         </div>

@@ -1,0 +1,16 @@
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+src/components/Certificate.tsx(20,5): error TS6133: 'certificateId' is declared but its value is never read.
+src/components/engage/StudyMode.tsx(4,56): error TS6133: 'List' is declared but its value is never read.
+src/components/engage/StudyMode.tsx(4,85): error TS6133: 'Sparkles' is declared but its value is never read.
+src/components/engage/Tournaments.tsx(4,42): error TS6133: 'Zap' is declared but its value is never read.
+src/components/engage/Tournaments.tsx(151,35): error TS6133: 'index' is declared but its value is never read.
+src/components/Leaderboard.tsx(3,25): error TS6133: 'Award' is declared but its value is never read.
+src/lib/gamification.ts(46,52): error TS18048: 'threshold' is possibly 'undefined'.
+src/lib/gamification.ts(49,55): error TS18048: 'threshold' is possibly 'undefined'.
+src/lib/gamification.ts(52,47): error TS18048: 'threshold' is possibly 'undefined'.
+src/lib/gamification.ts(55,48): error TS18048: 'threshold' is possibly 'undefined'.
+src/pages/AdminDashboardPage.tsx(17,13): error TS2322: Type '{ users: UserData[]; attempts: AttemptData[]; quizzes: Quiz[]; badges: BadgeDefinition[]; currentUser: UserData; onLogout: () => void; onRefresh: () => Promise<...>; }' is not assignable to type 'IntrinsicAttributes & AdminDashboardProps'.
+  Property 'badges' does not exist on type 'IntrinsicAttributes & AdminDashboardProps'.

@@ -1,14 +1,14 @@
 export const storage = {
-    get: async (key: string, _flag?: boolean) => {
+    get: async (key: string) => {
         const value = sessionStorage.getItem(key);
         if (value === null) throw new Error('Key not found');
         return { value };
     },
-    set: async (key: string, value: string, _flag?: boolean) => {
+    set: async (key: string, value: string) => {
         sessionStorage.setItem(key, value);
         return true;
     },
-    list: async (prefix: string, _flag?: boolean) => {
+    list: async (prefix: string) => {
         const keys: string[] = [];
         for (let i = 0; i < sessionStorage.length; i++) {
             const key = sessionStorage.key(i);

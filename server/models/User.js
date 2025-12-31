@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
-  userId: { type: String, required: true, unique: true },
+  userId: { type: String, required: true, index: true, unique: true },
   name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, index: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   totalScore: { type: Number, default: 0 },
@@ -20,7 +20,38 @@ const userSchema = new mongoose.Schema({
     icon: String,
     dateEarned: { type: Date, default: Date.now }
   }],
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  friends: [{ type: String, ref: 'User' }], // Stores userIds
+  friendRequests: [{
+    from: { type: String, ref: 'User' }, // userId
+    to: { type: String, ref: 'User' }, // userId
+    status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
+    createdAt: { type: Date, default: Date.now }
+  }],
+  // Economy & power-ups
+  coins: { type: Number, default: 0 },
+  inventory: [{
+    itemId: String,
+    quantity: { type: Number, default: 0 }
+  }],
+  powerUps: [{
+    type: { type: String }, // e.g., '5050', 'time_freeze'
+    quantity: { type: Number, default: 0 }
+  }],
+  // Daily challenge streak
+  dailyChallengeDate: { type: Date },
+  dailyChallengeCompleted: { type: Boolean, default: false },
+  dailyChallengeStreak: { type: Number, default: 0 },
+  // Skill tracks progress (simplified)
+  skillTracks: [{
+    trackId: String,
+    unlockedModules: [String],
+    completedModules: [String]
+  }]
 });
+
+// Indexes to speed up lookups and leaderboards
+userSchema.index({ totalScore: -1 });
+userSchema.index({ name: 1 });
 
 export const User = mongoose.model('User', userSchema);

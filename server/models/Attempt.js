@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const attemptSchema = new mongoose.Schema({
-  attemptId: { type: String, required: true, unique: true },
+  attemptId: { type: String, required: true, unique: true, index: true },
   userId: { type: String, required: true },
   userName: { type: String, required: true },
   userEmail: { type: String, required: true },
@@ -14,7 +14,12 @@ const attemptSchema = new mongoose.Schema({
   answers: { type: Object, required: true }, // Storing answers as loose Object
   reviewStatus: { type: String, enum: ['completed', 'pending', 'reviewed'], default: 'completed' },
   feedback: { type: Object, default: {} }, // Map of questionId/index to feedback
-  completedAt: { type: Date, default: Date.now }
+  completedAt: { type: Date, default: Date.now },
+  powerUpsUsed: { type: [String], default: [] }
 });
+
+// Indexes for quick filtering and sorting
+attemptSchema.index({ userId: 1, completedAt: -1 });
+attemptSchema.index({ quizId: 1 });
 
 export const Attempt = mongoose.model('Attempt', attemptSchema);

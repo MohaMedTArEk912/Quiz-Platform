@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
-import type { Quiz, UserData } from '../types/index.ts';
-import { Award, RotateCcw, Home, Clock, Download, Loader2 } from 'lucide-react';
+import type { Quiz, UserData, QuizResult } from '../types/index.ts';
+import { Award, RotateCcw, Home, Clock, Download, Loader2, Star, Zap, Check, X } from 'lucide-react';
 import Navbar from './Navbar.tsx';
 import { Certificate } from './Certificate.tsx';
 import html2canvas from 'html2canvas';
@@ -8,7 +8,7 @@ import jsPDF from 'jspdf';
 import confetti from 'canvas-confetti';
 
 interface QuizResultsProps {
-    result: any;
+    result: QuizResult;
     quiz: Quiz;
     user: UserData;
     onBackToQuizzes: () => void;
@@ -18,6 +18,7 @@ interface QuizResultsProps {
 const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQuizzes, onRetake }) => {
     const certificateRef = useRef<HTMLDivElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [showReview, setShowReview] = useState(false);
 
     useEffect(() => {
         if (result.passed) {
@@ -46,9 +47,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
     }, [result.passed]);
 
     const getScoreColor = (percentage: number) => {
-        if (percentage >= 80) return 'text-green-600';
-        if (percentage >= 60) return 'text-yellow-600';
-        return 'text-red-600';
+        if (percentage >= 80) return 'text-emerald-400';
+        if (percentage >= 60) return 'text-yellow-400';
+        return 'text-red-400';
     };
 
     const formatTime = (seconds: number) => {
@@ -65,11 +66,10 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
         setIsGenerating(true);
         setError(null);
         try {
-            // Wait a bit to ensure rendering
             await new Promise(resolve => setTimeout(resolve, 500));
 
             const canvas = await html2canvas(certificateRef.current, {
-                scale: 2, // Higher resolution
+                scale: 2,
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#ffffff'
@@ -79,7 +79,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
             const pdf = new jsPDF({
                 orientation: 'landscape',
                 unit: 'px',
-                format: [1000, 700] // Match the component dimensions
+                format: [1000, 700]
             });
 
             pdf.addImage(imgData, 'PNG', 0, 0, 1000, 700);
@@ -93,7 +93,13 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 flex flex-col transition-colors">
+        <div className="min-h-screen bg-[#0a0a0b] flex flex-col transition-colors selection:bg-indigo-500/30">
+            {/* Ambient Background */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full blur-[128px] mix-blend-screen opacity-20 ${result.passed ? 'bg-emerald-600' : 'bg-red-600'
+                    }`} />
+            </div>
+
             <Navbar
                 user={user}
                 onBack={onBackToQuizzes}
@@ -104,35 +110,91 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                 onLogout={() => { }}
                 showActions={false}
             />
-            <div className="flex-1 flex items-center justify-center p-6">
-                <div className="max-w-2xl w-full bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 transition-colors">
-                    <div className="text-center">
-                        <Award className={`w-24 h-24 mx-auto mb-6 ${getScoreColor(result.percentage)}`} />
-                        <h1 className={`text-4xl font-bold mb-4 ${getScoreColor(result.percentage)}`}>
+
+            <div className="flex-1 flex items-center justify-center p-6 relative z-10">
+                <div className="max-w-2xl w-full bg-[#13141f] rounded-[2.5rem] shadow-2xl p-8 border border-white/5 relative overflow-hidden">
+                    {/* Top Shine */}
+                    <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+
+                    <div className="relative text-center">
+                        {/* Animated Award Icon */}
+                        <div className="relative inline-block mb-8 mt-4">
+                            <div className={`absolute inset-0 bg-gradient-to-r ${result.passed ? 'from-emerald-500 to-green-500' : 'from-red-500 to-pink-500'
+                                } rounded-full blur-3xl opacity-20 animate-pulse`} />
+                            <div className={`relative w-28 h-28 mx-auto flex items-center justify-center rounded-3xl bg-gradient-to-br ${result.passed ? 'from-emerald-500/10 to-green-500/10' : 'from-red-500/10 to-pink-500/10'
+                                } border border-white/10`}>
+                                <Award className={`w-14 h-14 ${getScoreColor(result.percentage)} drop-shadow-lg`} />
+                            </div>
+                        </div>
+
+                        <h1 className={`text-5xl font-black mb-4 bg-gradient-to-r ${result.passed
+                            ? 'from-emerald-400 to-green-400'
+                            : 'from-red-400 to-pink-400'
+                            } bg-clip-text text-transparent`}>
                             {result.passed ? 'Congratulations!' : 'Keep Trying!'}
                         </h1>
-                        <div className={`text-6xl font-bold mb-6 ${getScoreColor(result.percentage)}`}>
-                            {result.percentage}%
+
+                        {/* Circular Progress */}
+                        <div className="relative w-56 h-56 mx-auto mb-10 py-4">
+                            <div className="w-48 h-48 mx-auto relative cursor-pointer group">
+                                <svg className="transform -rotate-90 w-48 h-48 drop-shadow-2xl">
+                                    <circle
+                                        cx="96"
+                                        cy="96"
+                                        r="88"
+                                        stroke="currentColor"
+                                        strokeWidth="12"
+                                        fill="none"
+                                        className="text-white/5"
+                                    />
+                                    <circle
+                                        cx="96"
+                                        cy="96"
+                                        r="88"
+                                        stroke="url(#gradient)"
+                                        strokeWidth="12"
+                                        fill="none"
+                                        strokeDasharray={`${2 * Math.PI * 88}`}
+                                        strokeDashoffset={`${2 * Math.PI * 88 * (1 - result.percentage / 100)}`}
+                                        className="transition-all duration-1000 ease-out"
+                                        strokeLinecap="round"
+                                    />
+                                    <defs>
+                                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stopColor={result.percentage >= 80 ? '#10B981' : result.percentage >= 60 ? '#F59E0B' : '#EF4444'} />
+                                            <stop offset="100%" stopColor={result.percentage >= 80 ? '#34D399' : result.percentage >= 60 ? '#FBBF24' : '#F87171'} />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center group-hover:scale-110 transition-transform">
+                                    <div className={`text-6xl font-black ${getScoreColor(result.percentage)} drop-shadow-lg`}>
+                                        {result.percentage}%
+                                    </div>
+                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Score</div>
+                                </div>
+                            </div>
                         </div>
-                        <p className="text-xl text-gray-700 dark:text-gray-300 mb-8">
-                            You scored {result.score} out of {result.totalQuestions} questions
+
+                        <p className="text-xl text-gray-300 mb-8 font-medium">
+                            You scored <span className="font-bold text-white bg-white/10 px-2 py-0.5 rounded-lg border border-white/5">{result.score}</span> out of <span className="font-bold text-white bg-white/10 px-2 py-0.5 rounded-lg border border-white/5">{result.totalQuestions}</span> questions
                         </p>
 
+
                         {/* Stats */}
-                        <div className="grid grid-cols-2 gap-4 mb-8">
-                            <div className="bg-purple-50 dark:bg-purple-900/30 rounded-xl p-4">
-                                <div className="flex items-center justify-center gap-2 text-purple-600 dark:text-purple-400 mb-2">
+                        <div className="grid grid-cols-2 gap-4 mb-10">
+                            <div className="bg-white/5 rounded-2xl p-5 border border-white/5 hover:border-white/10 transition-colors">
+                                <div className="flex items-center justify-center gap-2 text-purple-400 mb-2">
                                     <Clock className="w-5 h-5" />
-                                    <span className="font-semibold">Time Taken</span>
+                                    <span className="font-bold uppercase text-xs tracking-wider">Time Taken</span>
                                 </div>
-                                <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatTime(result.timeTaken)}</div>
+                                <div className="text-2xl font-black text-white px-2 py-1">{formatTime(result.timeTaken)}</div>
                             </div>
-                            <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4">
-                                <div className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 mb-2">
-                                    <Award className="w-5 h-5" />
-                                    <span className="font-semibold">Status</span>
+                            <div className="bg-white/5 rounded-2xl p-5 border border-white/5 hover:border-white/10 transition-colors">
+                                <div className="flex items-center justify-center gap-2 text-blue-400 mb-2">
+                                    <Zap className="w-5 h-5" />
+                                    <span className="font-bold uppercase text-xs tracking-wider">Status</span>
                                 </div>
-                                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                                <div className={`text-2xl font-black ${result.passed ? 'text-emerald-400' : 'text-red-400'} px-2 py-1`}>
                                     {result.passed ? 'Passed' : 'Failed'}
                                 </div>
                             </div>
@@ -140,29 +202,38 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
 
                         {/* Messages */}
                         {result.percentage >= 80 && (
-                            <p className="text-xl text-green-600 mb-6">
-                                Excellent! You've mastered this topic! 🌟
-                            </p>
+                            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 mb-8">
+                                <p className="text-emerald-300 font-semibold flex items-center justify-center gap-2">
+                                    <Star className="w-5 h-5 fill-emerald-300" />
+                                    Excellent! You've mastered this topic!
+                                </p>
+                            </div>
                         )}
                         {result.percentage >= 60 && result.percentage < 80 && (
-                            <p className="text-xl text-yellow-600 mb-6">
-                                Good job! A bit more practice will make you perfect! 💪
-                            </p>
+                            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 mb-8">
+                                <p className="text-yellow-300 font-semibold flex items-center justify-center gap-2">
+                                    <Star className="w-5 h-5 fill-yellow-300" />
+                                    Good job! A bit more practice will make you perfect!
+                                </p>
+                            </div>
                         )}
                         {result.percentage < 60 && (
-                            <p className="text-xl text-red-600 mb-6">
-                                Don't give up! Review the material and try again! 📚
-                            </p>
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 mb-8">
+                                <p className="text-red-300 font-semibold flex items-center justify-center gap-2">
+                                    <RotateCcw className="w-5 h-5" />
+                                    Don't give up! Review the material and try again!
+                                </p>
+                            </div>
                         )}
 
                         {/* Actions */}
                         <div className="flex flex-col gap-4">
-                            {/* Certificate Button */}
-                            {result.passed && (
+                            {/* Certificate Button - Only for 100% */}
+                            {result.percentage === 100 && (
                                 <button
                                     onClick={handleDownloadCertificate}
                                     disabled={isGenerating}
-                                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-6 py-4 rounded-xl font-bold text-lg hover:from-yellow-600 hover:to-amber-600 transition-all shadow-lg transform hover:-translate-y-1"
+                                    className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black px-6 py-4 rounded-xl font-black text-lg transition-all shadow-lg hover:shadow-yellow-500/25 active:scale-95 border-b-4 border-amber-700 active:border-b-0 active:translate-y-1"
                                 >
                                     {isGenerating ? (
                                         <>
@@ -172,39 +243,131 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                     ) : (
                                         <>
                                             <Download className="w-6 h-6" />
-                                            Download Certificate
+                                            CLAIM CERTIFICATE
                                         </>
                                     )}
                                 </button>
                             )}
+
+                            {/* Certificate Info Message */}
+                            {result.passed && result.percentage < 100 && (
+                                <div className="text-center p-3 rounded-xl border border-white/5 bg-white/5">
+                                    <p className="text-sm font-medium text-gray-400">
+                                        🏆 Score 100% to earn a verified certificate!
+                                    </p>
+                                </div>
+                            )}
+
                             {error && (
-                                <div className="text-red-500 text-sm font-semibold animate-pulse mt-2">
+                                <div className="text-red-400 text-sm font-bold bg-red-500/10 p-3 rounded-xl border border-red-500/20 animate-in fade-in slide-in-from-top-2">
                                     {error}
                                 </div>
                             )}
 
+                            {/* Review Answers Toggle */}
+                            <button
+                                onClick={() => setShowReview(!showReview)}
+                                className="w-full flex items-center justify-center gap-2 bg-[#1e1f2e] text-gray-300 px-6 py-4 rounded-xl font-bold text-lg hover:bg-[#25263a] hover:text-white transition-all border border-white/5 hover:border-white/10"
+                            >
+                                {showReview ? 'Hide Answers' : 'Review Answers'}
+                            </button>
+
                             <div className="flex gap-4">
                                 <button
                                     onClick={onBackToQuizzes}
-                                    className="flex-1 flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-6 py-4 rounded-xl font-bold text-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                                    className="flex-1 flex items-center justify-center gap-2 bg-[#1e1f2e] text-gray-300 px-6 py-4 rounded-xl font-bold text-lg hover:bg-[#25263a] hover:text-white transition-all border border-white/5 hover:border-white/10"
                                 >
-                                    <Home className="w-6 h-6" />
-                                    Back to Quizzes
+                                    <Home className="w-5 h-5" />
+                                    Home
                                 </button>
                                 <button
                                     onClick={onRetake}
-                                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all"
+                                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-indigo-500/25 active:scale-95 border-b-4 border-indigo-800 active:border-b-0 active:translate-y-1"
                                 >
-                                    <RotateCcw className="w-6 h-6" />
-                                    Try Again
+                                    <RotateCcw className="w-5 h-5" />
+                                    Retry
                                 </button>
                             </div>
                         </div>
                     </div>
+
+                    {/* Review Section */}
+                    {showReview && (
+                        <div className="mt-8 space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                            {quiz.questions.map((q, idx) => {
+                                const answerEntry = result.answers[idx]; // FIX: Use index, not q.id
+                                // DetailedAnswer has { selected, isCorrect, type }
+                                // Or it might just be the value if legacy. But our onComplete sends DetailedAnswer.
+
+                                const userVal = (typeof answerEntry === 'object' && answerEntry !== null && 'selected' in answerEntry)
+                                    ? (answerEntry as any).selected
+                                    : answerEntry;
+
+                                const isCorrect = (typeof answerEntry === 'object' && answerEntry !== null && 'isCorrect' in answerEntry)
+                                    ? (answerEntry as any).isCorrect
+                                    : (q.correctAnswer !== undefined && userVal === q.correctAnswer);
+
+                                return (
+                                    <div key={q.id} className={`group relative p-6 rounded-3xl border transition-all duration-300 ${isCorrect
+                                        ? 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10'
+                                        : 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10'
+                                        }`}>
+                                        <div className="flex items-start gap-4 mb-4">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 ${isCorrect
+                                                ? 'bg-emerald-500 text-black'
+                                                : 'bg-red-500 text-white'
+                                                }`}>
+                                                {isCorrect ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                                            </div>
+                                            <p className="font-bold text-white text-lg leading-snug">
+                                                {q.question}
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-3 pl-12">
+                                            <div className={`flex items-center gap-3 p-3 rounded-xl border ${isCorrect
+                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+                                                : 'bg-red-500/10 border-red-500/20 text-red-300'
+                                                }`}>
+                                                <span className="text-xs font-bold uppercase tracking-wider opacity-70 w-24 shrink-0">Your Answer</span>
+                                                <span className="font-medium">
+                                                    {
+                                                        userVal !== undefined && userVal !== null
+                                                            ? (q.options && typeof userVal === 'number' ? q.options[userVal] : String(userVal))
+                                                            : 'Skipped'
+                                                    }
+                                                </span>
+                                            </div>
+
+                                            {!isCorrect && q.options && q.correctAnswer !== undefined && (
+                                                <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-300">
+                                                    <span className="text-xs font-bold uppercase tracking-wider opacity-70 w-24 shrink-0">Correct Answer</span>
+                                                    <span className="font-medium">{q.options[q.correctAnswer]}</span>
+                                                </div>
+                                            )}
+
+                                            {q.explanation && (
+                                                <div className="mt-4 pt-4 border-t border-white/5">
+                                                    <div className="flex gap-3 text-gray-400 text-sm leading-relaxed bg-[#0a0a0b]/50 p-4 rounded-xl">
+                                                        <div className="mt-0.5 shrink-0">💡</div>
+                                                        <div>
+                                                            <strong className="text-gray-200 block mb-1">Explanation</strong>
+                                                            {q.explanation}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Hidden Certificate Component */}
+            {/* Same as before */}
             <div style={{ position: 'absolute', top: -10000, left: -10000 }}>
                 <Certificate
                     ref={certificateRef}
@@ -216,7 +379,25 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                     certificateId={Date.now().toString(36)}
                 />
             </div>
-        </div>
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                }
+            `}} />
+        </div >
     );
 };
 

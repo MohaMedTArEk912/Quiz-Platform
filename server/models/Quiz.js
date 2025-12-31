@@ -8,18 +8,26 @@ const questionSchema = new mongoose.Schema({
   options: { type: [String], default: [] },
   correctAnswer: { type: Number },
   explanation: { type: String, default: '' },
-  points: { type: Number, default: 1 }
+  points: { type: Number, default: 1 },
+  imageUrl: { type: String },
+  codeSnippet: { type: String },
+  audioUrl: { type: String }
 });
 
 const quizSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true }, // Custom string ID (e.g., 'javascript-basics')
+  id: { type: String, required: true, unique: true, index: true }, // Custom string ID (e.g., 'javascript-basics')
   title: { type: String, required: true },
   description: { type: String, required: true },
   category: { type: String, required: true },
   difficulty: { type: String, required: true },
   timeLimit: { type: Number, required: true }, // in minutes
   passingScore: { type: Number, required: true }, // percentage
+  coinsReward: { type: Number, default: 10 },
+  xpReward: { type: Number, default: 50 },
   icon: { type: String, default: '📝' },
+  isTournamentOnly: { type: Boolean, default: false },
+  linkedTrackId: { type: String }, // Links this quiz to a specific skill track
+  linkedModuleId: { type: String }, // Links this quiz to a specific module within that track
   questions: [questionSchema]
 });
 

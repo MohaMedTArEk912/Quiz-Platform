@@ -29,25 +29,18 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     });
 
     useEffect(() => {
-        console.log('🌓 Theme useEffect triggered. isDark:', isDark);
         // Apply theme to document
         if (isDark) {
-            console.log('🌙 Adding dark class to <html>');
             document.documentElement.classList.add('dark');
         } else {
-            console.log('☀️ Removing dark class from <html>');
             document.documentElement.classList.remove('dark');
         }
         // Save preference
         sessionStorage.setItem('theme', isDark ? 'dark' : 'light');
-        console.log('💾 Saved theme to sessionStorage:', isDark ? 'dark' : 'light');
-        console.log('📋 Current html classes:', document.documentElement.className);
     }, [isDark]);
 
     const toggleTheme = () => {
-        console.log('🎨 Toggle theme clicked! Current isDark:', isDark);
         setIsDark(!isDark);
-        console.log('🎨 Setting isDark to:', !isDark);
     };
 
     return (
