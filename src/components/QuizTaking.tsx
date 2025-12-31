@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Quiz, UserData, QuizResult, DetailedAnswer, AttemptAnswers } from '../types/index.ts';
-import { Clock, Zap, Target } from 'lucide-react';
+import { Clock, Zap, Target, Sparkles } from 'lucide-react';
 import Navbar from './Navbar.tsx';
 
 interface QuizTakingProps {
@@ -30,6 +30,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
     const [fiftyUsed, setFiftyUsed] = useState(false);
     const [eliminatedOptions, setEliminatedOptions] = useState<Set<number>>(new Set());
     const [timeFreezeUsed, setTimeFreezeUsed] = useState(false);
+    const [hintUsed, setHintUsed] = useState(false);
+    const [hintMessage, setHintMessage] = useState<string | null>(null);
     const [usedPowerUps, setUsedPowerUps] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -95,6 +97,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
     const resetQuestionState = () => {
         setFiftyUsed(false);
         setEliminatedOptions(new Set());
+        setHintUsed(false);
+        setHintMessage(null);
     };
 
     const handleAnswer = (answer: string | number) => {
@@ -139,6 +143,23 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         setTimeFreezeUsed(true);
         setUsedPowerUps(prev => [...prev, 'time_freeze']);
         onPowerUpUsed?.('time_freeze');
+    };
+
+    const useHint = () => {
+        if (isSubmitting) return;
+        const q = quiz.questions[currentQuestion];
+        if (hintUsed || isTextQuestion || countPowerUp('hint') <= 0) return; // Only MC supported for now
+
+        // Find correct answer (assumed to be index in options)
+        const correctIndex = q.correctAnswer;
+        if (correctIndex === undefined || correctIndex === null) return;
+
+        // Logic: Highlight the correct answer with a message
+        const correctLetter = String.fromCharCode(65 + correctIndex);
+        setHintMessage(`💡 Smart Hint: The answer is likely Option ${correctLetter}`);
+        setHintUsed(true);
+        setUsedPowerUps(prev => [...prev, 'hint']);
+        onPowerUpUsed?.('hint');
     };
 
     const handleQuizComplete = useCallback(() => {
@@ -450,6 +471,62 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                                     )}
                                 </div>
                             </button>
+
+                            {/* Hint Power-Up */}
+                            <button
+                                onClick={useHint}
+                                disabled={hintUsed || countPowerUp('hint') <= 0 || isTextQuestion}
+                                className={`group relative w-full p-3 rounded-xl border-2 transition-all duration-300 overflow-hidden ${hintUsed || countPowerUp('hint') <= 0 || isTextQuestion
+                                    ? 'border-gray-300 dark:border-slate-700 bg-gray-100 dark:bg-slate-800/30 cursor-not-allowed opacity-50'
+                                    : 'border-purple-400 dark:border-purple-500/50 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/40 dark:to-pink-900/40 hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5 cursor-pointer'
+                                    }`}
+                            >
+                                {/* Animated background */}
+                                {!hintUsed && countPowerUp('hint') > 0 && !isTextQuestion && (
+                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                )}
+
+                                <div className="relative z-10">
+                                    {/* Icon */}
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 mx-auto transition-all ${hintUsed || countPowerUp('hint') <= 0 || isTextQuestion
+                                        ? 'bg-gray-300 dark:bg-slate-700'
+                                        : 'bg-gradient-to-br from-purple-500 to-pink-500 group-hover:scale-105 shadow-md'
+                                        }`}>
+                                        <Sparkles className="w-5 h-5 text-white" />
+                                    </div>
+
+                                    {/* Title */}
+                                    <div className="text-center mb-1.5">
+                                        <div className={`text-base font-black ${hintUsed || countPowerUp('hint') <= 0 || isTextQuestion
+                                            ? 'text-gray-500 dark:text-slate-500'
+                                            : 'text-purple-700 dark:text-white'
+                                            }`}>
+                                            Smart Hint
+                                        </div>
+                                        <div className={`text-[10px] leading-tight ${hintUsed || countPowerUp('hint') <= 0 || isTextQuestion
+                                            ? 'text-gray-400 dark:text-slate-600'
+                                            : 'text-purple-600 dark:text-purple-300'
+                                            }`}>
+                                            Reveal clue
+                                        </div>
+                                    </div>
+
+                                    {/* Quantity Badge */}
+                                    <div className="flex justify-center">
+                                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${hintUsed || countPowerUp('hint') <= 0 || isTextQuestion
+                                            ? 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-500'
+                                            : 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300'
+                                            }`}>
+                                            <Zap className="w-2.5 h-2.5" />
+                                            x{countPowerUp('hint')}
+                                        </div>
+                                    </div>
+
+                                    {hintUsed && (
+                                        <div className="mt-1 text-[10px] text-green-600 dark:text-green-400 font-semibold text-center">✓ Used</div>
+                                    )}
+                                </div>
+                            </button>
                         </div>
                     )}
 
@@ -473,6 +550,23 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                             {q.audioUrl && (
                                 <div className="mt-4">
                                     <audio controls src={q.audioUrl} className="w-full" />
+                                </div>
+                            )}
+
+                            {/* Hint Message Display */}
+                            {hintMessage && (
+                                <div className="mt-6 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-700/30 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded-lg">
+                                            <Sparkles className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-yellow-800 dark:text-yellow-200">Hint Revealed!</p>
+                                            <p className="text-yellow-700 dark:text-yellow-300/90 text-sm mt-0.5">
+                                                {hintMessage.replace('💡 Smart Hint: ', '')}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>

@@ -2,6 +2,7 @@ import React from 'react';
 import type { UserData } from '../types/index.ts';
 import { Trophy, Medal, Star, TrendingUp, Users, Crown } from 'lucide-react';
 import Navbar from './Navbar.tsx';
+import Avatar from './Avatar.tsx';
 
 interface LeaderboardProps {
     users: UserData[];
@@ -51,8 +52,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                 {/* User Info above podium */}
                 <div className="mb-4 flex flex-col items-center transform transition-transform duration-300 group-hover:-translate-y-2">
                     <div className="relative mb-3">
-                        <div className={`w-20 h-20 rounded-full bg-slate-100 dark:bg-[#1e293b] flex items-center justify-center text-3xl font-black text-gray-800 dark:text-white shadow-2xl ${avatarBorder[rank as 1 | 2 | 3]} ring-offset-4 ring-offset-gray-50 dark:ring-offset-[#0f172a]`}>
-                            {user.name.charAt(0)}
+                        <div className={`w-20 h-20 rounded-full bg-slate-100 dark:bg-[#1e293b] flex items-center justify-center text-3xl font-black text-gray-800 dark:text-white shadow-2xl ${avatarBorder[rank as 1 | 2 | 3]} ring-offset-4 ring-offset-gray-50 dark:ring-offset-[#0f172a] overflow-hidden`}>
+                            {user.avatar ? (
+                                <Avatar config={user.avatar} size="lg" className="w-full h-full" />
+                            ) : (
+                                user.name.charAt(0)
+                            )}
                         </div>
                         <div className="absolute -top-6 left-1/2 -translate-x-1/2">
                             {getRankIcon(rank)}
@@ -178,8 +183,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                                             #{user.rank}
                                         </div>
 
-                                        <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-800 flex items-center justify-center font-bold text-xl text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-white/10 group-hover:border-gray-400 dark:group-hover:border-white/30 group-hover:text-gray-900 dark:group-hover:text-white transition-all">
-                                            {user.name.charAt(0)}
+                                        <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-800 flex items-center justify-center font-bold text-xl text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-white/10 group-hover:border-gray-400 dark:group-hover:border-white/30 group-hover:text-gray-900 dark:group-hover:text-white transition-all overflow-hidden">
+                                            {user.avatar ? (
+                                                <Avatar config={user.avatar} size="md" className="w-full h-full" />
+                                            ) : (
+                                                user.name.charAt(0)
+                                            )}
                                         </div>
 
                                         <div className="flex-grow">

@@ -3,6 +3,8 @@ import type { Quiz, UserData, QuizResult } from '../../types';
 import { useSocket } from '../../context/SocketContext';
 import QuizTaking from '../QuizTaking'; // Reusing existing component
 import { Trophy, Zap } from 'lucide-react';
+import Avatar from '../Avatar';
+import type { AvatarConfig } from '../../types';
 
 type OpponentProgress = {
     userId: string;
@@ -17,6 +19,7 @@ interface VSGameProps {
     opponent: {
         id: string;
         name: string;
+        avatar?: AvatarConfig;
     };
     roomId: string; // The socket room ID
     onComplete: (result: QuizResult) => void;
@@ -112,8 +115,12 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
 
                 <div className="text-center space-y-8 animate-in fade-in duration-500">
                     <div className="relative">
-                        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center text-5xl font-bold shadow-2xl border-4 border-white dark:border-white/20">
-                            {opponent.name.charAt(0)}
+                        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center text-5xl font-bold shadow-2xl border-4 border-white dark:border-white/20 overflow-hidden">
+                            {opponent.avatar ? (
+                                <Avatar config={opponent.avatar} size="xl" className="w-full h-full" />
+                            ) : (
+                                opponent.name.charAt(0)
+                            )}
                         </div>
                         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-900 px-4 py-1 rounded-xl border border-gray-200 dark:border-slate-700 font-bold whitespace-nowrap shadow-sm">
                             {opponent.name}

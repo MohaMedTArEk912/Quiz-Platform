@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { UserData, ChallengeData } from '../../types';
 import { api } from '../../lib/api';
 import { Users, UserPlus, Search, Check, X, Shield, Swords, Zap, Trophy } from 'lucide-react';
+import Avatar from '../Avatar';
 
 interface FriendListProps {
     currentUser: UserData;
@@ -124,8 +125,12 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                         {friendsList.map(friend => (
                             <div key={friend.userId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl border border-gray-200 dark:border-white/5 transition-colors group">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-inner">
-                                        {friend.name.charAt(0)}
+                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-inner overflow-hidden">
+                                        {friend.avatar ? (
+                                            <Avatar config={friend.avatar} size="md" className="w-full h-full" />
+                                        ) : (
+                                            friend.name.charAt(0)
+                                        )}
                                     </div>
                                     <div>
                                         <div className="font-bold text-gray-900 dark:text-white text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{friend.name}</div>
@@ -172,8 +177,12 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                         {requestList.map(({ request, user }) => (
                             <div key={request.createdAt} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-black text-lg">
-                                        {user?.name.charAt(0) || '?'}
+                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-black text-lg overflow-hidden">
+                                        {user?.avatar ? (
+                                            <Avatar config={user.avatar} size="md" className="w-full h-full" />
+                                        ) : (
+                                            user?.name.charAt(0) || '?'
+                                        )}
                                     </div>
                                     <div>
                                         <div className="font-bold text-gray-900 dark:text-white text-lg">{user?.name || 'Unknown'}</div>
@@ -220,8 +229,12 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                 return (
                                     <div key={user.userId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-white font-bold text-lg border border-white/10">
-                                                {user.name?.charAt(0)}
+                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-white font-bold text-lg border border-white/10 overflow-hidden">
+                                                {user.avatar ? (
+                                                    <Avatar config={user.avatar} size="md" className="w-full h-full" />
+                                                ) : (
+                                                    user.name?.charAt(0)
+                                                )}
                                             </div>
                                             <div>
                                                 <div className="font-bold text-gray-900 dark:text-white text-lg">{user.name}</div>

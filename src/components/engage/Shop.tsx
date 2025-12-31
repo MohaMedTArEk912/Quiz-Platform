@@ -41,6 +41,9 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
     // Cosmetics
     if (name.includes('Glasses') || name.includes('Sunglasses')) return <div className="text-3xl">🕶️</div>;
     if (name.includes('Crown')) return <div className="text-3xl">👑</div>;
+    if (name.includes('Wizard')) return <div className="text-3xl">🧙‍♂️</div>;
+    if (name.includes('Wizard')) return <div className="text-3xl">🧙‍♂️</div>;
+    if (name.includes('Galaxy')) return <div className="text-3xl">🌌</div>;
 
     return <Zap className={iconClass} />;
   };
@@ -54,6 +57,9 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
     // Cosmetics
     if (name.includes('Crown')) return 'from-yellow-400 to-amber-600';
     if (name.includes('Glasses')) return 'from-gray-800 to-black';
+    if (name.includes('Wizard')) return 'from-indigo-600 to-blue-800';
+    if (name.includes('Wizard')) return 'from-indigo-600 to-blue-800';
+    if (name.includes('Galaxy')) return 'from-slate-900 to-violet-900';
     return 'from-indigo-500 to-purple-500';
   };
 
@@ -70,7 +76,8 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
       onUserUpdate({
         coins: res.coins,
         inventory: res.inventory,
-        powerUps: res.powerUps || res.inventory
+        powerUps: res.powerUps,
+        unlockedItems: res.unlockedItems
       });
 
       // Success message
@@ -150,7 +157,7 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
       <div className="max-w-7xl mx-auto">
         <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-3">
           <ShoppingBag className="w-8 h-8" />
-          Power-Ups & Style
+          {activeTab === 'powerups' ? 'Power-Ups Shop' : 'Style Shop'}
         </h2>
 
         {/* Tabs */}
@@ -174,12 +181,12 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {items.filter(i => activeTab === 'powerups' ? i.type === 'powerup' : i.type === 'cosmetic').map((item, index) => {
+          {items.filter(i => activeTab === 'powerups' ? (i.type === 'power-up' || i.type === 'boost') : i.type === 'cosmetic').map((item, index) => {
             const canAfford = (user.coins || 0) >= item.price;
             const isPurchasing = purchasingId === item.itemId;
             const gradient = getItemGradient(item.name);
 
-            // Check if already owned (mock check). In real app check unlockedItems properly.
+            // Check if already owned
             const isOwned = user.unlockedItems?.includes(item.itemId);
 
             return (

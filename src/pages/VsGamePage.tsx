@@ -8,7 +8,7 @@ import type { QuizResult } from '../types';
 const VsGamePage: React.FC = () => {
     const { state } = useLocation(); // Expecting { quizId, opponent, roomId }
     const { currentUser, updateUser } = useAuth();
-    const { availableQuizzes } = useData();
+    const { availableQuizzes, allUsers } = useData();
     const navigate = useNavigate();
 
     if (!state || !state.quizId || !state.opponent || !state.roomId) {
@@ -17,6 +17,9 @@ const VsGamePage: React.FC = () => {
 
     const { quizId, opponent, roomId } = state;
     const quiz = availableQuizzes.find(q => q.id === quizId || q._id === quizId);
+
+    // Find full opponent details including avatar
+    const opponentUser = allUsers.find(u => u.userId === opponent.id) || { userId: opponent.id, name: opponent.name, email: '', totalScore: 0, totalTime: 0, totalAttempts: 0, xp: 0, level: 1, streak: 0, lastLoginDate: '', badges: [] };
 
     if (!currentUser || !quiz) return <Navigate to="/" replace />;
 
@@ -35,7 +38,7 @@ const VsGamePage: React.FC = () => {
         <VSGame
             quiz={quiz}
             currentUser={currentUser}
-            opponent={opponent}
+            opponent={opponentUser as any} // Cast to any temporarily or match types if VSGame is updated
             roomId={roomId}
             onComplete={(result: QuizResult) => {
                 // Handle completion (Save attempt, etc.)

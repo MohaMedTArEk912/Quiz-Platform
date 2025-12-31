@@ -2,13 +2,41 @@ import { ShopItem } from '../models/ShopItem.js';
 import { User } from '../models/User.js';
 
 async function ensureShopSeed() {
-  const count = await ShopItem.countDocuments({});
-  if (count === 0) {
-    await ShopItem.insertMany([
-      { itemId: 'power-5050', name: '50/50', description: 'Remove two wrong options once per quiz', type: 'power-up', price: 50, payload: { powerUpType: '5050', uses: 1 } },
-      { itemId: 'power-time', name: 'Time Freeze', description: 'Add 20s once per quiz', type: 'power-up', price: 60, payload: { powerUpType: 'time_freeze', uses: 1 } },
-      { itemId: 'boost-xp', name: 'XP Boost', description: '1.5x XP for next quiz', type: 'boost', price: 80, payload: { boost: 'xp', multiplier: 1.5 } },
-    ]);
+  const defaultItems = [
+    // Power-Ups
+    { itemId: 'power-5050', name: '50/50', description: 'Remove two wrong options', type: 'power-up', price: 50, payload: { powerUpType: '5050', uses: 1 } },
+    { itemId: 'power-time', name: 'Time Freeze', description: 'Freeze time for 30s', type: 'power-up', price: 60, payload: { powerUpType: 'time_freeze', uses: 1 } },
+    { itemId: 'power-skip', name: 'Question Skip', description: 'Skip a hard question', type: 'power-up', price: 100, payload: { powerUpType: 'skip', uses: 1 } },
+    { itemId: 'power-shield', name: 'Streak Shield', description: 'Protect your streak once', type: 'power-up', price: 150, payload: { powerUpType: 'shield', uses: 1 } },
+    { itemId: 'power-hint', name: 'Smart Hint', description: 'Get a helpful hint', type: 'power-up', price: 75, payload: { powerUpType: 'hint', uses: 1 } },
+    
+    // Boosts
+    { itemId: 'boost-xp', name: 'XP Boost', description: '2x XP for next quiz', type: 'boost', price: 120, payload: { boost: 'xp', multiplier: 2.0 } },
+    
+    // Cosmetics - Hats/Head
+    { itemId: 'style-glasses', name: 'Cool Glasses', description: 'Look smart while quizzing', type: 'cosmetic', price: 200, payload: { cosmeticType: 'accessory', value: 'glasses' } },
+    { itemId: 'style-crown', name: 'Golden Crown', description: 'For the quiz royalty', type: 'cosmetic', price: 1000, payload: { cosmeticType: 'hat', value: 'crown' } },
+    { itemId: 'style-wizard', name: 'Wizard Hat', description: 'Magical knowledge inside', type: 'cosmetic', price: 500, payload: { cosmeticType: 'hat', value: 'wizard_hat' } },
+    
+    // Cosmetics - Themes/Frames
+    { itemId: 'style-galaxy', name: 'Galaxy Theme', description: 'Space explorer vibes', type: 'cosmetic', price: 800, payload: { cosmeticType: 'theme', value: 'galaxy' } },
+  ];
+
+  try {
+    // Cleanup deprecated items
+    await ShopItem.deleteOne({ itemId: 'style-neon' });
+
+    for (const item of defaultItems) {
+      await ShopItem.findOneAndUpdate(
+        { itemId: item.itemId },
+        { ...item },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+    // Migration: ensure types are correct for old data if any
+    await ShopItem.updateMany({ type: 'powerup' }, { type: 'power-up' });
+  } catch (err) {
+    console.error('Shop Seeding Error:', err);
   }
 }
 
@@ -68,41 +96,60 @@ export const purchaseItem = async (req, res) => {
     const item = await ShopItem.findOne({ itemId }).lean();
     if (!item) return res.status(404).json({ message: 'Item not found' });
 
-    const user = await User.findOne({ userId: req.user.userId }); // Re-fetch to ensure sync, or use req.user (might be stale if not careful, but generally ok)
-    // Using req.user might mean we manipulate the object attached to request. 
-    // Mongoose documents attached to req.user are 'live' if not lean(). verifyUser uses findOne without lean().
-    // So req.user is a Mongoose document.
+    const user = await User.findOne({ userId: req.user.userId });
+    if (!user) return res.status(404).json({ message: 'User not found' });
     
+    // Check if already owned (for cosmetics)
+    if (item.type === 'cosmetic' && user.unlockedItems?.includes(itemId)) {
+        return res.status(400).json({ message: 'Item already owned' });
+    }
+
     const coins = user.coins || 0;
     if (coins < item.price) {
       return res.status(400).json({ message: 'Not enough coins' });
     }
 
+    // Deduct coins
     user.coins = coins - item.price;
-    const inv = user.inventory || [];
     
-    // For power-ups, also add to powerUps list
-    if (item.type === 'power-up' && item.payload?.powerUpType) {
-      const pList = user.powerUps || [];
-      const idx = pList.findIndex(p => p.type === item.payload.powerUpType);
-      if (idx >= 0) {
-        pList[idx].quantity += item.payload.uses || 1;
-      } else {
-        pList.push({ type: item.payload.powerUpType, quantity: item.payload.uses || 1 });
-      }
-      user.powerUps = pList;
+    // Handle Item Type
+    if (item.type === 'cosmetic') {
+        if (!user.unlockedItems) user.unlockedItems = [];
+        user.unlockedItems.push(itemId);
+    } else {
+        // Consumables (power-ups / boosts)
+        const inv = user.inventory || [];
+        const existing = inv.find((i) => i.itemId === itemId);
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            inv.push({ itemId, quantity: 1 });
+        }
+        user.inventory = inv;
+
+        // Sync with specific tracking arrays if needed (e.g. powerUps)
+        // Note: The previous logic synced to 'powerUps' array too. We should maintain that for compatibility.
+        if (item.type === 'power-up' && item.payload?.powerUpType) {
+            const pList = user.powerUps || [];
+            const idx = pList.findIndex(p => p.type === item.payload.powerUpType);
+            if (idx >= 0) {
+                pList[idx].quantity += item.payload.uses || 1;
+            } else {
+                pList.push({ type: item.payload.powerUpType, quantity: item.payload.uses || 1 });
+            }
+            user.powerUps = pList;
+        }
     }
 
-    const existing = inv.find((i) => i.itemId === itemId);
-    if (existing) {
-      existing.quantity += 1;
-    } else {
-      inv.push({ itemId, quantity: 1 });
-    }
-    user.inventory = inv;
     await user.save();
 
-    res.json({ message: 'Purchased', coins: user.coins, inventory: user.inventory });
+    res.json({ 
+        message: 'Purchased successfully', 
+        coins: user.coins, 
+        inventory: user.inventory,
+        powerUps: user.powerUps,
+        unlockedItems: user.unlockedItems 
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error purchasing item', error: error.message });
   }

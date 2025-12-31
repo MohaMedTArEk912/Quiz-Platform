@@ -46,6 +46,7 @@ const userSchema = new mongoose.Schema({
     type: { type: String }, // e.g., '5050', 'time_freeze'
     quantity: { type: Number, default: 0 }
   }],
+  unlockedItems: [{ type: String }], // Array of itemIds for permanent unlocks (cosmetics)
   // Daily challenge streak
   dailyChallengeDate: { type: Date },
   dailyChallengeCompleted: { type: Boolean, default: false },
