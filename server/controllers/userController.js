@@ -58,7 +58,7 @@ export const deleteUser = async (req, res) => {
 export const getUserData = async (req, res) => {
   try {
     const user = await User.findOne({ userId: req.user.userId })
-      .select('userId name email role totalScore totalAttempts totalTime xp level streak lastLoginDate badges friends friendRequests')
+      .select('userId name email role totalScore totalAttempts totalTime xp level streak lastLoginDate badges friends friendRequests avatar')
       .lean();
 
     if (!user) {

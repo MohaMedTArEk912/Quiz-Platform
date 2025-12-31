@@ -83,6 +83,8 @@ export interface UserData {
     streak: number;
     lastLoginDate: string;
     badges: Badge[];
+    avatar?: AvatarConfig;
+    unlockedItems?: string[];
     createdAt?: string;
     friends?: string[]; // userIds
     friendRequests?: {
@@ -102,6 +104,15 @@ export interface UserData {
         unlockedModules: string[];
         completedModules: string[];
     }[];
+}
+
+export interface AvatarConfig {
+    skinColor: string;
+    hairStyle: string;
+    hairColor: string;
+    accessory: string;
+    backgroundColor: string;
+    mood: 'happy' | 'neutral' | 'cool' | 'excited';
 }
 
 export interface AttemptData {

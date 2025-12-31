@@ -224,7 +224,7 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
             </div>
 
             {/* Badges Grid */}
-            <div className="bg-white dark:bg-gray-800/50 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className={`rounded-2xl p-6 ${badges.length > 0 ? 'bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 shadow-sm' : ''}`}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {badges.map(badge => (
                         <div

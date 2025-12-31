@@ -11,6 +11,7 @@ interface ShopProps {
 
 const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
   const [items, setItems] = useState<ShopItem[]>([]);
+  const [activeTab, setActiveTab] = useState<'powerups' | 'style'>('powerups');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -36,6 +37,11 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
     if (name.includes('Hint')) return <Sparkles className={iconClass} />;
     if (name.includes('Skip')) return <TrendingUp className={iconClass} />;
     if (name.includes('Shield')) return <Shield className={iconClass} />;
+
+    // Cosmetics
+    if (name.includes('Glasses') || name.includes('Sunglasses')) return <div className="text-3xl">🕶️</div>;
+    if (name.includes('Crown')) return <div className="text-3xl">👑</div>;
+
     return <Zap className={iconClass} />;
   };
 
@@ -45,6 +51,9 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
     if (name.includes('Hint')) return 'from-purple-500 to-pink-500';
     if (name.includes('Skip')) return 'from-green-500 to-emerald-500';
     if (name.includes('Shield')) return 'from-yellow-500 to-orange-500';
+    // Cosmetics
+    if (name.includes('Crown')) return 'from-yellow-400 to-amber-600';
+    if (name.includes('Glasses')) return 'from-gray-800 to-black';
     return 'from-indigo-500 to-purple-500';
   };
 
@@ -56,15 +65,12 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
 
       const res = await api.purchaseItem(itemId, user.userId);
 
-      console.log('💰 Purchase response:', res);
-      console.log('📦 Updating user with coins:', res.coins, 'inventory:', res.inventory, 'powerUps:', res.powerUps);
-
       // Update both inventory and powerUps to ensure compatibility
       // inventory is the raw purchase data, powerUps is what the quiz uses
       onUserUpdate({
         coins: res.coins,
         inventory: res.inventory,
-        powerUps: res.powerUps || res.inventory // Use powerUps if available, otherwise use inventory
+        powerUps: res.powerUps || res.inventory
       });
 
       // Success message
@@ -144,14 +150,37 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
       <div className="max-w-7xl mx-auto">
         <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-3">
           <ShoppingBag className="w-8 h-8" />
-          Power-Ups Available
+          Power-Ups & Style
         </h2>
 
+        {/* Tabs */}
+        <div className="flex gap-4 mb-8">
+          <button
+            onClick={() => setActiveTab('powerups')}
+            className={`px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'powerups'
+              ? 'bg-indigo-600 text-white shadow-lg'
+              : 'bg-white dark:bg-white/5 text-gray-500 hover:text-indigo-500'}`}
+          >
+            Power-Ups
+          </button>
+          <button
+            onClick={() => setActiveTab('style')}
+            className={`px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'style'
+              ? 'bg-purple-600 text-white shadow-lg'
+              : 'bg-white dark:bg-white/5 text-gray-500 hover:text-purple-500'}`}
+          >
+            Style Shop
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {items.map((item, index) => {
+          {items.filter(i => activeTab === 'powerups' ? i.type === 'powerup' : i.type === 'cosmetic').map((item, index) => {
             const canAfford = (user.coins || 0) >= item.price;
             const isPurchasing = purchasingId === item.itemId;
             const gradient = getItemGradient(item.name);
+
+            // Check if already owned (mock check). In real app check unlockedItems properly.
+            const isOwned = user.unlockedItems?.includes(item.itemId);
 
             return (
               <div
@@ -203,8 +232,8 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
                     {/* Buy Button */}
                     <button
                       onClick={() => purchase(item.itemId, item.name)}
-                      disabled={!canAfford || isPurchasing}
-                      className={`w-full px-8 py-4 rounded-2xl font-black text-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl ${canAfford
+                      disabled={!canAfford || isPurchasing || isOwned}
+                      className={`w-full px-8 py-4 rounded-2xl font-black text-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl ${canAfford && !isOwned
                         ? `bg-gradient-to-r ${gradient} hover:shadow-2xl hover:shadow-purple-500/50 text-white`
                         : 'bg-gray-200 dark:bg-slate-700 text-gray-400 dark:text-slate-400'
                         }`}
@@ -213,6 +242,11 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
                         <span className="flex items-center justify-center gap-3">
                           <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
                           Purchasing...
+                        </span>
+                      ) : isOwned ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <CheckCircle2 className="w-5 h-5" />
+                          Owned
                         </span>
                       ) : canAfford ? (
                         <span className="flex items-center justify-center gap-2">

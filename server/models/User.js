@@ -13,6 +13,14 @@ const userSchema = new mongoose.Schema({
   level: { type: Number, default: 1 },
   streak: { type: Number, default: 0 },
   lastLoginDate: { type: Date, default: Date.now },
+  avatar: {
+    skinColor: { type: String },
+    hairStyle: { type: String },
+    hairColor: { type: String },
+    accessory: { type: String },
+    backgroundColor: { type: String },
+    mood: { type: String }
+  },
   badges: [{
     id: String,
     name: String,

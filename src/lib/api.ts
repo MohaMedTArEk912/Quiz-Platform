@@ -360,15 +360,15 @@ export const api = {
     // Shop & Economy
     async getShopItems(): Promise<ShopItem[]> {
         const response = await fetch(`${API_URL}/shop/items`);
-        if (!response.ok) throw new Error('Failed to load shop items');
+        if (!response.ok) throw new Error('Failed to fetch shop items');
         return response.json();
     },
 
-    async createShopItem(item: ShopItem, adminId: string) {
+    async addShopItem(item: Omit<ShopItem, 'itemId'>, adminId: string): Promise<ShopItem> {
         const response = await fetch(`${API_URL}/shop/items`, {
             method: 'POST',
             headers: getHeaders(adminId),
-            body: JSON.stringify(item)
+            body: JSON.stringify(item),
         });
         if (!response.ok) throw new Error('Failed to create shop item');
         return response.json();
@@ -378,7 +378,7 @@ export const api = {
         const response = await fetch(`${API_URL}/shop/items/${itemId}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
-            body: JSON.stringify(item)
+            body: JSON.stringify(item),
         });
         if (!response.ok) throw new Error('Failed to update shop item');
         return response.json();
@@ -397,14 +397,17 @@ export const api = {
         const response = await fetch(`${API_URL}/shop/purchase`, {
             method: 'POST',
             headers: getHeaders(userId),
-            body: JSON.stringify({ itemId })
+            body: JSON.stringify({ itemId }),
         });
         if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Purchase failed');
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to purchase item');
         }
         return response.json();
     },
+
+
+
 
     // Daily Challenge
     async getDailyChallenge(userId: string) {

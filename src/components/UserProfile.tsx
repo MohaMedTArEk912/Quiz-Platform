@@ -8,6 +8,9 @@ import jsPDF from 'jspdf';
 import { calculateLevel } from '../lib/gamification';
 import UserSettings from './UserSettings.tsx';
 import AnalyticsPanel from './engage/AnalyticsPanel.tsx';
+import Avatar from './Avatar';
+import AvatarEditor from './AvatarEditor';
+import { Pencil } from 'lucide-react';
 
 interface UserProfileProps {
     user: UserData;
@@ -32,6 +35,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
     const [downloadingAttemptId, setDownloadingAttemptId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
     const [currentUser, setCurrentUser] = useState<UserData>(user);
 
     const currentXP = currentUser.xp || 0;
@@ -114,31 +118,46 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
             <div className="relative w-full px-6 py-8 md:py-12">
                 {/* Profile Card */}
                 <div className="relative bg-white dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-gray-200 dark:border-white/10 shadow-2xl dark:shadow-2xl overflow-hidden mb-12">
+                    {/* Settings Button - Moved to top right of card */}
+                    <button
+                        onClick={() => setIsSettingsOpen(true)}
+                        className="absolute top-6 right-6 z-30 p-2.5 bg-white/20 dark:bg-black/20 hover:bg-white/40 dark:hover:bg-black/40 text-gray-700 dark:text-white rounded-full backdrop-blur-md border border-white/20 transition-all hover:rotate-90"
+                        title="Account Settings"
+                    >
+                        <Settings className="w-5 h-5" />
+                    </button>
+
                     <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-indigo-600/20 to-purple-600/20" />
 
                     <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12 pt-4">
                         <div className="relative group">
-                            <div className="w-32 h-32 rounded-full bg-white dark:bg-[#0a0a0b] p-1.5 ring-4 ring-indigo-500/50 shadow-2xl relative z-10 group-hover:scale-105 transition-transform duration-500">
-                                <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-5xl font-black text-white">
-                                    {currentUser.name.charAt(0)}
-                                </div>
+                            <div className="w-32 h-32 rounded-full ring-4 ring-indigo-500/50 shadow-2xl relative z-10 group-hover:scale-105 transition-transform duration-500 bg-white dark:bg-[#0a0a0b]">
+                                {currentUser.avatar ? (
+                                    <Avatar config={currentUser.avatar} size="xl" className="w-full h-full" />
+                                ) : (
+                                    <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-5xl font-black text-white">
+                                        {currentUser.name.charAt(0)}
+                                    </div>
+                                )}
                             </div>
-                            <div className="absolute -bottom-3 -right-3 z-20 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-sm font-black px-4 py-1.5 rounded-full shadow-lg border-2 border-white dark:border-[#0a0a0b]">
-                                Lvl {currentUser.level || 1}
-                            </div>
-                            {/* Settings Button */}
+                            {/* Edit Avatar Button - Positioned nicely at bottom right */}
                             <button
-                                onClick={() => setIsSettingsOpen(true)}
-                                className="absolute -top-2 -right-2 z-20 p-2.5 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-600 dark:text-white rounded-full backdrop-blur-md border border-gray-200 dark:border-white/10 transition-all hover:rotate-180"
-                                title="Account Settings"
+                                onClick={() => setIsAvatarEditorOpen(true)}
+                                className="absolute bottom-0 right-0 z-20 p-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-lg border-4 border-white dark:border-[#13141f] transition-all hover:scale-110 hover:shadow-indigo-500/25"
+                                title="Customize Avatar"
                             >
-                                <Settings className="w-5 h-5" />
+                                <Pencil className="w-4 h-4" />
                             </button>
                         </div>
 
                         <div className="flex-1 text-center md:text-left w-full">
                             <div className="mb-6">
-                                <h2 className="text-4xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">{currentUser.name}</h2>
+                                <h2 className="text-4xl font-black text-gray-900 dark:text-white mb-2 tracking-tight flex items-center justify-center md:justify-start gap-4 flex-wrap">
+                                    {currentUser.name}
+                                    <span className="text-sm bg-gradient-to-r from-amber-400 to-orange-500 text-white px-3 py-1 rounded-full font-black shadow-sm border border-white/20 transform hover:scale-105 transition-transform cursor-default">
+                                        Lvl {currentUser.level || 1}
+                                    </span>
+                                </h2>
                                 <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">{currentUser.email}</p>
                             </div>
 
@@ -367,6 +386,15 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                 <UserSettings
                     user={currentUser}
                     onClose={() => setIsSettingsOpen(false)}
+                    onUpdate={handleUserUpdate}
+                />
+            )}
+
+            {/* Avatar Editor Modal */}
+            {isAvatarEditorOpen && (
+                <AvatarEditor
+                    user={currentUser}
+                    onClose={() => setIsAvatarEditorOpen(false)}
                     onUpdate={handleUserUpdate}
                 />
             )}

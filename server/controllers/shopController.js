@@ -25,8 +25,13 @@ export const getShopItems = async (req, res) => {
 export const createShopItem = async (req, res) => {
   try {
     const data = req.body;
-    if (!data.itemId || !data.name) {
-      return res.status(400).json({ message: 'itemId and name are required' });
+    if (!data.name) {
+      return res.status(400).json({ message: 'Name is required' });
+    }
+    
+    // Auto-generate itemId if not provided
+    if (!data.itemId) {
+        data.itemId = `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
     const created = await ShopItem.create(data);
     res.status(201).json(created);

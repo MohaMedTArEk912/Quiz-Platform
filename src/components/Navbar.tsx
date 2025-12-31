@@ -17,6 +17,7 @@ import {
 import ThemeToggle from './ThemeToggle.tsx';
 import type { UserData } from '../types/index.ts';
 import { useNavigate, useLocation } from 'react-router-dom';
+import Avatar from './Avatar';
 
 interface NavbarProps {
     user: UserData;
@@ -143,7 +144,15 @@ const Navbar: React.FC<NavbarProps> = ({
                                     className="group flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 rounded-xl hover:border-blue-500/50 hover:text-blue-600 dark:hover:text-white hover:shadow-lg transition-all font-bold text-sm"
                                     title="Profile"
                                 >
-                                    <User className="w-4 h-4 group-hover:text-blue-400 transition-colors" />
+                                    <div className="w-8 h-8 rounded-full ring-2 ring-indigo-500/50 shadow-sm overflow-hidden bg-white dark:bg-[#0a0a0b]">
+                                        {user.avatar ? (
+                                            <Avatar config={user.avatar} size="sm" className="w-full h-full" />
+                                        ) : (
+                                            <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">
+                                                {user.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
                                     <span className="hidden xl:inline">Profile</span>
                                 </button>
 
@@ -208,8 +217,14 @@ const Navbar: React.FC<NavbarProps> = ({
                         {showActions && (
                             <div className="space-y-3 pt-3 border-t border-gray-200 dark:border-white/5">
                                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-black/20 rounded-2xl border border-gray-200 dark:border-white/5">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white text-lg">
-                                        {user.name.charAt(0).toUpperCase()}
+                                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#0a0a0b] flex items-center justify-center font-bold text-white text-lg overflow-hidden border border-gray-200 dark:border-white/10">
+                                        {user.avatar ? (
+                                            <Avatar config={user.avatar} size="md" className="w-full h-full" />
+                                        ) : (
+                                            <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                                {user.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
                                     </div>
                                     <div>
                                         <p className="text-gray-500 dark:text-gray-400 text-xs font-medium">Signed in as</p>
