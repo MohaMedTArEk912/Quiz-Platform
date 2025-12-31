@@ -69,16 +69,16 @@ const SkillTreeVisualization: React.FC<SkillTreeVisualizationProps> = ({
                     <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition duration-500 animate-pulse" />
 
                     {/* Main Track Card */}
-                    <div className="relative bg-gradient-to-br from-purple-600 via-blue-600 to-purple-700 rounded-3xl p-8 shadow-2xl border-2 border-white/20">
-                        <div className="flex items-center gap-6">
+                    <div className="relative bg-gradient-to-br from-purple-600 via-blue-600 to-purple-700 rounded-3xl p-6 md:p-8 shadow-2xl border-2 border-white/20">
+                        <div className="flex items-center gap-4 md:gap-6">
                             {/* Icon */}
-                            <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-5xl shadow-lg">
+                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl md:text-5xl shadow-lg flex-shrink-0">
                                 {trackIcon}
                             </div>
 
                             {/* Track Info */}
-                            <div className="flex-1">
-                                <h2 className="text-4xl font-black text-white mb-2 tracking-tight">{trackTitle}</h2>
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-2xl md:text-4xl font-black text-white mb-2 tracking-tight truncate">{trackTitle}</h2>
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2 text-white/90">
                                         <BookOpen className="w-5 h-5" />
@@ -138,7 +138,7 @@ const SkillTreeVisualization: React.FC<SkillTreeVisualizationProps> = ({
                 <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500/60 via-blue-500/60 to-purple-500/60 rounded-full transform -translate-x-1/2" />
 
                 {/* Module Nodes */}
-                <div className="space-y-16">
+                <div className="space-y-8 md:space-y-16">
                     {filteredModules.map((moduleNode, index) => {
                         const isHovered = hoveredModule === moduleNode.module.moduleId;
                         const hasBadges = moduleNode.badges.length > 0;
@@ -147,7 +147,7 @@ const SkillTreeVisualization: React.FC<SkillTreeVisualizationProps> = ({
                         return (
                             <div key={moduleNode.module.moduleId} className="relative">
                                 {/* Horizontal Branch Line */}
-                                <div className={`absolute top-1/2 ${isLeft ? 'right-1/2 left-0' : 'left-1/2 right-0'} h-0.5 bg-gradient-to-${isLeft ? 'l' : 'r'} from-purple-500/60 to-transparent`} style={{ width: '120px' }} />
+                                <div className={`hidden md:block absolute top-1/2 ${isLeft ? 'right-1/2 left-0' : 'left-1/2 right-0'} h-0.5 bg-gradient-to-${isLeft ? 'l' : 'r'} from-purple-500/60 to-transparent`} style={{ width: '120px' }} />
 
                                 {/* Module Card */}
                                 <div className={`flex ${isLeft ? 'justify-start' : 'justify-end'} relative`}>

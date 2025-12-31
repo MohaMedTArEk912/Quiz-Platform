@@ -76,9 +76,9 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, attempts, onSelectQu
                 showActions={true}
             />
 
-            <main className="relative max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+            <main className="relative w-full px-4 sm:px-6 py-8 md:py-12">
                 {/* Hero Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                     {[
                         {
                             label: "Total Score",

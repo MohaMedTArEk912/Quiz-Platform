@@ -57,7 +57,7 @@ const BadgeTreeDetailPage: React.FC = () => {
         return (
             <PageLayout>
                 <div className="flex items-center justify-center min-h-screen">
-                    <div className="text-white text-xl">Loading badge tree...</div>
+                    <div className="text-gray-900 dark:text-white text-xl">Loading badge tree...</div>
                 </div>
             </PageLayout>
         );
@@ -92,7 +92,7 @@ const BadgeTreeDetailPage: React.FC = () => {
                 <div className="mb-8">
                     <button
                         onClick={() => navigate('/tracks')}
-                        className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
+                        className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4 transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5" />
                         Back to Tracks
@@ -101,37 +101,37 @@ const BadgeTreeDetailPage: React.FC = () => {
                     <div className="flex items-center gap-4 mb-4">
                         <div className="text-5xl">{tree.icon || '🏆'}</div>
                         <div>
-                            <h1 className="text-4xl font-bold text-white">{tree.name}</h1>
-                            <p className="text-gray-400 text-lg">{tree.description}</p>
+                            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{tree.name}</h1>
+                            <p className="text-gray-500 dark:text-gray-400 text-lg">{tree.description}</p>
                         </div>
                     </div>
 
                     {/* Progress Stats */}
                     <div className="grid grid-cols-3 gap-4 mt-6">
                         <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl p-4">
-                            <div className="flex items-center gap-2 text-purple-400 mb-2">
+                            <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-2">
                                 <Award className="w-5 h-5" />
                                 <span className="text-sm font-semibold">Total Badges</span>
                             </div>
-                            <p className="text-3xl font-bold text-white">{tree.nodes.length}</p>
+                            <p className="text-3xl font-bold text-gray-900 dark:text-white">{tree.nodes.length}</p>
                         </div>
 
                         <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-4">
-                            <div className="flex items-center gap-2 text-green-400 mb-2">
+                            <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-2">
                                 <Check className="w-5 h-5" />
                                 <span className="text-sm font-semibold">Earned</span>
                             </div>
-                            <p className="text-3xl font-bold text-white">
+                            <p className="text-3xl font-bold text-gray-900 dark:text-white">
                                 {tree.nodes.filter(n => isBadgeEarned(n.badgeId)).length}
                             </p>
                         </div>
 
                         <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-xl p-4">
-                            <div className="flex items-center gap-2 text-blue-400 mb-2">
+                            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-2">
                                 <Sparkles className="w-5 h-5" />
                                 <span className="text-sm font-semibold">Available</span>
                             </div>
-                            <p className="text-3xl font-bold text-white">
+                            <p className="text-3xl font-bold text-gray-900 dark:text-white">
                                 {tree.nodes.filter(n => !isBadgeEarned(n.badgeId) && canUnlockBadge(n)).length}
                             </p>
                         </div>
@@ -139,9 +139,9 @@ const BadgeTreeDetailPage: React.FC = () => {
                 </div>
 
                 {/* Badge Tree Visualization */}
-                <div className="bg-gray-800/50 rounded-2xl p-8 border border-gray-700">
-                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                        <Award className="w-6 h-6 text-purple-400" />
+                <div className="bg-white dark:bg-gray-800/50 rounded-2xl p-8 border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-none">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                        <Award className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                         Badge Progression Tree
                     </h2>
 
@@ -186,9 +186,9 @@ const BadgeTreeDetailPage: React.FC = () => {
 
                                                     {/* Badge Info on Hover */}
                                                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                                        <div className="bg-gray-900 border border-gray-700 rounded-xl p-4 shadow-xl min-w-[250px]">
-                                                            <h3 className="font-bold text-white mb-2">{badge.name}</h3>
-                                                            <p className="text-gray-400 text-sm mb-3">{badge.description}</p>
+                                                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-xl min-w-[250px]">
+                                                            <h3 className="font-bold text-gray-900 dark:text-white mb-2">{badge.name}</h3>
+                                                            <p className="text-gray-500 dark:text-gray-400 text-sm mb-3">{badge.description}</p>
 
                                                             {badge.rewards.xp > 0 || badge.rewards.coins > 0 ? (
                                                                 <div className="flex gap-2 text-xs">
@@ -206,7 +206,7 @@ const BadgeTreeDetailPage: React.FC = () => {
                                                             ) : null}
 
                                                             {!isEarned && node.prerequisites && node.prerequisites.length > 0 && (
-                                                                <div className="mt-3 pt-3 border-t border-gray-700">
+                                                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
                                                                     <p className="text-xs text-gray-500 mb-1">Requires:</p>
                                                                     <div className="flex flex-wrap gap-1">
                                                                         {node.prerequisites.map((prereqId: string) => {

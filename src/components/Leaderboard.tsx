@@ -97,7 +97,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                 showActions={false}
             />
 
-            <main className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12">
+            <main className="relative w-full px-4 sm:px-6 py-12">
                 {/* Stats Header */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
                     <div className="bg-white dark:bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-gray-200 dark:border-white/10 flex items-center gap-5 shadow-xl dark:shadow-none">

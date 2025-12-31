@@ -626,7 +626,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, attempts, quizze
         <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0b] text-gray-900 dark:text-white selection:bg-purple-500/30">
             {/* Header */}
             <div className="bg-white/80 dark:bg-[#13141f]/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/5 sticky top-0 z-30">
-                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div className="w-full px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-16 h-16 flex items-center justify-center">
                             <TransparentLogo src="/icon.png" className="w-full h-full object-contain" threshold={40} />

@@ -71,8 +71,8 @@ const BadgeNodeCard: React.FC<BadgeNodeCardProps> = ({
                 className={`relative ${sizeClasses[size]} rounded-full border-4 flex items-center justify-center transition-all duration-300 ${isUnlocked
                     ? `bg-gradient-to-br ${getRarityColor(badge.rarity)} border-white/30 shadow-lg group-hover:scale-105`
                     : canUnlock
-                        ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-green-500/50 group-hover:border-green-500'
-                        : 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 opacity-60'
+                        ? 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 border-green-500/30 dark:border-green-500/50 group-hover:border-green-500'
+                        : 'bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-900 border-gray-300 dark:border-gray-700 opacity-60'
                     }`}
                 style={{ backgroundColor: badge.color }}
             >
@@ -83,8 +83,8 @@ const BadgeNodeCard: React.FC<BadgeNodeCardProps> = ({
 
                 {/* Lock overlay for locked badges */}
                 {!isUnlocked && !canUnlock && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
-                        <Lock className="w-8 h-8 text-white/80" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/5 dark:bg-black/40 rounded-full">
+                        <Lock className="w-8 h-8 text-gray-400 dark:text-white/80" />
                     </div>
                 )}
 

@@ -174,7 +174,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
 
   if (error) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="w-full px-4 py-8">
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 text-red-500 dark:text-red-400">
           {error}
         </div>
@@ -183,7 +183,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="w-full px-4 py-8">
       {/* Header */}
       <div className="mb-8 text-center">
         <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-4">Skill Progression Trees</h1>
@@ -193,7 +193,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
       </div>
 
       {/* Filters */}
-      <div className="mb-8 flex flex-col sm:flex-row gap-4">
+      <div className="mb-6 flex flex-col lg:flex-row gap-3">
         {/* Search Bar */}
         <div className="flex-1">
           <input
@@ -201,7 +201,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
             placeholder="Search skill tracks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-3 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors shadow-sm"
+            className="w-full px-4 py-2 md:py-3 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors shadow-sm"
           />
         </div>
 
@@ -212,7 +212,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-3 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none appearance-none shadow-sm"
+              className="w-full px-4 py-2 md:py-3 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none appearance-none shadow-sm"
             >
               {categories.map(category => (
                 <option key={category} value={category} className="bg-white dark:bg-gray-800">{category}</option>
@@ -221,10 +221,10 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
           </div>
 
           {/* Status Filter */}
-          <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'all'
+              className={`px-3 py-2 md:px-4 md:py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${statusFilter === 'all'
                 ? 'bg-purple-600 text-white'
                 : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
                 }`}
@@ -233,7 +233,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
             </button>
             <button
               onClick={() => setStatusFilter('in-progress')}
-              className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'in-progress'
+              className={`px-3 py-2 md:px-4 md:py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${statusFilter === 'in-progress'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
                 }`}
@@ -242,7 +242,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
             </button>
             <button
               onClick={() => setStatusFilter('completed')}
-              className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'completed'
+              className={`px-3 py-2 md:px-4 md:py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${statusFilter === 'completed'
                 ? 'bg-green-600 text-white'
                 : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
                 }`}

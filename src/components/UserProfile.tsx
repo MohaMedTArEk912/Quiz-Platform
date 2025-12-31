@@ -111,7 +111,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                 showActions={false}
             />
 
-            <div className="relative max-w-7xl mx-auto px-6 py-8 md:py-12">
+            <div className="relative w-full px-6 py-8 md:py-12">
                 {/* Profile Card */}
                 <div className="relative bg-white dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-gray-200 dark:border-white/10 shadow-2xl dark:shadow-2xl overflow-hidden mb-12">
                     <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-indigo-600/20 to-purple-600/20" />
@@ -233,7 +233,53 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                         </span>}
                     </div>
                     <div className="overflow-x-auto">
-                        <table className="w-full">
+                        {/* Mobile View (Cards) */}
+                        <div className="md:hidden">
+                            {recentAttempts.map((attempt) => (
+                                <div key={attempt.attemptId} className="p-4 border-b border-gray-100 dark:border-white/5 last:border-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 dark:text-white mb-1">{attempt.quizTitle}</h4>
+                                            <span className="text-xs text-gray-500 dark:text-gray-500 font-medium">
+                                                {new Date(attempt.completedAt).toLocaleDateString()} • {Math.floor(attempt.timeTaken / 60)}m {attempt.timeTaken % 60}s
+                                            </span>
+                                        </div>
+                                        {attempt.percentage === 100 && (
+                                            <div className="bg-yellow-100 dark:bg-yellow-500/20 p-1.5 rounded-lg text-yellow-600 dark:text-yellow-400">
+                                                {downloadingAttemptId === attempt.attemptId ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <Download className="w-4 h-4" onClick={() => handleDownloadCertificate(attempt)} />
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span
+                                            className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${attempt.percentage >= 60
+                                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                                : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+                                                }`}
+                                        >
+                                            {attempt.score}/{attempt.totalQuestions} ({attempt.percentage}%)
+                                        </span>
+                                        {attempt.percentage === 100 && (
+                                            <span className="text-[10px] font-bold text-yellow-600 dark:text-yellow-500 uppercase tracking-wider flex items-center gap-1">
+                                                <Award className="w-3 h-3" /> Certified
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                            {recentAttempts.length === 0 && (
+                                <div className="px-8 py-16 text-center text-gray-500 font-medium text-lg">
+                                    No recent activity. Start a quiz to build your legacy!
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Desktop View (Table) */}
+                        <table className="w-full hidden md:table">
                             <thead>
                                 <tr className="border-b border-gray-200 dark:border-white/5 bg-gray-100 dark:bg-black/20 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <th className="px-8 py-5 text-left">Quiz</th>

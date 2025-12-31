@@ -118,8 +118,8 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onClose, onUpdate }) 
 
                     {notification && (
                         <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 border ${notification.type === 'success'
-                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                            : 'bg-red-500/10 border-red-500/20 text-red-400'
+                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+                            : 'bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400'
                             } animate-in slide-in-from-top-2`}>
                             {notification.type === 'success' ? <Check className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
                             <span className="font-bold text-sm">{notification.message}</span>
@@ -142,7 +142,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onClose, onUpdate }) 
                                             type="text"
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
-                                            className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 font-medium transition-all"
+                                            className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 font-medium transition-all"
                                             placeholder="Full Name"
                                         />
                                     </div>
