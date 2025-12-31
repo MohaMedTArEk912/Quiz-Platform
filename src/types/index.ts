@@ -186,6 +186,7 @@ export interface SkillTrack {
     trackId: string;
     title: string;
     description?: string;
+    category?: string;
     icon?: string;
     modules: SkillModule[];
 }

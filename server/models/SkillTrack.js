@@ -12,6 +12,7 @@ const skillTrackSchema = new mongoose.Schema({
   trackId: { type: String, required: true, unique: true, index: true },
   title: { type: String, required: true },
   description: { type: String, default: '' },
+  category: { type: String, default: 'General' },
   modules: [moduleSchema],
   createdAt: { type: Date, default: Date.now }
 });

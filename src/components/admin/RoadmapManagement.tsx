@@ -21,6 +21,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         title: '',
         description: '',
         icon: '📚',
+        category: 'General',
         modules: [] as any[]
     });
 
@@ -103,6 +104,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                     title: json.title || '',
                     description: json.description || '',
                     icon: json.icon || '📚',
+                    category: json.category || 'General',
                     modules: Array.isArray(json.modules) ? json.modules.map((m: any) => ({
                         moduleId: `mod_${crypto.randomUUID()}`,
                         title: m.title || '',
@@ -183,6 +185,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                 title: '',
                                 description: '',
                                 icon: '📚',
+                                category: 'General',
                                 modules: []
                             });
                             setShowTrackForm(true);
@@ -213,7 +216,12 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                 <div className="flex items-center gap-3">
                                     <div className="text-3xl">{track.icon || '📚'}</div>
                                     <div>
-                                        <h4 className="font-bold text-white">{track.title}</h4>
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="font-bold text-white">{track.title}</h4>
+                                            <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-gray-700 text-gray-400 border border-gray-600">
+                                                {track.category || 'General'}
+                                            </span>
+                                        </div>
                                         <p className="text-xs text-gray-400">{track.modules.length} modules</p>
                                     </div>
                                 </div>
@@ -225,6 +233,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                             title: track.title,
                                             description: track.description || '',
                                             icon: track.icon || '📚',
+                                            category: track.category || 'General',
                                             modules: track.modules
                                         });
                                         setShowTrackForm(true);
@@ -290,7 +299,6 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-400">Icon Emoji</label>
                                     <input
                                         type="text"
                                         value={trackForm.icon}
@@ -298,6 +306,23 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                         className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-blue-500 focus:outline-none"
                                         placeholder="e.g. 📚"
                                     />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-400">Category</label>
+                                    <select
+                                        value={trackForm.category}
+                                        onChange={(e) => setTrackForm(prev => ({ ...prev, category: e.target.value }))}
+                                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-blue-500 focus:outline-none"
+                                    >
+                                        <option value="General">General</option>
+                                        <option value="Frontend">Frontend</option>
+                                        <option value="Backend">Backend</option>
+                                        <option value="DevOps">DevOps</option>
+                                        <option value="Design">Design</option>
+                                        <option value="Mobile">Mobile</option>
+                                        <option value="Data Science">Data Science</option>
+                                        <option value="Soft Skills">Soft Skills</option>
+                                    </select>
                                 </div>
                                 <div className="col-span-full space-y-2">
                                     <label className="text-sm font-medium text-gray-400">Description</label>
@@ -433,6 +458,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                                 title: trackForm.title,
                                                 description: trackForm.description,
                                                 icon: trackForm.icon,
+                                                category: trackForm.category,
                                                 modules: trackForm.modules
                                             }, adminId);
                                         } else {
@@ -441,6 +467,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                                 title: trackForm.title,
                                                 description: trackForm.description,
                                                 icon: trackForm.icon,
+                                                category: trackForm.category,
                                                 modules: trackForm.modules
                                             }, adminId);
                                         }

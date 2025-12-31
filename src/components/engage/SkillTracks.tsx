@@ -25,6 +25,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'in-progress' | 'not-started'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
   useEffect(() => {
     const load = async () => {
@@ -138,8 +139,16 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
     return user.badges?.map(b => b.id) || [];
   };
 
-  // Filter tracks based on search and status
+  // Extract unique categories
+  const categories = ['All', ...new Set(tracks.map(t => t.category || 'General'))];
+
+  // Filter tracks based on search, category and status
   const filteredTracks = tracks.filter(track => {
+    // Category filter
+    if (selectedCategory !== 'All' && (track.category || 'General') !== selectedCategory) {
+      return false;
+    }
+
     // Search filter
     const matchesSearch = track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       track.description?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -196,44 +205,60 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
           />
         </div>
 
-        {/* Status Filter */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setStatusFilter('all')}
-            className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'all'
-              ? 'bg-purple-600 text-white'
-              : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
-              }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setStatusFilter('in-progress')}
-            className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'in-progress'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
-              }`}
-          >
-            In Progress
-          </button>
-          <button
-            onClick={() => setStatusFilter('completed')}
-            className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'completed'
-              ? 'bg-green-600 text-white'
-              : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
-              }`}
-          >
-            Completed
-          </button>
-          <button
-            onClick={() => setStatusFilter('not-started')}
-            className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'not-started'
-              ? 'bg-gray-600 text-white'
-              : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
-              }`}
-          >
-            Not Started
-          </button>
+        {/* Filters Row */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Category Filter */}
+          <div className="w-full sm:w-48">
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:border-purple-500 focus:outline-none appearance-none"
+            >
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'all'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setStatusFilter('in-progress')}
+              className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'in-progress'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                }`}
+            >
+              In Progress
+            </button>
+            <button
+              onClick={() => setStatusFilter('completed')}
+              className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'completed'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                }`}
+            >
+              Completed
+            </button>
+            <button
+              onClick={() => setStatusFilter('not-started')}
+              className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'not-started'
+                ? 'bg-gray-600 text-white'
+                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                }`}
+            >
+              Not Started
+            </button>
+          </div>
         </div>
       </div>
 
