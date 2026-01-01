@@ -29,7 +29,7 @@ const questionSchema = new mongoose.Schema({
 });
 
 const quizSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true, index: true }, // Custom string ID (e.g., 'javascript-basics')
+  id: { type: String, required: true, unique: true }, // Custom string ID (e.g., 'javascript-basics')
   title: { type: String, required: true },
   description: { type: String, required: true },
   category: { type: String, required: true },

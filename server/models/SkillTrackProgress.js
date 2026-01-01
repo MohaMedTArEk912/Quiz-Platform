@@ -8,8 +8,7 @@ const skillTrackProgressSchema = new mongoose.Schema({
   },
   trackId: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   completedModules: [{
     type: String // Create/store moduleIDs

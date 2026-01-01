@@ -1,19 +1,32 @@
 import { User } from '../models/User.js';
 
+import jwt from 'jsonwebtoken';
+
 // Middleware to verify any authenticated user
 export const verifyUser = async (req, res, next) => {
   try {
-    const requesterId = req.headers['x-user-id'];
-    if (!requesterId) {
-      return res.status(401).json({ message: 'Unauthorized: User ID required in headers' });
+    // Check for Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      // Fallback for legacy x-user-id (warn or deprecate?)
+      // For security, strict JWT is better.
+      return res.status(401).json({ message: 'Unauthorized: No token provided' });
     }
-    const user = await User.findOne({ userId: requesterId });
+
+    const token = authHeader.split(' ')[1];
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    
+    const user = await User.findOne({ userId: decoded.userId });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     req.user = user;
     next();
   } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired' });
+    }
     res.status(500).json({ message: 'Authentication error', error: error.message });
   }
 };
@@ -21,11 +34,16 @@ export const verifyUser = async (req, res, next) => {
 // Middleware to verify admin access
 export const verifyAdmin = async (req, res, next) => {
   try {
-    const requesterId = req.headers['x-user-id'];
-    if (!requesterId) {
-      return res.status(401).json({ message: 'Unauthorized: Admin user ID required in headers' });
+    // Use verifyUser logic first (composition would be better, but repeating for clarity as per tools limitation)
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Unauthorized: Admin token required' });
     }
-    const adminUser = await User.findOne({ userId: requesterId });
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+
+    const adminUser = await User.findOne({ userId: decoded.userId });
     if (!adminUser) {
       return res.status(404).json({ message: 'Authorized user not found' });
     }
@@ -35,6 +53,9 @@ export const verifyAdmin = async (req, res, next) => {
     req.admin = adminUser;
     next();
   } catch (error) {
+     if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired' });
+    }
     res.status(500).json({ message: 'Authorization error', error: error.message });
   }
 };

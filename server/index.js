@@ -5,6 +5,12 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { connectToDatabase } from './middleware/dbMiddleware.js';
 
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+// import mongoSanitize from 'express-mongo-sanitize'; // Conflict with Express 5
+import hpp from 'hpp';
+// import xss from 'xss-clean'; // Deprecated and causes issues with Express 5
+
 // Routes
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
@@ -29,7 +35,7 @@ const httpServer = createServer(app);
 // Socket.io configuration optimized for Netlify
 const io = new Server(httpServer, {
   cors: {
-    origin: "*", // Allow all origins
+    origin: process.env.CLIENT_URL || ["http://localhost:5173", "http://localhost:3000"],
     methods: ["GET", "POST"],
     credentials: true
   },
@@ -45,11 +51,28 @@ app.set('io', io);
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: true, // Allow all origins (or reflect)
+  origin: process.env.CLIENT_URL || ["http://localhost:5173", "http://localhost:3000"],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'x-user-id']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id'] // Keep x-user-id for now if legacy still sends it, but add Authorization
 }));
 app.use(express.json());
+
+
+// Security Middleware
+app.use(helmet());
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use('/api', limiter);
+
+// Data Sanitization
+// app.use(mongoSanitize());
+// app.use(xss()); // Deprecated
+app.use(hpp());
 
 // Middleware to ensure DB connection
 app.use(async (req, res, next) => {

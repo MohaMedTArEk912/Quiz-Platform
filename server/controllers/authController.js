@@ -1,4 +1,11 @@
 import { User } from '../models/User.js';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+
+// Helper: Generate JWT
+const generateToken = (userId, role) => {
+  return jwt.sign({ userId, role }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '7d' });
+};
 
 // Helper function to calculate login streak
 const calculateStreak = (lastLoginDate, currentStreak) => {
@@ -30,7 +37,7 @@ const calculateStreak = (lastLoginDate, currentStreak) => {
 
 export const register = async (req, res) => {
   try {
-    const { userId, name, email, password, createdAt } = req.body;
+    const { userId, name, email, password } = req.body;
     
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -38,16 +45,24 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     const newUser = new User({
       userId,
       name,
       email,
-      password, // In a real app, hash this!
-      createdAt
+      password: hashedPassword,
+      createdAt: new Date()
     });
 
     await newUser.save();
-    res.status(201).json(newUser);
+    
+    // Generate Token
+    const token = generateToken(newUser.userId, newUser.role || 'user');
+
+    res.status(201).json({ user: newUser, token });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -63,7 +78,9 @@ export const login = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if (user.password !== password) {
+    // Verify Password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -73,7 +90,10 @@ export const login = async (req, res) => {
     user.lastLoginDate = new Date();
     await user.save();
 
-    res.json(user);
+    // Generate Token
+    const token = generateToken(user.userId, user.role || 'user');
+
+    res.json({ user, token });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -113,7 +133,10 @@ export const googleAuth = async (req, res) => {
       await user.save();
     }
     
-    res.json(user);
+    // Generate Token for Google User
+    const token = generateToken(user.userId, user.role || 'user');
+    
+    res.json({ user, token });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -121,19 +144,26 @@ export const googleAuth = async (req, res) => {
 
 export const verifySession = async (req, res) => {
   try {
-    const { userId } = req.body;
+    // For backwards compatibility/session check, we can rely on the middleware to have verified the token
+    // But if this route is used to *validate* a stored token on client reload:
     
-    if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized: No user ID provided' });
-    }
+    // In a stateless JWT flow, "verifying session" is just "is my token valid?"
+    // The client should send the token in the header.
+    // If we're here, it means the token MIGHT be in the body (if that's how the client sends it) 
+    // OR we should just trust the middleware if we add it to this route.
     
-    const user = await User.findOne({ userId });
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    // Return user data
+    // Assuming we update the frontend to check validaty by hitting a protected route
+    // Or we decode the token here if sent in body.
+
+    // Let's assume the client sends { token }
+    const { token } = req.body;
+    if (!token) return res.status(401).json({ valid: false, message: 'No token provided' });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const user = await User.findOne({ userId: decoded.userId });
+
+    if (!user) return res.status(404).json({ valid: false });
+
     res.json({
       valid: true,
       user

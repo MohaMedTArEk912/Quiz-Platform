@@ -9,7 +9,7 @@ const moduleSchema = new mongoose.Schema({
 }, { _id: false });
 
 const skillTrackSchema = new mongoose.Schema({
-  trackId: { type: String, required: true, unique: true, index: true },
+  trackId: { type: String, required: true, unique: true },
   title: { type: String, required: true },
   description: { type: String, default: '' },
   category: { type: String, default: 'General' },
