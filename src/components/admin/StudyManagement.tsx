@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { BookOpen, Download, Upload, Plus, MoreVertical, Edit2, Trash2, Code } from 'lucide-react';
 import type { StudyCard, UserData } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
@@ -192,7 +193,7 @@ const StudyManagement: React.FC<StudyManagementProps> = ({ currentUser, onNotifi
             </div>
 
             {/* Edit Study Card Modal */}
-            {editingStudyCard && (
+            {editingStudyCard && createPortal(
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 shadow-2xl relative">
                         <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-4 mb-6">
@@ -220,7 +221,8 @@ const StudyManagement: React.FC<StudyManagementProps> = ({ currentUser, onNotifi
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

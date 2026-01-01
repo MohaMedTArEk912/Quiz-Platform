@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Upload, Download, Edit2, Trash2, Code, X } from 'lucide-react';
 import type { Quiz, Question, UserData } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
@@ -166,7 +167,7 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
             </div>
 
             {/* Quiz Editor Modal */}
-            {editingQuiz && (
+            {editingQuiz && createPortal(
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 shadow-2xl relative [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
                         <button onClick={() => setEditingQuiz(null)} className="absolute top-6 right-6 text-gray-400 hover:text-white"><X className="w-6 h-6" /></button>
@@ -263,11 +264,12 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                             </div>
                         )}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Delete Confirmation Modal */}
-            {deleteConfirmation && (
+            {deleteConfirmation && createPortal(
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200 text-center">
                         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 mb-6 border border-red-500/20">
@@ -292,7 +294,8 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

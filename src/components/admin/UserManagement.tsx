@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Edit2, Trash2, Users } from 'lucide-react';
 import type { UserData } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
@@ -133,7 +134,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onR
             </table>
 
             {/* Edit User Modal */}
-            {editingUser && (
+            {editingUser && createPortal(
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 shadow-2xl relative">
                         <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6">Edit User</h2>
@@ -177,11 +178,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onR
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Delete Confirmation Modal */}
-            {deleteConfirmation && (
+            {deleteConfirmation && createPortal(
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200 text-center">
                         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 mb-6 border border-red-500/20">
@@ -206,7 +208,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onR
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

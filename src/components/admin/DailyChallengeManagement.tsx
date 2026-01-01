@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Zap, Plus, Edit2 } from 'lucide-react';
 import type { UserData, Quiz } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
@@ -115,7 +116,7 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
             </div>
 
             {/* Edit Challenge Modal */}
-            {editingChallenge && (
+            {editingChallenge && createPortal(
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 shadow-2xl relative">
                         <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6">Edit Daily Challenge</h2>
@@ -158,7 +159,8 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
