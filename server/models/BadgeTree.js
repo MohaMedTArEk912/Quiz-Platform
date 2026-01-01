@@ -39,6 +39,5 @@ badgeTreeSchema.pre('save', function(next) {
 
 // Index for efficient queries
 badgeTreeSchema.index({ type: 1, isActive: 1 });
-badgeTreeSchema.index({ trackId: 1 });
 
 export const BadgeTree = mongoose.model('BadgeTree', badgeTreeSchema);
