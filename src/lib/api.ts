@@ -3,11 +3,31 @@ export type { UserData, AttemptData, Quiz, BadgeDefinition, ChallengeData, ShopI
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-const getHeaders = (userId?: string) => {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (userId) {
-        headers['x-user-id'] = userId;
+const getStoredToken = () => {
+    try {
+        const session = sessionStorage.getItem('userSession');
+        if (!session) return null;
+        const parsed = JSON.parse(session);
+        return parsed.token ?? null;
+    } catch (error) {
+        console.warn('Failed to read session token', error);
+        return null;
     }
+};
+
+const getHeaders = (tokenOrOptions?: string | { token?: string; userId?: string }) => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const options = typeof tokenOrOptions === 'string' ? { userId: tokenOrOptions } : tokenOrOptions ?? {};
+
+    const token = options.token ?? getStoredToken();
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (options.userId) {
+        headers['x-user-id'] = options.userId; // Legacy header kept for backward compatibility
+    }
+
     return headers;
 };
 
@@ -261,11 +281,12 @@ export const api = {
         return response.json();
     },
 
-    async verifySession(userId: string) {
+    async verifySession(token?: string) {
+        const resolvedToken = token || getStoredToken();
         const response = await fetch(`${API_URL}/verify-session`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId }),
+            headers: getHeaders({ token: resolvedToken ?? undefined }),
+            body: JSON.stringify({ token: resolvedToken }),
         });
         if (!response.ok) {
             const error = await response.json();

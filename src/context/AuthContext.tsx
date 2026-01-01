@@ -29,6 +29,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [currentUser, setCurrentUser] = useState<UserData | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [token, setToken] = useState<string | null>(null);
 
     // Load session on mount
     useEffect(() => {
@@ -37,12 +38,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (savedSession) {
                 try {
                     const session = JSON.parse(savedSession);
-                    // Verify session with server
-                    const { valid, user } = await api.verifySession(session.user.userId);
+                    const sessionToken = session.token as string | undefined;
+                    // Verify session with server using JWT
+                    const { valid, user } = await api.verifySession(sessionToken);
 
                     if (valid) {
                         setCurrentUser(user);
                         setIsAdmin(user.role === 'admin');
+                        setToken(sessionToken ?? null);
                     } else {
                         throw new Error('Invalid session');
                     }
@@ -51,6 +54,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     sessionStorage.removeItem('userSession');
                     setCurrentUser(null);
                     setIsAdmin(false);
+                    setToken(null);
                 }
             }
             setIsLoading(false);
@@ -62,11 +66,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const refreshUser = async () => {
         if (!currentUser) return;
         try {
-            const user = await api.getUserData(currentUser.userId);
+            const { user } = await api.getUserData(currentUser.userId);
             setCurrentUser(user);
             const isAdminUser = user.role === 'admin';
             setIsAdmin(isAdminUser);
-            sessionStorage.setItem('userSession', JSON.stringify({ user, isAdmin: isAdminUser }));
+            sessionStorage.setItem('userSession', JSON.stringify({ user, token, isAdmin: isAdminUser }));
         } catch (error) {
             console.error('Failed to refresh user:', error);
         }
@@ -74,12 +78,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const login = async (email: string, password: string) => {
         const normalizedEmail = email.toLowerCase().trim();
-        const user = await api.login({ email: normalizedEmail, password });
+        const { user, token: jwt } = await api.login({ email: normalizedEmail, password });
         const isAdminUser = user.role === 'admin';
 
         setIsAdmin(isAdminUser);
         setCurrentUser(user);
-        sessionStorage.setItem('userSession', JSON.stringify({ user, isAdmin: isAdminUser }));
+        setToken(jwt);
+        sessionStorage.setItem('userSession', JSON.stringify({ user, token: jwt, isAdmin: isAdminUser }));
     };
 
     const register = async (name: string, email: string, password: string) => {
@@ -101,24 +106,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
 
         const registrationData: Partial<UserData> & { password: string } = { ...baseUserData, password };
-        await api.register(registrationData);
+        const { user, token: jwt } = await api.register(registrationData);
 
-        setCurrentUser(baseUserData);
-        setIsAdmin(false);
-        sessionStorage.setItem('userSession', JSON.stringify({ user: baseUserData, isAdmin: false }));
+        setCurrentUser(user);
+        setIsAdmin(user.role === 'admin');
+        setToken(jwt);
+        sessionStorage.setItem('userSession', JSON.stringify({ user, token: jwt, isAdmin: user.role === 'admin' }));
     };
 
     const googleLogin = async (profile: { email: string; name: string; googleId: string }) => {
-        const user = await api.googleLogin(profile);
+        const { user, token: jwt } = await api.googleLogin(profile);
         const isAdminUser = user.role === 'admin';
         setCurrentUser(user);
         setIsAdmin(isAdminUser);
-        sessionStorage.setItem('userSession', JSON.stringify({ user, isAdmin: isAdminUser }));
+        setToken(jwt);
+        sessionStorage.setItem('userSession', JSON.stringify({ user, token: jwt, isAdmin: isAdminUser }));
     };
 
     const logout = () => {
         setCurrentUser(null);
         setIsAdmin(false);
+        setToken(null);
         sessionStorage.removeItem('userSession');
     };
 
@@ -126,7 +134,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
         if (currentUser) {
             const newState = { ...currentUser, ...updates };
-            sessionStorage.setItem('userSession', JSON.stringify({ user: newState, isAdmin }));
+            sessionStorage.setItem('userSession', JSON.stringify({ user: newState, token, isAdmin }));
         }
     };
 

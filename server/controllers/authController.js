@@ -61,8 +61,9 @@ export const register = async (req, res) => {
     
     // Generate Token
     const token = generateToken(newUser.userId, newUser.role || 'user');
+    const { password: _pw, ...safeUser } = newUser.toObject();
 
-    res.status(201).json({ user: newUser, token });
+    res.status(201).json({ user: safeUser, token });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -107,7 +108,9 @@ export const login = async (req, res) => {
     // Generate Token
     const token = generateToken(user.userId, user.role || 'user');
 
-    res.json({ user, token });
+    const { password: _pw, ...safeUser } = user.toObject();
+
+    res.json({ user: safeUser, token });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -149,8 +152,9 @@ export const googleAuth = async (req, res) => {
     
     // Generate Token for Google User
     const token = generateToken(user.userId, user.role || 'user');
+    const { password: _pw, ...safeUser } = user.toObject();
     
-    res.json({ user, token });
+    res.json({ user: safeUser, token });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -170,7 +174,11 @@ export const verifySession = async (req, res) => {
     // Or we decode the token here if sent in body.
 
     // Let's assume the client sends { token }
-    const { token } = req.body;
+    const authHeader = req.headers.authorization;
+    const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+    const { token: bodyToken } = req.body;
+    const token = headerToken || bodyToken;
+
     if (!token) return res.status(401).json({ valid: false, message: 'No token provided' });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
@@ -178,9 +186,11 @@ export const verifySession = async (req, res) => {
 
     if (!user) return res.status(404).json({ valid: false });
 
+    const { password: _pw, ...safeUser } = user.toObject();
+
     res.json({
       valid: true,
-      user
+      user: safeUser
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
