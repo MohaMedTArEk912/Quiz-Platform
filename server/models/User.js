@@ -56,7 +56,8 @@ const userSchema = new mongoose.Schema({
     trackId: String,
     unlockedModules: [String],
     completedModules: [String]
-  }]
+  }],
+  clanId: { type: String } // Simplified link to clan
 });
 
 // Indexes to speed up lookups and leaderboards

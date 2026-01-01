@@ -1,8 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { UserData } from '../types/index.ts';
-import { Trophy, Medal, Star, TrendingUp, Users, Crown } from 'lucide-react';
+import { Trophy, Medal, Star, TrendingUp, Users, Crown, Shield } from 'lucide-react';
 import Navbar from './Navbar.tsx';
 import Avatar from './Avatar.tsx';
+import { api } from '../lib/api';
+
+interface ClanLeaderboardEntry {
+    clanId: string;
+    name: string;
+    tag: string;
+    description: string;
+    level: number;
+    totalXP: number;
+    memberCount: number;
+    leaderName: string;
+    rank: number;
+    isPublic: boolean;
+}
 
 interface LeaderboardProps {
     users: UserData[];
@@ -11,6 +25,29 @@ interface LeaderboardProps {
 }
 
 const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack }) => {
+    const [activeTab, setActiveTab] = useState<'players' | 'clans'>('players');
+    const [clanLeaderboard, setClanLeaderboard] = useState<ClanLeaderboardEntry[]>([]);
+    const [loadingClans, setLoadingClans] = useState(false);
+
+    // Fetch clan leaderboard
+    useEffect(() => {
+        const fetchClanLeaderboard = async () => {
+            setLoadingClans(true);
+            try {
+                const data = await api.getClanLeaderboard();
+                setClanLeaderboard(data);
+            } catch (error) {
+                console.error('Failed to load clan leaderboard:', error);
+            } finally {
+                setLoadingClans(false);
+            }
+        };
+
+        if (activeTab === 'clans') {
+            fetchClanLeaderboard();
+        }
+    }, [activeTab]);
+
     // Sort users by total score (descending)
     const rankedUsers = [...users]
         .filter(u => u.totalScore && u.totalScore > 0)
@@ -102,117 +139,283 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                 showActions={false}
             />
 
-            <main className="relative w-full px-4 sm:px-6 py-12">
-                {/* Stats Header */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-                    <div className="bg-white dark:bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-gray-200 dark:border-white/10 flex items-center gap-5 shadow-xl dark:shadow-none">
-                        <div className="p-4 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-2xl text-indigo-600 dark:text-indigo-400">
-                            <Users className="w-8 h-8" />
-                        </div>
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Participants</div>
-                            <div className="text-3xl font-black text-gray-900 dark:text-white">{users.length}</div>
-                        </div>
-                    </div>
-                    <div className="bg-white dark:bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-gray-200 dark:border-white/10 flex items-center gap-5 shadow-xl dark:shadow-none">
-                        <div className="p-4 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-2xl text-emerald-600 dark:text-emerald-400">
-                            <TrendingUp className="w-8 h-8" />
-                        </div>
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Total Attempts</div>
-                            <div className="text-3xl font-black text-gray-900 dark:text-white">{users.reduce((acc, u) => acc + (u.totalAttempts || 0), 0)}</div>
-                        </div>
-                    </div>
-                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 rounded-3xl shadow-xl shadow-indigo-500/20 flex items-center gap-5 relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="p-4 bg-white/20 rounded-2xl text-white backdrop-blur-sm">
-                            <Trophy className="w-8 h-8" />
-                        </div>
-                        <div className="relative z-10">
-                            <div className="text-sm text-indigo-100 font-bold uppercase tracking-wider">Your Rank</div>
-                            <div className="text-3xl font-black text-white">#{currentUserRank?.rank || 'N/A'}</div>
-                        </div>
-                    </div>
+            {/* Tab Navigation */}
+            <div className="relative w-full px-4 sm:px-6 pt-6 pb-4">
+                <div className="max-w-md mx-auto bg-white dark:bg-white/5 backdrop-blur-xl p-2 rounded-2xl border border-gray-200 dark:border-white/10 shadow-xl dark:shadow-none flex gap-2">
+                    <button
+                        onClick={() => setActiveTab('players')}
+                        className={`flex-1 px-6 py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'players'
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
+                            }`}
+                    >
+                        <Users className="w-5 h-5" />
+                        Players
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('clans')}
+                        className={`flex-1 px-6 py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'clans'
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
+                            }`}
+                    >
+                        <Shield className="w-5 h-5" />
+                        Clans
+                    </button>
                 </div>
+            </div>
 
-                {rankedUsers.length === 0 ? (
-                    <div className="text-center py-20 bg-white dark:bg-white/5 rounded-[3rem] border border-gray-200 dark:border-white/10 border-dashed shadow-xl dark:shadow-none">
-                        <Trophy className="w-24 h-24 text-gray-400 dark:text-gray-700 mx-auto mb-6" />
-                        <h2 className="text-3xl font-bold text-gray-500">The Arena is Empty</h2>
-                        <p className="text-gray-500 dark:text-gray-600 mt-2">Check back later for rankings.</p>
-                    </div>
-                ) : (
-                    <div className="space-y-12">
-                        {/* Podium */}
-                        {topThree.length >= 1 && (
-                            <div className="relative pt-8 pb-12">
-                                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-indigo-500/5 to-transparent rounded-full blur-3xl" />
-                                <div className="flex flex-row items-end justify-center gap-4 md:gap-8 min-h-[400px]">
-                                    {topThree.map((user) => (
-                                        <PodiumUser key={user.userId} user={user} rank={user.rank} />
-                                    ))}
+            <main className="relative w-full px-4 sm:px-6 py-8">
+                {activeTab === 'players' ? (
+                    <>
+                        {/* Stats Header */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+                            <div className="bg-white dark:bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-gray-200 dark:border-white/10 flex items-center gap-5 shadow-xl dark:shadow-none">
+                                <div className="p-4 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-2xl text-indigo-600 dark:text-indigo-400">
+                                    <Users className="w-8 h-8" />
+                                </div>
+                                <div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Participants</div>
+                                    <div className="text-3xl font-black text-gray-900 dark:text-white">{users.length}</div>
+                                </div>
+                            </div>
+                            <div className="bg-white dark:bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-gray-200 dark:border-white/10 flex items-center gap-5 shadow-xl dark:shadow-none">
+                                <div className="p-4 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-2xl text-emerald-600 dark:text-emerald-400">
+                                    <TrendingUp className="w-8 h-8" />
+                                </div>
+                                <div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Total Attempts</div>
+                                    <div className="text-3xl font-black text-gray-900 dark:text-white">{users.reduce((acc, u) => acc + (u.totalAttempts || 0), 0)}</div>
+                                </div>
+                            </div>
+                            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 rounded-3xl shadow-xl shadow-indigo-500/20 flex items-center gap-5 relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="p-4 bg-white/20 rounded-2xl text-white backdrop-blur-sm">
+                                    <Trophy className="w-8 h-8" />
+                                </div>
+                                <div className="relative z-10">
+                                    <div className="text-sm text-indigo-100 font-bold uppercase tracking-wider">Your Rank</div>
+                                    <div className="text-3xl font-black text-white">#{currentUserRank?.rank || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {rankedUsers.length === 0 ? (
+                            <div className="text-center py-20 bg-white dark:bg-white/5 rounded-[3rem] border border-gray-200 dark:border-white/10 border-dashed shadow-xl dark:shadow-none">
+                                <Trophy className="w-24 h-24 text-gray-400 dark:text-gray-700 mx-auto mb-6" />
+                                <h2 className="text-3xl font-bold text-gray-500">The Arena is Empty</h2>
+                                <p className="text-gray-500 dark:text-gray-600 mt-2">Check back later for rankings.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-12">
+                                {/* Podium */}
+                                {topThree.length >= 1 && (
+                                    <div className="relative pt-8 pb-12">
+                                        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-indigo-500/5 to-transparent rounded-full blur-3xl" />
+                                        <div className="flex flex-row items-end justify-center gap-4 md:gap-8 min-h-[400px]">
+                                            {topThree.map((user) => (
+                                                <PodiumUser key={user.userId} user={user} rank={user.rank} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Leaderboard List */}
+                                <div className="bg-white dark:bg-[#13141f] rounded-[2.5rem] border border-gray-200 dark:border-white/10 overflow-hidden shadow-2xl">
+                                    <div className="p-8 border-b border-gray-200 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5 backdrop-blur-md">
+                                        <div className="flex items-center gap-3">
+                                            <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
+                                            <h3 className="font-black text-xl uppercase tracking-widest text-gray-900 dark:text-white">Challengers</h3>
+                                        </div>
+                                        <span className="px-4 py-1.5 rounded-full bg-gray-200 dark:bg-white/10 text-xs font-bold text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-white/5">
+                                            {restOfUsers.length} Remaining
+                                        </span>
+                                    </div>
+
+                                    <div className="divide-y divide-gray-200 dark:divide-white/5">
+                                        {restOfUsers.length === 0 && topThree.length > 0 && (
+                                            <div className="p-16 text-center text-gray-500 font-medium">
+                                                Top {topThree.length} have claimed all the glory!
+                                            </div>
+                                        )}
+                                        {restOfUsers.map((user) => (
+                                            <div
+                                                key={user.userId}
+                                                className={`group p-6 flex items-center gap-6 transition-all duration-300 hover:bg-gray-50 dark:hover:bg-white/5 ${user.userId === currentUser.userId ? 'bg-indigo-50 dark:bg-indigo-500/10 border-l-4 border-indigo-500' : 'border-l-4 border-transparent'
+                                                    }`}
+                                            >
+                                                <div className="w-12 text-center font-black text-2xl text-gray-400 dark:text-gray-600 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                                                    #{user.rank}
+                                                </div>
+
+                                                <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-800 flex items-center justify-center font-bold text-xl text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-white/10 group-hover:border-gray-400 dark:group-hover:border-white/30 group-hover:text-gray-900 dark:group-hover:text-white transition-all overflow-hidden">
+                                                    {user.avatar ? (
+                                                        <Avatar config={user.avatar} size="md" className="w-full h-full" />
+                                                    ) : (
+                                                        user.name.charAt(0)
+                                                    )}
+                                                </div>
+
+                                                <div className="flex-grow">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="font-bold text-lg text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{user.name}</span>
+                                                        {user.userId === currentUser.userId && (
+                                                            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-500 text-white">
+                                                                You
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-sm font-medium text-gray-500 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-400">
+                                                        Lvl {user.level || 1} • {user.totalAttempts || 0} Attempts
+                                                    </div>
+                                                </div>
+
+                                                <div className="text-right">
+                                                    <div className="text-2xl font-black text-gray-900 dark:text-white">{user.totalScore}</div>
+                                                    <div className="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider">Points</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         )}
-
-                        {/* Leaderboard List */}
-                        <div className="bg-white dark:bg-[#13141f] rounded-[2.5rem] border border-gray-200 dark:border-white/10 overflow-hidden shadow-2xl">
-                            <div className="p-8 border-b border-gray-200 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5 backdrop-blur-md">
-                                <div className="flex items-center gap-3">
-                                    <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
-                                    <h3 className="font-black text-xl uppercase tracking-widest text-gray-900 dark:text-white">Challengers</h3>
+                    </>
+                ) : (
+                    /* Clan Leaderboard */
+                    <div className="space-y-8">
+                        {loadingClans ? (
+                            <div className="text-center py-20">
+                                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                                <p className="text-gray-600 dark:text-gray-400">Loading clan rankings...</p>
+                            </div>
+                        ) : clanLeaderboard.length === 0 ? (
+                            <div className="text-center py-20 bg-white dark:bg-white/5 rounded-[3rem] border border-gray-200 dark:border-white/10 border-dashed shadow-xl dark:shadow-none">
+                                <Shield className="w-24 h-24 text-gray-400 dark:text-gray-700 mx-auto mb-6" />
+                                <h2 className="text-3xl font-bold text-gray-500">No Clans Yet</h2>
+                                <p className="text-gray-500 dark:text-gray-600 mt-2">Be the first to create a clan!</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Clan Stats */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                    <div className="bg-white dark:bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-gray-200 dark:border-white/10 flex items-center gap-5 shadow-xl dark:shadow-none">
+                                        <div className="p-4 bg-violet-500/10 dark:bg-violet-500/20 rounded-2xl text-violet-600 dark:text-violet-400">
+                                            <Shield className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Total Clans</div>
+                                            <div className="text-3xl font-black text-gray-900 dark:text-white">{clanLeaderboard.length}</div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white dark:bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-gray-200 dark:border-white/10 flex items-center gap-5 shadow-xl dark:shadow-none">
+                                        <div className="p-4 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-2xl text-emerald-600 dark:text-emerald-400">
+                                            <Users className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Total Members</div>
+                                            <div className="text-3xl font-black text-gray-900 dark:text-white">
+                                                {clanLeaderboard.reduce((acc, clan) => acc + clan.memberCount, 0)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-gradient-to-r from-violet-600 to-purple-600 p-6 rounded-3xl shadow-xl shadow-violet-500/20 flex items-center gap-5 relative overflow-hidden group">
+                                        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <div className="p-4 bg-white/20 rounded-2xl text-white backdrop-blur-sm">
+                                            <Trophy className="w-8 h-8" />
+                                        </div>
+                                        <div className="relative z-10">
+                                            <div className="text-sm text-violet-100 font-bold uppercase tracking-wider">Your Clan Rank</div>
+                                            <div className="text-3xl font-black text-white">
+                                                {currentUser.clanId
+                                                    ? `#${clanLeaderboard.find(c => c.clanId === currentUser.clanId)?.rank || 'N/A'}`
+                                                    : 'None'
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <span className="px-4 py-1.5 rounded-full bg-gray-200 dark:bg-white/10 text-xs font-bold text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-white/5">
-                                    {restOfUsers.length} Remaining
-                                </span>
-                            </div>
 
-                            <div className="divide-y divide-gray-200 dark:divide-white/5">
-                                {restOfUsers.length === 0 && topThree.length > 0 && (
-                                    <div className="p-16 text-center text-gray-500 font-medium">
-                                        Top {topThree.length} have claimed all the glory!
+                                {/* Clan Rankings Table */}
+                                <div className="bg-white dark:bg-[#13141f] rounded-[2.5rem] border border-gray-200 dark:border-white/10 overflow-hidden shadow-2xl">
+                                    <div className="p-8 border-b border-gray-200 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5 backdrop-blur-md">
+                                        <div className="flex items-center gap-3">
+                                            <Trophy className="w-6 h-6 text-violet-500 fill-violet-500" />
+                                            <h3 className="font-black text-xl uppercase tracking-widest text-gray-900 dark:text-white">Clan Rankings</h3>
+                                        </div>
+                                        <span className="px-4 py-1.5 rounded-full bg-gray-200 dark:bg-white/10 text-xs font-bold text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-white/5">
+                                            {clanLeaderboard.length} Clans
+                                        </span>
                                     </div>
-                                )}
-                                {restOfUsers.map((user) => (
-                                    <div
-                                        key={user.userId}
-                                        className={`group p-6 flex items-center gap-6 transition-all duration-300 hover:bg-gray-50 dark:hover:bg-white/5 ${user.userId === currentUser.userId ? 'bg-indigo-50 dark:bg-indigo-500/10 border-l-4 border-indigo-500' : 'border-l-4 border-transparent'
-                                            }`}
-                                    >
-                                        <div className="w-12 text-center font-black text-2xl text-gray-400 dark:text-gray-600 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                                            #{user.rank}
-                                        </div>
 
-                                        <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-800 flex items-center justify-center font-bold text-xl text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-white/10 group-hover:border-gray-400 dark:group-hover:border-white/30 group-hover:text-gray-900 dark:group-hover:text-white transition-all overflow-hidden">
-                                            {user.avatar ? (
-                                                <Avatar config={user.avatar} size="md" className="w-full h-full" />
-                                            ) : (
-                                                user.name.charAt(0)
-                                            )}
-                                        </div>
+                                    <div className="divide-y divide-gray-200 dark:divide-white/5">
+                                        {clanLeaderboard.map((clan) => {
+                                            const isUserClan = clan.clanId === currentUser.clanId;
+                                            const getRankBadge = (rank: number) => {
+                                                if (rank === 1) return <Crown className="w-6 h-6 text-yellow-400 fill-yellow-400" />;
+                                                if (rank === 2) return <Medal className="w-6 h-6 text-slate-300 fill-slate-300" />;
+                                                if (rank === 3) return <Medal className="w-6 h-6 text-amber-600 fill-amber-600" />;
+                                                return null;
+                                            };
 
-                                        <div className="flex-grow">
-                                            <div className="flex items-center gap-3">
-                                                <span className="font-bold text-lg text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{user.name}</span>
-                                                {user.userId === currentUser.userId && (
-                                                    <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-500 text-white">
-                                                        You
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="text-sm font-medium text-gray-500 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-400">
-                                                Lvl {user.level || 1} • {user.totalAttempts || 0} Attempts
-                                            </div>
-                                        </div>
+                                            return (
+                                                <div
+                                                    key={clan.clanId}
+                                                    className={`group p-6 flex items-center gap-6 transition-all duration-300 hover:bg-gray-50 dark:hover:bg-white/5 ${isUserClan ? 'bg-violet-50 dark:bg-violet-500/10 border-l-4 border-violet-500' : 'border-l-4 border-transparent'
+                                                        }`}
+                                                >
+                                                    {/* Rank */}
+                                                    <div className="w-16 text-center">
+                                                        {getRankBadge(clan.rank) || (
+                                                            <span className="font-black text-2xl text-gray-400 dark:text-gray-600 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                                                                #{clan.rank}
+                                                            </span>
+                                                        )}
+                                                    </div>
 
-                                        <div className="text-right">
-                                            <div className="text-2xl font-black text-gray-900 dark:text-white">{user.totalScore}</div>
-                                            <div className="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider">Points</div>
-                                        </div>
+                                                    {/* Clan Icon */}
+                                                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                                                        <Shield className="w-8 h-8 text-white" />
+                                                    </div>
+
+                                                    {/* Clan Info */}
+                                                    <div className="flex-grow">
+                                                        <div className="flex items-center gap-3 mb-1">
+                                                            <span className="font-black text-lg text-gray-900 dark:text-white">
+                                                                [{clan.tag}] {clan.name}
+                                                            </span>
+                                                            {isUserClan && (
+                                                                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-violet-500 text-white">
+                                                                    Your Clan
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
+                                                            {clan.description || 'No description'}
+                                                        </div>
+                                                        <div className="flex gap-4 mt-2 text-xs font-semibold text-gray-500 dark:text-gray-500">
+                                                            <span className="flex items-center gap-1">
+                                                                <Users className="w-3 h-3" />
+                                                                {clan.memberCount} members
+                                                            </span>
+                                                            <span>•</span>
+                                                            <span>Leader: {clan.leaderName}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Stats */}
+                                                    <div className="text-right">
+                                                        <div className="text-sm text-gray-500 dark:text-gray-400 font-bold mb-1">Level {clan.level}</div>
+                                                        <div className="text-2xl font-black text-gray-900 dark:text-white">{clan.totalXP.toLocaleString()}</div>
+                                                        <div className="text-[10px] font-black text-violet-500 dark:text-violet-400 uppercase tracking-wider">Total XP</div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
             </main>

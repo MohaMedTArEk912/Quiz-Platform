@@ -1,5 +1,5 @@
-import type { UserData, AttemptData, Quiz, BadgeDefinition, ChallengeData, ShopItem, SkillTrack, Tournament } from '../types';
-export type { UserData, AttemptData, Quiz, BadgeDefinition, ChallengeData, ShopItem, SkillTrack, Tournament };
+import type { UserData, AttemptData, Quiz, BadgeDefinition, ChallengeData, ShopItem, SkillTrack, Tournament, Clan } from '../types';
+export type { UserData, AttemptData, Quiz, BadgeDefinition, ChallengeData, ShopItem, SkillTrack, Tournament, Clan };
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -745,6 +745,67 @@ export const api = {
     async getUserTreeProgress(userId: string, treeId: string) {
         const response = await fetch(`${API_URL}/badge-trees/progress/${userId}/${treeId}`);
         if (!response.ok) throw new Error('Failed to load tree progress');
+        return response.json();
+    },
+
+    // Clans
+    async createClan(data: { name: string; tag: string; description: string; isPublic: boolean }, userId: string) {
+        const response = await fetch(`${API_URL}/clans/create`, {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to create clan');
+        }
+        return response.json();
+    },
+
+    async getClan(clanId: string, userId: string): Promise<Clan> {
+        const response = await fetch(`${API_URL}/clans/${clanId}`, {
+            headers: getHeaders(userId)
+        });
+        if (!response.ok) throw new Error('Failed to fetch clan');
+        return response.json();
+    },
+
+    async searchClans(query: string, userId: string): Promise<Clan[]> {
+        const response = await fetch(`${API_URL}/clans/search?query=${encodeURIComponent(query)}`, {
+            headers: getHeaders(userId)
+        });
+        if (!response.ok) throw new Error('Failed to search clans');
+        return response.json();
+    },
+
+    async joinClan(clanId: string, userId: string) {
+        const response = await fetch(`${API_URL}/clans/join`, {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ clanId })
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to join clan');
+        }
+        return response.json();
+    },
+
+    async leaveClan(userId: string) {
+        const response = await fetch(`${API_URL}/clans/leave`, {
+            method: 'POST',
+            headers: getHeaders(userId)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to leave clan');
+        }
+        return response.json();
+    },
+
+    async getClanLeaderboard() {
+        const response = await fetch(`${API_URL}/clans/leaderboard`);
+        if (!response.ok) throw new Error('Failed to fetch clan leaderboard');
         return response.json();
     }
 };

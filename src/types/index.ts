@@ -104,6 +104,7 @@ export interface UserData {
         unlockedModules: string[];
         completedModules: string[];
     }[];
+    clanId?: string;
 }
 
 export interface AvatarConfig {
@@ -300,4 +301,27 @@ export interface UserBadgeProgress {
     progress: number; // percentage
     nextUnlockable: BadgeNode[];
     recentlyEarned: Badge[];
+}
+
+export interface ClanMember {
+    userId: string;
+    role: 'leader' | 'elder' | 'member';
+    joinedAt: string;
+    contribution: number;
+    name?: string;
+    avatar?: AvatarConfig;
+    totalScore?: number;
+}
+
+export interface Clan {
+    clanId: string;
+    name: string;
+    tag: string;
+    description: string;
+    leaderId: string;
+    totalXP: number;
+    level: number;
+    isPublic: boolean;
+    members: ClanMember[];
+    createdAt: string;
 }

@@ -28,6 +28,7 @@ import QuizResultsPage from './pages/QuizResultsPage';
 import AsyncChallengePage from './pages/AsyncChallengePage';
 import VsGamePage from './pages/VsGamePage';
 import BadgeTreeDetailPage from './pages/BadgeTreeDetailPage';
+import ClanPage from './pages/ClanPage';
 
 const App: React.FC = () => {
   return (
@@ -78,6 +79,7 @@ const App: React.FC = () => {
                     <Route path="/results" element={<QuizResultsPage />} />
                     <Route path="/game/vs" element={<VsGamePage />} />
                     <Route path="/badge-tree/:treeId" element={<BadgeTreeDetailPage />} />
+                    <Route path="/clans" element={<ClanPage />} />
                   </Route>
 
                   {/* Catch all redirect */}

@@ -12,7 +12,8 @@ import {
     BookOpen,
     Trophy,
     TrendingUp,
-    Users
+    Users,
+    Shield
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle.tsx';
 import type { UserData } from '../types/index.ts';
@@ -50,6 +51,7 @@ const Navbar: React.FC<NavbarProps> = ({
         { path: '/daily', icon: Calendar, label: 'Daily', color: 'from-orange-500 to-red-500' },
         { path: '/study', icon: BookOpen, label: 'Study', color: 'from-indigo-500 to-purple-500' },
         { path: '/tournaments', icon: Trophy, label: 'Tournaments', color: 'from-yellow-500 to-orange-500' },
+        { path: '/clans', icon: Shield, label: 'Clans', color: 'from-violet-500 to-indigo-500' },
         { path: '/tracks', icon: TrendingUp, label: 'Tracks', color: 'from-blue-500 to-purple-500' },
         { path: '/social', icon: Users, label: 'Social', color: 'from-pink-500 to-purple-500' },
     ];
@@ -91,7 +93,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
                             {!showBack && (
                                 <p className="hidden sm:block text-gray-500 dark:text-gray-400 text-xs font-medium">
-                                    Welcome, <span className="text-gray-900 dark:text-white">{user.name}</span>!
+                                    Welcome, <span className="text-gray-900 dark:text-white">{user?.name || 'User'}</span>!
                                 </p>
                             )}
                         </div>
@@ -149,7 +151,7 @@ const Navbar: React.FC<NavbarProps> = ({
                                             <Avatar config={user.avatar} size="sm" className="w-full h-full" />
                                         ) : (
                                             <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">
-                                                {user.name.charAt(0).toUpperCase()}
+                                                {user?.name?.charAt(0).toUpperCase() || 'U'}
                                             </div>
                                         )}
                                     </div>
@@ -222,13 +224,13 @@ const Navbar: React.FC<NavbarProps> = ({
                                             <Avatar config={user.avatar} size="md" className="w-full h-full" />
                                         ) : (
                                             <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                                                {user.name.charAt(0).toUpperCase()}
+                                                {user?.name?.charAt(0).toUpperCase() || 'U'}
                                             </div>
                                         )}
                                     </div>
                                     <div>
                                         <p className="text-gray-500 dark:text-gray-400 text-xs font-medium">Signed in as</p>
-                                        <p className="font-bold text-gray-900 dark:text-white">{user.name}</p>
+                                        <p className="font-bold text-gray-900 dark:text-white">{user?.name || 'User'}</p>
                                     </div>
                                 </div>
 

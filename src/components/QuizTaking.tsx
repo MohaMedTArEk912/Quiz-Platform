@@ -259,6 +259,48 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
+    const q = quiz.questions && quiz.questions.length > 0 ? quiz.questions[currentQuestion] : null;
+    const progress = quiz.questions ? ((currentQuestion + 1) / quiz.questions.length) * 100 : 0;
+    const selectedAnswer = answers[currentQuestion];
+    const answeredCount = Object.keys(answers).length;
+    const isTextQuestion = q ? q.type === 'text' : false;
+
+    // Keyboard Shortcuts
+    useEffect(() => {
+        if (showResumePrompt || isSubmitting) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Ignore if typing in an input
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+            // Number keys 1-4 for options
+            if (['1', '2', '3', '4'].includes(e.key)) {
+                if (isTextQuestion) return;
+                const index = parseInt(e.key) - 1;
+                // Check if option exists and not eliminated
+                if (quiz.questions[currentQuestion].options && index < (quiz.questions[currentQuestion].options?.length || 0)) {
+                    if (!eliminatedOptions.has(index)) {
+                        handleAnswer(index);
+                    }
+                }
+            }
+
+            // Enter for Next / Submit
+            if (e.key === 'Enter') {
+                if (selectedAnswer !== undefined) {
+                    if (currentQuestion < quiz.questions.length - 1) {
+                        nextQuestion();
+                    } else {
+                        handleQuizComplete();
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [currentQuestion, answers, showResumePrompt, isSubmitting, quiz.questions, selectedAnswer, eliminatedOptions]);
+
     if (!quiz.questions || quiz.questions.length === 0) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
@@ -290,11 +332,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         );
     }
 
-    const q = quiz.questions[currentQuestion];
-    const progress = ((currentQuestion + 1) / quiz.questions.length) * 100;
-    const selectedAnswer = answers[currentQuestion];
-    const answeredCount = Object.keys(answers).length;
-    const isTextQuestion = q.type === 'text';
+    if (!q) return null;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
@@ -315,7 +353,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                         <div className="flex items-center gap-4">
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{quiz.title}</h1>
-                                <p className="text-gray-600 dark:text-gray-400 text-sm">{q.part}</p>
+                                <p className="text-gray-600 dark:text-gray-400 text-sm hidden md:block">
+                                    <span className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs mr-2">Pro Tip</span>
+                                    Use <kbd className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">1</kbd>-<kbd className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">4</kbd> to answer, <kbd className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">Enter</kbd> for next
+                                </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-6">
@@ -588,7 +629,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                                         <button
                                             key={index}
                                             onClick={() => handleAnswer(index)}
-                                            className={`w-full p-5 rounded-xl text-left transition-all flex items-center gap-4 font-medium text-lg ${isSelected
+                                            className={`w-full p-5 rounded-xl text-left transition-all flex items-center gap-4 font-medium text-lg group ${isSelected
                                                 ? 'bg-purple-100 dark:bg-purple-900/40 border-2 border-purple-500 text-purple-900 dark:text-purple-100'
                                                 : 'bg-gray-100 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 hover:bg-gray-200 dark:hover:bg-purple-900/20 text-gray-700 dark:text-gray-200'
                                                 }`}
@@ -598,6 +639,9 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                                                 {String.fromCharCode(65 + index)}
                                             </div>
                                             <span className="flex-1">{option}</span>
+                                            <span className="opacity-0 group-hover:opacity-50 text-xs font-mono border border-current px-1.5 rounded hidden lg:inline-block">
+                                                {index + 1}
+                                            </span>
                                         </button>
                                     );
                                 })
@@ -628,7 +672,12 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                                         Submitting...
                                     </span>
                                 ) : (
-                                    currentQuestion < quiz.questions.length - 1 ? 'Next Question' : 'Submit Quiz'
+                                    currentQuestion < quiz.questions.length - 1 ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            Next Question
+                                            <span className="text-xs font-normal opacity-70 hidden lg:inline-block border border-white/30 px-1.5 rounded ml-1">↵</span>
+                                        </span>
+                                    ) : 'Submit Quiz'
                                 )}
                             </button>
                         </div>

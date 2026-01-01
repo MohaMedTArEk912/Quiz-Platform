@@ -11,6 +11,7 @@ interface AuthContextType {
     googleLogin: (profile: { email: string; name: string; googleId: string }) => Promise<void>;
     logout: () => void;
     updateUser: (updates: Partial<UserData>) => void;
+    refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -57,6 +58,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         verifyAndLoadSession();
     }, []);
+
+    const refreshUser = async () => {
+        if (!currentUser) return;
+        try {
+            const user = await api.getUserData(currentUser.userId);
+            setCurrentUser(user);
+            const isAdminUser = user.role === 'admin';
+            setIsAdmin(isAdminUser);
+            sessionStorage.setItem('userSession', JSON.stringify({ user, isAdmin: isAdminUser }));
+        } catch (error) {
+            console.error('Failed to refresh user:', error);
+        }
+    };
 
     const login = async (email: string, password: string) => {
         const normalizedEmail = email.toLowerCase().trim();
@@ -110,10 +124,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const updateUser = (updates: Partial<UserData>) => {
         setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
-        // Also update session storage to persist local changes? 
-        // Usually session storage holds the initial session, but if we refresh, we want latest.
-        // Ideally session storage just holds ID/Token and we fetch fresh.
-        // But keeping it consistent:
         if (currentUser) {
             const newState = { ...currentUser, ...updates };
             sessionStorage.setItem('userSession', JSON.stringify({ user: newState, isAdmin }));
@@ -121,7 +131,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ currentUser, isAdmin, isLoading, login, register, googleLogin, logout, updateUser }}>
+        <AuthContext.Provider value={{ currentUser, isAdmin, isLoading, login, register, googleLogin, logout, updateUser, refreshUser }}>
             {children}
         </AuthContext.Provider>
     );

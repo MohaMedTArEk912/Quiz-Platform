@@ -19,6 +19,7 @@ import badgeRoutes from './routes/badges.js';
 import badgeNodesRoutes from './routes/badgeNodes.js';
 import badgeTreesRoutes from './routes/badgeTrees.js';
 import studyCardsRoutes from './routes/studyCards.js';
+import clanRoutes from './routes/clanRoutes.js';
 
 dotenv.config();
 
@@ -60,6 +61,7 @@ app.use('/api/shop', shopRoutes);
 app.use('/api', engagementRoutes); // mounts /daily-challenge, /skill-tracks, /tournaments
 app.use('/api', analyticsRoutes); // mounts /analytics/summary, /data
 app.use('/api/study-cards', studyCardsRoutes);
+app.use('/api/clans', clanRoutes);
 
 app.use('/api/badges', badgeRoutes);
 app.use('/api/badge-nodes', badgeNodesRoutes);
