@@ -5,12 +5,17 @@ dotenv.config();
 
 const uri = process.env.MONGODB_URI;
 
-// Global connection state for serverless caching
+// Cache the connection/promise so serverless cold starts don't reconnect on every request
 let cachedConnection = null;
+let cachedPromise = null;
 
 export async function connectToDatabase() {
-  if (cachedConnection) {
+  // 1 = connected, 2 = connecting. Reuse existing sockets when possible.
+  if (mongoose.connection.readyState === 1 && cachedConnection) {
     return cachedConnection;
+  }
+  if (mongoose.connection.readyState === 2 && cachedPromise) {
+    return cachedPromise;
   }
 
   if (!uri) {
@@ -18,18 +23,32 @@ export async function connectToDatabase() {
     throw new Error('MONGODB_URI is not defined');
   }
 
-  try {
-    const opts = {
-      serverSelectionTimeoutMS: 5000, // Fail fast after 5s if DB is unreachable
-      socketTimeoutMS: 45000,
-    };
-    cachedConnection = await mongoose.connect(uri, opts);
-    console.log('Connected to MongoDB');
-    return cachedConnection;
-  } catch (err) {
-    console.error('MongoDB connection error:', err);
-    throw err;
-  }
+  const opts = {
+    maxPoolSize: 10,
+    minPoolSize: 1,
+    serverSelectionTimeoutMS: 3000, // fail faster if cluster is unreachable
+    connectTimeoutMS: 3000,
+    socketTimeoutMS: 20000,
+    heartbeatFrequencyMS: 8000,
+    family: 4, // prefer IPv4 to avoid slow DNS/IPv6 fallbacks
+  };
+
+  const start = Date.now();
+
+  cachedPromise = mongoose.connect(uri, opts)
+    .then((mongooseInstance) => {
+      cachedConnection = mongooseInstance.connection;
+      const ms = Date.now() - start;
+      console.info(`MongoDB connected in ${ms}ms`);
+      return cachedConnection;
+    })
+    .catch((err) => {
+      cachedPromise = null; // allow retries on next request
+      console.error('MongoDB connection error:', err);
+      throw err;
+    });
+
+  return cachedPromise;
 }
 
 export const dbMiddleware = async (req, res, next) => {
