@@ -4,7 +4,10 @@ import bcrypt from 'bcryptjs';
 
 // Helper: Generate JWT
 const generateToken = (userId, role) => {
-  return jwt.sign({ userId, role }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '7d' });
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+  return jwt.sign({ userId, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
 // Helper function to calculate login streak
@@ -181,7 +184,12 @@ export const verifySession = async (req, res) => {
 
     if (!token) return res.status(401).json({ valid: false, message: 'No token provided' });
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    if (!process.env.JWT_SECRET) {
+      console.error('CRITICAL: JWT_SECRET is not defined');
+      return res.status(500).json({ valid: false, message: 'Server configuration error' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findOne({ userId: decoded.userId });
 
     if (!user) return res.status(404).json({ valid: false });

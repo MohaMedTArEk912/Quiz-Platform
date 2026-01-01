@@ -125,12 +125,6 @@ const QuizTakingPage: React.FC = () => {
                 rank: currentUser.rank
             };
 
-            console.log('📊 Score Update Debug:');
-            console.log('Current user totalScore:', currentUser.totalScore);
-            console.log('Quiz result score:', result.score);
-            console.log('Calculated new totalScore:', userUpdates.totalScore);
-            console.log('Full userUpdates:', userUpdates);
-
             // Update local state first
             updateUser(userUpdates);
 
@@ -142,7 +136,6 @@ const QuizTakingPage: React.FC = () => {
                 const freshUserData = await api.verifySession(currentUser.userId);
                 if (freshUserData.valid && freshUserData.user) {
                     updateUser(freshUserData.user);
-                    console.log('✅ Fresh user data loaded:', freshUserData.user);
                 }
             } catch (error) {
                 console.error('Failed to fetch fresh user data:', error);

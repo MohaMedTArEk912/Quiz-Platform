@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import type { Clan, UserData } from '../../types';
 import { Users, Shield, Trophy, Search, LogOut, Star, UserPlus, Edit2, Check, X, MoreVertical, Trash2, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { useNotification } from '../../context/NotificationContext';
+import { useConfirm } from '../../hooks/useConfirm';
+import ConfirmDialog from '../ConfirmDialog';
 
 interface ClanHubProps {
     user: UserData;
@@ -9,6 +12,8 @@ interface ClanHubProps {
 }
 
 export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
+    const { showNotification } = useNotification();
+    const { confirm, confirmState, handleCancel } = useConfirm();
     const [clan, setClan] = useState<Clan | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -90,14 +95,21 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
     };
 
     const handleLeave = async () => {
-        if (!confirm('Are you sure you want to leave your clan?')) return;
+        const confirmed = await confirm({
+            title: 'Leave Clan',
+            message: 'Are you sure you want to leave your clan?',
+            confirmText: 'Leave',
+            type: 'danger'
+        });
+        if (!confirmed) return;
         try {
             await api.leaveClan(user.userId);
             setClan(null);
             onUpdateUser();
             setView('browse');
+            showNotification('success', 'You have left the clan');
         } catch (err: any) {
-            setError(err.message);
+            showNotification('error', err.message || 'Failed to leave clan');
         }
     };
 
@@ -115,20 +127,28 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
         if (!clan) return;
         try {
             await api.inviteToClan(clan.clanId, targetId, user.userId);
-            alert('Invite sent!');
+            showNotification('success', 'Invite sent!');
             setInviteResults(inviteResults.filter(u => u.userId !== targetId));
         } catch (err: any) {
-            alert(err.message);
+            showNotification('error', err.message || 'Failed to send invite');
         }
     };
 
     const handleKick = async (targetId: string) => {
-        if (!clan || !confirm('Are you sure you want to remove this member?')) return;
+        if (!clan) return;
+        const confirmed = await confirm({
+            title: 'Remove Member',
+            message: 'Are you sure you want to remove this member from the clan?',
+            confirmText: 'Remove',
+            type: 'danger'
+        });
+        if (!confirmed) return;
         try {
             await api.kickMember(clan.clanId, targetId, user.userId);
             loadClan(clan.clanId);
+            showNotification('success', 'Member removed');
         } catch (err: any) {
-            alert(err.message);
+            showNotification('error', err.message || 'Failed to remove member');
         }
     };
 
@@ -137,8 +157,9 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
         try {
             await api.updateMemberRole(clan.clanId, targetId, newRole, user.userId);
             loadClan(clan.clanId);
+            showNotification('success', 'Role updated');
         } catch (err: any) {
-            alert(err.message);
+            showNotification('error', err.message || 'Failed to update role');
         }
     };
 
@@ -147,8 +168,9 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
         try {
             await api.handleJoinRequest(clan.clanId, targetId, accept, user.userId);
             loadClan(clan.clanId);
+            showNotification('success', accept ? 'Request accepted' : 'Request rejected');
         } catch (err: any) {
-            alert(err.message);
+            showNotification('error', err.message || 'Failed to process request');
         }
     };
 
@@ -555,6 +577,17 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                         </button>
                     </form>
                 </div>
+            )}
+            {confirmState.isOpen && (
+                <ConfirmDialog
+                    title={confirmState.title}
+                    message={confirmState.message}
+                    confirmText={confirmState.confirmText}
+                    cancelText={confirmState.cancelText}
+                    type={confirmState.type}
+                    onConfirm={confirmState.onConfirm}
+                    onCancel={handleCancel}
+                />
             )}
         </div>
     );

@@ -4,6 +4,8 @@ import type { BadgeNode } from '../../types';
 import { Plus, Edit2, Trash2, Award, Download, Upload, MoreVertical } from 'lucide-react';
 import BadgeNodeEditor from './BadgeNodeEditor';
 import { SAMPLE_BADGE, BADGE_RARITY_COLORS } from '../../constants/badgeDefaults';
+import { useConfirm } from '../../hooks/useConfirm';
+import ConfirmDialog from '../ConfirmDialog';
 
 interface BadgeManagementProps {
     adminId: string;
@@ -11,6 +13,7 @@ interface BadgeManagementProps {
 }
 
 const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotification }) => {
+    const { confirm, confirmState, handleCancel } = useConfirm();
     const [badges, setBadges] = useState<BadgeNode[]>([]);
     const [loading, setLoading] = useState(true);
     const [showBadgeEditor, setShowBadgeEditor] = useState(false);
@@ -110,7 +113,13 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
     };
 
     const handleDeleteBadge = async (badgeId: string) => {
-        if (!confirm('Are you sure you want to delete this badge?')) return;
+        const confirmed = await confirm({
+            title: 'Delete Badge',
+            message: 'Are you sure you want to delete this badge? This action cannot be undone.',
+            confirmText: 'Delete',
+            type: 'danger'
+        });
+        if (!confirmed) return;
 
         try {
             await api.deleteBadgeNode(badgeId, adminId);
@@ -275,6 +284,17 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
                         setShowBadgeEditor(false);
                         setEditingBadge(null);
                     }}
+                />
+            )}
+            {confirmState.isOpen && (
+                <ConfirmDialog
+                    title={confirmState.title}
+                    message={confirmState.message}
+                    confirmText={confirmState.confirmText}
+                    cancelText={confirmState.cancelText}
+                    type={confirmState.type}
+                    onConfirm={confirmState.onConfirm}
+                    onCancel={handleCancel}
                 />
             )}
         </div>

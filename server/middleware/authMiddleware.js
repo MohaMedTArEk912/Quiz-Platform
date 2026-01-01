@@ -15,7 +15,12 @@ export const verifyUser = async (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
     
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    if (!process.env.JWT_SECRET) {
+      console.error('CRITICAL: JWT_SECRET is not defined');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     const user = await User.findOne({ userId: decoded.userId });
     if (!user) {
@@ -41,7 +46,13 @@ export const verifyAdmin = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    
+    if (!process.env.JWT_SECRET) {
+      console.error('CRITICAL: JWT_SECRET is not defined');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const adminUser = await User.findOne({ userId: decoded.userId });
     if (!adminUser) {

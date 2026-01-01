@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { BookOpen, Download, Upload, Plus, MoreVertical, Edit2, Trash2, Code } from 'lucide-react';
 import type { StudyCard, UserData } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
+import { useConfirm } from '../../hooks/useConfirm';
+import ConfirmDialog from '../ConfirmDialog';
 
 interface StudyManagementProps {
     currentUser: UserData;
@@ -10,6 +12,7 @@ interface StudyManagementProps {
 }
 
 const StudyManagement: React.FC<StudyManagementProps> = ({ currentUser, onNotification }) => {
+    const { confirm, confirmState, handleCancel } = useConfirm();
     const [studyCards, setStudyCards] = useState<StudyCard[]>([]);
     const [editingStudyCard, setEditingStudyCard] = useState<Partial<StudyCard> | null>(null);
     const [studyLanguageFilter, setStudyLanguageFilter] = useState<string>('all');
@@ -94,7 +97,13 @@ const StudyManagement: React.FC<StudyManagementProps> = ({ currentUser, onNotifi
     };
 
     const handleDeleteStudyCard = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this study card?')) return;
+        const confirmed = await confirm({
+            title: 'Delete Study Card',
+            message: 'Are you sure you want to delete this study card? This action cannot be undone.',
+            confirmText: 'Delete',
+            type: 'danger'
+        });
+        if (!confirmed) return;
         try {
             await api.deleteStudyCard(id, currentUser.userId);
             setStudyCards(prev => prev.filter(c => c.id !== id));
@@ -223,6 +232,17 @@ const StudyManagement: React.FC<StudyManagementProps> = ({ currentUser, onNotifi
                     </div>
                 </div>,
                 document.body
+            )}
+            {confirmState.isOpen && (
+                <ConfirmDialog
+                    title={confirmState.title}
+                    message={confirmState.message}
+                    confirmText={confirmState.confirmText}
+                    cancelText={confirmState.cancelText}
+                    type={confirmState.type}
+                    onConfirm={confirmState.onConfirm}
+                    onCancel={handleCancel}
+                />
             )}
         </div>
     );

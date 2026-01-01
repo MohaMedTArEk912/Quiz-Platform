@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/refs */
-import React, { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 
@@ -20,14 +20,43 @@ export const useSocket = () => {
     return context;
 };
 
+const resolveSocketConfig = () => {
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+
+    const envUrl = import.meta.env.VITE_SOCKET_URL as string | undefined;
+    const envPath = import.meta.env.VITE_SOCKET_PATH as string | undefined;
+    const envEnabled = import.meta.env.VITE_ENABLE_SOCKET as string | undefined;
+
+    const enabled = envEnabled === 'true' || isLocal;
+    if (!enabled) {
+        return { enabled: false } as const;
+    }
+
+    const url = envUrl ?? (isLocal ? 'http://localhost:5000' : window.location.origin);
+    const path = envPath ?? (isLocal ? '/socket.io/' : '/.netlify/functions/api/socket.io/');
+    const transports = isLocal ? ['websocket', 'polling'] : ['polling'];
+
+    return { enabled: true, url, path, transports } as const;
+};
+
 export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { currentUser } = useAuth();
     const socketRef = useRef<Socket | null>(null);
     const [connected, setConnected] = useState(false);
 
+    const socketConfig = useMemo(() => resolveSocketConfig(), []);
+
     const userId = currentUser?.userId ?? null;
 
     useEffect(() => {
+        if (!socketConfig.enabled) {
+            socketRef.current?.disconnect();
+            socketRef.current = null;
+            setConnected(false);
+            return;
+        }
+
         if (!userId) {
             socketRef.current?.disconnect();
             socketRef.current = null;
@@ -37,12 +66,8 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
         if (socketRef.current) return;
 
-        // Netlify Functions do not support true WebSockets. Use polling in prod and point to the function path.
-        const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-        const socketUrl = isDevelopment ? 'http://localhost:5000' : window.location.origin;
-        const socketPath = isDevelopment ? '/socket.io/' : '/.netlify/functions/api/socket.io/';
-        const transports = isDevelopment ? ['websocket', 'polling'] : ['polling'];
+        // Netlify Functions cannot hold WebSockets; allow production sockets only when explicitly enabled.
+        const { url: socketUrl, path: socketPath, transports } = socketConfig;
 
         try {
             const newSocket = io(socketUrl, {
@@ -58,18 +83,18 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             socketRef.current = newSocket;
 
             newSocket.on('connect', () => {
-                console.log('✅ WebSocket connected successfully');
+                if (import.meta.env.DEV) console.log('✅ WebSocket connected successfully');
                 setConnected(true);
                 newSocket.emit('join_user', userId);
             });
 
             newSocket.on('disconnect', (reason) => {
-                console.log('❌ WebSocket disconnected:', reason);
+                if (import.meta.env.DEV) console.log('❌ WebSocket disconnected:', reason);
                 setConnected(false);
             });
 
             newSocket.on('connect_error', (error) => {
-                console.log('⚠️ Socket connection error:', error.message);
+                if (import.meta.env.DEV) console.log('⚠️ Socket connection error:', error.message);
                 setConnected(false);
             });
 
@@ -79,10 +104,10 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 setConnected(false);
             };
         } catch (error) {
-            console.log('Socket initialization failed:', error);
+            if (import.meta.env.DEV) console.error('Socket initialization failed:', error);
             return;
         }
-    }, [userId]);
+    }, [userId, socketConfig]);
 
     return (
         <SocketContext.Provider value={{ socket: socketRef.current, connected }}>

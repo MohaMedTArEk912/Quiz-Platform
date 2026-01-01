@@ -67,7 +67,7 @@ const BlockQuestion: React.FC<BlockQuestionProps> = ({ initialXml, toolbox, onCh
       code = javascriptGenerator.workspaceToCode(workspaceRef.current);
     } catch (e) {
       console.error("Error generating code:", e);
-      alert("Error generating code. Please check your blocks.");
+      showNotification('error', 'Error generating code. Please check your blocks.');
       setIsRunning(false);
       return;
     }

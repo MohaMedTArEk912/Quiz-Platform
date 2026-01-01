@@ -116,11 +116,15 @@ app.use('/api/badge-trees', badgeTreesRoutes);
 
 // Socket.io event handlers
 io.on('connection', (socket) => {
-  console.log('✅ Client connected:', socket.id);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('✅ Client connected:', socket.id);
+  }
   
   socket.on('join_user', (userId) => {
     socket.join(userId);
-    console.log(`👤 User ${userId} joined their room`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`👤 User ${userId} joined their room`);
+    }
   });
 
   socket.on('invite_friend', ({ fromId, toId, fromName, quizId }) => {
@@ -131,12 +135,16 @@ io.on('connection', (socket) => {
       quizId,
       roomId
     });
-    console.log(`🎮 Game invite sent from ${fromName} to ${toId}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🎮 Game invite sent from ${fromName} to ${toId}`);
+    }
   });
 
   socket.on('join_game_room', (roomId) => {
     socket.join(roomId);
-    console.log(`🚪 Socket ${socket.id} joined game room ${roomId}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🚪 Socket ${socket.id} joined game room ${roomId}`);
+    }
   });
 
   socket.on('update_progress', ({ roomId, userId, score, currentQuestion, percentage }) => {
@@ -146,11 +154,15 @@ io.on('connection', (socket) => {
       currentQuestion,
       percentage
     });
-    console.log(`📊 Progress update in room ${roomId}: ${percentage}%`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`📊 Progress update in room ${roomId}: ${percentage}%`);
+    }
   });
   
   socket.on('disconnect', (reason) => {
-    console.log('❌ Client disconnected:', socket.id, 'Reason:', reason);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('❌ Client disconnected:', socket.id, 'Reason:', reason);
+    }
   });
 });
 

@@ -1,7 +1,59 @@
-import type { UserData, AttemptData, Quiz, BadgeDefinition, ChallengeData, ShopItem, SkillTrack, Tournament, Clan } from '../types';
-export type { UserData, AttemptData, Quiz, BadgeDefinition, ChallengeData, ShopItem, SkillTrack, Tournament, Clan };
+import type {
+    UserData,
+    AttemptData,
+    Quiz,
+    BadgeDefinition,
+    ChallengeData,
+    ShopItem,
+    SkillTrack,
+    Tournament,
+    Clan,
+    DailyChallengeDef,
+    StudyCard,
+    BadgeNode,
+    BadgeTree,
+    BadgeTreeNode
+} from '../types';
+export type {
+    UserData,
+    AttemptData,
+    Quiz,
+    BadgeDefinition,
+    ChallengeData,
+    ShopItem,
+    SkillTrack,
+    Tournament,
+    Clan,
+    DailyChallengeDef,
+    StudyCard,
+    BadgeNode,
+    BadgeTree,
+    BadgeTreeNode
+};
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const stripTrailingSlash = (value: string) => (value.endsWith('/') ? value.slice(0, -1) : value);
+
+const resolveApiUrl = () => {
+    const envUrl = import.meta.env.VITE_API_URL;
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+
+    if (envUrl) {
+        const normalized = stripTrailingSlash(envUrl);
+        // Prevent shipping a localhost URL to production builds
+        if (!isLocalhost && normalized.includes('localhost')) {
+            return '/api';
+        }
+        return normalized;
+    }
+
+    const localDefault = 'http://localhost:5000/api';
+    const hostedDefault = '/api'; // Netlify/Vercel rewrite target
+
+    return isLocalhost ? localDefault : hostedDefault;
+};
+
+const API_URL = resolveApiUrl();
 
 const getStoredToken = () => {
     try {
@@ -467,7 +519,7 @@ export const api = {
         return response.json();
     },
 
-    async createDailyChallenge(data: any, adminId: string) {
+    async createDailyChallenge(data: Partial<DailyChallengeDef>, adminId: string) {
         const response = await fetch(`${API_URL}/daily-challenge/admin`, {
             method: 'POST',
             headers: getHeaders(adminId),
@@ -477,7 +529,7 @@ export const api = {
         return response.json();
     },
 
-    async updateDailyChallenge(date: string, data: any, adminId: string) {
+    async updateDailyChallenge(date: string, data: Partial<DailyChallengeDef>, adminId: string) {
         const response = await fetch(`${API_URL}/daily-challenge/admin/${date}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
@@ -540,7 +592,7 @@ export const api = {
         return response.json();
     },
 
-    async createTournament(data: any, adminId: string) {
+    async createTournament(data: Partial<Tournament>, adminId: string) {
         const response = await fetch(`${API_URL}/tournaments`, {
             method: 'POST',
             headers: getHeaders(adminId),
@@ -550,7 +602,7 @@ export const api = {
         return response.json();
     },
 
-    async updateTournament(id: string, data: any, adminId: string) {
+    async updateTournament(id: string, data: Partial<Tournament>, adminId: string) {
         const response = await fetch(`${API_URL}/tournaments/${id}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
@@ -594,7 +646,7 @@ export const api = {
         return response.json();
     },
 
-    async createStudyCard(card: any, adminId: string) {
+    async createStudyCard(card: Partial<StudyCard>, adminId: string) {
         const response = await fetch(`${API_URL}/study-cards`, {
             method: 'POST',
             headers: getHeaders(adminId),
@@ -604,7 +656,7 @@ export const api = {
         return response.json();
     },
 
-    async updateStudyCard(id: string, card: any, adminId: string) {
+    async updateStudyCard(id: string, card: Partial<StudyCard>, adminId: string) {
         const response = await fetch(`${API_URL}/study-cards/${id}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
@@ -637,7 +689,7 @@ export const api = {
         return response.json();
     },
 
-    async createBadgeNode(badgeData: any, adminId: string) {
+    async createBadgeNode(badgeData: Partial<BadgeNode>, adminId: string) {
         const response = await fetch(`${API_URL}/badge-nodes`, {
             method: 'POST',
             headers: getHeaders(adminId),
@@ -647,7 +699,7 @@ export const api = {
         return response.json();
     },
 
-    async updateBadgeNode(badgeId: string, updates: any, adminId: string) {
+    async updateBadgeNode(badgeId: string, updates: Partial<BadgeNode>, adminId: string) {
         const response = await fetch(`${API_URL}/badge-nodes/${badgeId}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
@@ -699,7 +751,7 @@ export const api = {
         return response.json();
     },
 
-    async createBadgeTree(treeData: any, adminId: string) {
+    async createBadgeTree(treeData: Partial<BadgeTree>, adminId: string) {
         const response = await fetch(`${API_URL}/badge-trees`, {
             method: 'POST',
             headers: getHeaders(adminId),
@@ -709,7 +761,7 @@ export const api = {
         return response.json();
     },
 
-    async updateBadgeTree(treeId: string, updates: any, adminId: string) {
+    async updateBadgeTree(treeId: string, updates: Partial<BadgeTree>, adminId: string) {
         const response = await fetch(`${API_URL}/badge-trees/${treeId}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
@@ -728,7 +780,7 @@ export const api = {
         return response.json();
     },
 
-    async addNodeToTree(treeId: string, nodeData: any, adminId: string) {
+    async addNodeToTree(treeId: string, nodeData: Partial<BadgeTreeNode>, adminId: string) {
         const response = await fetch(`${API_URL}/badge-trees/${treeId}/nodes`, {
             method: 'POST',
             headers: getHeaders(adminId),
@@ -738,7 +790,7 @@ export const api = {
         return response.json();
     },
 
-    async updateNodeInTree(treeId: string, badgeId: string, updates: any, adminId: string) {
+    async updateNodeInTree(treeId: string, badgeId: string, updates: Partial<BadgeTreeNode>, adminId: string) {
         const response = await fetch(`${API_URL}/badge-trees/${treeId}/nodes/${badgeId}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
@@ -830,7 +882,7 @@ export const api = {
         return response.json();
     },
 
-    async updateClan(clanId: string, updates: any, userId: string) {
+    async updateClan(clanId: string, updates: Partial<Clan>, userId: string) {
         const response = await fetch(`${API_URL}/clans/${clanId}`, {
             method: 'PUT',
             headers: getHeaders(userId),
