@@ -18,16 +18,47 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        setItems(await api.getShopItems());
-      } catch (err) {
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    // Static items since dynamic admin was removed
+    const staticItems: ShopItem[] = [
+      { itemId: '50-50', name: '50/50', description: 'Removes two wrong answers', type: 'power-up', price: 50, payload: { powerUpType: '5050', uses: 1 } },
+      { itemId: 'time-freeze', name: 'Time Freeze', description: 'Freezes the timer for 10 seconds', type: 'power-up', price: 100, payload: { powerUpType: 'time_freeze', uses: 1 } },
+      { itemId: 'skip-question', name: 'Skip Question', description: 'Skip the current question without penalty', type: 'power-up', price: 150, payload: { powerUpType: 'skip', uses: 1 } },
+      { itemId: 'smart-hint', name: 'Smart Hint', description: 'Shows a hint for the current question', type: 'power-up', price: 75, payload: { powerUpType: 'hint', uses: 1 } },
+      { itemId: 'streak-shield', name: 'Streak Shield', description: 'Protects your streak from one wrong answer', type: 'power-up', price: 200, payload: { powerUpType: 'shield', uses: 1 } },
+      { itemId: 'cool-glasses', name: 'Cool Glasses', description: 'A stylish pair of sunglasses for your avatar', type: 'cosmetic', price: 500, payload: { attribute: 'accessory', value: 'sunglasses' } },
+      { itemId: 'golden-crown', name: 'Golden Crown', description: 'A crown fit for a quiz king or queen', type: 'cosmetic', price: 1000, payload: { attribute: 'hat', value: 'crown' } },
+      { itemId: 'wizard-hat', name: 'Wizard Hat', description: 'Magical headgear', type: 'cosmetic', price: 750, payload: { attribute: 'hat', value: 'wizard_hat' } },
+      // New Item Added
+      { itemId: 'galaxy-theme', name: 'Galaxy Theme', description: 'Unlock the cosmic galaxy background theme', type: 'cosmetic', price: 2000, payload: { attribute: 'theme', value: 'galaxy' } },
+      { itemId: 'neon-rave', name: 'Neon Rave', description: 'Electrifying neon colors for your profile', type: 'cosmetic', price: 1500, payload: { attribute: 'theme', value: 'neon' } },
+      { itemId: 'cyber-frame', name: 'Cyberpunk Frame', description: 'A futuristic glitch-art frame', type: 'cosmetic', price: 1200, payload: { attribute: 'frame', value: 'cyberpunk' } },
+
+      // --- New Additions ---
+      // Themes
+      { itemId: 'midnight-theme', name: 'Midnight Theme', description: 'Deep dark blue theme for night owls', type: 'cosmetic', price: 1000, payload: { attribute: 'theme', value: 'midnight' } },
+      { itemId: 'forest-theme', name: 'Forest Theme', description: 'Calming nature vibes', type: 'cosmetic', price: 1000, payload: { attribute: 'theme', value: 'forest' } },
+      { itemId: 'sunset-theme', name: 'Sunset Theme', description: 'Warm gradients of a summer sunset', type: 'cosmetic', price: 1200, payload: { attribute: 'theme', value: 'sunset' } },
+
+      // Frames
+      { itemId: 'gold-frame', name: 'Gold Frame', description: 'Shiny golden border for your avatar', type: 'cosmetic', price: 2500, payload: { attribute: 'frame', value: 'gold' } },
+      { itemId: 'diamond-frame', name: 'Diamond Frame', description: 'Sparkling diamond border', type: 'cosmetic', price: 5000, payload: { attribute: 'frame', value: 'diamond' } },
+
+      // Hats / Heads
+      { itemId: 'pirate-hat', name: 'Pirate Hat', description: 'Yarrr! Sail the seven seas.', type: 'cosmetic', price: 800, payload: { attribute: 'hat', value: 'pirate' } },
+      { itemId: 'ninja-band', name: 'Ninja Headband', description: 'Silent but deadly knowledge.', type: 'cosmetic', price: 600, payload: { attribute: 'hat', value: 'ninja' } },
+      { itemId: 'viking-helm', name: 'Viking Helmet', description: 'For the brave warriors.', type: 'cosmetic', price: 900, payload: { attribute: 'hat', value: 'viking' } },
+      { itemId: 'astro-helm', name: 'Astro Helmet', description: 'Take your knowledge to the moon.', type: 'cosmetic', price: 1500, payload: { attribute: 'hat', value: 'astro' } },
+
+      // Accessories
+      { itemId: 'cat-ears', name: 'Cat Ears', description: 'Cute feline ears.', type: 'cosmetic', price: 700, payload: { attribute: 'accessory', value: 'cat_ears' } },
+      { itemId: 'bowtie', name: 'Fancy Bowtie', description: 'Classy look for smart people.', type: 'cosmetic', price: 400, payload: { attribute: 'accessory', value: 'bowtie' } },
+
+      // Boosts
+      { itemId: 'double-xp-1h', name: 'Double XP (1h)', description: 'Earn 2x XP for 1 hour', type: 'boost', price: 300, payload: { boost: 'xp', multiplier: 2, duration: 3600 } },
+      { itemId: 'coin-magnet-1h', name: 'Coin Magnet (1h)', description: 'Earn 1.5x Coins for 1 hour', type: 'boost', price: 300, payload: { boost: 'coins', multiplier: 1.5, duration: 3600 } }
+    ];
+    setItems(staticItems);
+    setLoading(false);
   }, []);
 
   const getItemIcon = (name: string) => {
@@ -44,6 +75,27 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
     if (name.includes('Wizard')) return <div className="text-3xl">🧙‍♂️</div>;
     if (name.includes('Wizard')) return <div className="text-3xl">🧙‍♂️</div>;
     if (name.includes('Galaxy')) return <div className="text-3xl">🌌</div>;
+    if (name.includes('Neon')) return <div className="text-3xl">🎆</div>;
+    if (name.includes('Frame')) {
+      if (name.includes('Gold')) return <div className="text-3xl">⚜️</div>;
+      if (name.includes('Diamond')) return <div className="text-3xl">💎</div>;
+      return <div className="text-3xl">🖼️</div>;
+    }
+    if (name.includes('Theme')) {
+      if (name.includes('Midnight')) return <div className="text-3xl">🌙</div>;
+      if (name.includes('Forest')) return <div className="text-3xl">🌲</div>;
+      if (name.includes('Sunset')) return <div className="text-3xl">🌅</div>;
+    }
+    if (name.includes('Pirate')) return <div className="text-3xl">🏴‍☠️</div>;
+    if (name.includes('Ninja')) return <div className="text-3xl">🥷</div>;
+    if (name.includes('Viking')) return <div className="text-3xl">🛡️</div>;
+    if (name.includes('Astro')) return <div className="text-3xl">👨‍🚀</div>;
+    if (name.includes('Cat')) return <div className="text-3xl">🐱</div>;
+    if (name.includes('Bowtie')) return <div className="text-3xl">🤵</div>;
+
+    // Boosts
+    if (name.includes('Double XP')) return <Zap className={iconClass} fill="yellow" />;
+    if (name.includes('Magnet')) return <div className="text-3xl">🧲</div>;
 
     return <Zap className={iconClass} />;
   };
@@ -60,6 +112,19 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
     if (name.includes('Wizard')) return 'from-indigo-600 to-blue-800';
     if (name.includes('Wizard')) return 'from-indigo-600 to-blue-800';
     if (name.includes('Galaxy')) return 'from-slate-900 to-violet-900';
+    if (name.includes('Neon')) return 'from-fuchsia-500 to-cyan-500';
+    if (name.includes('Frame')) {
+      if (name.includes('Gold')) return 'from-yellow-300 to-yellow-600';
+      if (name.includes('Diamond')) return 'from-cyan-300 to-blue-600';
+      return 'from-teal-400 to-blue-500';
+    }
+    if (name.includes('Midnight')) return 'from-slate-800 to-slate-950';
+    if (name.includes('Forest')) return 'from-emerald-600 to-green-900';
+    if (name.includes('Sunset')) return 'from-orange-400 to-rose-600';
+    if (name.includes('Pirate')) return 'from-red-700 to-black';
+    if (name.includes('Astro')) return 'from-gray-200 to-gray-500';
+    if (name.includes('Magnet')) return 'from-yellow-400 to-orange-500';
+    if (name.includes('Double')) return 'from-purple-500 to-yellow-400';
     return 'from-indigo-500 to-purple-500';
   };
 
