@@ -74,6 +74,18 @@ app.use('/api', limiter);
 // app.use(xss()); // Deprecated
 app.use(hpp());
 
+// Health Check Route (Bypasses DB middleware)
+app.get('/api/health-check', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date(),
+    env: {
+      mongo_defined: !!process.env.MONGODB_URI,
+      client_url: process.env.CLIENT_URL
+    }
+  });
+});
+
 // Middleware to ensure DB connection
 app.use(async (req, res, next) => {
   try {

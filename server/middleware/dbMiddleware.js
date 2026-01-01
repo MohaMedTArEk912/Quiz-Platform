@@ -19,7 +19,10 @@ export async function connectToDatabase() {
   }
 
   try {
-    const opts = {};
+    const opts = {
+      serverSelectionTimeoutMS: 5000, // Fail fast after 5s if DB is unreachable
+      socketTimeoutMS: 45000,
+    };
     cachedConnection = await mongoose.connect(uri, opts);
     console.log('Connected to MongoDB');
     return cachedConnection;
