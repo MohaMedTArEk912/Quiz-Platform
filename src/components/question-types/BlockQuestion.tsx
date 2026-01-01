@@ -5,6 +5,7 @@ import { javascriptGenerator } from 'blockly/javascript';
 import { Play, RotateCcw, Cat, Loader2 } from 'lucide-react';
 import { DEFAULT_BLOCKLY_TOOLBOX } from '../../constants/quizDefaults.ts';
 import { registerBlocklyBlocks } from '../../utils/blocklyRegistry';
+import { useNotification } from '../../context/NotificationContext';
 
 // Execute registration
 try {
@@ -30,6 +31,7 @@ interface SpriteState {
 }
 
 const BlockQuestion: React.FC<BlockQuestionProps> = ({ initialXml, toolbox, onChange, readOnly, hideStage = false, className }) => {
+  const { showNotification } = useNotification();
   const [sprite, setSprite] = useState<SpriteState>({ x: 0, y: 0, rotation: 90, bubbleText: null });
   const [backdrop, setBackdrop] = useState('default');
   const [isRunning, setIsRunning] = useState(false);
