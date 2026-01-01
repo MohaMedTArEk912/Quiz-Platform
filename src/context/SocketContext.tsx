@@ -37,25 +37,23 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
         if (socketRef.current) return;
 
-        // WebSocket connections enabled for Netlify deployment
+        // Netlify Functions do not support true WebSockets. Use polling in prod and point to the function path.
         const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-        // In production, use the same origin for WebSocket connection
-        // Netlify supports WebSockets on the same domain
-        const socketUrl = isDevelopment
-            ? 'http://localhost:5000'
-            : window.location.origin;
+        const socketUrl = isDevelopment ? 'http://localhost:5000' : window.location.origin;
+        const socketPath = isDevelopment ? '/socket.io/' : '/.netlify/functions/api/socket.io/';
+        const transports = isDevelopment ? ['websocket', 'polling'] : ['polling'];
 
         try {
             const newSocket = io(socketUrl, {
-                transports: ['websocket', 'polling'],
+                transports,
                 autoConnect: true,
                 reconnection: true,
                 reconnectionAttempts: 5,
                 reconnectionDelay: 1000,
                 reconnectionDelayMax: 5000,
                 timeout: 10000,
-                path: '/socket.io/'
+                path: socketPath
             });
             socketRef.current = newSocket;
 
