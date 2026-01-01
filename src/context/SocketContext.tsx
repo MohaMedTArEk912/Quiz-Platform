@@ -37,28 +37,53 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
         if (socketRef.current) return;
 
-        const socketUrl = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : '/');
+        // Only attempt socket connection in development or when explicitly configured
+        // Vercel and other serverless platforms don't support WebSockets
+        const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const socketUrl = import.meta.env.VITE_API_URL;
 
-        const newSocket = io(socketUrl, {
-            transports: ['websocket'],
-            autoConnect: true
-        });
-        socketRef.current = newSocket;
+        // Skip socket connection if we're in production without explicit socket URL
+        if (!isDevelopment && !socketUrl) {
+            console.log('WebSocket connections not available in this environment');
+            return;
+        }
 
-        newSocket.on('connect', () => {
-            setConnected(true);
-            newSocket.emit('join_user', userId);
-        });
+        const finalSocketUrl = socketUrl || 'http://localhost:5000';
 
-        newSocket.on('disconnect', () => {
-            setConnected(false);
-        });
+        try {
+            const newSocket = io(finalSocketUrl, {
+                transports: ['websocket', 'polling'],
+                autoConnect: true,
+                reconnection: true,
+                reconnectionAttempts: 3,
+                reconnectionDelay: 1000,
+                timeout: 5000
+            });
+            socketRef.current = newSocket;
 
-        return () => {
-            newSocket.disconnect();
-            socketRef.current = null;
-            setConnected(false);
-        };
+            newSocket.on('connect', () => {
+                setConnected(true);
+                newSocket.emit('join_user', userId);
+            });
+
+            newSocket.on('disconnect', () => {
+                setConnected(false);
+            });
+
+            newSocket.on('connect_error', (error) => {
+                console.log('Socket connection not available:', error.message);
+                setConnected(false);
+            });
+
+            return () => {
+                newSocket.disconnect();
+                socketRef.current = null;
+                setConnected(false);
+            };
+        } catch (error) {
+            console.log('Socket initialization failed:', error);
+            return;
+        }
     }, [userId]);
 
     return (

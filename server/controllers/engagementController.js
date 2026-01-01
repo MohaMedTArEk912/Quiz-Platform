@@ -19,19 +19,30 @@ export const getDailyChallenge = async (req, res) => {
     if (challenge) {
         if (challenge.quizId) {
              quiz = await Quiz.findOne({ $or: [{ id: challenge.quizId }, { _id: challenge.quizId }] }).lean();
+             
+             // If the challenge has a quizId but the quiz doesn't exist, return 404
+             if (!quiz) {
+                 return res.status(404).json({ message: 'Daily challenge quiz not found' });
+             }
+        } else {
+            // Challenge exists but no specific quiz - pick a random one
+            const availableQuizzes = await Quiz.find({ isTournamentOnly: { $ne: true } }).lean();
+            if (availableQuizzes.length > 0) {
+                quiz = availableQuizzes[Math.floor(Math.random() * availableQuizzes.length)];
+            }
         }
     } else {
-        // Fallback: Pick a random quiz if no specific challenge set
-        // Or create a dynamic one on the fly? For now, keep legacy behavior but wrapped
-        quiz = await Quiz.findOne({}).lean(); // TODO: Better random logic
-        if (quiz) {
+        // No challenge scheduled for today - pick a random quiz and create dynamic challenge
+        const availableQuizzes = await Quiz.find({ isTournamentOnly: { $ne: true } }).lean();
+        if (availableQuizzes.length > 0) {
+            quiz = availableQuizzes[Math.floor(Math.random() * availableQuizzes.length)];
             challenge = {
                 title: 'Daily Random Quiz',
                 description: `Complete the ${quiz.title} quiz!`,
                 criteria: { type: 'complete_quiz', threshold: 1 },
-                rewardCoins: 20,
+                rewardCoins: 50,
                 rewardXP: 100,
-                quizId: quiz.id
+                quizId: quiz.id || quiz._id
             };
         }
     }
@@ -42,12 +53,13 @@ export const getDailyChallenge = async (req, res) => {
     
     res.json({
       ...challenge,
-      quizId: quiz.id,
+      quizId: quiz.id || quiz._id,
       streak: req.user.dailyChallengeStreak || 0,
       completed: req.user.dailyChallengeCompleted && req.user.dailyChallengeDate && new Date(req.user.dailyChallengeDate).setHours(0,0,0,0) === today.getTime(),
       date: today
     });
   } catch (error) {
+    console.error('Error fetching daily challenge:', error);
     res.status(500).json({ message: 'Error fetching daily challenge', error: error.message });
   }
 };

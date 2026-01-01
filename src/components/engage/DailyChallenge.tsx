@@ -44,8 +44,19 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart,
             console.error("Failed to load reward badge", e);
           }
         }
-      } catch (err) {
-        setError((err as Error).message);
+      } catch (err: any) {
+        const errorMessage = err.message || 'Failed to load daily challenge';
+
+        // Show user-friendly error messages
+        if (errorMessage.includes('No daily challenge available') || errorMessage.includes('not found')) {
+          setError('No daily challenge available today. Check back tomorrow!');
+        } else if (errorMessage.includes('Failed to load')) {
+          setError('Unable to load daily challenge. Please try again later.');
+        } else {
+          setError(errorMessage);
+        }
+
+        console.error('Daily challenge error:', err);
       }
     };
     load();
