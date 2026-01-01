@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Zap, Plus, Edit2 } from 'lucide-react';
-import type { UserData, Quiz } from '../../types/index.ts';
+import type { UserData, Quiz, BadgeDefinition } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
+import { staticItems } from '../../lib/shopItems';
 
 interface DailyChallengeManagementProps {
     currentUser: UserData;
@@ -13,6 +14,7 @@ interface DailyChallengeManagementProps {
 const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ currentUser, quizzes, onNotification }) => {
     const [dailyChallenges, setDailyChallenges] = useState<any[]>([]);
     const [editingChallenge, setEditingChallenge] = useState<any | null>(null);
+    const [badges, setBadges] = useState<BadgeDefinition[]>([]);
 
     useEffect(() => {
         loadData();
@@ -22,6 +24,8 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
         try {
             const data = await api.getDailyChallengesAdmin(currentUser.userId);
             setDailyChallenges(data);
+            const badgesData = await api.getBadgeNodes();
+            setBadges(badgesData);
         } catch (err) {
             console.error('Failed to load challenges', err);
             onNotification('error', 'Failed to load daily challenges');
@@ -147,6 +151,35 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                             <div className="flex gap-2">
                                 <input type="number" placeholder="Coins" value={editingChallenge.rewardCoins} onChange={e => setEditingChallenge({ ...editingChallenge, rewardCoins: parseInt(e.target.value) })} className="w-1/2 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
                                 <input type="number" placeholder="XP" value={editingChallenge.rewardXP} onChange={e => setEditingChallenge({ ...editingChallenge, rewardXP: parseInt(e.target.value) })} className="w-1/2 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-500 dark:text-gray-400 mb-1">Reward Badge (Optional)</label>
+                                    <select
+                                        value={editingChallenge.rewardBadgeId || ''}
+                                        onChange={e => setEditingChallenge({ ...editingChallenge, rewardBadgeId: e.target.value || undefined })}
+                                        className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                                    >
+                                        <option value="">None</option>
+                                        {badges.map(b => (
+                                            <option key={b.id} value={b.id}>{b.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-500 dark:text-gray-400 mb-1">Reward Item (Optional)</label>
+                                    <select
+                                        value={editingChallenge.rewardItemId || ''}
+                                        onChange={e => setEditingChallenge({ ...editingChallenge, rewardItemId: e.target.value || undefined })}
+                                        className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                                    >
+                                        <option value="">None</option>
+                                        {staticItems.map(item => (
+                                            <option key={item.itemId} value={item.itemId}>{item.name} ({item.price} pts)</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                             <div className="flex gap-4 mt-6">
                                 <button

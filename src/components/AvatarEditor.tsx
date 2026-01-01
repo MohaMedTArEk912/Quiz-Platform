@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { AvatarConfig, UserData } from '../types';
 import Avatar from './Avatar';
-import { Sparkles, Palette, Smile, User, Save, RefreshCw } from 'lucide-react';
+import { Sparkles, Smile, User, Save, RefreshCw, Shirt, Crown } from 'lucide-react';
 import { api } from '../lib/api';
 
 interface AvatarEditorProps {
@@ -17,10 +17,34 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
         hairColor: '#4A3728',
         accessory: 'none',
         backgroundColor: 'bg-indigo-100',
-        mood: 'happy'
+        mood: 'happy',
+        gender: 'male',
+        clothing: 'shirt'
     });
-    const [activeTab, setActiveTab] = useState<'base' | 'hair' | 'style' | 'mood'>('base');
+
+    // Ensure new properties exist if user has old avatar data
+    useEffect(() => {
+        setConfig(prev => ({
+            ...prev,
+            gender: prev.gender || 'male',
+            clothing: prev.clothing || 'shirt'
+        }));
+    }, []);
+
+    const [activeTab, setActiveTab] = useState<'base' | 'hair' | 'clothing' | 'style' | 'mood'>('base');
     const [saving, setSaving] = useState(false);
+
+    // Reset incompatible items when gender changes
+    const handleGenderChange = (newGender: 'male' | 'female') => {
+        let newClothing = config.clothing;
+
+        // If switching to male while wearing a dress, switch to shirt
+        if (newGender === 'male' && config.clothing === 'dress') {
+            newClothing = 'shirt';
+        }
+
+        setConfig({ ...config, gender: newGender, clothing: newClothing });
+    };
 
     const handleSave = async () => {
         setSaving(true);
@@ -45,25 +69,81 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
     const tabs = [
         { id: 'base', icon: <User className="w-5 h-5" />, label: 'Base' },
         { id: 'hair', icon: <Sparkles className="w-5 h-5" />, label: 'Hair' },
-        { id: 'style', icon: <Palette className="w-5 h-5" />, label: 'Style' },
+        { id: 'clothing', icon: <Shirt className="w-5 h-5" />, label: 'Clothing' },
+        { id: 'style', icon: <Crown className="w-5 h-5" />, label: 'Accessory' },
         { id: 'mood', icon: <Smile className="w-5 h-5" />, label: 'Mood' },
     ] as const;
 
     const options = {
         base: {
-            skinColor: ['#F5D0C5', '#E8B4A5', '#D49D8B', '#C68642', '#8D5524', '#5A3921'],
-            backgroundColor: ['bg-indigo-100', 'bg-blue-100', 'bg-purple-100', 'bg-green-100', 'bg-yellow-100', 'bg-red-100', 'bg-pink-100', 'bg-gray-100']
+            skinColor: ['#F5D0C5', '#E8B4A5', '#D49D8B', '#C68642', '#8D5524', '#5A3921', '#3C2E28'],
+            backgroundColor: ['bg-indigo-100', 'bg-blue-100', 'bg-purple-100', 'bg-green-100', 'bg-yellow-100', 'bg-red-100', 'bg-pink-100', 'bg-gray-100', 'bg-slate-800'],
+            gender: ['male', 'female']
         },
         hair: {
-            styles: ['short', 'long', 'messy', 'buzz'],
-            colors: ['#4A3728', '#2C1A0F', '#E6BE8A', '#A52A2A', '#D49D8B', '#000000', '#F59E0B', '#6366F1']
+            styles: [
+                'short', 'messy', 'buzz', 'mohawk',
+                'fade', 'quiff',
+                'long', 'ponytail', 'curly', 'bob', 'wavy', 'bun'
+            ],
+            colors: ['#4A3728', '#2C1A0F', '#E6BE8A', '#A52A2A', '#D49D8B', '#000000', '#F59E0B', '#6366F1', '#EC4899', '#FFFFFF', '#9CA3AF']
+        },
+        clothing: {
+            types: ['shirt', 'tshirt', 'hoodie', 'blazer', 'dress']
         },
         style: {
-            accessories: ['none', 'glasses', 'sunglasses', 'crown']
+            accessories: ['none', 'glasses', 'sunglasses', 'crown', 'headphones', 'cap', 'mask']
         },
         mood: {
             moods: ['happy', 'neutral', 'cool', 'excited']
         }
+    };
+
+    // Filter clothing based on gender
+    const getAvailableClothing = () => {
+        if (config.gender === 'male') {
+            return options.clothing.types.filter(c => c !== 'dress');
+        }
+        return options.clothing.types;
+    };
+
+    // Filter hair based on gender
+    const getAvailableHairStyles = () => {
+        // Common styles available to both
+        const common = ['short', 'messy', 'buzz', 'mohawk'];
+
+        if (config.gender === 'male') {
+            // Male specific additions
+            return [...common, 'fade', 'quiff', 'curly'];
+        }
+
+        // Female specific additions
+        return [...common, 'long', 'ponytail', 'curly', 'bob', 'wavy', 'bun'];
+    };
+
+    // Randomizer logic that respects gender constraints
+    const handleRandomize = () => {
+        const randomGender = Math.random() > 0.5 ? 'male' : 'female';
+
+        const validClothing = randomGender === 'male'
+            ? options.clothing.types.filter(c => c !== 'dress')
+            : options.clothing.types;
+
+        const commonHair = ['short', 'messy', 'buzz', 'mohawk'];
+        const validHair = randomGender === 'male'
+            ? [...commonHair, 'fade', 'quiff', 'curly']
+            : [...commonHair, 'long', 'ponytail', 'curly', 'bob', 'wavy', 'bun'];
+
+        setConfig({
+            skinColor: options.base.skinColor[Math.floor(Math.random() * options.base.skinColor.length)],
+            hairStyle: validHair[Math.floor(Math.random() * validHair.length)],
+            hairColor: options.hair.colors[Math.floor(Math.random() * options.hair.colors.length)],
+            accessory: options.style.accessories[Math.floor(Math.random() * options.style.accessories.length)],
+            backgroundColor: options.base.backgroundColor[Math.floor(Math.random() * options.base.backgroundColor.length)],
+            mood: options.mood.moods[Math.floor(Math.random() * options.mood.moods.length)] as any,
+            gender: randomGender as any,
+            clothing: validClothing[Math.floor(Math.random() * validClothing.length)] as any
+        });
     };
 
     return (
@@ -82,14 +162,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
 
                     <div className="mt-8 flex gap-3">
                         <button
-                            onClick={() => setConfig({
-                                skinColor: options.base.skinColor[Math.floor(Math.random() * options.base.skinColor.length)],
-                                hairStyle: options.hair.styles[Math.floor(Math.random() * options.hair.styles.length)],
-                                hairColor: options.hair.colors[Math.floor(Math.random() * options.hair.colors.length)],
-                                accessory: options.style.accessories[Math.floor(Math.random() * options.style.accessories.length)],
-                                backgroundColor: options.base.backgroundColor[Math.floor(Math.random() * options.base.backgroundColor.length)],
-                                mood: options.mood.moods[Math.floor(Math.random() * options.mood.moods.length)] as any
-                            })}
+                            onClick={handleRandomize}
                             className="p-3 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-500 hover:text-indigo-500 transition-colors"
                             title="Randomize"
                         >
@@ -132,6 +205,30 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                         {activeTab === 'base' && (
                             <div className="space-y-8">
                                 <div>
+                                    <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Identity</h3>
+                                    <div className="flex gap-4">
+                                        <button
+                                            onClick={() => handleGenderChange('male')}
+                                            className={`flex-1 py-3 rounded-xl border-2 font-bold transition-all ${config.gender === 'male'
+                                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                                                : 'border-gray-200 dark:border-white/10 text-gray-500'
+                                                }`}
+                                        >
+                                            Male
+                                        </button>
+                                        <button
+                                            onClick={() => handleGenderChange('female')}
+                                            className={`flex-1 py-3 rounded-xl border-2 font-bold transition-all ${config.gender === 'female'
+                                                ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400'
+                                                : 'border-gray-200 dark:border-white/10 text-gray-500'
+                                                }`}
+                                        >
+                                            Female
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
                                     <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Skin Tone</h3>
                                     <div className="flex flex-wrap gap-4">
                                         {options.base.skinColor.map(color => (
@@ -164,9 +261,9 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                         {activeTab === 'hair' && (
                             <div className="space-y-8">
                                 <div>
-                                    <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Hair Style</h3>
+                                    <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Hair Style ({config.gender})</h3>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        {options.hair.styles.map(style => (
+                                        {getAvailableHairStyles().map(style => (
                                             <button
                                                 key={style}
                                                 onClick={() => setConfig({ ...config, hairStyle: style })}
@@ -193,6 +290,29 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                                             />
                                         ))}
                                     </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'clothing' && (
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
+                                    Outfit {config.gender === 'male' && <span className="text-xs font-normal lowercase opacity-75">(male options)</span>}
+                                    {config.gender === 'female' && <span className="text-xs font-normal lowercase opacity-75">(female options)</span>}
+                                </h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {getAvailableClothing().map(item => (
+                                        <button
+                                            key={item}
+                                            onClick={() => setConfig({ ...config, clothing: item as any })}
+                                            className={`p-4 rounded-xl border-2 text-sm font-bold capitalize transition-all ${config.clothing === item
+                                                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
+                                                : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-indigo-300'
+                                                }`}
+                                        >
+                                            {item}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         )}

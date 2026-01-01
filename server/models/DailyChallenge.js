@@ -11,6 +11,8 @@ const dailyChallengeSchema = new mongoose.Schema({
   },
   rewardCoins: { type: Number, default: 50 },
   rewardXP: { type: Number, default: 100 },
+  rewardBadgeId: { type: String },
+  rewardItemId: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

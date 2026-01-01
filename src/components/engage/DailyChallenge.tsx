@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { UserData, Quiz } from '../../types';
 import { api } from '../../lib/api';
-import { Flame, Calendar, Trophy, Play, CheckCircle2, Sparkles, Target, Zap, Swords } from 'lucide-react';
+import { Flame, Calendar, Trophy, Play, CheckCircle2, Sparkles, Target, Zap, Swords, Gift } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface DailyChallengeProps {
@@ -11,16 +11,39 @@ interface DailyChallengeProps {
   onUserUpdate: (updates: Partial<UserData>) => void;
 }
 
+interface DailyChallengeData {
+  quizId?: string;
+  streak?: number;
+  completed?: boolean;
+  rewardCoins?: number;
+  rewardXP?: number;
+  rewardBadgeId?: string;
+  rewardItemId?: string;
+  title?: string;
+  description?: string;
+}
+
 const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart, onUserUpdate }) => {
-  const [data, setData] = useState<{ quizId?: string; streak?: number; completed?: boolean }>({});
+  const [data, setData] = useState<DailyChallengeData>({});
   const [error, setError] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
+  const [badgeReward, setBadgeReward] = useState<any>(null); // Badge definition can be 'any' or proper type if available
 
   useEffect(() => {
     const load = async () => {
       try {
         const res = await api.getDailyChallenge(user.userId);
+
         setData(res);
+
+        if (res.rewardBadgeId) {
+          try {
+            const badge = await api.getBadgeNode(res.rewardBadgeId);
+            setBadgeReward(badge);
+          } catch (e) {
+            console.error("Failed to load reward badge", e);
+          }
+        }
       } catch (err) {
         setError((err as Error).message);
       }
@@ -138,15 +161,33 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart,
           </div>
         </div>
 
-        {/* Reward Card */}
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-[2.5rem] blur opacity-20 group-hover:opacity-30 transition-opacity"></div>
           <div className="relative h-full bg-white dark:bg-[#13141f] rounded-[2.5rem] border border-gray-200 dark:border-white/5 p-8 flex flex-col justify-center items-center text-center">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg mb-4 group-hover:scale-110 transition-transform">
               <Trophy className="w-7 h-7 text-white" />
             </div>
-            <div className="text-4xl font-black text-gray-900 dark:text-white mb-1">+50</div>
-            <div className="text-sm font-bold text-yellow-600 dark:text-yellow-500 uppercase tracking-wider">Bonus Coins</div>
+
+            <div className="flex flex-col gap-1">
+              <div className="text-2xl font-black text-gray-900 dark:text-white">
+                {data.rewardCoins || 50} <span className="text-sm font-bold text-yellow-600 dark:text-yellow-500">COINS</span>
+              </div>
+              <div className="text-2xl font-black text-gray-900 dark:text-white">
+                {data.rewardXP || 100} <span className="text-sm font-bold text-blue-600 dark:text-blue-500">XP</span>
+              </div>
+
+              {badgeReward && (
+                <div className="mt-2 text-sm font-bold text-purple-500 flex items-center justify-center gap-1">
+                  <span className="text-xl">{badgeReward.icon}</span> Badge
+                </div>
+              )}
+              {data.rewardItemId && (
+                <div className="mt-1 text-sm font-bold text-pink-500 flex items-center justify-center gap-1">
+                  <Gift className="w-4 h-4" /> Item
+                </div>
+              )}
+            </div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mt-4">Completion Rewards</div>
           </div>
         </div>
       </div>

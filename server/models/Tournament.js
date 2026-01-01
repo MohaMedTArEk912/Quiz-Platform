@@ -8,6 +8,8 @@ const tournamentSchema = new mongoose.Schema({
   quizIds: [String],
   status: { type: String, enum: ['scheduled', 'live', 'completed'], default: 'scheduled' },
   participants: [{ type: String }], // userIds
+  rewardBadgeId: { type: String },
+  rewardItemId: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

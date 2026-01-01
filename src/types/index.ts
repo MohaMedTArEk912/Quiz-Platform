@@ -113,6 +113,8 @@ export interface AvatarConfig {
     accessory: string;
     backgroundColor: string;
     mood: 'happy' | 'neutral' | 'cool' | 'excited';
+    gender: 'male' | 'female';
+    clothing: 'shirt' | 'hoodie' | 'blazer' | 'dress' | 'tshirt';
 }
 
 export interface AttemptData {
@@ -211,6 +213,8 @@ export interface Tournament {
     status: string;
     quizIds?: string[];
     participants?: string[];
+    rewardBadgeId?: string;
+    rewardItemId?: string;
 }
 
 export interface DailyChallengeDef {
@@ -224,6 +228,8 @@ export interface DailyChallengeDef {
     };
     rewardCoins: number;
     rewardXP: number;
+    rewardBadgeId?: string;
+    rewardItemId?: string;
 }
 
 export interface StudyCard {

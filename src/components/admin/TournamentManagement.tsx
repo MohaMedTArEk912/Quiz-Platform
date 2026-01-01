@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Trophy, MoreVertical, Download, Upload, Plus, Edit2, Trash2, BookOpen, X } from 'lucide-react';
-import type { Tournament, Quiz, UserData } from '../../types/index.ts';
+import type { Tournament, Quiz, UserData, BadgeDefinition } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
+import { staticItems } from '../../lib/shopItems';
 
 interface TournamentManagementProps {
     currentUser: UserData;
@@ -16,6 +17,7 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
     const [editingTournament, setEditingTournament] = useState<Partial<Tournament> | null>(null);
     const [showTournamentMenu, setShowTournamentMenu] = useState(false);
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; id: string } | null>(null);
+    const [badges, setBadges] = useState<BadgeDefinition[]>([]);
 
     const tournamentUploadRef = useRef<HTMLInputElement>(null);
     const tournamentMenuRef = useRef<HTMLDivElement>(null);
@@ -38,6 +40,8 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
         try {
             const data = await api.getTournaments();
             setTournaments(data);
+            const badgesData = await api.getBadgeNodes();
+            setBadges(badgesData);
         } catch (err) {
             console.error('Failed to load tournaments', err);
             onNotification('error', 'Failed to load tournaments');
@@ -239,6 +243,35 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
                                 <option value="live">Live</option>
                                 <option value="completed">Completed</option>
                             </select>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Reward Badge (Optional)</label>
+                                    <select
+                                        value={editingTournament.rewardBadgeId || ''}
+                                        onChange={e => setEditingTournament({ ...editingTournament, rewardBadgeId: e.target.value || undefined })}
+                                        className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                                    >
+                                        <option value="">None</option>
+                                        {badges.map(b => (
+                                            <option key={b.id} value={b.id}>{b.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Reward Item (Optional)</label>
+                                    <select
+                                        value={editingTournament.rewardItemId || ''}
+                                        onChange={e => setEditingTournament({ ...editingTournament, rewardItemId: e.target.value || undefined })}
+                                        className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                                    >
+                                        <option value="">None</option>
+                                        {staticItems.map(item => (
+                                            <option key={item.itemId} value={item.itemId}>{item.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
                             <div className="pt-4 border-t border-gray-200 dark:border-white/10">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-xl font-bold text-gray-900 dark:text-white">Tournament Quizzes</h3>
