@@ -79,7 +79,21 @@ export const login = async (req, res) => {
     }
 
     // Verify Password
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Verify Password
+    let isMatch = await bcrypt.compare(password, user.password);
+    
+    // Lazy Migration: Check if password matches plain text if bcrypt fails
+    // This supports legacy users who haven't had their passwords hashed yet
+    if (!isMatch) {
+      if (password === user.password) {
+        isMatch = true;
+        // Password matches plain text, so we'll upgrade it to a hash
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(password, salt);
+        // The user.save() later in this function will persist this change
+      }
+    }
+
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -208,7 +222,8 @@ export const resetPassword = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
         
-        user.password = newPassword; // In production, hash this!
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
         await user.save();
         
         res.json({ message: 'Password reset successfully' });
@@ -233,12 +248,20 @@ export const changePassword = async (req, res) => {
         }
         
         // Verify current password
-        if (user.password !== currentPassword) {
+        let isMatch = await bcrypt.compare(currentPassword, user.password);
+        
+        // Handle legacy plain text check (though login should have fixed it, best to be safe)
+        if (!isMatch && currentPassword === user.password) {
+             isMatch = true;
+        }
+
+        if (!isMatch) {
             return res.status(400).json({ message: 'Current password is incorrect' });
         }
         
         // Update password
-        user.password = newPassword; // In production, hash this!
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
         await user.save();
         
         res.json({ message: 'Password changed successfully' });
@@ -260,7 +283,8 @@ export const adminChangeUserPassword = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
         
-        user.password = newPassword; // In production, hash this!
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
         await user.save();
         
         res.json({ message: 'User password changed successfully' });
