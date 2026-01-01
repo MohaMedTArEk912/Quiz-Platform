@@ -41,6 +41,12 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
     const [timeFreezeUsed, setTimeFreezeUsed] = useState(false);
     const [hintUsed, setHintUsed] = useState(false);
     const [hintMessage, setHintMessage] = useState<string | null>(null);
+    const [blockHintUsed, setBlockHintUsed] = useState(false);
+    const [blockHintMessage, setBlockHintMessage] = useState<string | null>(null);
+    const [codeSnippetUsed, setCodeSnippetUsed] = useState(false);
+    const [codeSnippetMessage, setCodeSnippetMessage] = useState<string | null>(null);
+    const [debugHelperUsed, setDebugHelperUsed] = useState(false);
+    const [debugHelperMessage, setDebugHelperMessage] = useState<string | null>(null);
     const [usedPowerUps, setUsedPowerUps] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -108,6 +114,12 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         setEliminatedOptions(new Set());
         setHintUsed(false);
         setHintMessage(null);
+        setBlockHintUsed(false);
+        setBlockHintMessage(null);
+        setCodeSnippetUsed(false);
+        setCodeSnippetMessage(null);
+        setDebugHelperUsed(false);
+        setDebugHelperMessage(null);
     };
 
     const handleAnswer = (answer: string | number, code?: string) => {
@@ -165,18 +177,105 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
     const useHint = () => {
         if (isSubmitting) return;
         const q = quiz.questions[currentQuestion];
-        if (hintUsed || isTextQuestion || countPowerUp('hint') <= 0) return; // Only MC supported for now
+        if (hintUsed || countPowerUp('hint') <= 0) return;
 
-        // Find correct answer (assumed to be index in options)
-        const correctIndex = q.correctAnswer;
-        if (correctIndex === undefined || correctIndex === null) return;
+        // Works for multiple choice questions
+        if (!q.isBlock && !q.isCompiler && q.type !== 'text' && q.options) {
+            const correctIndex = q.correctAnswer;
+            if (correctIndex === undefined || correctIndex === null) return;
+            const correctLetter = String.fromCharCode(65 + correctIndex);
+            setHintMessage(`💡 Smart Hint: The answer is likely Option ${correctLetter}`);
+        }
+        // For block/compiler questions, show general hint
+        else if (q.isBlock || q.isCompiler) {
+            setHintMessage(`💡 Smart Hint: Think about the logical flow and what each step should accomplish`);
+        }
 
-        // Logic: Highlight the correct answer with a message
-        const correctLetter = String.fromCharCode(65 + correctIndex);
-        setHintMessage(`💡 Smart Hint: The answer is likely Option ${correctLetter}`);
         setHintUsed(true);
         setUsedPowerUps(prev => [...prev, 'hint']);
         onPowerUpUsed?.('hint');
+    };
+
+    const useBlockHint = () => {
+        if (isSubmitting) return;
+        const q = quiz.questions[currentQuestion];
+        if (blockHintUsed || countPowerUp('block_hint') <= 0) return;
+        if (!q.isBlock) return; // Only for block questions
+
+        // Analyze reference XML to determine block categories
+        if (q.blockConfig?.referenceXml) {
+            const categories = [];
+            if (q.blockConfig.referenceXml.includes('event_')) categories.push('Events');
+            if (q.blockConfig.referenceXml.includes('motion_')) categories.push('Motion');
+            if (q.blockConfig.referenceXml.includes('looks_')) categories.push('Looks');
+
+            const hint = categories.length > 0
+                ? `🎯 Block Hint: You'll need blocks from: ${categories.join(', ')}`
+                : `🎯 Block Hint: Start with an event block to trigger your code`;
+
+            setBlockHintMessage(hint);
+        }
+
+        setBlockHintUsed(true);
+        setUsedPowerUps(prev => [...prev, 'block_hint']);
+        onPowerUpUsed?.('block_hint');
+    };
+
+    const useCodeSnippet = () => {
+        if (isSubmitting) return;
+        const q = quiz.questions[currentQuestion];
+        if (codeSnippetUsed || countPowerUp('code_snippet') <= 0) return;
+        if (!q.isBlock && !q.isCompiler) return;
+
+        let snippet = '';
+        if (q.isBlock) {
+            snippet = `📝 Code Structure:
+1. Start with an event trigger
+2. Add your action blocks
+3. Connect them in sequence`;
+        } else if (q.isCompiler) {
+            const lang = q.compilerConfig?.language || 'javascript';
+            if (lang === 'javascript') {
+                snippet = `📝 Example Structure:
+function solution() {
+  // Your code here
+  return result;
+}`;
+            } else if (lang === 'python') {
+                snippet = `📝 Example Structure:
+def solution():
+    # Your code here
+    return result`;
+            }
+        }
+
+        setCodeSnippetMessage(snippet);
+        setCodeSnippetUsed(true);
+        setUsedPowerUps(prev => [...prev, 'code_snippet']);
+        onPowerUpUsed?.('code_snippet');
+    };
+
+    const useDebugHelper = () => {
+        if (isSubmitting) return;
+        const q = quiz.questions[currentQuestion];
+        if (debugHelperUsed || countPowerUp('debug_helper') <= 0) return;
+        if (!q.isBlock && !q.isCompiler) return;
+
+        const tips = [];
+        if (q.isBlock) {
+            tips.push('✓ Make sure blocks are connected properly');
+            tips.push('✓ Check that values in number fields are correct');
+            tips.push('✓ Verify the order of your blocks');
+        } else if (q.isCompiler) {
+            tips.push('✓ Check for syntax errors');
+            tips.push('✓ Verify variable names');
+            tips.push('✓ Make sure you return the correct value');
+        }
+
+        setDebugHelperMessage(`🐛 Debug Tips:\n${tips.join('\n')}`);
+        setDebugHelperUsed(true);
+        setUsedPowerUps(prev => [...prev, 'debug_helper']);
+        onPowerUpUsed?.('debug_helper');
     };
 
     const handleQuizComplete = useCallback(() => {
@@ -626,6 +725,147 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                                     )}
                                 </div>
                             </button>
+
+                            {/* Block Hint Power-Up - Only for Block Questions */}
+                            {q.isBlock && (
+                                <button
+                                    onClick={useBlockHint}
+                                    disabled={blockHintUsed || countPowerUp('block_hint') <= 0}
+                                    className={`group relative w-full p-3 rounded-xl border-2 transition-all duration-300 overflow-hidden ${blockHintUsed || countPowerUp('block_hint') <= 0
+                                        ? 'border-gray-300 dark:border-slate-700 bg-gray-100 dark:bg-slate-800/30 cursor-not-allowed opacity-50'
+                                        : 'border-green-400 dark:border-green-500/50 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/40 dark:to-emerald-900/40 hover:border-green-500 hover:shadow-lg hover:shadow-green-500/20 hover:-translate-y-0.5 cursor-pointer'
+                                        }`}
+                                >
+                                    <div className="relative z-10">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 mx-auto transition-all ${blockHintUsed || countPowerUp('block_hint') <= 0
+                                            ? 'bg-gray-300 dark:bg-slate-700'
+                                            : 'bg-gradient-to-br from-green-500 to-emerald-500 group-hover:scale-105 shadow-md'
+                                            }`}>
+                                            <Target className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div className="text-center mb-1.5">
+                                            <div className={`text-base font-black ${blockHintUsed || countPowerUp('block_hint') <= 0
+                                                ? 'text-gray-500 dark:text-slate-500'
+                                                : 'text-green-700 dark:text-white'
+                                                }`}>
+                                                Block Hint
+                                            </div>
+                                            <div className={`text-[10px] leading-tight ${blockHintUsed || countPowerUp('block_hint') <= 0
+                                                ? 'text-gray-400 dark:text-slate-600'
+                                                : 'text-green-600 dark:text-green-300'
+                                                }`}>
+                                                Show categories
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-center">
+                                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${blockHintUsed || countPowerUp('block_hint') <= 0
+                                                ? 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-500'
+                                                : 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300'
+                                                }`}>
+                                                <Zap className="w-2.5 h-2.5" />
+                                                x{countPowerUp('block_hint')}
+                                            </div>
+                                        </div>
+                                        {blockHintUsed && (
+                                            <div className="mt-1 text-[10px] text-green-600 dark:text-green-400 font-semibold text-center">✓ Used</div>
+                                        )}
+                                    </div>
+                                </button>
+                            )}
+
+                            {/* Code Snippet Power-Up - For Block & Compiler Questions */}
+                            {(q.isBlock || q.isCompiler) && (
+                                <button
+                                    onClick={useCodeSnippet}
+                                    disabled={codeSnippetUsed || countPowerUp('code_snippet') <= 0}
+                                    className={`group relative w-full p-3 rounded-xl border-2 transition-all duration-300 overflow-hidden ${codeSnippetUsed || countPowerUp('code_snippet') <= 0
+                                        ? 'border-gray-300 dark:border-slate-700 bg-gray-100 dark:bg-slate-800/30 cursor-not-allowed opacity-50'
+                                        : 'border-indigo-400 dark:border-indigo-500/50 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/40 dark:to-blue-900/40 hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-0.5 cursor-pointer'
+                                        }`}
+                                >
+                                    <div className="relative z-10">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 mx-auto transition-all ${codeSnippetUsed || countPowerUp('code_snippet') <= 0
+                                            ? 'bg-gray-300 dark:bg-slate-700'
+                                            : 'bg-gradient-to-br from-indigo-500 to-blue-500 group-hover:scale-105 shadow-md'
+                                            }`}>
+                                            <Sparkles className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div className="text-center mb-1.5">
+                                            <div className={`text-base font-black ${codeSnippetUsed || countPowerUp('code_snippet') <= 0
+                                                ? 'text-gray-500 dark:text-slate-500'
+                                                : 'text-indigo-700 dark:text-white'
+                                                }`}>
+                                                Code Snippet
+                                            </div>
+                                            <div className={`text-[10px] leading-tight ${codeSnippetUsed || countPowerUp('code_snippet') <= 0
+                                                ? 'text-gray-400 dark:text-slate-600'
+                                                : 'text-indigo-600 dark:text-indigo-300'
+                                                }`}>
+                                                Show structure
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-center">
+                                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${codeSnippetUsed || countPowerUp('code_snippet') <= 0
+                                                ? 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-500'
+                                                : 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300'
+                                                }`}>
+                                                <Zap className="w-2.5 h-2.5" />
+                                                x{countPowerUp('code_snippet')}
+                                            </div>
+                                        </div>
+                                        {codeSnippetUsed && (
+                                            <div className="mt-1 text-[10px] text-green-600 dark:text-green-400 font-semibold text-center">✓ Used</div>
+                                        )}
+                                    </div>
+                                </button>
+                            )}
+
+                            {/* Debug Helper Power-Up - For Block & Compiler Questions */}
+                            {(q.isBlock || q.isCompiler) && (
+                                <button
+                                    onClick={useDebugHelper}
+                                    disabled={debugHelperUsed || countPowerUp('debug_helper') <= 0}
+                                    className={`group relative w-full p-3 rounded-xl border-2 transition-all duration-300 overflow-hidden ${debugHelperUsed || countPowerUp('debug_helper') <= 0
+                                        ? 'border-gray-300 dark:border-slate-700 bg-gray-100 dark:bg-slate-800/30 cursor-not-allowed opacity-50'
+                                        : 'border-yellow-400 dark:border-yellow-500/50 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/40 dark:to-amber-900/40 hover:border-yellow-500 hover:shadow-lg hover:shadow-yellow-500/20 hover:-translate-y-0.5 cursor-pointer'
+                                        }`}
+                                >
+                                    <div className="relative z-10">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 mx-auto transition-all ${debugHelperUsed || countPowerUp('debug_helper') <= 0
+                                            ? 'bg-gray-300 dark:bg-slate-700'
+                                            : 'bg-gradient-to-br from-yellow-500 to-amber-500 group-hover:scale-105 shadow-md'
+                                            }`}>
+                                            <Zap className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div className="text-center mb-1.5">
+                                            <div className={`text-base font-black ${debugHelperUsed || countPowerUp('debug_helper') <= 0
+                                                ? 'text-gray-500 dark:text-slate-500'
+                                                : 'text-yellow-700 dark:text-white'
+                                                }`}>
+                                                Debug Helper
+                                            </div>
+                                            <div className={`text-[10px] leading-tight ${debugHelperUsed || countPowerUp('debug_helper') <= 0
+                                                ? 'text-gray-400 dark:text-slate-600'
+                                                : 'text-yellow-600 dark:text-yellow-300'
+                                                }`}>
+                                                Avoid mistakes
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-center">
+                                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${debugHelperUsed || countPowerUp('debug_helper') <= 0
+                                                ? 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-500'
+                                                : 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300'
+                                                }`}>
+                                                <Zap className="w-2.5 h-2.5" />
+                                                x{countPowerUp('debug_helper')}
+                                            </div>
+                                        </div>
+                                        {debugHelperUsed && (
+                                            <div className="mt-1 text-[10px] text-green-600 dark:text-green-400 font-semibold text-center">✓ Used</div>
+                                        )}
+                                    </div>
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -664,6 +904,57 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                                             <p className="text-yellow-700 dark:text-yellow-300/90 text-sm mt-0.5">
                                                 {hintMessage.replace('💡 Smart Hint: ', '')}
                                             </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Block Hint Message Display */}
+                            {blockHintMessage && (
+                                <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700/30 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
+                                            <Target className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-green-800 dark:text-green-200">Block Hint!</p>
+                                            <p className="text-green-700 dark:text-green-300/90 text-sm mt-0.5">
+                                                {blockHintMessage.replace('🎯 Block Hint: ', '')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Code Snippet Message Display */}
+                            {codeSnippetMessage && (
+                                <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border border-indigo-200 dark:border-indigo-700/30 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg">
+                                            <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold text-indigo-800 dark:text-indigo-200 mb-2">Code Structure!</p>
+                                            <pre className="text-indigo-700 dark:text-indigo-300/90 text-sm whitespace-pre-wrap font-mono bg-indigo-100/50 dark:bg-indigo-900/20 p-3 rounded-lg">
+                                                {codeSnippetMessage.replace('📝 Code Structure:\n', '').replace('📝 Example Structure:\n', '')}
+                                            </pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Debug Helper Message Display */}
+                            {debugHelperMessage && (
+                                <div className="mt-6 p-4 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border border-yellow-200 dark:border-yellow-700/30 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded-lg">
+                                            <Zap className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold text-yellow-800 dark:text-yellow-200 mb-2">Debug Tips!</p>
+                                            <pre className="text-yellow-700 dark:text-yellow-300/90 text-sm whitespace-pre-wrap">
+                                                {debugHelperMessage.replace('🐛 Debug Tips:\n', '')}
+                                            </pre>
                                         </div>
                                     </div>
                                 </div>

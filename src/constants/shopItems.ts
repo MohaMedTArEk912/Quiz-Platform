@@ -2,10 +2,16 @@ import type { ShopItem } from '../types';
 
 export const staticItems: ShopItem[] = [
     { itemId: '50-50', name: '50/50', description: 'Removes two wrong answers', type: 'power-up', price: 50, payload: { powerUpType: '5050', uses: 1 } },
-    { itemId: 'time-freeze', name: 'Time Freeze', description: 'Freezes the timer for 10 seconds', type: 'power-up', price: 100, payload: { powerUpType: 'time_freeze', uses: 1 } },
+    { itemId: 'time-freeze', name: 'Time Freeze', description: 'Freezes the timer for 20 seconds', type: 'power-up', price: 100, payload: { powerUpType: 'time_freeze', uses: 1 } },
     { itemId: 'skip-question', name: 'Skip Question', description: 'Skip the current question without penalty', type: 'power-up', price: 150, payload: { powerUpType: 'skip', uses: 1 } },
     { itemId: 'smart-hint', name: 'Smart Hint', description: 'Shows a hint for the current question', type: 'power-up', price: 75, payload: { powerUpType: 'hint', uses: 1 } },
     { itemId: 'streak-shield', name: 'Streak Shield', description: 'Protects your streak from one wrong answer', type: 'power-up', price: 200, payload: { powerUpType: 'shield', uses: 1 } },
+
+    // Block & Compiler Question Power-Ups
+    { itemId: 'block-hint', name: 'Block Hint', description: 'Highlights the correct block category to use', type: 'power-up', price: 100, payload: { powerUpType: 'block_hint', uses: 1 } },
+    { itemId: 'code-snippet', name: 'Code Snippet', description: 'Shows example code structure for block/compiler questions', type: 'power-up', price: 125, payload: { powerUpType: 'code_snippet', uses: 1 } },
+    { itemId: 'auto-complete', name: 'Auto-Complete', description: 'Fills in 50% of the solution for block/compiler questions', type: 'power-up', price: 250, payload: { powerUpType: 'auto_complete', uses: 1 } },
+    { itemId: 'debug-helper', name: 'Debug Helper', description: 'Shows common mistakes to avoid', type: 'power-up', price: 90, payload: { powerUpType: 'debug_helper', uses: 1 } },
     { itemId: 'cool-glasses', name: 'Cool Glasses', description: 'A stylish pair of sunglasses for your avatar', type: 'cosmetic', price: 500, payload: { attribute: 'accessory', value: 'sunglasses' } },
     { itemId: 'golden-crown', name: 'Golden Crown', description: 'A crown fit for a quiz king or queen', type: 'cosmetic', price: 1000, payload: { attribute: 'hat', value: 'crown' } },
     { itemId: 'wizard-hat', name: 'Wizard Hat', description: 'Magical headgear', type: 'cosmetic', price: 750, payload: { attribute: 'hat', value: 'wizard_hat' } },
