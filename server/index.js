@@ -51,7 +51,7 @@ app.set('io', io);
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || ["http://localhost:5173", "http://localhost:3000"],
+  origin: process.env.CLIENT_URL || ["http://localhost:5173", "http://localhost:3000", "https://thequizplatform.netlify.app"],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id'] // Keep x-user-id for now if legacy still sends it, but add Authorization
 }));
@@ -143,7 +143,7 @@ io.on('connection', (socket) => {
 });
 
 // Initialize DB
-connectToDatabase();
+// connectToDatabase(); // Removed to prevent cold-start crashes. Handled by middleware.
 
 if (process.env.NODE_ENV !== 'production') {
   httpServer.listen(PORT, () => {
