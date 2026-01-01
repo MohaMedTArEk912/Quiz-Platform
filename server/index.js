@@ -25,11 +25,18 @@ dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
+
+// Socket.io configuration optimized for Netlify
 const io = new Server(httpServer, {
- cors: {
-   origin: "*", // Allow all connections for development
-   methods: ["GET", "POST"]
- }
+  cors: {
+    origin: "*", // Allow all origins
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 // Attach IO to app for controllers
@@ -72,23 +79,29 @@ app.use('/api/badge-nodes', badgeNodesRoutes);
 app.use('/api/badge-trees', badgeTreesRoutes);
 
 
-// Socket.io Logic
+// Socket.io event handlers
 io.on('connection', (socket) => {
+  console.log('✅ Client connected:', socket.id);
+  
   socket.on('join_user', (userId) => {
     socket.join(userId);
+    console.log(`👤 User ${userId} joined their room`);
   });
 
   socket.on('invite_friend', ({ fromId, toId, fromName, quizId }) => {
+    const roomId = `room_${fromId}_${toId}_${Date.now()}`;
     io.to(toId).emit('game_invite', {
       fromId,
       fromName,
       quizId,
-      roomId: `room_${fromId}_${toId}_${Date.now()}`
+      roomId
     });
+    console.log(`🎮 Game invite sent from ${fromName} to ${toId}`);
   });
 
   socket.on('join_game_room', (roomId) => {
     socket.join(roomId);
+    console.log(`🚪 Socket ${socket.id} joined game room ${roomId}`);
   });
 
   socket.on('update_progress', ({ roomId, userId, score, currentQuestion, percentage }) => {
@@ -98,9 +111,11 @@ io.on('connection', (socket) => {
       currentQuestion,
       percentage
     });
+    console.log(`📊 Progress update in room ${roomId}: ${percentage}%`);
   });
   
-  socket.on('disconnect', () => {
+  socket.on('disconnect', (reason) => {
+    console.log('❌ Client disconnected:', socket.id, 'Reason:', reason);
   });
 });
 

@@ -37,41 +37,41 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
         if (socketRef.current) return;
 
-        // Only attempt socket connection in development or when explicitly configured
-        // Vercel and other serverless platforms don't support WebSockets
+        // WebSocket connections enabled for Netlify deployment
         const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const socketUrl = import.meta.env.VITE_API_URL;
 
-        // Skip socket connection if we're in production without explicit socket URL
-        if (!isDevelopment && !socketUrl) {
-            console.log('WebSocket connections not available in this environment');
-            return;
-        }
-
-        const finalSocketUrl = socketUrl || 'http://localhost:5000';
+        // In production, use the same origin for WebSocket connection
+        // Netlify supports WebSockets on the same domain
+        const socketUrl = isDevelopment
+            ? 'http://localhost:5000'
+            : window.location.origin;
 
         try {
-            const newSocket = io(finalSocketUrl, {
+            const newSocket = io(socketUrl, {
                 transports: ['websocket', 'polling'],
                 autoConnect: true,
                 reconnection: true,
-                reconnectionAttempts: 3,
+                reconnectionAttempts: 5,
                 reconnectionDelay: 1000,
-                timeout: 5000
+                reconnectionDelayMax: 5000,
+                timeout: 10000,
+                path: '/socket.io/'
             });
             socketRef.current = newSocket;
 
             newSocket.on('connect', () => {
+                console.log('✅ WebSocket connected successfully');
                 setConnected(true);
                 newSocket.emit('join_user', userId);
             });
 
-            newSocket.on('disconnect', () => {
+            newSocket.on('disconnect', (reason) => {
+                console.log('❌ WebSocket disconnected:', reason);
                 setConnected(false);
             });
 
             newSocket.on('connect_error', (error) => {
-                console.log('Socket connection not available:', error.message);
+                console.log('⚠️ Socket connection error:', error.message);
                 setConnected(false);
             });
 
