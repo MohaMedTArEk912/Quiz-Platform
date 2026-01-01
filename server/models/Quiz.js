@@ -6,12 +6,26 @@ const questionSchema = new mongoose.Schema({
   part: { type: String, required: true },
   question: { type: String, required: true },
   options: { type: [String], default: [] },
-  correctAnswer: { type: Number },
+  correctAnswer: { type: Number }, // For text/block/compiler this might be unused or used differently
   explanation: { type: String, default: '' },
   points: { type: Number, default: 1 },
   imageUrl: { type: String },
   codeSnippet: { type: String },
-  audioUrl: { type: String }
+  audioUrl: { type: String },
+
+  // New features
+  isBlock: { type: Boolean, default: false },
+  blockConfig: {
+    toolbox: { type: String }, // XML string defining the blocks available
+    initialXml: { type: String }, // Starting workspace
+    referenceXml: { type: String } // For auto-grading
+  },
+  isCompiler: { type: Boolean, default: false },
+  compilerConfig: {
+    language: { type: String, default: 'javascript' },
+    allowedLanguages: { type: [String], default: ['javascript'] },
+    initialCode: { type: String }
+  }
 });
 
 const quizSchema = new mongoose.Schema({

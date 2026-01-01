@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { AvatarConfig, UserData } from '../types';
 import Avatar from './Avatar';
 import { Sparkles, Smile, User, Save, RefreshCw, Shirt, Crown } from 'lucide-react';
+import { AVATAR_OPTIONS, DEFAULT_AVATAR_CONFIG } from '../constants/avatarDefaults';
 import { api } from '../lib/api';
 
 interface AvatarEditorProps {
@@ -11,16 +12,7 @@ interface AvatarEditorProps {
 }
 
 const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) => {
-    const [config, setConfig] = useState<AvatarConfig>(user.avatar || {
-        skinColor: '#F5D0C5',
-        hairStyle: 'short',
-        hairColor: '#4A3728',
-        accessory: 'none',
-        backgroundColor: 'bg-indigo-100',
-        mood: 'happy',
-        gender: 'male',
-        clothing: 'shirt'
-    });
+    const [config, setConfig] = useState<AvatarConfig>(user.avatar || DEFAULT_AVATAR_CONFIG);
 
     // Ensure new properties exist if user has old avatar data
     useEffect(() => {
@@ -74,37 +66,14 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
         { id: 'mood', icon: <Smile className="w-5 h-5" />, label: 'Mood' },
     ] as const;
 
-    const options = {
-        base: {
-            skinColor: ['#F5D0C5', '#E8B4A5', '#D49D8B', '#C68642', '#8D5524', '#5A3921', '#3C2E28'],
-            backgroundColor: ['bg-indigo-100', 'bg-blue-100', 'bg-purple-100', 'bg-green-100', 'bg-yellow-100', 'bg-red-100', 'bg-pink-100', 'bg-gray-100', 'bg-slate-800'],
-            gender: ['male', 'female']
-        },
-        hair: {
-            styles: [
-                'short', 'messy', 'buzz', 'mohawk',
-                'fade', 'quiff',
-                'long', 'ponytail', 'curly', 'bob', 'wavy', 'bun'
-            ],
-            colors: ['#4A3728', '#2C1A0F', '#E6BE8A', '#A52A2A', '#D49D8B', '#000000', '#F59E0B', '#6366F1', '#EC4899', '#FFFFFF', '#9CA3AF']
-        },
-        clothing: {
-            types: ['shirt', 'tshirt', 'hoodie', 'blazer', 'dress']
-        },
-        style: {
-            accessories: ['none', 'glasses', 'sunglasses', 'crown', 'headphones', 'cap', 'mask']
-        },
-        mood: {
-            moods: ['happy', 'neutral', 'cool', 'excited']
-        }
-    };
+    // options definition removed, using AVATAR_OPTIONS from constants
 
     // Filter clothing based on gender
     const getAvailableClothing = () => {
         if (config.gender === 'male') {
-            return options.clothing.types.filter(c => c !== 'dress');
+            return AVATAR_OPTIONS.clothing.types.filter(c => c !== 'dress');
         }
-        return options.clothing.types;
+        return AVATAR_OPTIONS.clothing.types;
     };
 
     // Filter hair based on gender
@@ -126,8 +95,8 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
         const randomGender = Math.random() > 0.5 ? 'male' : 'female';
 
         const validClothing = randomGender === 'male'
-            ? options.clothing.types.filter(c => c !== 'dress')
-            : options.clothing.types;
+            ? AVATAR_OPTIONS.clothing.types.filter(c => c !== 'dress')
+            : AVATAR_OPTIONS.clothing.types;
 
         const commonHair = ['short', 'messy', 'buzz', 'mohawk'];
         const validHair = randomGender === 'male'
@@ -135,12 +104,12 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
             : [...commonHair, 'long', 'ponytail', 'curly', 'bob', 'wavy', 'bun'];
 
         setConfig({
-            skinColor: options.base.skinColor[Math.floor(Math.random() * options.base.skinColor.length)],
+            skinColor: AVATAR_OPTIONS.base.skinColor[Math.floor(Math.random() * AVATAR_OPTIONS.base.skinColor.length)],
             hairStyle: validHair[Math.floor(Math.random() * validHair.length)],
-            hairColor: options.hair.colors[Math.floor(Math.random() * options.hair.colors.length)],
-            accessory: options.style.accessories[Math.floor(Math.random() * options.style.accessories.length)],
-            backgroundColor: options.base.backgroundColor[Math.floor(Math.random() * options.base.backgroundColor.length)],
-            mood: options.mood.moods[Math.floor(Math.random() * options.mood.moods.length)] as any,
+            hairColor: AVATAR_OPTIONS.hair.colors[Math.floor(Math.random() * AVATAR_OPTIONS.hair.colors.length)],
+            accessory: AVATAR_OPTIONS.style.accessories[Math.floor(Math.random() * AVATAR_OPTIONS.style.accessories.length)],
+            backgroundColor: AVATAR_OPTIONS.base.backgroundColor[Math.floor(Math.random() * AVATAR_OPTIONS.base.backgroundColor.length)],
+            mood: AVATAR_OPTIONS.mood.moods[Math.floor(Math.random() * AVATAR_OPTIONS.mood.moods.length)] as any,
             gender: randomGender as any,
             clothing: validClothing[Math.floor(Math.random() * validClothing.length)] as any
         });
@@ -231,7 +200,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                                 <div>
                                     <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Skin Tone</h3>
                                     <div className="flex flex-wrap gap-4">
-                                        {options.base.skinColor.map(color => (
+                                        {AVATAR_OPTIONS.base.skinColor.map(color => (
                                             <button
                                                 key={color}
                                                 onClick={() => setConfig({ ...config, skinColor: color })}
@@ -245,7 +214,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                                 <div>
                                     <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Background</h3>
                                     <div className="flex flex-wrap gap-4">
-                                        {options.base.backgroundColor.map(bg => (
+                                        {AVATAR_OPTIONS.base.backgroundColor.map(bg => (
                                             <button
                                                 key={bg}
                                                 onClick={() => setConfig({ ...config, backgroundColor: bg })}
@@ -280,7 +249,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                                 <div>
                                     <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Hair Color</h3>
                                     <div className="flex flex-wrap gap-4">
-                                        {options.hair.colors.map(color => (
+                                        {AVATAR_OPTIONS.hair.colors.map(color => (
                                             <button
                                                 key={color}
                                                 onClick={() => setConfig({ ...config, hairColor: color })}
@@ -297,8 +266,8 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                         {activeTab === 'clothing' && (
                             <div>
                                 <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
-                                    Outfit {config.gender === 'male' && <span className="text-xs font-normal lowercase opacity-75">(male options)</span>}
-                                    {config.gender === 'female' && <span className="text-xs font-normal lowercase opacity-75">(female options)</span>}
+                                    Outfit {config.gender === 'male' && <span className="text-xs font-normal lowercase opacity-75">(male AVATAR_OPTIONS)</span>}
+                                    {config.gender === 'female' && <span className="text-xs font-normal lowercase opacity-75">(female AVATAR_OPTIONS)</span>}
                                 </h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {getAvailableClothing().map(item => (
@@ -321,7 +290,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                             <div>
                                 <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Accessories</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    {options.style.accessories.map(item => (
+                                    {AVATAR_OPTIONS.style.accessories.map(item => (
                                         <button
                                             key={item}
                                             onClick={() => setConfig({ ...config, accessory: item })}
@@ -341,7 +310,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                             <div>
                                 <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Expression</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    {options.mood.moods.map(mood => (
+                                    {AVATAR_OPTIONS.mood.moods.map(mood => (
                                         <button
                                             key={mood}
                                             onClick={() => setConfig({ ...config, mood: mood as any })}

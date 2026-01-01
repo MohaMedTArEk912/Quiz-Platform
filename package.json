@@ -12,11 +12,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "@react-oauth/google": "^0.13.4",
     "@supabase/supabase-js": "^2.89.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/canvas-confetti": "^1.9.0",
     "@types/react-window": "^1.8.8",
+    "blockly": "^12.3.1",
     "canvas-confetti": "^1.9.4",
     "concurrently": "^9.2.1",
     "cors": "^2.8.5",
@@ -29,6 +31,7 @@
     "mongoose": "^9.0.2",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
+    "react-blockly": "^9.0.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.11.0",
     "react-window": "^2.2.3",

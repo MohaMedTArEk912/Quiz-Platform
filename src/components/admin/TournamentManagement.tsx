@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Trophy, MoreVertical, Download, Upload, Plus, Edit2, Trash2, BookOpen, X } from 'lucide-react';
 import type { Tournament, Quiz, UserData, BadgeDefinition } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
-import { staticItems } from '../../lib/shopItems';
+import { staticItems } from '../../constants/shopItems';
 
 interface TournamentManagementProps {
     currentUser: UserData;

@@ -2,6 +2,14 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import type { Quiz, UserData, QuizResult, DetailedAnswer, AttemptAnswers } from '../types/index.ts';
 import { Clock, Zap, Target, Sparkles } from 'lucide-react';
 import Navbar from './Navbar.tsx';
+import * as Blockly from 'blockly';
+import { javascriptGenerator } from 'blockly/javascript';
+import { registerBlocklyBlocks } from '../utils/blocklyRegistry';
+
+// Lazy load heavy question components
+const BlockQuestion = React.lazy(() => import('./question-types/BlockQuestion.tsx'));
+const CompilerQuestion = React.lazy(() => import('./question-types/CompilerQuestion.tsx'));
+const Loader = React.lazy(() => import('./PageLoader.tsx'));
 
 interface QuizTakingProps {
     quiz: Quiz;
@@ -25,6 +33,7 @@ type SavedQuizState = {
 const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack, onProgress, powerUps, onPowerUpUsed, hidePowerUps }) => {
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState<Record<number, string | number>>({});
+    const [answerCodes, setAnswerCodes] = useState<Record<number, string>>({}); // Store generated code for block questions
     const [timeLeft, setTimeLeft] = useState(quiz.timeLimit * 60);
     const startTimeRef = useRef(0);
     const [fiftyUsed, setFiftyUsed] = useState(false);
@@ -101,13 +110,21 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         setHintMessage(null);
     };
 
-    const handleAnswer = (answer: string | number) => {
+    const handleAnswer = (answer: string | number, code?: string) => {
         if (isSubmitting) return;
         const newAnswers = {
             ...answers,
             [currentQuestion]: answer
         };
         setAnswers(newAnswers);
+
+        // Store generated code for block questions
+        if (code !== undefined) {
+            setAnswerCodes(prev => ({
+                ...prev,
+                [currentQuestion]: code
+            }));
+        }
 
         // Calculate provisional score for progress tracking
         if (onProgress) {
@@ -172,6 +189,13 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         const startTime = startTimeRef.current || Date.now();
         const timeTaken = Math.floor((Date.now() - startTime) / 1000);
 
+        // Ensure Blockly blocks are registered for grading
+        try {
+            registerBlocklyBlocks();
+        } catch (e) {
+            console.error("Error registering blocks for grading:", e);
+        }
+
         // Calculate score and correct answers
         let score = 0;
         let correctAnswers = 0;
@@ -180,17 +204,53 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         quiz.questions.forEach((question, index) => {
             const selectedAnswer = answers[index];
             const isText = question.type === 'text';
+            const isBlock = question.isBlock;
+            const isCompiler = question.isCompiler;
             let isCorrect = false;
 
-            if (isText) {
-                // For text questions, we don't auto-grade. Mark as correct only if exact match? 
-                // No, usually requires manual review. For now count as 0 points until reviewed.
+            if (isText || isCompiler) {
+                // For text and compiler questions, manual review required
                 isCorrect = false;
+            } else if (isBlock) {
+                // Block-based grading using GENERATED CODE comparison
+                if (question.blockConfig?.referenceXml && selectedAnswer) {
+                    try {
+                        // Generate code from reference XML
+                        const headless = new Blockly.Workspace();
+                        const xmlDom = Blockly.utils.xml.textToDom(question.blockConfig.referenceXml);
+                        Blockly.Xml.domToWorkspace(xmlDom, headless);
+                        const refCode = javascriptGenerator.workspaceToCode(headless);
+                        headless.dispose();
+
+                        // Get user's generated code
+                        const userCode = answerCodes[index];
+
+                        // Compare generated code (logic-based, not structure-based)
+                        if (userCode && refCode) {
+                            isCorrect = userCode.trim() === refCode.trim();
+                        } else {
+                            // Fallback: if code generation failed, mark as incorrect
+                            isCorrect = false;
+                        }
+                    } catch (e) {
+                        console.error("Error grading block question:", e);
+                        isCorrect = false;
+                    }
+
+                    if (isCorrect) {
+                        score += question.points;
+                        correctAnswers++;
+                    }
+                } else {
+                    // No reference or no answer
+                    isCorrect = false;
+                }
             } else {
+                // Multiple choice questions
                 isCorrect = selectedAnswer === question.correctAnswer;
                 if (isCorrect) {
                     score += question.points;
-                    correctAnswers++; // Count correct answers separately
+                    correctAnswers++;
                 }
             }
 
@@ -203,21 +263,19 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         });
 
         const totalPoints = quiz.questions.reduce((sum, q) => sum + q.points, 0);
-        // Calculate percentage based on auto-graded questions initially? 
-        // Or just show current score. User asked for manual review.
         const percentage = Math.round((score / totalPoints) * 100);
 
         onComplete({
-            score: correctAnswers, // Use correct answers count for display
+            score: correctAnswers,
             totalQuestions: quiz.questions.length,
             percentage,
             timeTaken,
             answers: detailedAnswers,
             passed: percentage >= quiz.passingScore,
-            reviewStatus: quiz.questions.some(q => q.type === 'text') ? 'pending' : 'completed',
+            reviewStatus: quiz.questions.some(q => q.type === 'text' || q.isCompiler) ? 'pending' : 'completed',
             powerUpsUsed: usedPowerUps
         });
-    }, [answers, onComplete, quiz, storageKey, usedPowerUps, isSubmitting]);
+    }, [answers, answerCodes, onComplete, quiz, storageKey, usedPowerUps, isSubmitting]);
 
     useEffect(() => {
         if (showResumePrompt || isSubmitting) return; // Pause timer while prompting or submitting
@@ -613,7 +671,26 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                         </div>
 
                         <div className="space-y-4 mb-6">
-                            {isTextQuestion ? (
+                            {q.isBlock ? (
+                                <React.Suspense fallback={<div className="h-64 flex items-center justify-center"><Loader /></div>}>
+                                    <BlockQuestion
+                                        initialXml={selectedAnswer as string || q.blockConfig?.initialXml}
+                                        toolbox={q.blockConfig?.toolbox}
+                                        onChange={(xml, code) => handleAnswer(xml, code)}
+                                        readOnly={isSubmitting}
+                                    />
+                                </React.Suspense>
+                            ) : q.isCompiler ? (
+                                <React.Suspense fallback={<div className="h-[600px] flex items-center justify-center"><Loader /></div>}>
+                                    <CompilerQuestion
+                                        language={q.compilerConfig?.language || 'javascript'}
+                                        allowedLanguages={q.compilerConfig?.allowedLanguages || ['javascript']}
+                                        initialCode={selectedAnswer as string || q.compilerConfig?.initialCode}
+                                        onChange={(code) => handleAnswer(code)}
+                                        readOnly={isSubmitting}
+                                    />
+                                </React.Suspense>
+                            ) : isTextQuestion ? (
                                 <textarea
                                     value={selectedAnswer as string || ''}
                                     onChange={(e) => handleAnswer(e.target.value)}

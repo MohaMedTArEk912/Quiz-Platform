@@ -3,7 +3,8 @@ import type { UserData, ShopItem } from '../../types';
 import { api } from '../../lib/api';
 import { ShoppingBag, Coins, Zap, Clock, Target, CheckCircle2, AlertCircle, Sparkles, TrendingUp, Shield } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { staticItems } from '../../lib/shopItems';
+import { staticItems } from '../../constants/shopItems';
+import { SHOP_ITEM_GRADIENTS, DEFAULT_SHOP_LOADING_MESSAGE, PURCHASE_SUCCESS_MESSAGE } from '../../constants/shopDefaults';
 
 interface ShopProps {
   user: UserData;
@@ -71,38 +72,10 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
   };
 
   const getItemGradient = (name: string) => {
-    if (name.includes('50/50')) return 'from-blue-500 to-cyan-500';
-    if (name.includes('Time')) return 'from-orange-500 to-red-500';
-    if (name.includes('Hint')) return 'from-purple-500 to-pink-500';
-    if (name.includes('Skip')) return 'from-green-500 to-emerald-500';
-    if (name.includes('Shield')) return 'from-yellow-500 to-orange-500';
-    // Cosmetics
-    if (name.includes('Crown')) return 'from-yellow-400 to-amber-600';
-    if (name.includes('Glasses')) return 'from-gray-800 to-black';
-    if (name.includes('Wizard')) return 'from-indigo-600 to-blue-800';
-    if (name.includes('Wizard')) return 'from-indigo-600 to-blue-800';
-    if (name.includes('Galaxy')) return 'from-slate-900 to-violet-900';
-    if (name.includes('Neon')) return 'from-fuchsia-500 to-cyan-500';
-    if (name.includes('Frame')) {
-      if (name.includes('Gold')) return 'from-yellow-300 to-yellow-600';
-      if (name.includes('Diamond')) return 'from-cyan-300 to-blue-600';
-      return 'from-teal-400 to-blue-500';
+    for (const key in SHOP_ITEM_GRADIENTS) {
+      if (name.includes(key)) return SHOP_ITEM_GRADIENTS[key];
     }
-    if (name.includes('Midnight')) return 'from-slate-800 to-slate-950';
-    if (name.includes('Forest')) return 'from-emerald-600 to-green-900';
-    if (name.includes('Sunset')) return 'from-orange-400 to-rose-600';
-    if (name.includes('Pirate')) return 'from-red-700 to-black';
-    if (name.includes('Astro')) return 'from-gray-200 to-gray-500';
-    if (name.includes('Headset')) return 'from-red-500 to-slate-900';
-    if (name.includes('Earrings')) return 'from-cyan-400 to-blue-600';
-    if (name.includes('Necklace')) return 'from-yellow-300 to-yellow-600';
-    if (name.includes('Beret')) return 'from-gray-700 to-gray-900';
-    if (name.includes('Hoodie')) return 'from-indigo-500 to-purple-600';
-    if (name.includes('Blazer')) return 'from-slate-700 to-black';
-    if (name.includes('Dress')) return 'from-pink-400 to-rose-500';
-    if (name.includes('Magnet')) return 'from-yellow-400 to-orange-500';
-    if (name.includes('Double')) return 'from-purple-500 to-yellow-400';
-    return 'from-indigo-500 to-purple-500';
+    return SHOP_ITEM_GRADIENTS.default;
   };
 
   const purchase = async (itemId: string, itemName: string) => {
@@ -123,7 +96,7 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
       });
 
       // Success message
-      setMessage(`🎉 ${itemName} purchased successfully!`);
+      setMessage(PURCHASE_SUCCESS_MESSAGE(itemName));
 
       // Confetti celebration
       confetti({
@@ -148,7 +121,7 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-xl font-semibold">Loading Shop...</p>
+          <p className="text-white text-xl font-semibold">{DEFAULT_SHOP_LOADING_MESSAGE}</p>
         </div>
       </div>
     );

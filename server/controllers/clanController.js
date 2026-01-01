@@ -47,7 +47,10 @@ export const getClan = async (req, res) => {
     
     // Enrich member data (names, avatars)
     const memberIds = clan.members.map(m => m.userId);
-    const users = await User.find({ userId: { $in: memberIds } })
+    const requestIds = clan.activeJoinRequests ? clan.activeJoinRequests.map(r => r.userId) : [];
+    const allUserIds = [...memberIds, ...requestIds];
+
+    const users = await User.find({ userId: { $in: allUserIds } })
       .select('userId name avatar xp totalScore')
       .lean();
       
@@ -56,7 +59,12 @@ export const getClan = async (req, res) => {
       return { ...m.toObject(), ...user };
     });
 
-    res.json({ ...clan.toObject(), members: enrichedMembers });
+    const enrichedRequests = clan.activeJoinRequests ? clan.activeJoinRequests.map(r => {
+        const user = users.find(u => u.userId === r.userId);
+        return { ...r.toObject(), name: user?.name || 'Unknown', avatar: user?.avatar };
+    }) : [];
+
+    res.json({ ...clan.toObject(), members: enrichedMembers, activeJoinRequests: enrichedRequests });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching clan', error: error.message });
   }
@@ -88,9 +96,14 @@ export const joinClan = async (req, res) => {
     const clan = await Clan.findOne({ clanId });
     if (!clan) return res.status(404).json({ message: 'Clan not found' });
 
+    // Check if already requested
+    const existingRequest = clan.activeJoinRequests?.find(r => r.userId === userId);
+    if (existingRequest) return res.status(400).json({ message: 'Join request already pending' });
+
     if (!clan.isPublic) {
-        // Handle join request logit later
-        return res.status(403).json({ message: 'Clan is invite only' }); 
+        clan.activeJoinRequests.push({ userId });
+        await clan.save();
+        return res.json({ message: 'Join request sent', requestSent: true });
     }
 
     clan.members.push({ userId, role: 'member', contribution: 0 });
@@ -183,5 +196,212 @@ export const getClanLeaderboard = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error fetching leaderboard', error: error.message });
   }
+};
+
+export const updateClan = async (req, res) => {
+    try {
+        const { clanId } = req.params;
+        const { name, description, isPublic, settings } = req.body;
+        const userId = req.user.userId;
+
+        const clan = await Clan.findOne({ clanId });
+        if (!clan) return res.status(404).json({ message: 'Clan not found' });
+
+        if (clan.leaderId !== userId) {
+            return res.status(403).json({ message: 'Only the leader can update clan settings' });
+        }
+
+        if (name) clan.name = name;
+        if (description !== undefined) clan.description = description;
+        if (isPublic !== undefined) clan.isPublic = isPublic;
+        if (settings) clan.settings = { ...clan.settings, ...settings };
+
+        await clan.save();
+        res.json(clan);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating clan', error: error.message });
+    }
+};
+
+export const inviteToClan = async (req, res) => {
+    try {
+        const { targetUserId, clanId } = req.body;
+        const userId = req.user.userId;
+
+        const clan = await Clan.findOne({ clanId });
+        if (!clan) return res.status(404).json({ message: 'Clan not found' });
+
+        // Check permissions (Leader or Elder)
+        const member = clan.members.find(m => m.userId === userId);
+        if (!member || (member.role !== 'leader' && member.role !== 'elder')) {
+            return res.status(403).json({ message: 'No permission to invite' });
+        }
+
+        const targetUser = await User.findOne({ userId: targetUserId });
+        if (!targetUser) return res.status(404).json({ message: 'User not found' });
+
+        if (targetUser.clanId) {
+            return res.status(400).json({ message: 'User is already in a clan' });
+        }
+
+        // Check if already invited
+        const existingInvite = targetUser.clanInvites?.find(inv => inv.clanId === clanId);
+        if (existingInvite) {
+            return res.status(400).json({ message: 'User already has a pending invite' });
+        }
+
+        targetUser.clanInvites.push({
+            clanId,
+            clanName: clan.name,
+            invitedBy: userId
+        });
+
+        await targetUser.save();
+        res.json({ message: 'Invitation sent' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error sending invitation', error: error.message });
+    }
+};
+
+export const respondToClanInvite = async (req, res) => {
+    try {
+        const { clanId, accept } = req.body;
+        const userId = req.user.userId;
+
+        const user = await User.findOne({ userId });
+        const inviteIndex = user.clanInvites.findIndex(inv => inv.clanId === clanId);
+
+        if (inviteIndex === -1) {
+            return res.status(404).json({ message: 'Invitation not found' });
+        }
+
+        if (accept) {
+            if (user.clanId) {
+                return res.status(400).json({ message: 'You are already in a clan' });
+            }
+
+            const clan = await Clan.findOne({ clanId });
+            if (!clan) {
+                user.clanInvites.splice(inviteIndex, 1);
+                await user.save();
+                return res.status(404).json({ message: 'Clan no longer exists' });
+            }
+
+            clan.members.push({ userId, role: 'member', contribution: 0 });
+            await clan.save();
+            
+            user.clanId = clanId;
+        }
+
+        // Remove invite regardless of accept/reject
+        user.clanInvites.splice(inviteIndex, 1);
+        await user.save();
+
+        res.json({ message: accept ? 'Joined clan successfully' : 'Invitation rejected' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error responding to invitation', error: error.message });
+    }
+};
+
+export const handleJoinRequest = async (req, res) => {
+    try {
+        const { clanId, targetUserId, accept } = req.body;
+        const userId = req.user.userId;
+
+        const clan = await Clan.findOne({ clanId });
+        if (!clan) return res.status(404).json({ message: 'Clan not found' });
+
+        // Check Permissions
+        const requester = clan.members.find(m => m.userId === userId);
+        if (!requester || (requester.role !== 'leader' && requester.role !== 'elder')) {
+            return res.status(403).json({ message: 'No permission' });
+        }
+
+        const requestIndex = clan.activeJoinRequests.findIndex(r => r.userId === targetUserId);
+        if (requestIndex === -1) return res.status(404).json({ message: 'Request not found' });
+
+        if (accept) {
+            const targetUser = await User.findOne({ userId: targetUserId });
+            if (!targetUser) return res.status(404).json({ message: 'User not found' });
+            
+            if (targetUser.clanId) {
+                // User joined another clan in the meantime
+                clan.activeJoinRequests.splice(requestIndex, 1);
+                await clan.save();
+                return res.status(400).json({ message: 'User already in a clan' });
+            }
+
+            clan.members.push({ userId: targetUserId, role: 'member', contribution: 0 });
+            targetUser.clanId = clanId;
+            await targetUser.save();
+        }
+
+        clan.activeJoinRequests.splice(requestIndex, 1);
+        await clan.save();
+
+        res.json({ message: accept ? 'Request accepted' : 'Request rejected' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error handling request', error: error.message });
+    }
+};
+
+export const kickMember = async (req, res) => {
+    try {
+        const { clanId, targetUserId } = req.body;
+        const userId = req.user.userId;
+
+        const clan = await Clan.findOne({ clanId });
+        if (!clan) return res.status(404).json({ message: 'Clan not found' });
+
+        const executor = clan.members.find(m => m.userId === userId);
+        const target = clan.members.find(m => m.userId === targetUserId);
+
+        if (!executor || !target) return res.status(404).json({ message: 'Member not found' });
+
+        // Permission Logic: Leader can kick anyone. Elder can kick Member.
+        const canKick = executor.role === 'leader' || (executor.role === 'elder' && target.role === 'member');
+        if (!canKick || userId === targetUserId) { // Cannot kick self here, use leave
+             return res.status(403).json({ message: 'No permission to kick this member' });
+        }
+
+        const memberIndex = clan.members.findIndex(m => m.userId === targetUserId);
+        clan.members.splice(memberIndex, 1);
+        await clan.save();
+
+        const targetUser = await User.findOne({ userId: targetUserId });
+        if (targetUser) {
+            targetUser.clanId = null;
+            await targetUser.save();
+        }
+
+        res.json({ message: 'Member kicked' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error kicking member', error: error.message });
+    }
+};
+
+export const updateMemberRole = async (req, res) => {
+    try {
+        const { clanId, targetUserId, newRole } = req.body; // 'elder', 'member'
+        const userId = req.user.userId;
+
+        if (!['elder', 'member'].includes(newRole)) return res.status(400).json({ message: 'Invalid role' });
+
+        const clan = await Clan.findOne({ clanId });
+        if (!clan) return res.status(404).json({ message: 'Clan not found' });
+
+        // Only Leader can promote/demote
+        if (clan.leaderId !== userId) return res.status(403).json({ message: 'Only leader can change roles' });
+
+        const target = clan.members.find(m => m.userId === targetUserId);
+        if (!target) return res.status(404).json({ message: 'Member not found' });
+
+        target.role = newRole;
+        await clan.save();
+
+        res.json({ message: 'Role updated' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating role', error: error.message });
+    }
 };
 

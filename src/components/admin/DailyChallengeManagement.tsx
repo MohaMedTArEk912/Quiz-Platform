@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Zap, Plus, Edit2 } from 'lucide-react';
 import type { UserData, Quiz, BadgeDefinition } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
-import { staticItems } from '../../lib/shopItems';
+import { staticItems } from '../../constants/shopItems';
 
 interface DailyChallengeManagementProps {
     currentUser: UserData;

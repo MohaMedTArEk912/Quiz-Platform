@@ -1,6 +1,6 @@
 import express from 'express';
 import { verifyUser } from '../middleware/authMiddleware.js';
-import { createClan, getClan, searchClans, joinClan, leaveClan, getClanLeaderboard } from '../controllers/clanController.js';
+import { createClan, getClan, searchClans, joinClan, leaveClan, getClanLeaderboard, updateClan, inviteToClan, respondToClanInvite, handleJoinRequest, kickMember, updateMemberRole } from '../controllers/clanController.js';
 
 const router = express.Router();
 
@@ -10,6 +10,12 @@ router.get('/leaderboard', getClanLeaderboard); // Public endpoint - must be bef
 router.get('/:clanId', verifyUser, getClan);
 router.post('/join', verifyUser, joinClan);
 router.post('/leave', verifyUser, leaveClan);
+router.put('/:clanId', verifyUser, updateClan);
+router.post('/invite', verifyUser, inviteToClan);
+router.post('/respond-invite', verifyUser, respondToClanInvite);
+router.post('/join-request', verifyUser, handleJoinRequest);
+router.post('/kick', verifyUser, kickMember);
+router.put('/role', verifyUser, updateMemberRole);
 
 export default router;
 

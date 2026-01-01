@@ -807,5 +807,83 @@ export const api = {
         const response = await fetch(`${API_URL}/clans/leaderboard`);
         if (!response.ok) throw new Error('Failed to fetch clan leaderboard');
         return response.json();
-    }
+    },
+
+    async updateClan(clanId: string, updates: any, userId: string) {
+        const response = await fetch(`${API_URL}/clans/${clanId}`, {
+            method: 'PUT',
+            headers: getHeaders(userId),
+            body: JSON.stringify(updates)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to update clan');
+        }
+        return response.json();
+    },
+
+    async inviteToClan(clanId: string, targetUserId: string, userId: string) {
+        const response = await fetch(`${API_URL}/clans/invite`, {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ clanId, targetUserId })
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to send invite');
+        }
+        return response.json();
+    },
+
+    async respondToClanInvite(clanId: string, accept: boolean, userId: string) {
+        const response = await fetch(`${API_URL}/clans/respond-invite`, {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ clanId, accept })
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to respond to invite');
+        }
+        return response.json();
+    },
+
+    async handleJoinRequest(clanId: string, targetUserId: string, accept: boolean, userId: string) {
+        const response = await fetch(`${API_URL}/clans/join-request`, {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ clanId, targetUserId, accept })
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to handle request');
+        }
+        return response.json();
+    },
+
+    async kickMember(clanId: string, targetUserId: string, userId: string) {
+        const response = await fetch(`${API_URL}/clans/kick`, {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ clanId, targetUserId })
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to kick member');
+        }
+        return response.json();
+    },
+
+    async updateMemberRole(clanId: string, targetUserId: string, newRole: 'elder' | 'member', userId: string) {
+        const response = await fetch(`${API_URL}/clans/role`, {
+            method: 'PUT',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ clanId, targetUserId, newRole })
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to update role');
+        }
+        return response.json();
+    },
 };

@@ -3,6 +3,7 @@ import { api } from '../../lib/api';
 import type { BadgeNode } from '../../types';
 import { Plus, Edit2, Trash2, Award, Download, Upload, MoreVertical } from 'lucide-react';
 import BadgeNodeEditor from './BadgeNodeEditor';
+import { SAMPLE_BADGE, BADGE_RARITY_COLORS } from '../../constants/badgeDefaults';
 
 interface BadgeManagementProps {
     adminId: string;
@@ -44,25 +45,7 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
     };
 
     const handleDownloadSample = () => {
-        const sample = {
-            name: "Speed Demon",
-            description: "Complete a quiz in under 60 seconds",
-            icon: "⚡",
-            rarity: "rare",
-            color: "#3B82F6",
-            rewards: {
-                xp: 100,
-                coins: 50,
-                powerUps: []
-            },
-            unlockCriteria: [
-                {
-                    type: "time_limit",
-                    threshold: 60,
-                    comparison: "lte"
-                }
-            ]
-        };
+        const sample = SAMPLE_BADGE;
 
         const blob = new Blob([JSON.stringify(sample, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -140,12 +123,7 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
     };
 
     const getRarityColor = (rarity: string) => {
-        switch (rarity) {
-            case 'legendary': return 'from-yellow-400 to-orange-500';
-            case 'epic': return 'from-orange-500 to-red-500';
-            case 'rare': return 'from-purple-500 to-pink-500';
-            default: return 'from-blue-500 to-cyan-500';
-        }
+        return BADGE_RARITY_COLORS[rarity as keyof typeof BADGE_RARITY_COLORS] || BADGE_RARITY_COLORS.default;
     };
 
     if (loading) {

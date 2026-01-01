@@ -37,7 +37,11 @@ app.set('io', io);
 
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: true, // Allow all origins (or reflect)
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'x-user-id']
+}));
 app.use(express.json());
 
 // Middleware to ensure DB connection

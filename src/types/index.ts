@@ -28,6 +28,22 @@ export interface Question {
     imageUrl?: string;
     codeSnippet?: string;
     audioUrl?: string;
+    isBlock?: boolean;
+    blockConfig?: BlockConfig;
+    isCompiler?: boolean;
+    compilerConfig?: CompilerConfig;
+}
+
+export interface BlockConfig {
+    toolbox?: string;
+    initialXml?: string;
+    referenceXml?: string;
+}
+
+export interface CompilerConfig {
+    language: string;
+    allowedLanguages?: string[];
+    initialCode?: string;
 }
 
 export interface DetailedAnswer {
@@ -105,6 +121,12 @@ export interface UserData {
         completedModules: string[];
     }[];
     clanId?: string;
+    clanInvites?: {
+        clanId: string;
+        clanName: string;
+        invitedBy: string;
+        createdAt: string;
+    }[];
 }
 
 export interface AvatarConfig {
@@ -323,5 +345,9 @@ export interface Clan {
     level: number;
     isPublic: boolean;
     members: ClanMember[];
+    activeJoinRequests?: {
+        userId: string;
+        createdAt: string;
+    }[];
     createdAt: string;
 }

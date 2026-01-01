@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Upload, Download, Edit2, Trash2, Code, X } from 'lucide-react';
+import { Plus, Upload, Download, Edit2, Trash2, Code, X, MoreVertical } from 'lucide-react';
 import type { Quiz, Question, UserData } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
+import { DEFAULT_BLOCKLY_TOOLBOX, COMPILER_ALLOWED_LANGUAGES, COMPILER_INITIAL_CODE, DIFFICULTY_LEVELS } from '../../constants/quizDefaults.ts';
 
 interface QuizManagementProps {
     quizzes: Quiz[];
@@ -17,6 +18,7 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
     const [activeModalTab, setActiveModalTab] = useState<'general' | 'questions'>('general');
     const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; id: string } | null>(null);
+    const [activeHeaderMenu, setActiveHeaderMenu] = useState(false);
 
     useEffect(() => {
         setLocalQuizzes(quizzes);
@@ -58,22 +60,48 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
     const handleSaveQuiz = async () => {
         if (!editingQuiz) return;
 
+        // Validation
+        if (!editingQuiz.title.trim() || !editingQuiz.description.trim()) {
+            onNotification('error', 'Title and Description are required');
+            return;
+        }
+        if (editingQuiz.timeLimit < 1) {
+            onNotification('error', 'Time limit must be at least 1 minute');
+            return;
+        }
+        if (editingQuiz.questions.length === 0) {
+            onNotification('error', 'Quiz must have at least one question');
+            return;
+        }
+
         try {
+            // Ensure all questions have required fields
+            const validatedQuestions = editingQuiz.questions.map(q => ({
+                ...q,
+                part: q.part || 'A', // Ensure part exists
+                id: Number(q.id) // Ensure ID is number
+            }));
+
+            const quizToSave = {
+                ...editingQuiz,
+                questions: validatedQuestions,
+                id: editingQuiz.id || crypto.randomUUID()
+            };
+
             if (editingQuiz.id && localQuizzes.some(q => q.id === editingQuiz.id)) {
-                await api.updateQuiz(editingQuiz.id, editingQuiz, currentUser.userId);
-                setLocalQuizzes(prev => prev.map(q => q.id === editingQuiz.id ? editingQuiz : q));
+                await api.updateQuiz(editingQuiz.id, quizToSave, currentUser.userId);
+                setLocalQuizzes(prev => prev.map(q => q.id === editingQuiz.id ? quizToSave : q));
                 onNotification('success', 'Quiz updated successfully');
             } else {
-                const newQuiz = { ...editingQuiz, id: editingQuiz.id || crypto.randomUUID() };
-                await api.createQuiz(newQuiz, currentUser.userId);
-                setLocalQuizzes(prev => [...prev, newQuiz]);
+                await api.createQuiz(quizToSave, currentUser.userId);
+                setLocalQuizzes(prev => [...prev, quizToSave]);
                 onNotification('success', 'Quiz created successfully');
             }
             setEditingQuiz(null);
             onRefresh();
         } catch (error) {
             console.error('Save quiz error:', error);
-            onNotification('error', 'Failed to save quiz');
+            onNotification('error', 'Failed to save quiz. Please check all fields.');
         }
     };
 
@@ -123,21 +151,109 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
         });
     };
 
+    const handleDownloadSample = () => {
+        const sampleQuiz: Quiz = {
+            id: 'sample-quiz-template',
+            title: 'Sample Quiz Template',
+            description: 'Use this template to structure your JSON import.',
+            category: 'General',
+            difficulty: 'Easy',
+            timeLimit: 15,
+            passingScore: 70,
+            coinsReward: 50,
+            xpReward: 100,
+            icon: 'Code',
+            isTournamentOnly: false,
+            questions: [
+                {
+                    id: 1,
+                    type: 'multiple-choice',
+                    part: 'Part 1',
+                    question: 'Multiple Choice Example',
+                    options: ['Option A', 'Option B', 'Option C', 'Option D'],
+                    correctAnswer: 0,
+                    points: 10,
+                    explanation: 'Explanation for the correct answer.'
+                },
+                {
+                    id: 2,
+                    type: 'multiple-choice', // Frontend uses 'multiple-choice' with isBlock=true
+                    part: 'Part 2',
+                    question: 'Block Logic Example',
+                    options: [],
+                    isBlock: true,
+                    blockConfig: {
+                        toolbox: '<xml>...</xml>', // Optional custom toolbox
+                        initialXml: '<xml>...</xml>',
+                        referenceXml: '<xml>...</xml>'
+                    },
+                    points: 20,
+                    explanation: 'Arrange blocks to solve.'
+                },
+                {
+                    id: 3,
+                    type: 'text', // Frontend uses 'text' with isCompiler=true
+                    part: 'Part 3',
+                    question: 'Code Compiler Example',
+                    options: [],
+                    isCompiler: true,
+                    compilerConfig: {
+                        language: 'javascript',
+                        allowedLanguages: ['javascript', 'python', 'typescript'],
+                        initialCode: '// Write your code here'
+                    },
+                    points: 30,
+                    explanation: 'Write code to solve the problem.'
+                }
+            ]
+        };
+
+        const dataStr = JSON.stringify([sampleQuiz], null, 2); // Export as array for import compatibility
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'quiz-import-sample.json';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div>
-            <div className="flex flex-wrap gap-4 justify-between mb-8">
+            <div className="flex flex-wrap gap-4 justify-between mb-8 items-center">
                 <h2 className="text-2xl font-black text-gray-900 dark:text-white">Quiz Management</h2>
                 <div className="flex gap-3">
+                    <div className="relative">
+                        <button
+                            onClick={() => setActiveHeaderMenu(!activeHeaderMenu)}
+                            className="p-3 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50 rounded-xl transition-colors"
+                        >
+                            <MoreVertical className="w-5 h-5" />
+                        </button>
+                        {activeHeaderMenu && (
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1e1e2d] rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                                <button
+                                    onClick={() => { handleDownloadSample(); setActiveHeaderMenu(false); }}
+                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200"
+                                >
+                                    <Download className="w-4 h-4 text-gray-400" /> Sample JSON
+                                </button>
+                                <label className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer">
+                                    <Upload className="w-4 h-4 text-emerald-500" /> Import JSON
+                                    <input type="file" accept=".json" className="hidden" onChange={(e) => { handleImportQuiz(e); setActiveHeaderMenu(false); }} />
+                                </label>
+                            </div>
+                        )}
+                    </div>
+
                     <button
-                        onClick={() => { setEditingQuiz({ id: '', title: '', description: '', timeLimit: 10, passingScore: 60, coinsReward: 10, xpReward: 50, category: 'General', difficulty: 'Beginner', icon: 'Code', questions: [] }); setActiveModalTab('general'); }}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold transition-all shadow-lg flex items-center gap-2"
+                        onClick={() => { setEditingQuiz({ id: '', title: '', description: '', timeLimit: 10, passingScore: 60, coinsReward: 10, xpReward: 50, category: 'General', difficulty: DIFFICULTY_LEVELS[0], icon: 'Code', questions: [] }); setActiveModalTab('general'); }}
+                        className="px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-violet-500/25 flex items-center gap-2"
                     >
-                        <Plus className="w-4 h-4" /> Create Quiz
+                        <Plus className="w-5 h-5" /> Create Quiz
                     </button>
-                    <label className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition-all shadow-lg cursor-pointer flex items-center gap-2">
-                        <Upload className="w-4 h-4" /> Import JSON
-                        <input type="file" accept=".json" className="hidden" onChange={handleImportQuiz} />
-                    </label>
                 </div>
             </div>
 
@@ -205,9 +321,9 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                                     <div className="space-y-1">
                                         <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Difficulty</label>
                                         <select value={editingQuiz.difficulty} onChange={e => setEditingQuiz({ ...editingQuiz, difficulty: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50">
-                                            <option value="Beginner">Beginner</option>
-                                            <option value="Intermediate">Intermediate</option>
-                                            <option value="Advanced">Advanced</option>
+                                            {DIFFICULTY_LEVELS.map(level => (
+                                                <option key={level} value={level}>{level}</option>
+                                            ))}
                                         </select>
                                     </div>
                                 </div>
@@ -221,22 +337,130 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                                 </div>
                                 {editingQuestion && (
                                     <div className="bg-gray-50 dark:bg-black/40 p-4 rounded-xl border border-gray-200 dark:border-white/10 space-y-3">
-                                        <input placeholder="Question Text" value={editingQuestion.question} onChange={e => setEditingQuestion({ ...editingQuestion, question: e.target.value })} className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {/* Basic Options Editor for Multiple Choice */}
-                                            {editingQuestion.type === 'multiple-choice' && editingQuestion.options?.map((opt, idx) => (
-                                                <input
-                                                    key={idx}
-                                                    placeholder={`Option ${idx + 1}`}
-                                                    value={opt}
+                                        <div className="flex gap-4">
+                                            <div className="flex-1 space-y-1">
+                                                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Question Type</label>
+                                                <select
+                                                    value={editingQuestion.isBlock ? 'block' : editingQuestion.isCompiler ? 'compiler' : 'multiple-choice'}
                                                     onChange={e => {
-                                                        const newOptions = [...(editingQuestion.options || [])];
-                                                        newOptions[idx] = e.target.value;
-                                                        setEditingQuestion({ ...editingQuestion, options: newOptions });
+                                                        const type = e.target.value;
+                                                        if (type === 'block') {
+                                                            setEditingQuestion({
+                                                                ...editingQuestion,
+                                                                type: 'multiple-choice', // Legacy fallback
+                                                                isBlock: true,
+                                                                isCompiler: false,
+                                                                blockConfig: { referenceXml: '', toolbox: DEFAULT_BLOCKLY_TOOLBOX, initialXml: '' }
+                                                            });
+                                                        } else if (type === 'compiler') {
+                                                            setEditingQuestion({
+                                                                ...editingQuestion,
+                                                                type: 'text', // Legacy fallback
+                                                                isBlock: false,
+                                                                isCompiler: true,
+                                                                compilerConfig: { language: 'javascript', allowedLanguages: COMPILER_ALLOWED_LANGUAGES, initialCode: COMPILER_INITIAL_CODE['javascript'] }
+                                                            });
+                                                        } else {
+                                                            setEditingQuestion({
+                                                                ...editingQuestion,
+                                                                type: 'multiple-choice',
+                                                                isBlock: false,
+                                                                isCompiler: false
+                                                            });
+                                                        }
                                                     }}
-                                                    className={`w-full bg-white dark:bg-black/40 border ${editingQuestion.correctAnswer === idx ? 'border-green-500' : 'border-gray-200 dark:border-white/10'} rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none`}
-                                                />
-                                            ))}
+                                                    className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                                                >
+                                                    <option value="multiple-choice">Multiple Choice</option>
+                                                    <option value="block">Block (Scratch-like)</option>
+                                                    <option value="compiler">Code Compiler</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <input placeholder="Question Text" value={editingQuestion.question} onChange={e => setEditingQuestion({ ...editingQuestion, question: e.target.value })} className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+
+                                        <div className="grid grid-cols-1 gap-2">
+                                            {/* Multiple Choice Editor */}
+                                            {(!editingQuestion.isBlock && !editingQuestion.isCompiler) && (
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {editingQuestion.options?.map((opt, idx) => (
+                                                        <input
+                                                            key={idx}
+                                                            placeholder={`Option ${idx + 1}`}
+                                                            value={opt}
+                                                            onChange={e => {
+                                                                const newOptions = [...(editingQuestion.options || [])];
+                                                                newOptions[idx] = e.target.value;
+                                                                setEditingQuestion({ ...editingQuestion, options: newOptions });
+                                                            }}
+                                                            className={`w-full bg-white dark:bg-black/40 border ${editingQuestion.correctAnswer === idx ? 'border-green-500' : 'border-gray-200 dark:border-white/10'} rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Block Editor Fields */}
+                                            {editingQuestion.isBlock && (
+                                                <div className="space-y-2 p-3 bg-gray-100 dark:bg-black/20 rounded-lg">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Block Reference XML (Answer)</label>
+                                                    <textarea
+                                                        value={editingQuestion.blockConfig?.referenceXml || ''}
+                                                        onChange={e => setEditingQuestion({ ...editingQuestion, blockConfig: { ...editingQuestion.blockConfig, referenceXml: e.target.value } })}
+                                                        placeholder="<xml>...</xml>"
+                                                        className="w-full h-24 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                                                    />
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Initial Workspace XML (Optional)</label>
+                                                    <textarea
+                                                        value={editingQuestion.blockConfig?.initialXml || ''}
+                                                        onChange={e => setEditingQuestion({ ...editingQuestion, blockConfig: { ...editingQuestion.blockConfig, initialXml: e.target.value } })}
+                                                        placeholder="<xml>...</xml>"
+                                                        className="w-full h-24 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                                                    />
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Toolbox XML (Optional - customization)</label>
+                                                    <textarea
+                                                        value={editingQuestion.blockConfig?.toolbox || ''}
+                                                        onChange={e => setEditingQuestion({ ...editingQuestion, blockConfig: { ...editingQuestion.blockConfig, toolbox: e.target.value } })}
+                                                        placeholder="<xml>...</xml> (Leave empty for default toolbox)"
+                                                        className="w-full h-24 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Compiler Editor Fields */}
+                                            {editingQuestion.isCompiler && (
+                                                <div className="space-y-2 p-3 bg-gray-100 dark:bg-black/20 rounded-lg">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Default Language</label>
+                                                            <select
+                                                                value={editingQuestion.compilerConfig?.language || 'javascript'}
+                                                                onChange={e => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...editingQuestion.compilerConfig!, language: e.target.value } })}
+                                                                className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                                                            >
+                                                                <option value="javascript">JavaScript</option>
+                                                                <option value="python">Python</option>
+                                                                <option value="typescript">TypeScript</option>
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Allowed Languages (comma sep)</label>
+                                                            <input
+                                                                value={editingQuestion.compilerConfig?.allowedLanguages?.join(',') || 'javascript'}
+                                                                onChange={e => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...editingQuestion.compilerConfig!, allowedLanguages: e.target.value.split(',').map(s => s.trim()) } })}
+                                                                className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Initial Code Template</label>
+                                                    <textarea
+                                                        value={editingQuestion.compilerConfig?.initialCode || ''}
+                                                        onChange={e => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...editingQuestion.compilerConfig!, initialCode: e.target.value } })}
+                                                        placeholder="// Write code here..."
+                                                        className="w-full h-32 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <label className="text-xs text-gray-500 uppercase font-bold">Points:</label>

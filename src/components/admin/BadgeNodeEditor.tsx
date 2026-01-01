@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { BadgeNode } from '../../types';
 import { X, Plus, Trash2, Save, Sparkles } from 'lucide-react';
+import { BADGE_CRITERIA_TYPES } from '../../constants/badgeDefaults';
 
 interface BadgeNodeEditorProps {
     badge?: BadgeNode;
@@ -28,20 +29,7 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
         operator: '>=' as const
     });
 
-    const criteriaTypes = [
-        { value: 'total_attempts', label: 'Total Attempts' },
-        { value: 'total_score', label: 'Total Score' },
-        { value: 'streak', label: 'Login Streak' },
-        { value: 'level', label: 'User Level' },
-        { value: 'perfect_score', label: 'Perfect Score' },
-        { value: 'speed_demon', label: 'Speed Demon' },
-        { value: 'quiz_completion', label: 'Quiz Completion' },
-        { value: 'exam_pass', label: 'Exam Pass' },
-        { value: 'tournament_win', label: 'Tournament Win' },
-        { value: 'track_completion', label: 'Track Completion' },
-        { value: 'friend_count', label: 'Friend Count' },
-        { value: 'manual', label: 'Manual (Admin Only)' }
-    ];
+    const criteriaTypes = BADGE_CRITERIA_TYPES;
 
     const handleAddCriterion = () => {
         setFormData({

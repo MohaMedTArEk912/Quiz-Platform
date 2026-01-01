@@ -36,6 +36,12 @@ const userSchema = new mongoose.Schema({
     status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
     createdAt: { type: Date, default: Date.now }
   }],
+  clanInvites: [{
+    clanId: { type: String },
+    clanName: { type: String },
+    invitedBy: { type: String }, // userId of inviter
+    createdAt: { type: Date, default: Date.now }
+  }],
   // Economy & power-ups
   coins: { type: Number, default: 0 },
   inventory: [{
