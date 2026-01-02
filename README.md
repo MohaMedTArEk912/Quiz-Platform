@@ -1,37 +1,46 @@
 # 🎯 Quiz Platform
 
-A modern, full-featured quiz platform built with React, TypeScript, and Tailwind CSS. Perfect for educational institutions, training programs, or self-assessment.
+## 📚 About The Project
 
-## ✨ Features
+Welcome to the ultimate **Quiz Platform**, a comprehensive learning ecosystem designed to transform the way students and professionals test their knowledge. Built on the robust **MERN stack**, this application goes beyond simple question-and-answer formats. It integrates powerful gamification mechanics, real-time social competition, and advanced coding challenges to create an engaging, immersive educational experience.
 
-### For Students
-- 📚 **Multiple Quizzes** - Browse and take various quizzes from JSON files
-- ⏱️ **Timed Quizzes** - Each quiz has a configurable time limit
-- 📊 **Instant Feedback** - See explanations for each answer immediately
-- 🏆 **Score Tracking** - Track your total score and quiz attempts
-- 📈 **Personal Profile** - View your stats, rank, and quiz history
-- 🎯 **Progress Tracking** - See your average score and total time spent
+Whether you are an institution looking to host exams, a coding bootcamp assessing student progress, or a community of learners competing for the top spot, this platform provides the tools to track progress, visualize growth, and make learning fun.
 
-### For Admins
-- 👥 **User Management** - Full CRUD operations on users
-- 📋 **Quiz Attempts** - View all quiz attempts with detailed stats
-- 📊 **Analytics Dashboard** - See total users, average scores, and more
-- ✏️ **Edit Users** - Update user information
-- 🗑️ **Delete Users** - Remove users and their attempts
+## ✨ Key Features
 
-### Technical Features
-- 🎨 **Beautiful UI** - Modern gradient design with smooth animations
-- 💾 **Dual Storage** - Supports both Supabase (cloud) and LocalStorage (offline)
-- 📱 **Responsive** - Works on desktop, tablet, and mobile
-- 🔐 **Authentication** - Secure login with password protection
-- 🚀 **Fast** - Built with Vite for lightning-fast development and builds
-- 📦 **Easy Quiz Management** - Add quizzes by creating JSON files
+### 🎮 Gamified Learning Ecosystem
+Learning shouldn't be boring. We've built a system that rewards consistency and mastery.
+- **Interactive Quizzes**: Support for multiple formats including multiple-choice, true/false, and code-based questions.
+- **Blockly Integration**: **New!** A drag-and-drop coding interface that allows users to solve logic puzzles visually, with semantic grading that understands the *logic* of the code.
+- **XP & Leveling**: Earn Experience Points (XP) for every correct answer, leveling up to unlock prestige and new features.
+- **Dynamic Shop**: A virtual economy where users spend earned currency on power-ups (e.g., "50/50", "Time Freeze"), cosmetic avatars, and badges.
+- **Daily Challenges**: Unique, time-limited quizzes generated daily to keep engagement high.
+
+### 🤝 Social & Competitive Hub
+Knowledge is better shared. Our social suite connects learners.
+- **Friends System**: Search for users, send friend requests, and build your learning network.
+- **Live Battles (VS Mode)**: Real-time 1v1 competitive quizzes powered by WebSockets. Challenge friends or match with random opponents.
+- **Clans & Communities**: Join forces to create Clans. Compete in exclusive Clan Leaderboards.
+- **Global Leaderboards**: Track ranking globally, among friends, or within your clan.
+
+### 🛡️ Enterprise-Grade Security
+Built with security first to protect data and privacy.
+- **Secure Authentication**: Robust JWT-based authentication with bcrypt hashing.
+- **Advanced Protection**: XSS sanitization, rate limiting, and HTTP parameter pollution protection.
+- **Role-Based Access Control (RBAC)**: Distinct secure environments for Students and Admins.
+
+### 🛠️ Powerful Admin Dashboard
+Complete control over the platform's content and users.
+- **Analytics Suite**: Visual graphs showing user growth, completion rates, and scores.
+- **User Management**: Administrators can view, edit, or ban users as needed.
+- **Content CMS**: Built-in tools to create and manage Shop Items, Quizzes, and Daily Challenges.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js 20.19+ or 22.12+
 - npm or yarn
+- MongoDB Instance (Local or Atlas)
 
 ### Installation
 
@@ -46,231 +55,80 @@ A modern, full-featured quiz platform built with React, TypeScript, and Tailwind
    npm install
    ```
 
-3. **Run development server**
+3. **Configure Environment Variables**
+   Create a `.env` file in the root directory:
+   ```env
+   # App Config
+   PORT=5000
+   NODE_ENV=development
+   
+   # Database
+   MONGODB_URI=mongodb://localhost:27017/quiz-platform
+   
+   # Security
+   JWT_SECRET=your_super_secret_jwt_key
+   JWT_EXPIRE=30d
+   
+   # Optional: Supabase (Legacy/Hybrid support)
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_key
+   ```
+
+4. **Run development server**
+   This enables concurrent execution of both the Client (Vite) and Server (Node/Express).
    ```bash
    npm run dev
    ```
+   - Client: http://localhost:5173
+   - Server: http://localhost:5000
 
-4. **Build for production**
+5. **Build for production**
    ```bash
    npm run build
    ```
-
-## 📝 Adding New Quizzes
-
-Quizzes are stored as JSON files in `public/quizzes/`. Here's how to add a new quiz:
-
-1. **Create a new JSON file** in `public/quizzes/` (e.g., `my-quiz.json`)
-
-2. **Use this structure**:
-```json
-{
-  "id": "my-quiz",
-  "title": "My Awesome Quiz",
-  "description": "Test your knowledge on awesome topics",
-  "category": "General",
-  "difficulty": "Beginner",
-  "timeLimit": 20,
-  "passingScore": 70,
-  "icon": "🎓",
-  "questions": [
-    {
-      "id": 1,
-      "part": "Section 1",
-      "question": "What is 2 + 2?",
-      "options": ["3", "4", "5", "6"],
-      "correctAnswer": 1,
-      "explanation": "2 + 2 equals 4",
-      "points": 1
-    }
-  ]
-}
-```
-
-3. **Add to index** - Update `public/quizzes/index.json`:
-```json
-[
-  "python-jr.json",
-  "javascript-basics.json",
-  "my-quiz.json"
-]
-```
-
-## 🗄️ Database Setup (Optional - for Vercel deployment)
-
-### Using Supabase
-
-1. **Create a Supabase project** at [supabase.com](https://supabase.com)
-
-2. **Run this SQL** in the Supabase SQL Editor:
-```sql
-create table users (
-  id bigint generated by default as identity primary key,
-  "userId" text not null unique,
-  name text not null,
-  email text not null,
-  password text not null,
-  "totalScore" integer default 0,
-  "totalAttempts" integer default 0,
-  rank integer,
-  "createdAt" timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
-create table attempts (
-  id bigint generated by default as identity primary key,
-  "attemptId" text not null unique,
-  "userId" text not null,
-  "userName" text,
-  "userEmail" text,
-  "quizId" text,
-  "quizTitle" text,
-  score integer,
-  "totalQuestions" integer,
-  percentage integer,
-  "timeTaken" integer,
-  answers jsonb,
-  "completedAt" timestamp with time zone default timezone('utc'::text, now()) not null
-);
-```
-
-3. **Set environment variables**:
-   - Create `.env` file (for local testing):
-     ```
-     VITE_SUPABASE_URL=your_project_url
-     VITE_SUPABASE_ANON_KEY=your_anon_key
-     ```
-   - For Vercel deployment, add these in Settings → Environment Variables
-
-## 🔐 Authentication
-
-### Regular Users
-- Login with **email and password**
-- **Google Sign-In** available (requires setup - see [Google OAuth Setup Guide](docs/GOOGLE_OAUTH_SETUP.md))
-- Accounts are **created automatically** on first login
-- Username is derived from your email address
-- **Forgot Password** feature with strength validation
-- All data is tracked per user
-
-### Admin Access
-
-**Default Credentials:**
-- **Email**: `admin@quiz.com`
-- **Password**: `admin123`
-
-**Customizing Admin Credentials:**
-
-For better security, you can change the admin credentials:
-
-1. Create a `.env` file (copy from `.env.example`):
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Add your custom admin credentials:
-   ```env
-   VITE_ADMIN_EMAIL=your-admin@example.com
-   VITE_ADMIN_PASSWORD=your-secure-password
-   ```
-
-3. Restart your development server
-
-⚠️ **Important**: 
-- Always change default credentials in production!
-- Never commit your `.env` file to version control
-- Admin users are automatically routed to the dashboard upon login
 
 ## 📦 Project Structure
 
 ```
 Quiz/
-├── public/
-│   └── quizzes/          # Quiz JSON files
-│       ├── index.json
-│       ├── python-jr.json
-│       └── javascript-basics.json
-├── src/
-│   ├── components/       # React components
-│   │   ├── LoginScreen.tsx
-│   │   ├── QuizList.tsx
-│   │   ├── QuizTaking.tsx
-│   │   ├── QuizResults.tsx
-│   │   ├── AdminDashboard.tsx
-│   │   └── UserProfile.tsx
-│   ├── lib/
-│   │   └── supabase.ts   # Supabase client
-│   ├── types/
-│   │   └── index.ts      # TypeScript interfaces
-│   ├── utils/
-│   │   └── storage.ts    # LocalStorage wrapper
-│   ├── App.tsx           # Main app component
-│   ├── main.tsx
-│   └── index.css
+├── public/               # Static assets & Legacy JSON quizzes
+├── server/               # Backend Logic (Express + Mongoose)
+│   ├── config/           # DB & App Configuration
+│   ├── controllers/      # Route logic (Auth, Users, Shop, etc.)
+│   ├── middleware/       # Auth, Error handling, Security
+│   ├── models/           # Mongoose Schemas (User, Attempt, Clan)
+│   └── routes/           # API Routes
+├── src/                  # Frontend Logic (React + Vite)
+│   ├── components/       # Reusable UI Components
+│   ├── pages/            # Main Application Pages
+│   ├── context/          # Global State (Auth, Theme, Notifications)
+│   └── lib/              # Utilities & Third-party configs
 ├── .env                  # Environment variables
-├── package.json
-└── README.md
+└── package.json
 ```
-
-## 🎨 Customization
-
-### Colors
-Edit `tailwind.config.js` to change the color scheme.
-
-### Quiz Difficulty Colors
-In `QuizList.tsx`, modify the `getDifficultyColor` function:
-```tsx
-const getDifficultyColor = (difficulty: string) => {
-  switch (difficulty.toLowerCase()) {
-    case 'beginner': return 'bg-green-100 text-green-700';
-    case 'intermediate': return 'bg-yellow-100 text-yellow-700';
-    case 'advanced': return 'bg-red-100 text-red-700';
-    default: return 'bg-gray-100 text-gray-700';
-  }
-};
-```
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-
-1. **Push to GitHub**
-2. **Import to Vercel**
-3. **Add environment variables** (if using Supabase)
-4. **Deploy!**
-
-### Other Platforms
-The app is a static site and can be deployed to:
-- Netlify
-- GitHub Pages
-- AWS S3 + CloudFront
-- Any static hosting service
-
-## 📊 Features Breakdown
-
-### User Features
-- ✅ Login/Registration
-- ✅ Browse available quizzes
-- ✅ Take timed quizzes
-- ✅ See instant feedback with explanations
-- ✅ View personal stats and rank
-- ✅ Track quiz history
-
-### Admin Features
-- ✅ View all users
-- ✅ Edit user information
-- ✅ Delete users
-- ✅ View all quiz attempts
-- ✅ See platform statistics
-- ✅ Filter by users/attempts
 
 ## 🛠️ Technologies Used
 
-- **React 18** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool
-- **Tailwind CSS v4** - Styling
-- **Lucide React** - Icons
-- **Supabase** - Database (optional)
-- **LocalStorage** - Offline storage
+### Frontend
+- **React 19** - Latest UI features
+- **TypeScript** - Strict type safety
+- **Tailwind CSS v4** - Modern, utility-first styling
+- **Vite** - Lightning-fast tooling
+- **Blockly** - Visual programming editor
+- **Socket.io Client** - Real-time communication
+
+### Backend
+- **Node.js & Express** - Robust server architecture
+- **MongoDB & Mongoose** - Flexible data modeling
+- **Socket.io** - WebSocket server for VS mode
+- **Bcrypt & JWT** - Industrial-grade security
+
+## 🚀 Deployment
+
+The app is configured for deployment on platforms like Netlify or Vercel for the frontend, and a Node.js compatible host (Render, Railway, Heroku) for the backend.
+
+**Netlify Deployment Note:**
+Ensure you configure the `_redirects` or `netlify.toml` to handle SPA routing and proxy API requests to your backend URL if deployed separately.
 
 ## 📄 License
 
@@ -279,30 +137,6 @@ MIT License - feel free to use this project for your own purposes!
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 💡 Tips
-
-- **Offline Mode**: Works without Supabase using LocalStorage
-- **Quiz Format**: Keep questions concise and clear
-- **Time Limits**: Set reasonable time limits (1-2 minutes per question)
-- **Passing Score**: 70% is a good default
-- **Icons**: Use emojis for quiz icons (🐍, ⚡, 🎨, etc.)
-
-## 🐛 Troubleshooting
-
-**Build errors?**
-- Make sure Node.js version is 20.19+ or 22.12+
-- Run `npm install` to ensure all dependencies are installed
-
-**Quizzes not showing?**
-- Check that quiz files are in `public/quizzes/`
-- Verify `index.json` includes your quiz file
-- Check browser console for errors
-
-**Database not working?**
-- Verify Supabase credentials in `.env`
-- Check that tables are created correctly
-- Ensure RLS (Row Level Security) is disabled for testing
 
 ---
 
