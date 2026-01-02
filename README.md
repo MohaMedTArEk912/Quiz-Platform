@@ -144,9 +144,11 @@ create table attempts (
 ## 🔐 Authentication
 
 ### Regular Users
-- Login with **email and password only**
+- Login with **email and password**
+- **Google Sign-In** available (requires setup - see [Google OAuth Setup Guide](docs/GOOGLE_OAUTH_SETUP.md))
 - Accounts are **created automatically** on first login
 - Username is derived from your email address
+- **Forgot Password** feature with strength validation
 - All data is tracked per user
 
 ### Admin Access
