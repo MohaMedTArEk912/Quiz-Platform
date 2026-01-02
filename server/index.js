@@ -166,6 +166,62 @@ io.on('connection', (socket) => {
   });
 });
 
+// Global Error Handler - Must be last
+app.use((error, req, res, next) => {
+  console.error('\n❌ === GLOBAL ERROR HANDLER ===');
+  console.error('Path:', req.path);
+  console.error('Method:', req.method);
+  console.error('Error:', error.message);
+  console.error('Name:', error.name);
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.error('Stack:', error.stack);
+  }
+  console.error('=== END GLOBAL ERROR ===\n');
+
+  // Handle different error types
+  let statusCode = error.statusCode || 500;
+  let message = error.message || 'Internal server error';
+
+  // Database errors
+  if (error.name === 'MongoError' || error.name === 'MongoServerError') {
+    statusCode = 500;
+    message = 'Database error occurred';
+  }
+
+  // Validation errors
+  if (error.name === 'ValidationError') {
+    statusCode = 400;
+    message = 'Validation failed';
+  }
+
+  // JWT errors
+  if (error.name === 'JsonWebTokenError') {
+    statusCode = 401;
+    message = 'Invalid token';
+  }
+
+  if (error.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Token expired';
+  }
+
+  res.status(statusCode).json({
+    success: false,
+    message,
+    ...(process.env.NODE_ENV === 'development' && { error: error.message })
+  });
+});
+
+// 404 Handler - Must be after all routes
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    path: req.path
+  });
+});
+
 // Initialize DB
 // connectToDatabase(); // Removed to prevent cold-start crashes. Handled by middleware.
 

@@ -8,64 +8,128 @@ import { checkAndUnlockBadges } from './badgeNodeController.js';
 
 // --- Daily Challenge ---
 export const getDailyChallenge = async (req, res) => {
+  let errorDetails = {};
   try {
-    // Ensure user is authenticated
+    console.log('\n=== DAILY CHALLENGE REQUEST ===');
+    
+    // Step 1: Verify authentication
     if (!req.user) {
+      console.error('❌ User not authenticated');
       return res.status(401).json({ message: 'User not authenticated' });
     }
+    console.log('✓ User authenticated:', req.user.userId);
+    errorDetails.step = 'auth_ok';
 
+    // Step 2: Get today's date
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    // Try to find a specific challenge defined for today
-    let challenge = await DailyChallenge.findOne({ date: today }).lean();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    console.log('✓ Date range:', today, 'to', tomorrow);
+    errorDetails.step = 'date_ok';
+
+    // Step 3: Fetch challenge from DB
+    console.log('🔄 Querying DailyChallenge collection...');
+    let challenge = null;
+    try {
+      challenge = await DailyChallenge.findOne({ 
+        date: { $gte: today, $lt: tomorrow } 
+      }).lean();
+      console.log('✓ DailyChallenge query result:', challenge ? `Found: ${challenge.title}` : 'None');
+    } catch (dbErr) {
+      console.error('❌ DailyChallenge query failed:', dbErr.message);
+      errorDetails.dailyChallengeError = dbErr.message;
+      throw dbErr;
+    }
+    errorDetails.step = 'challenge_query_ok';
+
+    // Step 4: Fetch quiz
     let quiz = null;
-
-    if (challenge) {
-        if (challenge.quizId) {
-             quiz = await Quiz.findOne({ $or: [{ id: challenge.quizId }, { _id: challenge.quizId }] }).lean();
-             
-             // If the challenge has a quizId but the quiz doesn't exist, return 404
-             if (!quiz) {
-                 return res.status(404).json({ message: 'Daily challenge quiz not found' });
-             }
-        } else {
-            // Challenge exists but no specific quiz - pick a random one
-            const availableQuizzes = await Quiz.find({ isTournamentOnly: { $ne: true } }).lean();
-            if (availableQuizzes.length > 0) {
-                quiz = availableQuizzes[Math.floor(Math.random() * availableQuizzes.length)];
-            }
+    if (challenge?.quizId) {
+      console.log('🔄 Challenge has quizId:', challenge.quizId);
+      try {
+        quiz = await Quiz.findOne({ id: challenge.quizId }).lean();
+        if (!quiz) {
+          console.warn('⚠️ Quiz not found, trying alternate lookups...');
+          quiz = await Quiz.findOne({ _id: challenge.quizId }).lean();
         }
+        if (!quiz) {
+          console.warn('⚠️ Quiz still not found, using fallback...');
+          quiz = await Quiz.findOne({}).lean();
+        }
+        console.log('✓ Quiz found:', quiz ? quiz.title : 'FALLBACK');
+      } catch (dbErr) {
+        console.error('❌ Quiz query failed:', dbErr.message);
+        errorDetails.quizError = dbErr.message;
+        throw dbErr;
+      }
     } else {
-        // No challenge scheduled for today - pick a random quiz and create dynamic challenge
-        const availableQuizzes = await Quiz.find({ isTournamentOnly: { $ne: true } }).lean();
-        if (availableQuizzes.length > 0) {
-            quiz = availableQuizzes[Math.floor(Math.random() * availableQuizzes.length)];
-            challenge = {
-                title: 'Daily Random Quiz',
-                description: `Complete the ${quiz.title} quiz!`,
-                criteria: { type: 'complete_quiz', threshold: 1 },
-                rewardCoins: 50,
-                rewardXP: 100,
-                quizId: quiz.id || quiz._id
-            };
+      console.log('🔄 No challenge found, using default...');
+      try {
+        // Get the first available quiz
+        quiz = await Quiz.findOne({ isTournamentOnly: { $ne: true } }).lean();
+        if (!quiz) {
+          quiz = await Quiz.findOne({}).lean();
         }
+        console.log('✓ Default quiz selected:', quiz ? quiz.title : 'NONE');
+        
+        challenge = {
+          title: 'Daily Challenge',
+          description: `Complete the ${quiz?.title || 'daily'} quiz!`,
+          criteria: { type: 'complete_quiz', threshold: 1 },
+          rewardCoins: 50,
+          rewardXP: 100,
+          quizId: quiz?.id || quiz?._id,
+          date: today
+        };
+      } catch (dbErr) {
+        console.error('❌ Default quiz query failed:', dbErr.message);
+        errorDetails.defaultQuizError = dbErr.message;
+        throw dbErr;
+      }
     }
+    errorDetails.step = 'quiz_ok';
 
-    if (!challenge || !quiz) {
-        return res.status(404).json({ message: 'No daily challenge available' });
+    // Step 5: Validate
+    if (!quiz) {
+      console.error('❌ No quiz available');
+      return res.status(404).json({ message: 'No quiz available' });
     }
-    
-    res.json({
+    if (!challenge) {
+      console.error('❌ No challenge available');
+      return res.status(404).json({ message: 'No challenge available' });
+    }
+    console.log('✓ Validation passed');
+
+    // Step 6: Send response
+    const response = {
       ...challenge,
       quizId: quiz.id || quiz._id,
       streak: req.user.dailyChallengeStreak || 0,
-      completed: req.user.dailyChallengeCompleted && req.user.dailyChallengeDate && new Date(req.user.dailyChallengeDate).setHours(0,0,0,0) === today.getTime(),
+      completed: req.user.dailyChallengeCompleted && req.user.dailyChallengeDate && 
+                 new Date(req.user.dailyChallengeDate).setHours(0,0,0,0) === today.getTime(),
       date: today
-    });
+    };
+    
+    console.log('✅ SENDING:', response.title);
+    console.log('=== END DAILY CHALLENGE REQUEST ===\n');
+    res.json(response);
+
   } catch (error) {
-    console.error('Error fetching daily challenge:', error);
-    res.status(500).json({ message: 'Error fetching daily challenge', error: error.message });
+    console.error('\n❌ === DAILY CHALLENGE ERROR ===');
+    console.error('Error Message:', error.message);
+    console.error('Error Type:', error.name);
+    console.error('Steps Completed:', errorDetails);
+    if (error.stack) {
+      console.error('Stack:', error.stack);
+    }
+    console.error('=== END ERROR ===\n');
+    
+    res.status(500).json({ 
+      message: 'Error fetching daily challenge', 
+      error: error.message,
+      debug: process.env.NODE_ENV === 'development' ? errorDetails : undefined
+    });
   }
 };
 
