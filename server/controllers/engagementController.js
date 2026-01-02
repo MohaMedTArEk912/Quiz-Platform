@@ -9,6 +9,11 @@ import { checkAndUnlockBadges } from './badgeNodeController.js';
 // --- Daily Challenge ---
 export const getDailyChallenge = async (req, res) => {
   try {
+    // Ensure user is authenticated
+    if (!req.user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
