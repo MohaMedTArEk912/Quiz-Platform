@@ -234,9 +234,6 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
                                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                                 >
@@ -330,7 +327,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
 
                         <button
                             type="submit"
-                            disabled={loading || !passwordsMatch || (passwordStrength && passwordStrength.score <= 2)}
+                            disabled={loading || !passwordsMatch || (passwordStrength !== null && passwordStrength.score <= 2)}
                             className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 text-white py-4 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-600 dark:hover:to-purple-600 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
                             {loading ? (
