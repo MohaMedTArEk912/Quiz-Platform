@@ -2,6 +2,8 @@ import { Attempt } from '../models/Attempt.js';
 import { User } from '../models/User.js';
 import { Quiz } from '../models/Quiz.js';
 
+import { checkAndUnlockBadges } from './badgeNodeController.js';
+
 export const saveAttempt = async (req, res) => {
   try {
     const attemptData = req.body;
@@ -32,7 +34,52 @@ export const saveAttempt = async (req, res) => {
     const newAttempt = new Attempt(attemptData);
     await newAttempt.save();
 
-    res.status(201).json(newAttempt);
+    let newBadges = [];
+
+    // UPDATE USER STATS & REWARDS
+    if (user) {
+        user.totalAttempts = (user.totalAttempts || 0) + 1;
+        user.totalScore = (user.totalScore || 0) + (attemptData.score || 0);
+        user.totalTime = (user.totalTime || 0) + (attemptData.timeTaken || 0);
+
+        // Fetch quiz for rewards
+        const quiz = await Quiz.findOne({ id: attemptData.quizId }).lean();
+        
+        if (quiz) {
+            // Coins logic
+            const baseCoins = quiz.coinsReward || 10;
+            // Award coins if passed, or maybe partial? 
+            // For now, let's award base coins if passed, plus small amount for participation
+            if (attemptData.passed) {
+                const coinsEarned = baseCoins + Math.floor((attemptData.score / 10)); // Example bonus
+                user.coins = (user.coins || 0) + coinsEarned;
+            } else {
+                 user.coins = (user.coins || 0) + 2; // Participation coins
+            }
+
+            // XP Logic
+            const baseXp = quiz.xpReward || 50;
+             if (attemptData.passed) {
+                user.xp = (user.xp || 0) + baseXp;
+            } else {
+                user.xp = (user.xp || 0) + 10; // Participation XP
+            }
+        } else {
+            // Default fallbacks if quiz not found
+            user.xp = (user.xp || 0) + 10;
+            user.coins = (user.coins || 0) + 2;
+        }
+
+        // Level Up Logic (Simple: Level = 1 + floor(XP / 1000))
+        user.level = 1 + Math.floor((user.xp || 0) / 1000);
+        
+        await user.save();
+
+        // Check for new badges
+        newBadges = await checkAndUnlockBadges(userId, attemptData);
+    }
+
+    res.status(201).json({ ...newAttempt.toObject(), newBadges });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

@@ -127,6 +127,7 @@ export interface UserData {
         invitedBy: string;
         createdAt: string;
     }[];
+    relationship?: 'none' | 'friend' | 'pending_incoming' | 'pending_outgoing';
 }
 
 export interface AvatarConfig {

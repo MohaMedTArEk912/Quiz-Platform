@@ -134,17 +134,44 @@ export const searchUsers = async (req, res) => {
             return res.json([]);
         }
         
-        const users = await User.find({
+    const users = await User.find({
             $or: [
                 { email: { $regex: query, $options: 'i' } },
                 { name: { $regex: query, $options: 'i' } },
                 { userId: { $regex: query, $options: 'i' } }
             ]
-        }).limit(10).select('userId name email totalScore').lean();
+        }).limit(10).select('userId name email totalScore friends friendRequests').lean();
         
-        // Filter out self
-        const filtered = users.filter(u => u.userId !== req.user.userId);
-        res.json(filtered);
+        // Maps results to include relationship status relative to requester
+        const results = users
+            .filter(u => u.userId !== req.user.userId)
+            .map(u => {
+                let status = 'none'; // 'none', 'friend', 'pending_incoming', 'pending_outgoing'
+                
+                const isFriend = req.user.friends.includes(u.userId);
+                
+                if (isFriend) {
+                    status = 'friend';
+                }
+                // Check if they sent me a request (incoming)
+                else if (req.user.friendRequests.some(r => r.from === u.userId && r.status === 'pending')) {
+                    status = 'pending_incoming';
+                }
+                // Check if I sent them a request (outgoing) - checking their friendRequests
+                else if (u.friendRequests && u.friendRequests.some(r => r.from === req.user.userId && r.status === 'pending')) {
+                    status = 'pending_outgoing';
+                }
+
+                return {
+                    userId: u.userId,
+                    name: u.name,
+                    email: u.email,
+                    totalScore: u.totalScore,
+                    relationship: status
+                };
+            });
+
+        res.json(results);
     } catch (error) {
         res.status(500).json({ message: 'Error searching users', error: error.message });
     }

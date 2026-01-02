@@ -222,9 +222,10 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
 
                         <div className="space-y-3">
                             {searchResults.filter(u => u.userId !== currentUser.userId).map(user => {
-                                const isFriend = currentUser.friends?.includes(user.userId!);
-                                const sentRequest = currentUser.friendRequests?.find(r => r.to === user.userId && r.status === 'pending');
-                                const receivedRequest = currentUser.friendRequests?.find(r => r.from === user.userId && r.status === 'pending');
+                                const relationship = user.relationship;
+                                const isFriend = relationship === 'friend' || currentUser.friends?.includes(user.userId!);
+                                const sentRequest = relationship === 'pending_outgoing' || currentUser.friendRequests?.find(r => r.to === user.userId && r.status === 'pending');
+                                const receivedRequest = relationship === 'pending_incoming' || currentUser.friendRequests?.find(r => r.from === user.userId && r.status === 'pending');
 
                                 return (
                                     <div key={user.userId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">

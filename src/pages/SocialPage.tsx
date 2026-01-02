@@ -1,5 +1,6 @@
 import React from 'react';
 import FriendList from '../components/social/FriendList';
+import QuizSelectionModal from '../components/social/QuizSelectionModal';
 import PageLayout from '../layouts/PageLayout';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -15,42 +16,50 @@ const SocialPage: React.FC = () => {
     const { socket, connected } = useSocket();
     const { showNotification } = useNotification();
 
+    const [showQuizModal, setShowQuizModal] = React.useState(false);
+    const [selectedFriendId, setSelectedFriendId] = React.useState<string | null>(null);
+    const [challengeType, setChallengeType] = React.useState<'live' | 'async' | null>(null);
+
     if (!currentUser) return null;
 
-    const handleChallenge = (friendId: string) => {
-        if (availableQuizzes.length > 0) {
-            const quiz = availableQuizzes[0];
-            const quizId = quiz.id || quiz._id;
+    const initiateChallenge = (friendId: string, type: 'live' | 'async') => {
+        setSelectedFriendId(friendId);
+        setChallengeType(type);
+        setShowQuizModal(true);
+    };
+
+    const handleQuizSelected = async (quizId: string) => {
+        setShowQuizModal(false);
+        if (!selectedFriendId || !currentUser) return;
+
+        if (challengeType === 'live') {
             if (socket && connected) {
-                socket.emit('challenge_user', { to: friendId, quizId, from: currentUser.userId });
+                socket.emit('challenge_user', { to: selectedFriendId, quizId, from: currentUser.userId });
                 showNotification('success', `Challenge sent to friend!`);
             } else {
                 showNotification('error', 'Socket not connected. Cannot send challenge.');
             }
-        } else {
-            showNotification('info', 'No available quizzes to challenge with.');
-        }
-    };
-
-    const handleAsyncChallenge = async (friendId: string) => {
-        if (!currentUser || availableQuizzes.length === 0) return;
-        const quiz = availableQuizzes[0];
-        const quizId = (quiz.id || quiz._id) as string;
-        try {
-            const challenge = await api.createChallenge(friendId, quizId, currentUser.userId);
-            refreshData();
-            const link = `${window.location.origin}/challenge/${challenge.token}`;
-            showNotification('success', `Link generated! Copy sent to clipboard.`);
+        } else if (challengeType === 'async') {
             try {
-                await navigator.clipboard.writeText(link);
-                showNotification('success', 'Challenge link copied to clipboard!');
-            } catch {
-                showNotification('info', `Share this link: ${link}`);
+                const challenge = await api.createChallenge(selectedFriendId, quizId, currentUser.userId);
+                refreshData();
+                const link = `${window.location.origin}/challenge/${challenge.token}`;
+                showNotification('success', `Link generated! Copy sent to clipboard.`);
+                try {
+                    await navigator.clipboard.writeText(link);
+                    showNotification('success', 'Challenge link copied to clipboard!');
+                } catch {
+                    showNotification('info', `Share this link: ${link}`);
+                }
+            } catch (error) {
+                console.error(error);
+                showNotification('error', 'Failed to create challenge link.');
             }
-        } catch (error) {
-            console.error(error);
-            showNotification('error', 'Failed to create challenge link.');
         }
+
+        // Reset state
+        setSelectedFriendId(null);
+        setChallengeType(null);
     };
 
     return (
@@ -62,12 +71,19 @@ const SocialPage: React.FC = () => {
                         allUsers={allUsers}
                         onRefresh={refreshData}
                         challenges={challenges}
-                        onAsyncChallenge={handleAsyncChallenge}
+                        onAsyncChallenge={(id) => initiateChallenge(id, 'async')}
                         onStartChallenge={(c) => navigate(`/challenge/${c.token}`)}
-                        onChallenge={handleChallenge}
+                        onChallenge={(id) => initiateChallenge(id, 'live')}
                     />
                 </div>
             </div>
+
+            <QuizSelectionModal
+                isOpen={showQuizModal}
+                onClose={() => setShowQuizModal(false)}
+                onSelect={handleQuizSelected}
+                quizzes={availableQuizzes}
+            />
         </PageLayout>
     );
 };

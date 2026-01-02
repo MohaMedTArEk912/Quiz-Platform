@@ -201,6 +201,9 @@ export const verifySession = async (req, res) => {
       user: safeUser
     });
   } catch (error) {
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(200).json({ valid: false, message: 'Invalid or expired token' });
+    }
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

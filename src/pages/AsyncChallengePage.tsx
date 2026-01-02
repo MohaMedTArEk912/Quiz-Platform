@@ -84,7 +84,7 @@ const AsyncChallengePage: React.FC = () => {
             await api.saveAttempt(attempt as any);
 
             // 3. Update Gamification (Simplified)
-            await api.verifySession(currentUser.userId).then(data => {
+            await api.verifySession().then(data => {
                 if (data.user) updateUser(data.user);
             });
 

@@ -4,6 +4,7 @@ import VSGame from '../components/multiplayer/VSGame';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import type { QuizResult } from '../types';
+import { api } from '../lib/api';
 
 const VsGamePage: React.FC = () => {
     const { state } = useLocation(); // Expecting { quizId, opponent, roomId }
@@ -40,11 +41,38 @@ const VsGamePage: React.FC = () => {
             currentUser={currentUser}
             opponent={opponentUser as any} // Cast to any temporarily or match types if VSGame is updated
             roomId={roomId}
-            onComplete={(result: QuizResult) => {
-                // Handle completion (Save attempt, etc.)
-                // Similar to QuizTakingPage logic.
-                // For VS Game, result handling might be different or shared.
-                navigate('/results', { state: { result, quizId } });
+            onComplete={async (result: QuizResult) => {
+                try {
+                    const attempt = {
+                        attemptId: crypto.randomUUID(),
+                        userId: currentUser.userId,
+                        userName: currentUser.name,
+                        userEmail: currentUser.email,
+                        quizId: quiz.id || quiz._id || '',
+                        quizTitle: quiz.title,
+                        score: result.score,
+                        totalQuestions: result.totalQuestions,
+                        percentage: result.percentage,
+                        timeTaken: result.timeTaken,
+                        answers: result.answers,
+                        completedAt: new Date().toISOString(),
+                        passed: result.passed,
+                        powerUpsUsed: result.powerUpsUsed || []
+                    };
+
+                    // Save attempt which now awards XP/Coins
+                    await api.saveAttempt(attempt as any);
+
+                    // Refresh user data (XP/Coins/Level)
+                    const { user } = await api.verifySession();
+                    if (user) updateUser(user);
+
+                    navigate('/results', { state: { result, quizId } });
+                } catch (error) {
+                    console.error("Failed to save VS game result:", error);
+                    // Navigate anyway so user isn't stuck
+                    navigate('/results', { state: { result, quizId } });
+                }
             }}
             onBack={() => navigate('/')}
             powerUps={currentUser.powerUps}
