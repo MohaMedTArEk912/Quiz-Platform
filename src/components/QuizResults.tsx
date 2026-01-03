@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import type { Quiz, UserData, QuizResult } from '../types/index.ts';
+import type { Quiz, UserData, QuizResult, DetailedAnswer } from '../types/index.ts';
 import { Award, RotateCcw, Home, Clock, Download, Loader2, Star, Zap, Check, X } from 'lucide-react';
 import Navbar from './Navbar.tsx';
 import { Certificate } from './Certificate.tsx';
@@ -303,11 +303,11 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                 // Or it might just be the value if legacy. But our onComplete sends DetailedAnswer.
 
                                 const userVal = (typeof answerEntry === 'object' && answerEntry !== null && 'selected' in answerEntry)
-                                    ? (answerEntry as any).selected
+                                    ? (answerEntry as DetailedAnswer).selected
                                     : answerEntry;
 
                                 const isCorrect = (typeof answerEntry === 'object' && answerEntry !== null && 'isCorrect' in answerEntry)
-                                    ? (answerEntry as any).isCorrect
+                                    ? (answerEntry as DetailedAnswer).isCorrect
                                     : (q.correctAnswer !== undefined && userVal === q.correctAnswer);
 
                                 return (

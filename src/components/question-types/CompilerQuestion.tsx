@@ -42,8 +42,7 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
                 // Capture console.log
                 const logs: string[] = [];
                 const originalLog = console.log;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                console.log = (...args: any[]) => {
+                console.log = (...args: unknown[]) => {
                     logs.push(args.map(a => String(a)).join(' '));
                 };
 
@@ -52,12 +51,13 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
                     const runnable = new Function(code);
                     runnable();
                     setOutput(logs.length > 0 ? logs : ['> Program finished with no output.']);
-                } catch (e: any) {
-                    const errorMsg = `Error: ${e.message}`;
+                } catch (e: unknown) {
+                    const err = e instanceof Error ? e : new Error(String(e));
+                    const errorMsg = `Error: ${err.message}`;
                     let suggestion = "";
-                    if (e.name === 'ReferenceError') suggestion = "💡 Hint: Check if you defined all your variables.";
-                    else if (e.name === 'SyntaxError') suggestion = "💡 Hint: Check for missing brackets, parentheses, or semicolons.";
-                    else if (e.name === 'TypeError') suggestion = "💡 Hint: Check if you are using the correct methods for this data type.";
+                    if (err.name === 'ReferenceError') suggestion = "💡 Hint: Check if you defined all your variables.";
+                    else if (err.name === 'SyntaxError') suggestion = "💡 Hint: Check for missing brackets, parentheses, or semicolons.";
+                    else if (err.name === 'TypeError') suggestion = "💡 Hint: Check if you are using the correct methods for this data type.";
 
                     setOutput(prev => [...prev, errorMsg, ...(suggestion ? [suggestion] : [])]);
                 } finally {
@@ -95,7 +95,7 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
                 // Mock execution for other languages
                 setOutput(['> Compiling...', '> Executing...', `> Output for ${language} code:`, 'Hello World! (Simulated Output)']);
             }
-        } catch (e) {
+        } catch {
             setOutput(['Error executing code.']);
         }
 
