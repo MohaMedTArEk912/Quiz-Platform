@@ -9,11 +9,23 @@ interface CompilerQuestionProps {
     initialCode?: string;
     onChange: (code: string) => void;
     readOnly?: boolean;
+    className?: string;
 }
 
-const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLanguage, allowedLanguages = COMPILER_ALLOWED_LANGUAGES, initialCode, onChange, readOnly }) => {
+const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLanguage, allowedLanguages = COMPILER_ALLOWED_LANGUAGES, initialCode, onChange, readOnly, className }) => {
     const [language, setLanguage] = useState(defaultLanguage);
     const [code, setCode] = useState(initialCode || COMPILER_INITIAL_CODE[defaultLanguage] || `// Write your ${defaultLanguage} code here\n`);
+
+    // Sync state if prop changes (important for Admin UI switching questions)
+    React.useEffect(() => {
+        if (initialCode !== undefined) {
+            setCode(initialCode);
+        }
+    }, [initialCode]);
+
+    React.useEffect(() => {
+        setLanguage(defaultLanguage);
+    }, [defaultLanguage]);
     const [output, setOutput] = useState<string[]>([]);
     const [isRunning, setIsRunning] = useState(false);
 
@@ -103,7 +115,7 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
     };
 
     return (
-        <div className="flex flex-col h-[600px] border-2 border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm">
+        <div className={`flex flex-col border-2 border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm ${className || 'h-[600px]'}`}>
             {/* Toolbar */}
             <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2">

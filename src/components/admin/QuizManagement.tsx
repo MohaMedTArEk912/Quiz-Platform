@@ -4,6 +4,7 @@ import { Plus, Upload, Download, Edit2, Trash2, Code, X, MoreVertical } from 'lu
 import type { Quiz, Question, UserData } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 import { DEFAULT_BLOCKLY_TOOLBOX, COMPILER_ALLOWED_LANGUAGES, COMPILER_INITIAL_CODE, DIFFICULTY_LEVELS } from '../../constants/quizDefaults.ts';
+import CompilerQuestion from '../question-types/CompilerQuestion.tsx';
 
 interface QuizManagementProps {
     quizzes: Quiz[];
@@ -453,18 +454,21 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                                                         </div>
                                                     </div>
                                                     <label className="text-xs font-bold text-gray-500 uppercase">Initial Code Template</label>
-                                                    <textarea
-                                                        value={editingQuestion.compilerConfig?.initialCode || ''}
-                                                        onChange={e => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...editingQuestion.compilerConfig!, initialCode: e.target.value } })}
-                                                        placeholder="// Write code here..."
-                                                        className="w-full h-32 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                                                    <CompilerQuestion
+                                                        language={editingQuestion.compilerConfig?.language || 'javascript'}
+                                                        allowedLanguages={editingQuestion.compilerConfig?.allowedLanguages}
+                                                        initialCode={editingQuestion.compilerConfig?.initialCode}
+                                                        onChange={code => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...editingQuestion.compilerConfig!, initialCode: code } })}
+                                                        className="h-64 mb-4"
                                                     />
+
                                                     <label className="text-xs font-bold text-gray-500 uppercase mt-2">Reference Answer Code</label>
-                                                    <textarea
-                                                        value={editingQuestion.compilerConfig?.referenceCode || ''}
-                                                        onChange={e => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...editingQuestion.compilerConfig!, referenceCode: e.target.value } })}
-                                                        placeholder="// Write the correct answer here..."
-                                                        className="w-full h-32 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                                                    <CompilerQuestion
+                                                        language={editingQuestion.compilerConfig?.language || 'javascript'}
+                                                        allowedLanguages={editingQuestion.compilerConfig?.allowedLanguages}
+                                                        initialCode={editingQuestion.compilerConfig?.referenceCode}
+                                                        onChange={code => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...editingQuestion.compilerConfig!, referenceCode: code } })}
+                                                        className="h-64"
                                                     />
                                                 </div>
                                             )}
