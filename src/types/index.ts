@@ -44,6 +44,7 @@ export interface CompilerConfig {
     language: string;
     allowedLanguages?: string[];
     initialCode?: string;
+    referenceCode?: string;
 }
 
 export interface DetailedAnswer {

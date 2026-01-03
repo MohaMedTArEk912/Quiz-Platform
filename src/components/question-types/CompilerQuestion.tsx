@@ -53,7 +53,13 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
                     runnable();
                     setOutput(logs.length > 0 ? logs : ['> Program finished with no output.']);
                 } catch (e: any) {
-                    setOutput(prev => [...prev, `Error: ${e.message}`]);
+                    const errorMsg = `Error: ${e.message}`;
+                    let suggestion = "";
+                    if (e.name === 'ReferenceError') suggestion = "💡 Hint: Check if you defined all your variables.";
+                    else if (e.name === 'SyntaxError') suggestion = "💡 Hint: Check for missing brackets, parentheses, or semicolons.";
+                    else if (e.name === 'TypeError') suggestion = "💡 Hint: Check if you are using the correct methods for this data type.";
+
+                    setOutput(prev => [...prev, errorMsg, ...(suggestion ? [suggestion] : [])]);
                 } finally {
                     console.log = originalLog;
                 }
@@ -62,16 +68,25 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
                 const lines = code.split('\n');
                 const mockOutput: string[] = [];
                 let hasPrint = false;
+                let syntaxError = null;
 
-                lines.forEach(line => {
+                for (const line of lines) {
+                    // Check for Python 2 style print
+                    if (/^\s*print\s+["']/.test(line)) {
+                        syntaxError = "SyntaxError: Missing parentheses in call to 'print'. Did you mean print(...)?";
+                        break;
+                    }
+
                     const printMatch = line.match(/^\s*print\s*\((["'])(.*?)\1\)/);
                     if (printMatch) {
                         mockOutput.push(printMatch[2]);
                         hasPrint = true;
                     }
-                });
+                };
 
-                if (hasPrint) {
+                if (syntaxError) {
+                    setOutput([syntaxError, "💡 Hint: Python 3 requires parentheses for print function. ex: print('Hello')"]);
+                } else if (hasPrint) {
                     setOutput(mockOutput);
                 } else {
                     setOutput(['> Executing Python script...', '> Program finished with no output.']);

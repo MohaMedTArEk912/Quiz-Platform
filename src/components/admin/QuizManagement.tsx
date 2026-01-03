@@ -459,6 +459,13 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                                                         placeholder="// Write code here..."
                                                         className="w-full h-32 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
                                                     />
+                                                    <label className="text-xs font-bold text-gray-500 uppercase mt-2">Reference Answer Code</label>
+                                                    <textarea
+                                                        value={editingQuestion.compilerConfig?.referenceCode || ''}
+                                                        onChange={e => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...editingQuestion.compilerConfig!, referenceCode: e.target.value } })}
+                                                        placeholder="// Write the correct answer here..."
+                                                        className="w-full h-32 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                                                    />
                                                 </div>
                                             )}
                                         </div>

@@ -24,7 +24,8 @@ const questionSchema = new mongoose.Schema({
   compilerConfig: {
     language: { type: String, default: 'javascript' },
     allowedLanguages: { type: [String], default: ['javascript'] },
-    initialCode: { type: String }
+    initialCode: { type: String },
+    referenceCode: { type: String }
   }
 });
 

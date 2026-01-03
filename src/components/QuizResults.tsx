@@ -367,7 +367,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                                 </span>
                                             </div>
 
-                                            {!isCorrect && (q.correctAnswer !== undefined || q.blockConfig?.referenceXml) && (
+                                            {!isCorrect && (q.correctAnswer !== undefined || q.blockConfig?.referenceXml || q.compilerConfig?.referenceCode) && (
                                                 <div className="flex flex-col gap-2 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                                                     <span className="text-xs font-bold uppercase tracking-wider opacity-70">Correct Answer</span>
                                                     {q.isBlock && q.blockConfig?.referenceXml ? (
@@ -379,6 +379,17 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                                                     readOnly={true}
                                                                     hideStage={true}
                                                                     className='h-full'
+                                                                    onChange={() => { }}
+                                                                />
+                                                            </React.Suspense>
+                                                        </div>
+                                                    ) : q.isCompiler && q.compilerConfig?.referenceCode ? (
+                                                        <div className="h-64 mt-2 border border-emerald-500/20 rounded-xl overflow-hidden">
+                                                            <React.Suspense fallback={<div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>}>
+                                                                <CompilerQuestion
+                                                                    language={q.compilerConfig?.language || 'javascript'}
+                                                                    initialCode={q.compilerConfig.referenceCode}
+                                                                    readOnly={true}
                                                                     onChange={() => { }}
                                                                 />
                                                             </React.Suspense>

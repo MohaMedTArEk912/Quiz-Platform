@@ -24,6 +24,7 @@
     "canvas-confetti": "^1.9.4",
     "concurrently": "^9.2.1",
     "cors": "^2.8.5",
+    "diff": "^8.0.2",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-mongo-sanitize": "^2.2.0",
