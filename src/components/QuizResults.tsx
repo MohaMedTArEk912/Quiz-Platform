@@ -298,6 +298,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                     {showReview && (
                         <div className="mt-8 space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                             {quiz.questions.map((q, idx) => {
+                                console.log(`[QuizResults] Q${idx} ID:${q.id}`, q.compilerConfig);
                                 const answerEntry = result.answers[idx]; // FIX: Use index, not q.id
                                 // DetailedAnswer has { selected, isCorrect, type }
                                 // Or it might just be the value if legacy. But our onComplete sends DetailedAnswer.
@@ -356,6 +357,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                                                     initialCode={String(userVal)}
                                                                     readOnly={true}
                                                                     onChange={() => { }}
+                                                                    className="h-full border-0"
                                                                 />
                                                             </React.Suspense>
                                                         </div>
@@ -383,17 +385,24 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                                                 />
                                                             </React.Suspense>
                                                         </div>
-                                                    ) : q.isCompiler && q.compilerConfig?.referenceCode ? (
-                                                        <div className="h-64 mt-2 border border-emerald-500/20 rounded-xl overflow-hidden">
-                                                            <React.Suspense fallback={<div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>}>
-                                                                <CompilerQuestion
-                                                                    language={q.compilerConfig?.language || 'javascript'}
-                                                                    initialCode={q.compilerConfig.referenceCode}
-                                                                    readOnly={true}
-                                                                    onChange={() => { }}
-                                                                />
-                                                            </React.Suspense>
-                                                        </div>
+                                                    ) : q.isCompiler ? (
+                                                        q.compilerConfig?.referenceCode ? (
+                                                            <div className="h-64 mt-2 border border-emerald-500/20 rounded-xl overflow-hidden">
+                                                                <React.Suspense fallback={<div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>}>
+                                                                    <CompilerQuestion
+                                                                        language={q.compilerConfig?.language || 'javascript'}
+                                                                        initialCode={q.compilerConfig.referenceCode}
+                                                                        readOnly={true}
+                                                                        onChange={() => { }}
+                                                                        className="h-full border-0"
+                                                                    />
+                                                                </React.Suspense>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="p-4 mt-2 text-sm text-gray-500 italic bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
+                                                                No reference answer provided.
+                                                            </div>
+                                                        )
                                                     ) : (
                                                         <span className="font-medium">{q.options && q.correctAnswer !== undefined ? q.options[q.correctAnswer] : ''}</span>
                                                     )}

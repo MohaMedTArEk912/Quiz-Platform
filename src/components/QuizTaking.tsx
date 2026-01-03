@@ -307,9 +307,35 @@ def solution():
             const isCompiler = question.isCompiler;
             let isCorrect = false;
 
-            if (isText || isCompiler) {
-                // For text and compiler questions, manual review required
-                isCorrect = false;
+            if (isCompiler) {
+                // Compare with reference code if available
+                if (question.compilerConfig?.referenceCode && selectedAnswer) {
+                    const normalizeCode = (str: string) => {
+                        return str
+                            .replace(/\/\*[\s\S]*?\*\//g, '') // Remove JS block comments
+                            .replace(/\/\/.*/g, '')           // Remove JS line comments
+                            .replace(/#.*/g, '')              // Remove Python line comments
+                            .replace(/\s+/g, '')              // Remove whitespace
+                            .replace(/;/g, '')                // Remove semicolons
+                            .replace(/'/g, '"')               // Normalize quotes
+                            .trim();
+                    };
+                    const userCode = normalizeCode(String(selectedAnswer));
+                    const refCode = normalizeCode(question.compilerConfig.referenceCode);
+
+                    isCorrect = userCode === refCode;
+
+                    if (!isCorrect) {
+                        console.log(`Compiler Grading Mismatch:\nUser: ${userCode}\nRef:  ${refCode}`);
+                    }
+                } else {
+                    isCorrect = false;
+                }
+
+                if (isCorrect) {
+                    score += question.points;
+                    correctAnswers++;
+                }
             } else if (isBlock) {
                 // Block-based grading using GENERATED CODE comparison
                 if (question.blockConfig?.referenceXml && selectedAnswer) {
@@ -324,26 +350,44 @@ def solution():
                         // Get user's generated code
                         const userCode = answerCodes[index];
 
+                        // Normalization helper
+                        const normalizeCode = (str: string) => {
+                            return str
+                                .replace(/\/\*[\s\S]*?\*\//g, '')
+                                .replace(/\/\/.*/g, '')
+                                .replace(/#.*/g, '')
+                                .replace(/\s+/g, '')
+                                .replace(/;/g, '')
+                                .replace(/'/g, '"')
+                                .trim();
+                        };
+
                         // Compare generated code (logic-based, not structure-based)
                         if (userCode && refCode) {
-                            isCorrect = userCode.trim() === refCode.trim();
+                            const normUser = normalizeCode(userCode);
+                            const normRef = normalizeCode(refCode);
+                            isCorrect = normUser === normRef;
+
+                            if (!isCorrect) {
+                                console.log(`Block Grading Mismatch:\nUser: ${normUser}\nRef:  ${normRef}`);
+                            }
                         } else {
                             // Fallback: if code generation failed, mark as incorrect
                             isCorrect = false;
                         }
+
+                        if (isCorrect) {
+                            score += question.points;
+                            correctAnswers++;
+                        }
                     } catch (e) {
-                        console.error("Error grading block question:", e);
+                        console.error("Block grading error:", e);
                         isCorrect = false;
                     }
-
-                    if (isCorrect) {
-                        score += question.points;
-                        correctAnswers++;
-                    }
-                } else {
-                    // No reference or no answer
-                    isCorrect = false;
                 }
+            } else if (isText) {
+                // For text questions, manual review required
+                isCorrect = false;
             } else {
                 // Multiple choice questions
                 isCorrect = selectedAnswer === question.correctAnswer;
@@ -371,7 +415,7 @@ def solution():
             timeTaken,
             answers: detailedAnswers,
             passed: percentage >= quiz.passingScore,
-            reviewStatus: quiz.questions.some(q => q.type === 'text' || q.isCompiler) ? 'pending' : 'completed',
+            reviewStatus: quiz.questions.some(q => q.type === 'text') ? 'pending' : 'completed',
             powerUpsUsed: usedPowerUps
         });
     }, [answers, answerCodes, onComplete, quiz, storageKey, usedPowerUps, isSubmitting]);

@@ -74,6 +74,12 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
             onNotification('error', 'Quiz must have at least one question');
             return;
         }
+        // Check for missing reference codes in compiler questions
+        const missingRef = editingQuiz.questions.find(q => q.isCompiler && (!q.compilerConfig?.referenceCode || !q.compilerConfig.referenceCode.trim()));
+        if (missingRef) {
+            onNotification('error', `Question "${missingRef.question}" is missing a reference answer code.`);
+            return;
+        }
 
         try {
             // Ensure all questions have required fields
@@ -359,7 +365,12 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                                                                 type: 'text', // Legacy fallback
                                                                 isBlock: false,
                                                                 isCompiler: true,
-                                                                compilerConfig: { language: 'javascript', allowedLanguages: COMPILER_ALLOWED_LANGUAGES, initialCode: COMPILER_INITIAL_CODE['javascript'] }
+                                                                compilerConfig: {
+                                                                    language: 'javascript',
+                                                                    allowedLanguages: COMPILER_ALLOWED_LANGUAGES,
+                                                                    initialCode: COMPILER_INITIAL_CODE['javascript'],
+                                                                    referenceCode: '// Enter the correct code solution here...'
+                                                                }
                                                             });
                                                         } else {
                                                             setEditingQuestion({
@@ -436,7 +447,29 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                                                             <label className="text-xs font-bold text-gray-500 uppercase">Default Language</label>
                                                             <select
                                                                 value={editingQuestion.compilerConfig?.language || 'javascript'}
-                                                                onChange={e => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...editingQuestion.compilerConfig!, language: e.target.value } })}
+                                                                onChange={e => {
+                                                                    const newLang = e.target.value;
+                                                                    const currentRef = editingQuestion.compilerConfig?.referenceCode || '';
+
+                                                                    // Check if current ref is just a default placeholder (handles // and # and leading regex)
+                                                                    const isPlaceholder = !currentRef || currentRef.trim() === '' ||
+                                                                        /^\s*(\/\/|#)\s*Enter the correct code solution/.test(currentRef);
+
+                                                                    const newCommentPrefix = newLang.includes('python') ? '#' : '//';
+                                                                    const newRef = isPlaceholder
+                                                                        ? `${newCommentPrefix} Enter the correct code solution here...`
+                                                                        : currentRef;
+
+                                                                    setEditingQuestion({
+                                                                        ...editingQuestion,
+                                                                        compilerConfig: {
+                                                                            ...(editingQuestion.compilerConfig || { allowedLanguages: ['javascript'] }),
+                                                                            language: newLang,
+                                                                            initialCode: COMPILER_INITIAL_CODE[newLang] || '',
+                                                                            referenceCode: newRef
+                                                                        }
+                                                                    });
+                                                                }}
                                                                 className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
                                                             >
                                                                 <option value="javascript">JavaScript</option>
@@ -448,26 +481,17 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                                                             <label className="text-xs font-bold text-gray-500 uppercase">Allowed Languages (comma sep)</label>
                                                             <input
                                                                 value={editingQuestion.compilerConfig?.allowedLanguages?.join(',') || 'javascript'}
-                                                                onChange={e => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...editingQuestion.compilerConfig!, allowedLanguages: e.target.value.split(',').map(s => s.trim()) } })}
+                                                                onChange={e => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...(editingQuestion.compilerConfig || { language: 'javascript', initialCode: '', referenceCode: '' }), allowedLanguages: e.target.value.split(',').map(s => s.trim()) } })}
                                                                 className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
                                                             />
                                                         </div>
                                                     </div>
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Initial Code Template</label>
-                                                    <CompilerQuestion
-                                                        language={editingQuestion.compilerConfig?.language || 'javascript'}
-                                                        allowedLanguages={editingQuestion.compilerConfig?.allowedLanguages}
-                                                        initialCode={editingQuestion.compilerConfig?.initialCode}
-                                                        onChange={code => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...editingQuestion.compilerConfig!, initialCode: code } })}
-                                                        className="h-64 mb-4"
-                                                    />
-
                                                     <label className="text-xs font-bold text-gray-500 uppercase mt-2">Reference Answer Code</label>
                                                     <CompilerQuestion
                                                         language={editingQuestion.compilerConfig?.language || 'javascript'}
                                                         allowedLanguages={editingQuestion.compilerConfig?.allowedLanguages}
                                                         initialCode={editingQuestion.compilerConfig?.referenceCode}
-                                                        onChange={code => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...editingQuestion.compilerConfig!, referenceCode: code } })}
+                                                        onChange={code => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...(editingQuestion.compilerConfig || { language: 'javascript', allowedLanguages: ['javascript'], initialCode: '' }), referenceCode: code } })}
                                                         className="h-64"
                                                     />
                                                 </div>
@@ -490,7 +514,19 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                                         <div key={q.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/5">
                                             <span className="text-gray-600 dark:text-gray-300 truncate w-2/3">{i + 1}. {q.question}</span>
                                             <div className="flex gap-2">
-                                                <button onClick={() => setEditingQuestion(q)} className="text-blue-400"><Edit2 className="w-4 h-4" /></button>
+                                                <button onClick={() => {
+                                                    const qToEdit = { ...q };
+                                                    // Hydrate reference code if missing
+                                                    if (qToEdit.isCompiler && (!qToEdit.compilerConfig?.referenceCode || qToEdit.compilerConfig.referenceCode.trim() === '')) {
+                                                        const lang = qToEdit.compilerConfig?.language || 'javascript';
+                                                        const comment = lang.includes('python') ? '# Enter the correct code solution here...' : '// Enter the correct code solution here...';
+                                                        qToEdit.compilerConfig = {
+                                                            ...(qToEdit.compilerConfig || { language: 'javascript', allowedLanguages: ['javascript'], initialCode: '' }),
+                                                            referenceCode: comment
+                                                        };
+                                                    }
+                                                    setEditingQuestion(qToEdit);
+                                                }} className="text-blue-400"><Edit2 className="w-4 h-4" /></button>
                                                 <button onClick={() => handleDeleteQuestion(q.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
                                             </div>
                                         </div>

@@ -178,13 +178,42 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
                     value={code}
                     theme="vs-dark"
                     onChange={handleEditorChange}
+                    onMount={(_, monaco) => {
+                        // Enable semantic validation for better IntelliSense
+                        monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                            noSemanticValidation: false,
+                            noSyntaxValidation: false
+                        });
+
+                        // Set strict compiler options for better suggestion accuracy
+                        monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+                            target: monaco.languages.typescript.ScriptTarget.ES2020,
+                            allowNonTsExtensions: true,
+                            checkJs: true,
+                            allowJs: true
+                        });
+                    }}
                     options={{
                         minimap: { enabled: false },
                         fontSize: 14,
                         readOnly: readOnly,
                         automaticLayout: true,
                         scrollBeyondLastLine: false,
-                        padding: { top: 16 }
+                        padding: { top: 16 },
+                        // IntelliSense & Autocomplete Configuration
+                        quickSuggestions: { other: true, comments: true, strings: true },
+                        suggestOnTriggerCharacters: true,
+                        snippetSuggestions: 'inline',
+                        tabCompletion: 'on',
+                        wordBasedSuggestions: 'allDocumentWords',
+                        parameterHints: { enabled: true },
+                        suggest: {
+                            showWords: true,
+                            showSnippets: true,
+                            showClasses: true,
+                            showFunctions: true,
+                            showVariables: true
+                        }
                     }}
                 />
             </div>

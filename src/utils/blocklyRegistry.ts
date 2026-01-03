@@ -12,30 +12,42 @@ export const registerBlocklyBlocks = () => {
     if (!Blockly.Blocks['motion_movesteps']) {
         Blockly.Blocks['motion_movesteps'] = {
             init: function () {
-                this.appendDummyInput().appendField("move").appendField(new Blockly.FieldNumber(10), "STEPS").appendField("steps");
+                this.appendValueInput("STEPS").setCheck("Number").appendField("move");
+                this.appendDummyInput().appendField("steps");
                 this.setPreviousStatement(true, null);
                 this.setNextStatement(true, null);
                 this.setColour(225);
             }
         };
     }
-    javascriptGenerator.forBlock['motion_movesteps'] = function (block: any) {
-        const steps = block.getFieldValue('STEPS');
+    javascriptGenerator.forBlock['motion_movesteps'] = function (block: Blockly.Block) {
+        let steps = '10';
+        if (block.getInput('STEPS')) {
+            steps = javascriptGenerator.valueToCode(block, 'STEPS', Order.ATOMIC) || '10';
+        } else {
+            steps = block.getFieldValue('STEPS') || '10';
+        }
         return `await moveSteps(${steps});\n`;
     };
 
     if (!Blockly.Blocks['motion_turnright']) {
         Blockly.Blocks['motion_turnright'] = {
             init: function () {
-                this.appendDummyInput().appendField("turn right").appendField(new Blockly.FieldNumber(15), "DEGREES").appendField("degrees");
+                this.appendValueInput("DEGREES").setCheck("Number").appendField("turn right");
+                this.appendDummyInput().appendField("degrees");
                 this.setPreviousStatement(true, null);
                 this.setNextStatement(true, null);
                 this.setColour(225);
             }
         };
     }
-    javascriptGenerator.forBlock['motion_turnright'] = function (block: any) {
-        const degrees = block.getFieldValue('DEGREES');
+    javascriptGenerator.forBlock['motion_turnright'] = function (block: Blockly.Block) {
+        let degrees = '15';
+        if (block.getInput('DEGREES')) {
+            degrees = javascriptGenerator.valueToCode(block, 'DEGREES', Order.ATOMIC) || '15';
+        } else {
+            degrees = block.getFieldValue('DEGREES') || '15';
+        }
         return `await turnRight(${degrees});\n`;
     };
 
@@ -51,7 +63,7 @@ export const registerBlocklyBlocks = () => {
             }
         };
     }
-    javascriptGenerator.forBlock['looks_say'] = function (block: any) {
+    javascriptGenerator.forBlock['looks_say'] = function (block: Blockly.Block) {
         const message = javascriptGenerator.valueToCode(block, 'MESSAGE', Order.ATOMIC) || '"Hello"';
         const secs = javascriptGenerator.valueToCode(block, 'SECS', Order.ATOMIC) || '2';
         return `await say(${message}, ${secs});\n`;
@@ -67,7 +79,7 @@ export const registerBlocklyBlocks = () => {
             }
         };
     }
-    javascriptGenerator.forBlock['looks_switchbackdrop'] = function (block: any) {
+    javascriptGenerator.forBlock['looks_switchbackdrop'] = function (block: Blockly.Block) {
         const backdrop = block.getFieldValue('BACKDROP');
         return `setBackdrop('${backdrop}');\n`;
     };
@@ -81,7 +93,7 @@ export const registerBlocklyBlocks = () => {
             }
         };
     }
-    javascriptGenerator.forBlock['event_whenflagclicked'] = function (_block: any) {
+    javascriptGenerator.forBlock['event_whenflagclicked'] = function (_block: Blockly.Block) {
         return '// Green Flag Clicked\n';
     };
 

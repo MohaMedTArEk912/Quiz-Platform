@@ -187,7 +187,8 @@ const BlockQuestion: React.FC<BlockQuestionProps> = ({ initialXml, toolbox, onCh
             readOnly: readOnly,
             grid: { spacing: 20, length: 3, colour: '#ccc', snap: true },
             zoom: { controls: true, wheel: true, startScale: 0.8, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
-            move: { scrollbars: true, drag: true, wheel: true }
+            move: { scrollbars: true, drag: true, wheel: true },
+            sounds: false
           }}
         />
         {readOnly && (
