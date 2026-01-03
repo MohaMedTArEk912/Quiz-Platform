@@ -103,6 +103,8 @@ const Navbar: React.FC<NavbarProps> = ({
                         {navItems.map((item) => {
                             const Icon = item.icon;
                             const active = isActive(item.path);
+                            const hasNotifications = item.path === '/clans' && user.clanInvites && user.clanInvites.length > 0;
+
                             return (
                                 <button
                                     key={item.path}
@@ -114,6 +116,9 @@ const Navbar: React.FC<NavbarProps> = ({
                                 >
                                     <Icon className={`w-4 h-4 ${active ? 'animate-pulse' : ''}`} />
                                     <span className="hidden xl:inline">{item.label}</span>
+                                    {hasNotifications && (
+                                        <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-[#13141f]"></span>
+                                    )}
                                 </button>
                             );
                         })}

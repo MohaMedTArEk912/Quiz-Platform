@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import type { Clan, UserData } from '../../types';
-import { Users, Shield, Trophy, Search, LogOut, Star, UserPlus, Edit2, Check, X, MoreVertical, Trash2, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { Users, Shield, Trophy, Search, LogOut, Star, UserPlus, Edit2, Check, X, MoreVertical, Trash2, ArrowUpCircle, ArrowDownCircle, Bell } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
 import { useConfirm } from '../../hooks/useConfirm';
 import ConfirmDialog from '../ConfirmDialog';
@@ -418,20 +418,26 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                 <div className="space-y-6">
                     {/* Pending Invites */}
                     {user.clanInvites && user.clanInvites.length > 0 && (
-                        <div className="bg-gradient-to-r from-violet-600/10 to-indigo-600/10 border border-violet-200 dark:border-violet-800 rounded-2xl p-6">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span className="relative flex h-3 w-3">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-violet-500"></span>
-                                </span>
+                        <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl p-6 shadow-xl shadow-violet-500/20 text-white relative overflow-hidden mb-6 animate-in slide-in-from-top-5 duration-500">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                            <h3 className="text-xl font-bold mb-6 flex items-center gap-3 relative z-10">
+                                <div className="bg-white/20 p-2 rounded-lg">
+                                    <Bell className="w-5 h-5 animate-pulse" />
+                                </div>
                                 Clan Invitations
+                                <span className="bg-white text-violet-600 text-xs font-black px-2 py-0.5 rounded-full shadow-sm">{user.clanInvites.length}</span>
                             </h3>
-                            <div className="space-y-3">
+                            <div className="space-y-3 relative z-10">
                                 {user.clanInvites.map((invite) => (
-                                    <div key={invite.clanId} className="bg-white dark:bg-gray-800 p-4 rounded-xl flex items-center justify-between shadow-sm">
-                                        <div>
-                                            <div className="font-bold text-gray-900 dark:text-white">{invite.clanName}</div>
-                                            <div className="text-xs text-gray-500">Invited by a clan member</div>
+                                    <div key={invite.clanId} className="bg-black/20 backdrop-blur-md border border-white/10 p-4 rounded-xl flex items-center justify-between group hover:bg-black/30 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-gradient-to-br from-white/10 to-transparent rounded-lg flex items-center justify-center border border-white/10">
+                                                <Shield className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-lg leading-tight">{invite.clanName}</div>
+                                                <div className="text-white/60 text-xs mt-0.5">Invited by a clan member</div>
+                                            </div>
                                         </div>
                                         <div className="flex gap-2">
                                             <button
@@ -441,7 +447,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                         onUpdateUser(); // Refresh user to update state
                                                     } catch (e: any) { setError(e.message); }
                                                 }}
-                                                className="px-4 py-2 bg-violet-600 text-white rounded-lg font-bold text-sm hover:bg-violet-700"
+                                                className="px-4 py-2 bg-white text-violet-600 rounded-lg font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-black/10"
                                             >
                                                 Accept
                                             </button>
@@ -452,7 +458,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                         onUpdateUser();
                                                     } catch (e: any) { setError(e.message); }
                                                 }}
-                                                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-bold text-sm"
+                                                className="px-4 py-2 bg-black/20 text-white hover:bg-black/30 rounded-lg font-bold text-sm transition-all"
                                             >
                                                 Decline
                                             </button>

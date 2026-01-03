@@ -58,7 +58,7 @@ export const deleteUser = async (req, res) => {
 export const getUserData = async (req, res) => {
   try {
     const user = await User.findOne({ userId: req.user.userId })
-      .select('userId name email role totalScore totalAttempts totalTime xp level streak lastLoginDate badges friends friendRequests avatar')
+      .select('userId name email role totalScore totalAttempts totalTime xp level streak lastLoginDate badges friends friendRequests avatar clanId clanInvites')
       .lean();
 
     if (!user) {
@@ -140,7 +140,7 @@ export const searchUsers = async (req, res) => {
                 { name: { $regex: query, $options: 'i' } },
                 { userId: { $regex: query, $options: 'i' } }
             ]
-        }).limit(10).select('userId name email totalScore friends friendRequests').lean();
+        }).limit(10).select('userId name email totalScore friends friendRequests clanId').lean();
         
         // Maps results to include relationship status relative to requester
         const results = users

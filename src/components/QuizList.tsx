@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Quiz, UserData, AttemptData } from '../types/index.ts';
 import { DIFFICULTY_COLORS } from '../constants/quizDefaults.ts';
 import {
@@ -11,7 +12,9 @@ import {
     Award,
 
     Zap,
-    Target
+    Target,
+    Shield,
+    Bell
 } from 'lucide-react';
 import Navbar from './Navbar.tsx';
 
@@ -26,6 +29,7 @@ interface QuizListProps {
 }
 
 const QuizList: React.FC<QuizListProps> = ({ quizzes, user, attempts, onSelectQuiz, onViewProfile, onViewLeaderboard, onLogout }) => {
+    const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
@@ -109,6 +113,32 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, attempts, onSelectQu
                         </div>
                     ))}
                 </div>
+
+                {/* Clan Invites Banner */}
+                {user.clanInvites && user.clanInvites.length > 0 && (
+                    <div onClick={() => navigate('/clans')} className="mb-12 cursor-pointer relative overflow-hidden bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-6 shadow-xl shadow-violet-500/20 group animate-in slide-in-from-top-5 duration-500">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-white/20 transition-colors" />
+                        <div className="relative flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                                    <Bell className="w-6 h-6 text-white animate-pulse" />
+                                </div>
+                                <div className="text-white">
+                                    <h3 className="text-xl font-black flex items-center gap-2">
+                                        Pending Clan Invite{user.clanInvites.length > 1 ? 's' : ''}
+                                        <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{user.clanInvites.length}</span>
+                                    </h3>
+                                    <p className="text-white/80 font-medium">
+                                        You have been invited to join <span className="text-white font-bold">{user.clanInvites[0].clanName}</span> {user.clanInvites.length > 1 ? `and ${user.clanInvites.length - 1} others` : ''}.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="hidden md:flex px-6 py-2 bg-white text-violet-600 rounded-xl font-bold hover:scale-105 transition-transform items-center gap-2">
+                                View Invites <Shield className="w-4 h-4" />
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Filters Bar */}
                 <div className="bg-white/80 dark:bg-white/5 backdrop-blur-xl p-4 rounded-3xl border border-gray-200 dark:border-white/10 mb-12 flex flex-col md:flex-row gap-4 shadow-xl">
