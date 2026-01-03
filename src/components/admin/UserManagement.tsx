@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit2, Trash2, Users } from 'lucide-react';
+import { Edit2, Trash2, Users, Eye, EyeOff } from 'lucide-react';
 import type { UserData } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
-import { supabase, isValidSupabaseConfig } from '../../lib/supabase.ts';
-import { storage } from '../../utils/storage.ts';
+
 
 type EditableUser = UserData & { password?: string };
 
@@ -19,57 +18,40 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onR
     const [editingUser, setEditingUser] = useState<EditableUser | null>(null);
     const [originalUser, setOriginalUser] = useState<EditableUser | null>(null);
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; id: string } | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleUpdateUser = async (user: EditableUser) => {
         const normalizedEmail = user.email.toLowerCase().trim();
         const trimmedName = user.name.trim();
 
-        if (originalUser && normalizedEmail !== originalUser.email.toLowerCase()) {
-            if (isValidSupabaseConfig() && supabase) {
-                const { data: existingUsers } = await supabase
-                    .from('users')
-                    .select('email')
-                    .ilike('email', normalizedEmail);
-
-                if (existingUsers && existingUsers.length > 0) {
-                    onNotification('error', 'This email is already in use.');
-                    return;
-                }
+        try {
+            // 1. Update Basic Info (Name, Email)
+            if (user.name !== originalUser?.name || user.email !== originalUser?.email) {
+                await api.updateUser(user.userId, {
+                    name: trimmedName,
+                    email: normalizedEmail
+                });
             }
-        }
 
-        const updatedUser: EditableUser = {
-            ...user,
-            name: trimmedName,
-            email: normalizedEmail,
-            // Only update password if provided and not empty
-            password: user.password && user.password.trim() !== ''
-                ? user.password.trim()
-                : originalUser?.password
-        };
+            // 2. Update Password if provided
+            if (user.password && user.password.trim() !== '') {
+                // Check if it's actually different (though logic usually implies it if it's filled in admin panel)
+                // Use specific admin endpoint that handles hashing
+                await api.adminChangeUserPassword(
+                    user.userId,
+                    user.password.trim(),
+                    currentUser.userId
+                );
+            }
 
-        if (isValidSupabaseConfig() && supabase) {
-            try {
-                await supabase.from('users').update(updatedUser).eq('userId', user.userId);
-                setEditingUser(null);
-                setOriginalUser(null);
-                onNotification('success', 'User updated successfully');
-                onRefresh();
-            } catch (error) {
-                console.error('Update error:', error);
-                onNotification('error', 'Failed to update user');
-            }
-        } else {
-            try {
-                await storage.set(`user:${user.userId}`, JSON.stringify(updatedUser));
-                setEditingUser(null);
-                setOriginalUser(null);
-                onNotification('success', 'User updated successfully');
-                onRefresh();
-            } catch (error) {
-                console.error('Update error:', error);
-                onNotification('error', 'Failed to update user locally');
-            }
+            setEditingUser(null);
+            setOriginalUser(null);
+            onNotification('success', 'User updated successfully');
+            onRefresh();
+        } catch (error) {
+            console.error('Update error:', error);
+            const msg = error instanceof Error ? error.message : 'Failed to update user';
+            onNotification('error', msg);
         }
     };
 
@@ -153,13 +135,22 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onR
                             />
                             <div className="space-y-1">
                                 <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1 uppercase tracking-wider">Password</label>
-                                <input
-                                    type="password"
-                                    placeholder="Enter new password to change"
-                                    value={editingUser.password || ''}
-                                    onChange={e => setEditingUser({ ...editingUser, password: e.target.value })}
-                                    className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        placeholder="Enter new password to change"
+                                        value={editingUser.password || ''}
+                                        onChange={e => setEditingUser({ ...editingUser, password: e.target.value })}
+                                        className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 pr-12 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                    >
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
                                 <p className="text-xs text-gray-500 ml-1">Leave blank to keep existing password.</p>
                             </div>
                             <div className="flex gap-4 mt-6">

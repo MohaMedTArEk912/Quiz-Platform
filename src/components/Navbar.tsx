@@ -5,7 +5,8 @@ import {
     LogOut,
     ArrowLeft,
     Menu,
-    X
+    X,
+    Settings
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle.tsx';
 import type { UserData } from '../types/index.ts';
@@ -38,7 +39,18 @@ const Navbar: React.FC<NavbarProps> = ({
     const navigate = useNavigate();
     const location = useLocation();
 
-    const navItems = NAV_ITEMS;
+    const navItems = React.useMemo(() => {
+        const items = [...NAV_ITEMS];
+        if (user?.role === 'admin') {
+            items.push({
+                path: '/admin',
+                icon: Settings,
+                label: 'Admin',
+                color: 'from-red-600 to-rose-600'
+            });
+        }
+        return items;
+    }, [user?.role]);
 
     const isActive = (path: string) => {
         // Home button should be active for both / and /dashboard

@@ -10,7 +10,8 @@ import {
     Zap,
     LogOut,
     Activity,
-    Route
+    Route,
+    Settings
 } from 'lucide-react';
 
 import type { UserData, Quiz, AttemptData } from '../types/index.ts';
@@ -28,6 +29,7 @@ import TournamentManagement from './admin/TournamentManagement.tsx';
 import BadgeManagement from './admin/BadgeManagement.tsx';
 import AttemptsLog from './admin/AttemptsLog.tsx';
 import RoadmapManagement from './admin/RoadmapManagement.tsx';
+import AdminSettings from './AdminSettings.tsx';
 
 // --- Types ---
 interface AdminDashboardProps {
@@ -50,6 +52,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     // --- State ---
     const [selectedTab, setSelectedTab] = useState<'users' | 'attempts' | 'quizzes' | 'reviews' | 'study' | 'daily' | 'tournaments' | 'badges' | 'roadmaps'>('users');
     const [pendingReviews, setPendingReviews] = useState<AttemptData[]>([]);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [stats, setStats] = useState({
         totalUsers: 0,
         totalQuizzes: 0,
@@ -163,6 +166,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     )}
                                 </div>
                             </div>
+                            <button
+                                onClick={() => setIsSettingsOpen(true)}
+                                className="p-2.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-xl transition-all hover:scale-105 active:scale-95"
+                                title="Settings"
+                            >
+                                <Settings className="w-5 h-5" />
+                            </button>
                             <button
                                 onClick={onLogout}
                                 className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all hover:scale-105 active:scale-95"
@@ -355,6 +365,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                 </div>
             </div>
+
+            {/* Settings Modal */}
+            {isSettingsOpen && (
+                <AdminSettings
+                    adminEmail={currentUser.email}
+                    onClose={() => setIsSettingsOpen(false)}
+                />
+            )}
         </div>
     );
 };
