@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Upload, Download, Edit2, Trash2, Code, X, MoreVertical } from 'lucide-react';
+import { Plus, Upload, Download, Edit2, Trash2, Code, X, MoreVertical, Search } from 'lucide-react';
 import type { Quiz, Question, UserData } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 import { DEFAULT_BLOCKLY_TOOLBOX, COMPILER_ALLOWED_LANGUAGES, COMPILER_INITIAL_CODE, DIFFICULTY_LEVELS } from '../../constants/quizDefaults.ts';
@@ -13,6 +13,193 @@ interface QuizManagementProps {
     onNotification: (type: 'success' | 'error', message: string) => void;
 }
 
+interface QuestionEditorProps {
+    question: Question;
+    onChange: (q: Question) => void;
+    onSave: () => void;
+    onCancel: () => void;
+}
+
+const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onSave, onCancel }) => {
+    return (
+        <div className="bg-gray-50 dark:bg-black/40 p-4 rounded-xl border border-gray-200 dark:border-white/10 space-y-3">
+            <div className="flex gap-4">
+                <div className="flex-1 space-y-1">
+                    <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Question Type</label>
+                    <select
+                        value={question.isBlock ? 'block' : question.isCompiler ? 'compiler' : 'multiple-choice'}
+                        onChange={e => {
+                            const type = e.target.value;
+                            if (type === 'block') {
+                                onChange({
+                                    ...question,
+                                    type: 'multiple-choice', // Legacy fallback
+                                    isBlock: true,
+                                    isCompiler: false,
+                                    blockConfig: { referenceXml: '', toolbox: DEFAULT_BLOCKLY_TOOLBOX, initialXml: '' }
+                                });
+                            } else if (type === 'compiler') {
+                                onChange({
+                                    ...question,
+                                    type: 'text', // Legacy fallback
+                                    isBlock: false,
+                                    isCompiler: true,
+                                    compilerConfig: {
+                                        language: 'javascript',
+                                        allowedLanguages: COMPILER_ALLOWED_LANGUAGES,
+                                        initialCode: COMPILER_INITIAL_CODE['javascript'],
+                                        referenceCode: '// Enter the correct code solution here...'
+                                    }
+                                });
+                            } else {
+                                onChange({
+                                    ...question,
+                                    type: 'multiple-choice',
+                                    isBlock: false,
+                                    isCompiler: false
+                                });
+                            }
+                        }}
+                        className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                    >
+                        <option value="multiple-choice">Multiple Choice</option>
+                        <option value="block">Block (Scratch-like)</option>
+                        <option value="compiler">Code Compiler</option>
+                    </select>
+                </div>
+            </div>
+
+            <input placeholder="Question Text" value={question.question} onChange={e => onChange({ ...question, question: e.target.value })} className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+
+            <div className="grid grid-cols-1 gap-2">
+                {/* Multiple Choice Editor */}
+                {(!question.isBlock && !question.isCompiler) && (
+                    <>
+                        <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Click on an option to mark it as correct</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {question.options?.map((opt, idx) => (
+                                <div key={idx} className="relative">
+                                    <input
+                                        placeholder={`Option ${idx + 1}`}
+                                        value={opt}
+                                        onChange={e => {
+                                            const newOptions = [...(question.options || [])];
+                                            newOptions[idx] = e.target.value;
+                                            onChange({ ...question, options: newOptions });
+                                        }}
+                                        onClick={() => onChange({ ...question, correctAnswer: idx })}
+                                        className={`w-full bg-white dark:bg-black/40 border-2 ${question.correctAnswer === idx ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-200 dark:border-white/10'} rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none cursor-pointer transition-all`}
+                                    />
+                                    {question.correctAnswer === idx && (
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400 text-xs font-bold pointer-events-none">
+                                            ✓ Correct
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+
+                {/* Block Editor Fields */}
+                {question.isBlock && (
+                    <div className="space-y-2 p-3 bg-gray-100 dark:bg-black/20 rounded-lg">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Block Reference XML (Answer)</label>
+                        <textarea
+                            value={question.blockConfig?.referenceXml || ''}
+                            onChange={e => onChange({ ...question, blockConfig: { ...question.blockConfig, referenceXml: e.target.value } })}
+                            placeholder="<xml>...</xml>"
+                            className="w-full h-24 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                        />
+                        <label className="text-xs font-bold text-gray-500 uppercase">Initial Workspace XML (Optional)</label>
+                        <textarea
+                            value={question.blockConfig?.initialXml || ''}
+                            onChange={e => onChange({ ...question, blockConfig: { ...question.blockConfig, initialXml: e.target.value } })}
+                            placeholder="<xml>...</xml>"
+                            className="w-full h-24 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                        />
+                        <label className="text-xs font-bold text-gray-500 uppercase">Toolbox XML (Optional - customization)</label>
+                        <textarea
+                            value={question.blockConfig?.toolbox || ''}
+                            onChange={e => onChange({ ...question, blockConfig: { ...question.blockConfig, toolbox: e.target.value } })}
+                            placeholder="<xml>...</xml> (Leave empty for default toolbox)"
+                            className="w-full h-24 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                        />
+                    </div>
+                )}
+
+                {/* Compiler Editor Fields */}
+                {question.isCompiler && (
+                    <div className="space-y-2 p-3 bg-gray-100 dark:bg-black/20 rounded-lg">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase">Default Language</label>
+                                <select
+                                    value={question.compilerConfig?.language || 'javascript'}
+                                    onChange={e => {
+                                        const newLang = e.target.value;
+                                        const currentRef = question.compilerConfig?.referenceCode || '';
+
+                                        // Check if current ref is just a default placeholder (handles // and # and leading regex)
+                                        const isPlaceholder = !currentRef || currentRef.trim() === '' ||
+                                            /^\s*(\/\/|#)\s*Enter the correct code solution/.test(currentRef);
+
+                                        const newCommentPrefix = newLang.includes('python') ? '#' : '//';
+                                        const newRef = isPlaceholder
+                                            ? `${newCommentPrefix} Enter the correct code solution here...`
+                                            : currentRef;
+
+                                        onChange({
+                                            ...question,
+                                            compilerConfig: {
+                                                ...(question.compilerConfig || { allowedLanguages: ['javascript'] }),
+                                                language: newLang,
+                                                initialCode: COMPILER_INITIAL_CODE[newLang] || '',
+                                                referenceCode: newRef
+                                            }
+                                        });
+                                    }}
+                                    className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                                >
+                                    <option value="javascript">JavaScript</option>
+                                    <option value="python">Python</option>
+                                    <option value="typescript">TypeScript</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase">Allowed Languages (comma sep)</label>
+                                <input
+                                    value={question.compilerConfig?.allowedLanguages?.join(',') || 'javascript'}
+                                    onChange={e => onChange({ ...question, compilerConfig: { ...(question.compilerConfig || { language: 'javascript', initialCode: '', referenceCode: '' }), allowedLanguages: e.target.value.split(',').map(s => s.trim()) } })}
+                                    className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                                />
+                            </div>
+                        </div>
+                        <label className="text-xs font-bold text-gray-500 uppercase mt-2">Reference Answer Code</label>
+                        <CompilerQuestion
+                            language={question.compilerConfig?.language || 'javascript'}
+                            allowedLanguages={question.compilerConfig?.allowedLanguages}
+                            initialCode={question.compilerConfig?.referenceCode}
+                            onChange={code => onChange({ ...question, compilerConfig: { ...(question.compilerConfig || { language: 'javascript', allowedLanguages: ['javascript'], initialCode: '' }), referenceCode: code } })}
+                            className="h-64"
+                        />
+                    </div>
+                )}
+            </div>
+            <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-500 uppercase font-bold">Points:</label>
+                <input type="number" value={question.points} onChange={e => onChange({ ...question, points: parseInt(e.target.value) })} className="w-20 bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1" />
+            </div>
+            <input placeholder="Explanation (Optional)" value={question.explanation || ''} onChange={e => onChange({ ...question, explanation: e.target.value })} className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+
+            <div className="flex gap-2">
+                <button onClick={onSave} className="flex-1 py-2 bg-green-600 text-white rounded-lg">Save</button>
+                <button onClick={onCancel} className="flex-1 py-2 bg-gray-600 text-white rounded-lg">Cancel</button>
+            </div>
+        </div>
+    );
+};
+
 const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, onRefresh, onNotification }) => {
     const [localQuizzes, setLocalQuizzes] = useState<Quiz[]>(quizzes);
     const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
@@ -20,6 +207,13 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
     const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; id: string } | null>(null);
     const [activeHeaderMenu, setActiveHeaderMenu] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredQuizzes = localQuizzes.filter(q =>
+        !q.isTournamentOnly &&
+        (q.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            q.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
 
     useEffect(() => {
         setLocalQuizzes(quizzes);
@@ -264,8 +458,19 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                 </div>
             </div>
 
+            <div className="flex items-center gap-4 mb-6 bg-white dark:bg-[#13141f] p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm">
+                <Search className="w-5 h-5 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="Search quizzes by title or description..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder-gray-500 font-medium"
+                />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {localQuizzes.filter(q => !q.isTournamentOnly).map(quiz => (
+                {filteredQuizzes.map(quiz => (
                     <div key={quiz.id} className="bg-white dark:bg-black/20 p-6 rounded-3xl border border-gray-200 dark:border-white/5 hover:border-purple-500/30 transition-all group shadow-sm">
                         <div className="flex justify-between items-start mb-4">
                             <div>
@@ -281,7 +486,7 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                         </div>
                     </div>
                 ))}
-                {localQuizzes.filter(q => !q.isTournamentOnly).length === 0 && (
+                {filteredQuizzes.length === 0 && (
                     <div className="col-span-full py-12 text-center border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
                         <Code className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
                         <p className="text-gray-500 font-bold">No quizzes found</p>
@@ -290,308 +495,157 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
             </div>
 
             {/* Quiz Editor Modal */}
-            {editingQuiz && createPortal(
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 shadow-2xl relative [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
-                        <button onClick={() => setEditingQuiz(null)} className="absolute top-6 right-6 text-gray-400 hover:text-white"><X className="w-6 h-6" /></button>
+            {
+                editingQuiz && createPortal(
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 shadow-2xl relative [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+                            <button onClick={() => setEditingQuiz(null)} className="absolute top-6 right-6 text-gray-400 hover:text-white"><X className="w-6 h-6" /></button>
 
-                        <div className="flex gap-4 border-b border-white/10 pb-4 mb-6">
-                            <button onClick={() => setActiveModalTab('general')} className={`font-bold ${activeModalTab === 'general' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'}`}>General</button>
-                            <button onClick={() => setActiveModalTab('questions')} className={`font-bold ${activeModalTab === 'questions' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'}`}>Questions</button>
-                        </div>
-
-                        {activeModalTab === 'general' ? (
-                            <div className="space-y-4">
-                                <input placeholder="Title" value={editingQuiz.title} onChange={e => setEditingQuiz({ ...editingQuiz, title: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-                                <textarea placeholder="Description" value={editingQuiz.description} onChange={e => setEditingQuiz({ ...editingQuiz, description: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Time Limit (min) - 0 for unlimited</label>
-                                        <input type="number" placeholder="Time Limit" value={editingQuiz.timeLimit} onChange={e => setEditingQuiz({ ...editingQuiz, timeLimit: parseInt(e.target.value) })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Passing Score (%)</label>
-                                        <input type="number" placeholder="Passing Score" value={editingQuiz.passingScore} onChange={e => setEditingQuiz({ ...editingQuiz, passingScore: parseInt(e.target.value) })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs text-emerald-600 dark:text-emerald-400 font-bold ml-1">Coins Reward</label>
-                                        <input type="number" placeholder="Coins" value={editingQuiz.coinsReward ?? 10} onChange={e => setEditingQuiz({ ...editingQuiz, coinsReward: parseInt(e.target.value) })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs text-indigo-600 dark:text-indigo-400 font-bold ml-1">XP Reward</label>
-                                        <input type="number" placeholder="XP" value={editingQuiz.xpReward ?? 50} onChange={e => setEditingQuiz({ ...editingQuiz, xpReward: parseInt(e.target.value) })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Category</label>
-                                        <input type="text" placeholder="Category" value={editingQuiz.category} onChange={e => setEditingQuiz({ ...editingQuiz, category: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Difficulty</label>
-                                        <select value={editingQuiz.difficulty} onChange={e => setEditingQuiz({ ...editingQuiz, difficulty: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50">
-                                            {DIFFICULTY_LEVELS.map(level => (
-                                                <option key={level} value={level}>{level}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
-                                    <input
-                                        type="checkbox"
-                                        id="reviewMode"
-                                        checked={editingQuiz.reviewMode || false}
-                                        onChange={e => setEditingQuiz({ ...editingQuiz, reviewMode: e.target.checked })}
-                                        className="w-5 h-5 rounded border-purple-300 text-purple-600 focus:ring-purple-500 focus:ring-offset-0 cursor-pointer"
-                                    />
-                                    <label htmlFor="reviewMode" className="flex-1 cursor-pointer">
-                                        <div className="text-sm font-bold text-purple-900 dark:text-purple-100">Enable Review Mode</div>
-                                        <div className="text-xs text-purple-700 dark:text-purple-300">Show immediate feedback and explanations after each answer</div>
-                                    </label>
-                                </div>
-                                <button onClick={handleSaveQuiz} className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold">Save Quiz</button>
+                            <div className="flex gap-4 border-b border-white/10 pb-4 mb-6">
+                                <button onClick={() => setActiveModalTab('general')} className={`font-bold ${activeModalTab === 'general' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'}`}>General</button>
+                                <button onClick={() => setActiveModalTab('questions')} className={`font-bold ${activeModalTab === 'questions' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'}`}>Questions</button>
                             </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center bg-gray-50 dark:bg-white/5 p-4 rounded-xl">
-                                    <span className="text-gray-900 dark:text-white font-bold">Questions Editor</span>
-                                    <button onClick={() => setEditingQuestion({ id: 0, type: 'multiple-choice', part: 'A', question: '', options: ['', '', '', ''], correctAnswer: Math.floor(Math.random() * 4), points: 10, explanation: '' })} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-bold">Add Question</button>
+
+                            {activeModalTab === 'general' ? (
+                                <div className="space-y-4">
+                                    <input placeholder="Title" value={editingQuiz.title} onChange={e => setEditingQuiz({ ...editingQuiz, title: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+                                    <textarea placeholder="Description" value={editingQuiz.description} onChange={e => setEditingQuiz({ ...editingQuiz, description: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Time Limit (min) - 0 for unlimited</label>
+                                            <input type="number" placeholder="Time Limit" value={editingQuiz.timeLimit} onChange={e => setEditingQuiz({ ...editingQuiz, timeLimit: parseInt(e.target.value) })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Passing Score (%)</label>
+                                            <input type="number" placeholder="Passing Score" value={editingQuiz.passingScore} onChange={e => setEditingQuiz({ ...editingQuiz, passingScore: parseInt(e.target.value) })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-emerald-600 dark:text-emerald-400 font-bold ml-1">Coins Reward</label>
+                                            <input type="number" placeholder="Coins" value={editingQuiz.coinsReward ?? 10} onChange={e => setEditingQuiz({ ...editingQuiz, coinsReward: parseInt(e.target.value) })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-indigo-600 dark:text-indigo-400 font-bold ml-1">XP Reward</label>
+                                            <input type="number" placeholder="XP" value={editingQuiz.xpReward ?? 50} onChange={e => setEditingQuiz({ ...editingQuiz, xpReward: parseInt(e.target.value) })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Category</label>
+                                            <input type="text" placeholder="Category" value={editingQuiz.category} onChange={e => setEditingQuiz({ ...editingQuiz, category: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Difficulty</label>
+                                            <select value={editingQuiz.difficulty} onChange={e => setEditingQuiz({ ...editingQuiz, difficulty: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50">
+                                                {DIFFICULTY_LEVELS.map(level => (
+                                                    <option key={level} value={level}>{level}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                                        <input
+                                            type="checkbox"
+                                            id="reviewMode"
+                                            checked={editingQuiz.reviewMode || false}
+                                            onChange={e => setEditingQuiz({ ...editingQuiz, reviewMode: e.target.checked })}
+                                            className="w-5 h-5 rounded border-purple-300 text-purple-600 focus:ring-purple-500 focus:ring-offset-0 cursor-pointer"
+                                        />
+                                        <label htmlFor="reviewMode" className="flex-1 cursor-pointer">
+                                            <div className="text-sm font-bold text-purple-900 dark:text-purple-100">Enable Review Mode</div>
+                                            <div className="text-xs text-purple-700 dark:text-purple-300">Show immediate feedback and explanations after each answer</div>
+                                        </label>
+                                    </div>
+                                    <button onClick={handleSaveQuiz} className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold">Save Quiz</button>
                                 </div>
-                                {editingQuestion && (
-                                    <div className="bg-gray-50 dark:bg-black/40 p-4 rounded-xl border border-gray-200 dark:border-white/10 space-y-3">
-                                        <div className="flex gap-4">
-                                            <div className="flex-1 space-y-1">
-                                                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Question Type</label>
-                                                <select
-                                                    value={editingQuestion.isBlock ? 'block' : editingQuestion.isCompiler ? 'compiler' : 'multiple-choice'}
-                                                    onChange={e => {
-                                                        const type = e.target.value;
-                                                        if (type === 'block') {
-                                                            setEditingQuestion({
-                                                                ...editingQuestion,
-                                                                type: 'multiple-choice', // Legacy fallback
-                                                                isBlock: true,
-                                                                isCompiler: false,
-                                                                blockConfig: { referenceXml: '', toolbox: DEFAULT_BLOCKLY_TOOLBOX, initialXml: '' }
-                                                            });
-                                                        } else if (type === 'compiler') {
-                                                            setEditingQuestion({
-                                                                ...editingQuestion,
-                                                                type: 'text', // Legacy fallback
-                                                                isBlock: false,
-                                                                isCompiler: true,
-                                                                compilerConfig: {
-                                                                    language: 'javascript',
-                                                                    allowedLanguages: COMPILER_ALLOWED_LANGUAGES,
-                                                                    initialCode: COMPILER_INITIAL_CODE['javascript'],
-                                                                    referenceCode: '// Enter the correct code solution here...'
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center bg-gray-50 dark:bg-white/5 p-4 rounded-xl">
+                                        <span className="text-gray-900 dark:text-white font-bold">Questions Editor</span>
+                                        <button onClick={() => setEditingQuestion({ id: 0, type: 'multiple-choice', part: 'A', question: '', options: ['', '', '', ''], correctAnswer: Math.floor(Math.random() * 4), points: 10, explanation: '' })} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-bold">Add Question</button>
+                                    </div>
+
+                                    {editingQuestion && editingQuestion.id === 0 && (
+                                        <QuestionEditor
+                                            question={editingQuestion}
+                                            onChange={setEditingQuestion}
+                                            onSave={() => handleAddQuestion({ ...editingQuestion, id: Date.now() })}
+                                            onCancel={() => setEditingQuestion(null)}
+                                        />
+                                    )}
+
+                                    <div className="space-y-2">
+                                        {editingQuiz.questions.map((q, i) => (
+                                            <React.Fragment key={q.id}>
+                                                {editingQuestion && editingQuestion.id === q.id ? (
+                                                    <QuestionEditor
+                                                        question={editingQuestion}
+                                                        onChange={setEditingQuestion}
+                                                        onSave={() => handleQuestionUpdate(editingQuestion)}
+                                                        onCancel={() => setEditingQuestion(null)}
+                                                    />
+                                                ) : (
+                                                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/5">
+                                                        <span className="text-gray-600 dark:text-gray-300 truncate w-2/3">{i + 1}. {q.question}</span>
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => {
+                                                                const qToEdit = { ...q };
+                                                                // Hydrate reference code if missing
+                                                                if (qToEdit.isCompiler && (!qToEdit.compilerConfig?.referenceCode || qToEdit.compilerConfig.referenceCode.trim() === '')) {
+                                                                    const lang = qToEdit.compilerConfig?.language || 'javascript';
+                                                                    const comment = lang.includes('python') ? '# Enter the correct code solution here...' : '// Enter the correct code solution here...';
+                                                                    qToEdit.compilerConfig = {
+                                                                        ...(qToEdit.compilerConfig || { language: 'javascript', allowedLanguages: ['javascript'], initialCode: '' }),
+                                                                        referenceCode: comment
+                                                                    };
                                                                 }
-                                                            });
-                                                        } else {
-                                                            setEditingQuestion({
-                                                                ...editingQuestion,
-                                                                type: 'multiple-choice',
-                                                                isBlock: false,
-                                                                isCompiler: false
-                                                            });
-                                                        }
-                                                    }}
-                                                    className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                                                >
-                                                    <option value="multiple-choice">Multiple Choice</option>
-                                                    <option value="block">Block (Scratch-like)</option>
-                                                    <option value="compiler">Code Compiler</option>
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <input placeholder="Question Text" value={editingQuestion.question} onChange={e => setEditingQuestion({ ...editingQuestion, question: e.target.value })} className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-
-                                        <div className="grid grid-cols-1 gap-2">
-                                            {/* Multiple Choice Editor */}
-                                            {(!editingQuestion.isBlock && !editingQuestion.isCompiler) && (
-                                                <>
-                                                    <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Click on an option to mark it as correct</label>
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        {editingQuestion.options?.map((opt, idx) => (
-                                                            <div key={idx} className="relative">
-                                                                <input
-                                                                    placeholder={`Option ${idx + 1}`}
-                                                                    value={opt}
-                                                                    onChange={e => {
-                                                                        const newOptions = [...(editingQuestion.options || [])];
-                                                                        newOptions[idx] = e.target.value;
-                                                                        setEditingQuestion({ ...editingQuestion, options: newOptions });
-                                                                    }}
-                                                                    onClick={() => setEditingQuestion({ ...editingQuestion, correctAnswer: idx })}
-                                                                    className={`w-full bg-white dark:bg-black/40 border-2 ${editingQuestion.correctAnswer === idx ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-200 dark:border-white/10'} rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none cursor-pointer transition-all`}
-                                                                />
-                                                                {editingQuestion.correctAnswer === idx && (
-                                                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400 text-xs font-bold pointer-events-none">
-                                                                        ✓ Correct
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </>
-                                            )}
-
-                                            {/* Block Editor Fields */}
-                                            {editingQuestion.isBlock && (
-                                                <div className="space-y-2 p-3 bg-gray-100 dark:bg-black/20 rounded-lg">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Block Reference XML (Answer)</label>
-                                                    <textarea
-                                                        value={editingQuestion.blockConfig?.referenceXml || ''}
-                                                        onChange={e => setEditingQuestion({ ...editingQuestion, blockConfig: { ...editingQuestion.blockConfig, referenceXml: e.target.value } })}
-                                                        placeholder="<xml>...</xml>"
-                                                        className="w-full h-24 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
-                                                    />
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Initial Workspace XML (Optional)</label>
-                                                    <textarea
-                                                        value={editingQuestion.blockConfig?.initialXml || ''}
-                                                        onChange={e => setEditingQuestion({ ...editingQuestion, blockConfig: { ...editingQuestion.blockConfig, initialXml: e.target.value } })}
-                                                        placeholder="<xml>...</xml>"
-                                                        className="w-full h-24 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
-                                                    />
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Toolbox XML (Optional - customization)</label>
-                                                    <textarea
-                                                        value={editingQuestion.blockConfig?.toolbox || ''}
-                                                        onChange={e => setEditingQuestion({ ...editingQuestion, blockConfig: { ...editingQuestion.blockConfig, toolbox: e.target.value } })}
-                                                        placeholder="<xml>...</xml> (Leave empty for default toolbox)"
-                                                        className="w-full h-24 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
-                                                    />
-                                                </div>
-                                            )}
-
-                                            {/* Compiler Editor Fields */}
-                                            {editingQuestion.isCompiler && (
-                                                <div className="space-y-2 p-3 bg-gray-100 dark:bg-black/20 rounded-lg">
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label className="text-xs font-bold text-gray-500 uppercase">Default Language</label>
-                                                            <select
-                                                                value={editingQuestion.compilerConfig?.language || 'javascript'}
-                                                                onChange={e => {
-                                                                    const newLang = e.target.value;
-                                                                    const currentRef = editingQuestion.compilerConfig?.referenceCode || '';
-
-                                                                    // Check if current ref is just a default placeholder (handles // and # and leading regex)
-                                                                    const isPlaceholder = !currentRef || currentRef.trim() === '' ||
-                                                                        /^\s*(\/\/|#)\s*Enter the correct code solution/.test(currentRef);
-
-                                                                    const newCommentPrefix = newLang.includes('python') ? '#' : '//';
-                                                                    const newRef = isPlaceholder
-                                                                        ? `${newCommentPrefix} Enter the correct code solution here...`
-                                                                        : currentRef;
-
-                                                                    setEditingQuestion({
-                                                                        ...editingQuestion,
-                                                                        compilerConfig: {
-                                                                            ...(editingQuestion.compilerConfig || { allowedLanguages: ['javascript'] }),
-                                                                            language: newLang,
-                                                                            initialCode: COMPILER_INITIAL_CODE[newLang] || '',
-                                                                            referenceCode: newRef
-                                                                        }
-                                                                    });
-                                                                }}
-                                                                className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
-                                                            >
-                                                                <option value="javascript">JavaScript</option>
-                                                                <option value="python">Python</option>
-                                                                <option value="typescript">TypeScript</option>
-                                                            </select>
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-xs font-bold text-gray-500 uppercase">Allowed Languages (comma sep)</label>
-                                                            <input
-                                                                value={editingQuestion.compilerConfig?.allowedLanguages?.join(',') || 'javascript'}
-                                                                onChange={e => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...(editingQuestion.compilerConfig || { language: 'javascript', initialCode: '', referenceCode: '' }), allowedLanguages: e.target.value.split(',').map(s => s.trim()) } })}
-                                                                className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
-                                                            />
+                                                                setEditingQuestion(qToEdit);
+                                                            }} className="text-blue-400"><Edit2 className="w-4 h-4" /></button>
+                                                            <button onClick={() => handleDeleteQuestion(q.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
                                                         </div>
                                                     </div>
-                                                    <label className="text-xs font-bold text-gray-500 uppercase mt-2">Reference Answer Code</label>
-                                                    <CompilerQuestion
-                                                        language={editingQuestion.compilerConfig?.language || 'javascript'}
-                                                        allowedLanguages={editingQuestion.compilerConfig?.allowedLanguages}
-                                                        initialCode={editingQuestion.compilerConfig?.referenceCode}
-                                                        onChange={code => setEditingQuestion({ ...editingQuestion, compilerConfig: { ...(editingQuestion.compilerConfig || { language: 'javascript', allowedLanguages: ['javascript'], initialCode: '' }), referenceCode: code } })}
-                                                        className="h-64"
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <label className="text-xs text-gray-500 uppercase font-bold">Points:</label>
-                                            <input type="number" value={editingQuestion.points} onChange={e => setEditingQuestion({ ...editingQuestion, points: parseInt(e.target.value) })} className="w-20 bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1" />
-                                        </div>
-                                        <input placeholder="Explanation (Optional)" value={editingQuestion.explanation || ''} onChange={e => setEditingQuestion({ ...editingQuestion, explanation: e.target.value })} className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-
-                                        <div className="flex gap-2">
-                                            <button onClick={() => { if (editingQuestion.id === 0) handleAddQuestion({ ...editingQuestion, id: Date.now() }); else handleQuestionUpdate(editingQuestion); }} className="flex-1 py-2 bg-green-600 text-white rounded-lg">Save</button>
-                                            <button onClick={() => setEditingQuestion(null)} className="flex-1 py-2 bg-gray-600 text-white rounded-lg">Cancel</button>
-                                        </div>
+                                                )}
+                                            </React.Fragment>
+                                        ))}
                                     </div>
-                                )}
-                                <div className="space-y-2">
-                                    {editingQuiz.questions.map((q, i) => (
-                                        <div key={q.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/5">
-                                            <span className="text-gray-600 dark:text-gray-300 truncate w-2/3">{i + 1}. {q.question}</span>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => {
-                                                    const qToEdit = { ...q };
-                                                    // Hydrate reference code if missing
-                                                    if (qToEdit.isCompiler && (!qToEdit.compilerConfig?.referenceCode || qToEdit.compilerConfig.referenceCode.trim() === '')) {
-                                                        const lang = qToEdit.compilerConfig?.language || 'javascript';
-                                                        const comment = lang.includes('python') ? '# Enter the correct code solution here...' : '// Enter the correct code solution here...';
-                                                        qToEdit.compilerConfig = {
-                                                            ...(qToEdit.compilerConfig || { language: 'javascript', allowedLanguages: ['javascript'], initialCode: '' }),
-                                                            referenceCode: comment
-                                                        };
-                                                    }
-                                                    setEditingQuestion(qToEdit);
-                                                }} className="text-blue-400"><Edit2 className="w-4 h-4" /></button>
-                                                <button onClick={() => handleDeleteQuestion(q.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></button>
-                                            </div>
-                                        </div>
-                                    ))}
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                </div>,
-                document.body
-            )}
+
+                            )}
+                        </div>
+                    </div>,
+                    document.body
+                )
+            }
 
             {/* Delete Confirmation Modal */}
-            {deleteConfirmation && createPortal(
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200 text-center">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 mb-6 border border-red-500/20">
-                            <Trash2 className="h-8 w-8 text-red-500" />
+            {
+                deleteConfirmation && createPortal(
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200 text-center">
+                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 mb-6 border border-red-500/20">
+                                <Trash2 className="h-8 w-8 text-red-500" />
+                            </div>
+                            <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Confirm Delete</h3>
+                            <p className="text-gray-500 dark:text-gray-400 mb-8 font-medium">
+                                Are you sure you want to delete this quiz? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setDeleteConfirmation(null)}
+                                    className="flex-1 px-6 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDeleteQuiz}
+                                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-500 transition-colors shadow-lg shadow-red-500/20"
+                                >
+                                    Delete
+                                </button>
+                            </div>
                         </div>
-                        <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Confirm Delete</h3>
-                        <p className="text-gray-500 dark:text-gray-400 mb-8 font-medium">
-                            Are you sure you want to delete this quiz? This action cannot be undone.
-                        </p>
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setDeleteConfirmation(null)}
-                                className="flex-1 px-6 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmDeleteQuiz}
-                                className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-500 transition-colors shadow-lg shadow-red-500/20"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
-        </div>
+                    </div>,
+                    document.body
+                )
+            }
+        </div >
     );
 };
 

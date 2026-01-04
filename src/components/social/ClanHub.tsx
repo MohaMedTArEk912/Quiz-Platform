@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import type { Clan, UserData } from '../../types';
 import { Users, Shield, Trophy, Search, LogOut, Star, UserPlus, Edit2, Check, X, MoreVertical, Trash2, ArrowUpCircle, ArrowDownCircle, Bell } from 'lucide-react';
+import Avatar from '../Avatar';
 import { useNotification } from '../../context/NotificationContext';
 import { useConfirm } from '../../hooks/useConfirm';
 import ConfirmDialog from '../ConfirmDialog';
@@ -253,8 +254,12 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                     {clan.activeJoinRequests.map((req: any) => (
                                         <div key={req.userId} className="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center font-bold text-gray-500">
-                                                    {req.name ? req.name.substring(0, 2).toUpperCase() : '??'}
+                                                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center font-bold text-gray-500 overflow-hidden">
+                                                    {(req as any).avatar ? (
+                                                        <Avatar config={(req as any).avatar} size="sm" className="w-full h-full" />
+                                                    ) : (
+                                                        req.name ? req.name.substring(0, 2).toUpperCase() : '??'
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <div className="font-bold text-gray-900 dark:text-white">{req.name || 'Unknown User'}</div>
@@ -274,8 +279,12 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {clan.members.map((member) => (
                                 <div key={member.userId} className="relative flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 group">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center font-bold text-lg text-gray-600 dark:text-gray-300">
-                                        {member.name ? member.name.substring(0, 2).toUpperCase() : '??'}
+                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center font-bold text-lg text-gray-600 dark:text-gray-300 overflow-hidden">
+                                        {member.avatar ? (
+                                            <Avatar config={member.avatar} size="md" className="w-full h-full" />
+                                        ) : (
+                                            member.name ? member.name.substring(0, 2).toUpperCase() : '??'
+                                        )}
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
@@ -372,7 +381,18 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                             <div className="flex-1 overflow-y-auto space-y-2">
                                 {inviteResults.map(u => (
                                     <div key={u.userId} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-black/20 rounded-xl">
-                                        <span className="font-bold  text-gray-900 dark:text-white">{u.name}</span>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                                                {u.avatar ? (
+                                                    <Avatar config={u.avatar} size="sm" className="w-full h-full" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center font-bold text-xs text-gray-500">
+                                                        {u.name.substring(0, 1)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <span className="font-bold text-gray-900 dark:text-white">{u.name}</span>
+                                        </div>
                                         <button onClick={() => sendInvite(u.userId)} className="px-3 py-1 bg-violet-600 text-white rounded-lg text-sm font-bold">Invite</button>
                                     </div>
                                 ))}

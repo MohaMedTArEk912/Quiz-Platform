@@ -341,6 +341,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {selectedTab === 'reviews' && (
                             <ReviewManagement
                                 currentUser={currentUser}
+                                users={users}
                                 quizzes={quizzes}
                                 pendingReviews={pendingReviews}
                                 onRefresh={handleRefresh}

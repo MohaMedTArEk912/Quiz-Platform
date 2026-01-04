@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { Check, BookOpen } from 'lucide-react';
+import Avatar from '../Avatar.tsx';
 import type { AttemptData, Quiz, UserData } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 
 interface ReviewManagementProps {
     currentUser: UserData;
+    users: UserData[];
     quizzes: Quiz[];
     pendingReviews: AttemptData[];
     onRefresh: () => void;
     onNotification: (type: 'success' | 'error', message: string) => void;
 }
 
-const ReviewManagement: React.FC<ReviewManagementProps> = ({ currentUser, quizzes, pendingReviews, onRefresh, onNotification }) => {
+const ReviewManagement: React.FC<ReviewManagementProps> = ({ currentUser, users, quizzes, pendingReviews, onRefresh, onNotification }) => {
     const [reviewingAttempt, setReviewingAttempt] = useState<AttemptData | null>(null);
     const [reviewFeedback, setReviewFeedback] = useState<Record<number, string>>({});
     const [reviewScores, setReviewScores] = useState<Record<string, number>>({});
@@ -146,8 +148,17 @@ const ReviewManagement: React.FC<ReviewManagementProps> = ({ currentUser, quizze
                         <div key={attempt.attemptId} className="flex justify-between items-center bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/5 hover:border-purple-500/30 transition-all group shadow-sm">
                             <div>
                                 <div className="flex items-center gap-3 mb-1">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white text-xs">
-                                        {attempt.userName.charAt(0)}
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 p-0.5 flex items-center justify-center shadow-md overflow-hidden">
+                                        <div className="w-full h-full bg-white dark:bg-[#13141f] rounded-full overflow-hidden flex items-center justify-center">
+                                            {(() => {
+                                                const student = users?.find(u => u.userId === attempt.userId);
+                                                return student?.avatar ? (
+                                                    <Avatar config={student.avatar} size="sm" className="w-full h-full" />
+                                                ) : (
+                                                    <span className="font-bold text-gray-700 dark:text-gray-200 text-xs">{attempt.userName.charAt(0)}</span>
+                                                );
+                                            })()}
+                                        </div>
                                     </div>
                                     <div className="text-gray-900 dark:text-white font-bold text-lg group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{attempt.userName}</div>
                                 </div>

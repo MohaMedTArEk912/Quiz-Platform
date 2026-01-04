@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 import { Users, UserPlus, Search, Check, X, Shield, Swords, Zap, Trophy } from 'lucide-react';
 import Avatar from '../Avatar';
 
+
 interface FriendListProps {
     currentUser: UserData;
     allUsers: UserData[];
@@ -293,8 +294,14 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                             return (
                                 <div key={challenge.token} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-black text-lg">
-                                            <Swords className="w-6 h-6" />
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-black text-lg p-0.5 shadow-md overflow-hidden">
+                                            <div className="w-full h-full bg-white dark:bg-[#13141f] rounded-[10px] flex items-center justify-center overflow-hidden">
+                                                {opponentUser?.avatar ? (
+                                                    <Avatar config={opponentUser.avatar} size="md" className="w-full h-full" />
+                                                ) : (
+                                                    <span className="text-gray-900 dark:text-white">{opponentUser?.name.charAt(0) || '?'}</span>
+                                                )}
+                                            </div>
                                         </div>
                                         <div>
                                             <div className="font-bold text-gray-900 dark:text-white text-lg">vs {opponentUser?.name || 'Unknown'}</div>

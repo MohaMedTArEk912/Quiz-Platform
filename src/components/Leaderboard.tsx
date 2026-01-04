@@ -5,6 +5,7 @@ import Navbar from './Navbar.tsx';
 import Avatar from './Avatar.tsx';
 import { api } from '../lib/api';
 
+
 interface ClanLeaderboardEntry {
     clanId: string;
     name: string;
@@ -190,8 +191,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                             </div>
                             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 rounded-3xl shadow-xl shadow-indigo-500/20 flex items-center gap-5 relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="p-4 bg-white/20 rounded-2xl text-white backdrop-blur-sm">
-                                    <Trophy className="w-8 h-8" />
+                                <div className="p-1 rounded-2xl bg-white/20 backdrop-blur-sm shadow-inner overflow-hidden w-16 h-16 flex items-center justify-center">
+                                    {currentUser.avatar ? (
+                                        <div className="w-full h-full rounded-[10px] overflow-hidden bg-white/10">
+                                            <Avatar config={currentUser.avatar} size="md" className="w-full h-full" />
+                                        </div>
+                                    ) : (
+                                        <Trophy className="w-8 h-8 text-white" />
+                                    )}
                                 </div>
                                 <div className="relative z-10">
                                     <div className="text-sm text-indigo-100 font-bold uppercase tracking-wider">Your Rank</div>

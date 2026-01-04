@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit2, Trash2, Users, Eye, EyeOff } from 'lucide-react';
+import { Edit2, Trash2, Users, Eye, EyeOff, Search } from 'lucide-react';
+import Avatar from '../Avatar.tsx';
 import type { UserData } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 
@@ -19,6 +20,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onR
     const [originalUser, setOriginalUser] = useState<EditableUser | null>(null);
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; id: string } | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredUsers = users.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const handleUpdateUser = async (user: EditableUser) => {
         const normalizedEmail = user.email.toLowerCase().trim();
@@ -72,6 +79,17 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onR
 
     return (
         <div className="overflow-x-auto">
+            <div className="flex items-center gap-4 mb-6 bg-white dark:bg-[#13141f] p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm">
+                <Search className="w-5 h-5 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="Search users by name or email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder-gray-500 font-medium"
+                />
+            </div>
+
             <table className="w-full text-left">
                 <thead>
                     <tr className="border-b border-gray-100 dark:border-white/5 text-gray-400 dark:text-gray-500 text-xs font-bold uppercase tracking-widest">
@@ -82,12 +100,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, currentUser, onR
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                    {users.map(user => (
+                    {filteredUsers.map(user => (
                         <tr key={user.userId} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                             <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white shadow-lg">
-                                        {user.name.charAt(0)}
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 p-0.5 shadow-lg">
+                                        <div className="w-full h-full bg-white dark:bg-[#13141f] rounded-[10px] overflow-hidden flex items-center justify-center">
+                                            {user.avatar ? (
+                                                <Avatar config={user.avatar} size="sm" className="w-full h-full" />
+                                            ) : (
+                                                <span className="font-bold text-white text-sm">{user.name.charAt(0)}</span>
+                                            )}
+                                        </div>
                                     </div>
                                     <span className="font-bold text-gray-900 dark:text-white">{user.name}</span>
                                 </div>
