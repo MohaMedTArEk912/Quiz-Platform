@@ -353,7 +353,7 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center bg-gray-50 dark:bg-white/5 p-4 rounded-xl">
                                     <span className="text-gray-900 dark:text-white font-bold">Questions Editor</span>
-                                    <button onClick={() => setEditingQuestion({ id: 0, type: 'multiple-choice', part: 'A', question: '', options: ['', '', '', ''], correctAnswer: 0, points: 10, explanation: '' })} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-bold">Add Question</button>
+                                    <button onClick={() => setEditingQuestion({ id: 0, type: 'multiple-choice', part: 'A', question: '', options: ['', '', '', ''], correctAnswer: Math.floor(Math.random() * 4), points: 10, explanation: '' })} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-bold">Add Question</button>
                                 </div>
                                 {editingQuestion && (
                                     <div className="bg-gray-50 dark:bg-black/40 p-4 rounded-xl border border-gray-200 dark:border-white/10 space-y-3">
@@ -408,21 +408,31 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                                         <div className="grid grid-cols-1 gap-2">
                                             {/* Multiple Choice Editor */}
                                             {(!editingQuestion.isBlock && !editingQuestion.isCompiler) && (
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {editingQuestion.options?.map((opt, idx) => (
-                                                        <input
-                                                            key={idx}
-                                                            placeholder={`Option ${idx + 1}`}
-                                                            value={opt}
-                                                            onChange={e => {
-                                                                const newOptions = [...(editingQuestion.options || [])];
-                                                                newOptions[idx] = e.target.value;
-                                                                setEditingQuestion({ ...editingQuestion, options: newOptions });
-                                                            }}
-                                                            className={`w-full bg-white dark:bg-black/40 border ${editingQuestion.correctAnswer === idx ? 'border-green-500' : 'border-gray-200 dark:border-white/10'} rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none`}
-                                                        />
-                                                    ))}
-                                                </div>
+                                                <>
+                                                    <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Click on an option to mark it as correct</label>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {editingQuestion.options?.map((opt, idx) => (
+                                                            <div key={idx} className="relative">
+                                                                <input
+                                                                    placeholder={`Option ${idx + 1}`}
+                                                                    value={opt}
+                                                                    onChange={e => {
+                                                                        const newOptions = [...(editingQuestion.options || [])];
+                                                                        newOptions[idx] = e.target.value;
+                                                                        setEditingQuestion({ ...editingQuestion, options: newOptions });
+                                                                    }}
+                                                                    onClick={() => setEditingQuestion({ ...editingQuestion, correctAnswer: idx })}
+                                                                    className={`w-full bg-white dark:bg-black/40 border-2 ${editingQuestion.correctAnswer === idx ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-200 dark:border-white/10'} rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none cursor-pointer transition-all`}
+                                                                />
+                                                                {editingQuestion.correctAnswer === idx && (
+                                                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400 text-xs font-bold pointer-events-none">
+                                                                        ✓ Correct
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </>
                                             )}
 
                                             {/* Block Editor Fields */}
