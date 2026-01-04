@@ -13,6 +13,7 @@ export interface Quiz {
     isTournamentOnly?: boolean;
     linkedTrackId?: string;
     linkedModuleId?: string;
+    reviewMode?: boolean;
     questions: Question[];
 }
 

@@ -334,6 +334,19 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                                         </select>
                                     </div>
                                 </div>
+                                <div className="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                                    <input
+                                        type="checkbox"
+                                        id="reviewMode"
+                                        checked={editingQuiz.reviewMode || false}
+                                        onChange={e => setEditingQuiz({ ...editingQuiz, reviewMode: e.target.checked })}
+                                        className="w-5 h-5 rounded border-purple-300 text-purple-600 focus:ring-purple-500 focus:ring-offset-0 cursor-pointer"
+                                    />
+                                    <label htmlFor="reviewMode" className="flex-1 cursor-pointer">
+                                        <div className="text-sm font-bold text-purple-900 dark:text-purple-100">Enable Review Mode</div>
+                                        <div className="text-xs text-purple-700 dark:text-purple-300">Show immediate feedback and explanations after each answer</div>
+                                    </label>
+                                </div>
                                 <button onClick={handleSaveQuiz} className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold">Save Quiz</button>
                             </div>
                         ) : (

@@ -182,6 +182,18 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                             You scored <span className="font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-lg border border-gray-200 dark:border-white/5">{result.score}</span> out of <span className="font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-lg border border-gray-200 dark:border-white/5">{result.totalQuestions}</span> questions
                         </p>
 
+                        {/* Review Mode Indicator */}
+                        {quiz.reviewMode && (
+                            <div className="mb-6 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl">
+                                <p className="text-sm font-bold text-purple-900 dark:text-purple-100 flex items-center justify-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Review Mode - You received immediate feedback during the quiz
+                                </p>
+                            </div>
+                        )}
+
 
                         {/* Stats */}
                         <div className="grid grid-cols-2 gap-4 mb-10">

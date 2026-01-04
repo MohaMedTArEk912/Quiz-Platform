@@ -50,6 +50,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
     const [usedPowerUps, setUsedPowerUps] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Review Mode States
+    const [questionSubmitted, setQuestionSubmitted] = useState(false);
+    const [isCurrentAnswerCorrect, setIsCurrentAnswerCorrect] = useState(false);
+
     const quizIdentifier = quiz.id || quiz._id || quiz.title;
     const storageKey = `quiz_progress_${user.userId}_${quizIdentifier}`;
 
@@ -122,6 +126,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         setCodeSnippetMessage(null);
         setDebugHelperUsed(false);
         setDebugHelperMessage(null);
+        setQuestionSubmitted(false);
+        setIsCurrentAnswerCorrect(false);
     };
 
     const handleAnswer = (answer: string | number, code?: string) => {
@@ -278,6 +284,81 @@ def solution():
         setDebugHelperUsed(true);
         setUsedPowerUps(prev => [...prev, 'debug_helper']);
         onPowerUpUsed?.('debug_helper');
+    };
+
+    // Review Mode: Check if current answer is correct
+    const checkAnswerCorrectness = (questionIndex: number, answer: string | number): boolean => {
+        const question = quiz.questions[questionIndex];
+
+        if (question.isCompiler) {
+            // For compiler questions, compare with reference code
+            if (question.compilerConfig?.referenceCode && answer) {
+                const normalizeCode = (str: string) => {
+                    return str
+                        .replace(/\/\*[\s\S]*?\*\//g, '')
+                        .replace(/\/\/.*/g, '')
+                        .replace(/#.*/g, '')
+                        .replace(/\s+/g, '')
+                        .replace(/;/g, '')
+                        .replace(/'/g, '"')
+                        .trim();
+                };
+                const userCode = normalizeCode(String(answer));
+                const refCode = normalizeCode(question.compilerConfig.referenceCode);
+                return userCode === refCode;
+            }
+            return false;
+        } else if (question.isBlock) {
+            // For block questions, compare generated code
+            const userCode = answerCodes[questionIndex];
+            if (question.blockConfig?.referenceXml && userCode) {
+                try {
+                    registerBlocklyBlocks();
+                    const headless = new Blockly.Workspace();
+                    const xmlDom = Blockly.utils.xml.textToDom(question.blockConfig.referenceXml);
+                    Blockly.Xml.domToWorkspace(xmlDom, headless);
+                    const refCode = javascriptGenerator.workspaceToCode(headless);
+                    headless.dispose();
+
+                    const normalizeCode = (str: string) => {
+                        return str
+                            .replace(/\/\*[\s\S]*?\*\//g, '')
+                            .replace(/\/\/.*/g, '')
+                            .replace(/#.*/g, '')
+                            .replace(/\s+/g, '')
+                            .replace(/;/g, '')
+                            .replace(/'/g, '"')
+                            .trim();
+                    };
+
+                    const normUser = normalizeCode(userCode);
+                    const normRef = normalizeCode(refCode);
+                    return normUser === normRef;
+                } catch (e) {
+                    console.error("Block checking error:", e);
+                    return false;
+                }
+            }
+            return false;
+        } else if (question.type === 'text') {
+            // Text questions require manual review
+            return false;
+        } else {
+            // Multiple choice questions
+            return answer === question.correctAnswer;
+        }
+    };
+
+    // Review Mode: Submit current question answer
+    const handleSubmitAnswer = () => {
+        if (questionSubmitted || isSubmitting) return;
+
+        const answer = answers[currentQuestion];
+        if (answer === undefined) return;
+
+        const isCorrect = checkAnswerCorrectness(currentQuestion, answer);
+        setIsCurrentAnswerCorrect(isCorrect);
+        setQuestionSubmitted(true);
     };
 
     const handleQuizComplete = useCallback(() => {
@@ -1024,7 +1105,7 @@ def solution():
                                         initialXml={selectedAnswer as string || q.blockConfig?.initialXml}
                                         toolbox={q.blockConfig?.toolbox}
                                         onChange={(xml, code) => handleAnswer(xml, code)}
-                                        readOnly={isSubmitting}
+                                        readOnly={isSubmitting || (quiz.reviewMode && questionSubmitted)}
                                     />
                                 </React.Suspense>
                             ) : q.isCompiler ? (
@@ -1034,13 +1115,14 @@ def solution():
                                         allowedLanguages={q.compilerConfig?.allowedLanguages || ['javascript']}
                                         initialCode={selectedAnswer as string || q.compilerConfig?.initialCode}
                                         onChange={(code) => handleAnswer(code)}
-                                        readOnly={isSubmitting}
+                                        readOnly={isSubmitting || (quiz.reviewMode && questionSubmitted)}
                                     />
                                 </React.Suspense>
                             ) : isTextQuestion ? (
                                 <textarea
                                     value={selectedAnswer as string || ''}
                                     onChange={(e) => handleAnswer(e.target.value)}
+                                    disabled={quiz.reviewMode && questionSubmitted}
                                     placeholder="Type your answer here..."
                                     className="w-full p-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none min-h-[150px]"
                                 />
@@ -1053,10 +1135,11 @@ def solution():
                                         <button
                                             key={index}
                                             onClick={() => handleAnswer(index)}
+                                            disabled={quiz.reviewMode && questionSubmitted}
                                             className={`w-full p-5 rounded-xl text-left transition-all flex items-center gap-4 font-medium text-lg group ${isSelected
                                                 ? 'bg-purple-100 dark:bg-purple-900/40 border-2 border-purple-500 text-purple-900 dark:text-purple-100'
                                                 : 'bg-gray-100 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 hover:bg-gray-200 dark:hover:bg-purple-900/20 text-gray-700 dark:text-gray-200'
-                                                }`}
+                                                } ${quiz.reviewMode && questionSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}
                                         >
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold ${isSelected ? 'bg-purple-500 text-white' : 'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
                                                 }`}>
@@ -1072,9 +1155,51 @@ def solution():
                             )}
                         </div>
 
+                        {/* Review Mode Feedback */}
+                        {quiz.reviewMode && questionSubmitted && (
+                            <div className={`mt-6 p-6 rounded-2xl border-2 animate-in fade-in slide-in-from-top-4 duration-500 ${isCurrentAnswerCorrect
+                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border-green-400 dark:border-green-600'
+                                : 'bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/30 dark:to-orange-900/30 border-red-400 dark:border-red-600'
+                                }`}>
+                                <div className="flex items-start gap-4">
+                                    <div className={`p-3 rounded-full ${isCurrentAnswerCorrect
+                                        ? 'bg-green-500 dark:bg-green-600'
+                                        : 'bg-red-500 dark:bg-red-600'
+                                        }`}>
+                                        {isCurrentAnswerCorrect ? (
+                                            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        ) : (
+                                            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className={`text-2xl font-black mb-2 ${isCurrentAnswerCorrect
+                                            ? 'text-green-900 dark:text-green-100'
+                                            : 'text-red-900 dark:text-red-100'
+                                            }`}>
+                                            {isCurrentAnswerCorrect ? '🎉 Correct!' : '❌ Incorrect'}
+                                        </h3>
+                                        {!isCurrentAnswerCorrect && q.explanation && (
+                                            <div className="mt-3 p-4 bg-white/60 dark:bg-black/20 rounded-xl border border-red-200 dark:border-red-800/50">
+                                                <p className="text-sm font-bold text-red-900 dark:text-red-200 mb-2">📚 Explanation:</p>
+                                                <p className="text-red-800 dark:text-red-100 leading-relaxed">{q.explanation}</p>
+                                            </div>
+                                        )}
+                                        {isCurrentAnswerCorrect && q.explanation && (
+                                            <p className="text-green-700 dark:text-green-200 mt-2 leading-relaxed">{q.explanation}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Navigation Buttons */}
                         <div className="flex gap-4">
-                            {currentQuestion > 0 && (
+                            {currentQuestion > 0 && !quiz.reviewMode && (
                                 <button
                                     onClick={previousQuestion}
                                     className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-4 rounded-xl font-bold text-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
@@ -1082,28 +1207,64 @@ def solution():
                                     Previous
                                 </button>
                             )}
-                            <button
-                                onClick={nextQuestion}
-                                disabled={selectedAnswer === undefined || isSubmitting}
-                                className={`flex-1 py-4 rounded-xl font-bold text-xl transition-all ${selectedAnswer !== undefined && !isSubmitting
-                                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
-                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    }`}
-                            >
-                                {isSubmitting ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                        <div className="w-5 h-5 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                                        Submitting...
-                                    </span>
+
+                            {/* Review Mode: Show Submit Answer or Continue */}
+                            {quiz.reviewMode ? (
+                                questionSubmitted ? (
+                                    <button
+                                        onClick={nextQuestion}
+                                        disabled={isSubmitting}
+                                        className={`flex-1 py-4 rounded-xl font-bold text-xl transition-all ${!isSubmitting
+                                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            }`}
+                                    >
+                                        {isSubmitting ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <div className="w-5 h-5 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                                                Submitting...
+                                            </span>
+                                        ) : (
+                                            currentQuestion < quiz.questions.length - 1 ? 'Continue →' : 'Finish Quiz'
+                                        )}
+                                    </button>
                                 ) : (
-                                    currentQuestion < quiz.questions.length - 1 ? (
+                                    <button
+                                        onClick={handleSubmitAnswer}
+                                        disabled={selectedAnswer === undefined || isSubmitting}
+                                        className={`flex-1 py-4 rounded-xl font-bold text-xl transition-all ${selectedAnswer !== undefined && !isSubmitting
+                                            ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            }`}
+                                    >
+                                        Submit Answer
+                                    </button>
+                                )
+                            ) : (
+                                /* Normal Mode: Show Next/Submit */
+                                <button
+                                    onClick={nextQuestion}
+                                    disabled={selectedAnswer === undefined || isSubmitting}
+                                    className={`flex-1 py-4 rounded-xl font-bold text-xl transition-all ${selectedAnswer !== undefined && !isSubmitting
+                                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
+                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                >
+                                    {isSubmitting ? (
                                         <span className="flex items-center justify-center gap-2">
-                                            Next Question
-                                            <span className="text-xs font-normal opacity-70 hidden lg:inline-block border border-white/30 px-1.5 rounded ml-1">↵</span>
+                                            <div className="w-5 h-5 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                                            Submitting...
                                         </span>
-                                    ) : 'Submit Quiz'
-                                )}
-                            </button>
+                                    ) : (
+                                        currentQuestion < quiz.questions.length - 1 ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                Next Question
+                                                <span className="text-xs font-normal opacity-70 hidden lg:inline-block border border-white/30 px-1.5 rounded ml-1">↵</span>
+                                            </span>
+                                        ) : 'Submit Quiz'
+                                    )}
+                                </button>
+                            )}
                         </div>
 
                         {selectedAnswer === undefined && (

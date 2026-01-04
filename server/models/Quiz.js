@@ -43,6 +43,7 @@ const quizSchema = new mongoose.Schema({
   isTournamentOnly: { type: Boolean, default: false },
   linkedTrackId: { type: String }, // Links this quiz to a specific skill track
   linkedModuleId: { type: String }, // Links this quiz to a specific module within that track
+  reviewMode: { type: Boolean, default: false }, // Enable immediate feedback after each answer
   questions: [questionSchema]
 });
 
