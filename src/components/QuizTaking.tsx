@@ -28,6 +28,7 @@ type SavedQuizState = {
     answers: Record<number, string | number>;
     timeLeft: number;
     lastUpdated: number;
+    questionOrder?: number[];
 };
 
 const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack, onProgress, powerUps, onPowerUpUsed, hidePowerUps }) => {
@@ -62,6 +63,19 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
 
     const isUnlimitedTime = quiz.timeLimit === 0;
 
+    const generateShuffledIndices = useCallback((length: number) => {
+        const indices = Array.from({ length }, (_, i) => i);
+        for (let i = length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        return indices;
+    }, []);
+
+    const [questionOrder, setQuestionOrder] = useState<number[]>(() =>
+        generateShuffledIndices(quiz.questions ? quiz.questions.length : 0)
+    );
+
     const initialSavedState = useMemo(() => {
         const saved = sessionStorage.getItem(storageKey);
         if (!saved) return null;
@@ -93,22 +107,30 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
             currentQuestion,
             answers,
             timeLeft,
-            lastUpdated: Date.now()
+            lastUpdated: Date.now(),
+            questionOrder
         };
         sessionStorage.setItem(storageKey, JSON.stringify(state));
-    }, [currentQuestion, answers, timeLeft, quizIdentifier, storageKey, showResumePrompt, isSubmitting]);
+    }, [currentQuestion, answers, timeLeft, quizIdentifier, storageKey, showResumePrompt, isSubmitting, questionOrder]);
 
     const handleResume = () => {
         if (savedState) {
             setCurrentQuestion(savedState.currentQuestion);
             setAnswers(savedState.answers);
             setTimeLeft(savedState.timeLeft);
+            if (savedState.questionOrder) {
+                setQuestionOrder(savedState.questionOrder);
+            } else {
+                // Backward compatibility for saved states without order
+                setQuestionOrder(Array.from({ length: quiz.questions.length }, (_, i) => i));
+            }
         }
         resetQuestionState();
         setShowResumePrompt(false);
     };
 
     const handleStartNew = () => {
+        setQuestionOrder(generateShuffledIndices(quiz.questions.length));
         sessionStorage.removeItem(storageKey);
         setSavedState(null);
         setShowResumePrompt(false);
@@ -148,7 +170,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         if (isSubmitting) return;
         const newAnswers = {
             ...answers,
-            [currentQuestion]: answer
+            [questionOrder[currentQuestion]]: answer
         };
         setAnswers(newAnswers);
 
@@ -156,7 +178,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         if (code !== undefined) {
             setAnswerCodes(prev => ({
                 ...prev,
-                [currentQuestion]: code
+                [questionOrder[currentQuestion]]: code
             }));
         }
 
@@ -176,7 +198,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
 
     const useFiftyFifty = () => {
         if (isSubmitting) return;
-        const q = quiz.questions[currentQuestion];
+        const q = quiz.questions[questionOrder[currentQuestion]];
         if (fiftyUsed || (q.type === 'text') || countPowerUp('5050') <= 0) return;
         const incorrect = q.options?.map((_, idx) => idx).filter(idx => idx !== q.correctAnswer) || [];
         if (incorrect.length <= 1) return;
@@ -198,7 +220,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
 
     const useHint = () => {
         if (isSubmitting) return;
-        const q = quiz.questions[currentQuestion];
+        const q = quiz.questions[questionOrder[currentQuestion]];
         if (hintUsed || countPowerUp('hint') <= 0) return;
 
         // Works for multiple choice questions
@@ -220,7 +242,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
 
     const useBlockHint = () => {
         if (isSubmitting) return;
-        const q = quiz.questions[currentQuestion];
+        const q = quiz.questions[questionOrder[currentQuestion]];
         if (blockHintUsed || countPowerUp('block_hint') <= 0) return;
         if (!q.isBlock) return; // Only for block questions
 
@@ -245,7 +267,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
 
     const useCodeSnippet = () => {
         if (isSubmitting) return;
-        const q = quiz.questions[currentQuestion];
+        const q = quiz.questions[questionOrder[currentQuestion]];
         if (codeSnippetUsed || countPowerUp('code_snippet') <= 0) return;
         if (!q.isBlock && !q.isCompiler) return;
 
@@ -279,7 +301,7 @@ def solution():
 
     const useDebugHelper = () => {
         if (isSubmitting) return;
-        const q = quiz.questions[currentQuestion];
+        const q = quiz.questions[questionOrder[currentQuestion]];
         if (debugHelperUsed || countPowerUp('debug_helper') <= 0) return;
         if (!q.isBlock && !q.isCompiler) return;
 
@@ -367,10 +389,10 @@ def solution():
     const handleSubmitAnswer = () => {
         if (questionSubmitted || isSubmitting) return;
 
-        const answer = answers[currentQuestion];
+        const answer = answers[questionOrder[currentQuestion]];
         if (answer === undefined) return;
 
-        const isCorrect = checkAnswerCorrectness(currentQuestion, answer);
+        const isCorrect = checkAnswerCorrectness(questionOrder[currentQuestion], answer);
         setIsCurrentAnswerCorrect(isCorrect);
         setQuestionSubmitted(true);
 
@@ -561,9 +583,9 @@ def solution():
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const q = quiz.questions && quiz.questions.length > 0 ? quiz.questions[currentQuestion] : null;
+    const q = quiz.questions && quiz.questions.length > 0 ? quiz.questions[questionOrder[currentQuestion]] : null;
     const progress = quiz.questions ? ((currentQuestion + 1) / quiz.questions.length) * 100 : 0;
-    const selectedAnswer = answers[currentQuestion];
+    const selectedAnswer = answers[questionOrder[currentQuestion]];
     const answeredCount = Object.keys(answers).length;
     const isTextQuestion = q ? q.type === 'text' : false;
 
@@ -610,7 +632,8 @@ def solution():
                 if (['1', '2', '3', '4'].includes(e.key) && !questionSubmitted) {
                     if (isTextQuestion) return;
                     const index = parseInt(e.key) - 1;
-                    if (quiz.questions[currentQuestion].options && index < (quiz.questions[currentQuestion].options?.length || 0)) {
+                    const question = quiz.questions[questionOrder[currentQuestion]];
+                    if (question.options && index < (question.options?.length || 0)) {
                         if (!eliminatedOptions.has(index)) {
                             handleAnswer(index);
                         }
@@ -623,7 +646,8 @@ def solution():
                 if (['1', '2', '3', '4'].includes(e.key)) {
                     if (isTextQuestion) return;
                     const index = parseInt(e.key) - 1;
-                    if (quiz.questions[currentQuestion].options && index < (quiz.questions[currentQuestion].options?.length || 0)) {
+                    const question = quiz.questions[questionOrder[currentQuestion]];
+                    if (question.options && index < (question.options?.length || 0)) {
                         if (!eliminatedOptions.has(index)) {
                             handleAnswer(index);
                         }
@@ -645,7 +669,7 @@ def solution():
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [currentQuestion, answers, showResumePrompt, isSubmitting, quiz.questions, quiz.reviewMode, selectedAnswer, eliminatedOptions, questionSubmitted]);
+    }, [currentQuestion, answers, showResumePrompt, isSubmitting, quiz.questions, quiz.reviewMode, selectedAnswer, eliminatedOptions, questionSubmitted, questionOrder]);
 
     if (!quiz.questions || quiz.questions.length === 0) {
         return (

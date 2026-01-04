@@ -1,0 +1,1066 @@
+[
+  {
+    "__v": 0,
+    "category": "ISS",
+    "coinsReward": 2000,
+    "description": "Ch2,3,4\n",
+    "difficulty": "Advanced",
+    "icon": "🔒",
+    "isTournamentOnly": false,
+    "passingScore": 70,
+    "questions": [
+      {
+        "id": 100,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "______ means the protection of data from modification by unknown users.",
+        "options": [
+          "Confidentiality",
+          "Integrity",
+          "Authentication",
+          "Non-repudiation"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Malware can implant themeans torecord subsequent communications, keystrokes andmouse clicks ,andsend thisdataback to themalware’s owneroperator .",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2c7"
+      },
+      {
+        "id": 104,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Data ___________ is used to ensure confidentiality.",
+        "options": [
+          "Encryption",
+          "Locking",
+          "Deleting",
+          "Backup"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security principles.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2c8"
+      },
+      {
+        "id": 106,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Data integrity gets compromised when _____ and _____ are ta ken control off.",
+        "options": [
+          "Access control, file deletion",
+          "Network, file permission",
+          "Access control, file permission",
+          "Network, system"
+        ],
+        "correctAnswer": 2,
+        "explanation": "Thedisadvantage ofcontrol flowisthedifficulty inverifying aprogram's integrity .",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2c9"
+      },
+      {
+        "id": 116,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "It can be a software program or a hardware device that filters all data packets coming through",
+        "options": [
+          "Antivirus",
+          "Firewall",
+          "Cookies",
+          "Malware"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Refer to course materials for detailed explanation.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2ca"
+      },
+      {
+        "id": 131,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Which of the following characteristics can be used to differentiate worms from viruses? B. Worms always spread from system to system withou t user intervention. C. Worms always carry a malicious payload that impacts infected systems.",
+        "options": [
+          "Agent",
+          "Mashup",
+          "Applet",
+          "Script",
+          "They use hidden form variables",
+          "Browsers do not block and detect them",
+          "They are encrypted"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Thebrowser becomes theclient software ,which works withalloftheenterprise’s webapplications .",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2cb"
+      },
+      {
+        "id": 151,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Parallel systems areuseful indistributed computing applications, but parallelism isnotoften auseful concept intherealm ofsecurity.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Using layers inaseries rather than inparallel isimportant .",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2cc"
+      },
+      {
+        "id": 153,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Preventing anapplication from accessing hardware directly isalso a form ofdata hiding .Data hiding isoften akeyelement insecurity controls aswell asinprogramming.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "================================================================================ Page 7 ================================================================================ Protection Mechanisms Data Hiding Data hiding isexactly what itsounds like:preventing data from being discovered oraccessed byasubject bypositioning thedata inalogical storage compartment thatisnotaccessible orseen bythesubject .",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2cd"
+      },
+      {
+        "id": 166,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Secret Used fordata ofarestricted nature .The unauthorized disclosure ofdata classified assecret will have significant effects and cause critical damage to national security.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "There arefive levels ofgovernment/ military classification (listed here from highest tolowest) : Top secret The highest level ofclassification .",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2ce"
+      },
+      {
+        "id": 167,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Sensitive butunclassified Used fordata ofasensitive orprivate nature, butthe disclosure ofthisdata would notcause significant damage.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Securing everything atalowsecurity level means sensitive data iseasily accessible .",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2cf"
+      },
+      {
+        "id": 171,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Server characteristics .Intypical client -server applications, theserver component performs database updates andcommunicates with clients.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Server characteristics .",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2d0"
+      },
+      {
+        "id": 172,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Any user can access the application .Because aweb application requires onlyabrowser asaclient, anyuser anywhere intheworld can potentially access theapplication.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Users arenolonger locked intoa hardware orOSplatform, butcanaccess applications using avariety of terminal types including Windows, UNIX, andApple workstations, andalso mobile devices such assmartphones andPDAs.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2d1"
+      },
+      {
+        "id": 225,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Some examples ofagents include : Anti-virus .Youcould consider theanti-virus program onaworkstation or server asanagent inanenterprise environment thatincludes acentral management console.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2d2"
+      },
+      {
+        "id": 226,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Patch management .Anagent oneach server periodically queries theOS ontheexistence ofsoftware patches, andwillinstall patches when commanded todosofrom thecentral patch management server.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2d3"
+      },
+      {
+        "id": 227,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Themost common useofapplets iswithin Webbrowsers.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2d4"
+      },
+      {
+        "id": 228,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Server characteristics .Intypical client -server applications, theserver component performs database updates andcommunicates with clients.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2d5"
+      },
+      {
+        "id": 229,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Any user can access the application .Because aweb application requires onlyabrowser asaclient, anyuser anywhere intheworld can potentially access theapplication.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2d6"
+      },
+      {
+        "id": 230,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Buffer Overflow Types ofBuffer Overflow Attacks There areseveral specific types of buffer overflow attacks, discussed here.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2d7"
+      },
+      {
+        "id": 231,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Jump -to-Register Attack :Inthisattack, thereturn pointer is overwritten withavalue thatwillcause theprogram tojump toa known pointer stored inaregister thatpoints totheinput buffer.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2d8"
+      },
+      {
+        "id": 232,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Damage and destruction ofinformation .Malware canalter ordelete filesontarget systems.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2d9"
+      },
+      {
+        "id": 233,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Steal information .Malware canlocate andsteal valuable information such ase-mailaddresses, userids andpasswords, bank account numbers, andcredit cardnumbers.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2da"
+      },
+      {
+        "id": 234,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Usage monitoring .Malware can implant themeans torecord subsequent communications, keystrokes andmouse clicks ,andsend thisdataback to themalware’s owneroperator.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2db"
+      },
+      {
+        "id": 235,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Denial ofService .Malware canconsume allavailable resources ona target system ,rendering itessentially useless foritsintended use.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2dc"
+      },
+      {
+        "id": 236,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Several types ofviruses arediscussed here: Master Boot Record (MBR) viruses .Viruses attach themselves to themaster bootrecord.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2dd"
+      },
+      {
+        "id": 237,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Fileinfector viruses .These aretheviruses thatattach themselves to executable programs (.EXEand.COM files) Macro viruses.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2de"
+      },
+      {
+        "id": 238,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "ATrojan horse claims tobeone thing, butisinstead something else—something withmore malicious intent.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2df"
+      },
+      {
+        "id": 239,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Methods used byrootkits toavoid detection include : Process hiding .Rootkits canhidetheir ownprocess(es) from users byaltering thetools thatareused tolistprocesses onasystem.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2e0"
+      },
+      {
+        "id": 240,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Filehiding .Rootkits canhidefilesasawayofavoiding detection.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2e1"
+      },
+      {
+        "id": 241,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Registry hiding .Rootkits canhideregistry entries inanattempt to function without being detected.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2e2"
+      },
+      {
+        "id": 242,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Running underneath theOS.Rootkits canhide from theOSby running underneath orbeside it.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2e3"
+      },
+      {
+        "id": 243,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Malware .Spam isoften used todirectly deliver malware tousers’ computers, butitisalsooften used tolurepeople towebsites thatcontain malicious code in theform ofviruses, worms, orbots.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2e4"
+      },
+      {
+        "id": 244,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Spyware andadware take onmany forms including : Tracking cookies .Many websiteoperators willtrackusers’ individual visits toweb sites through theuseoftracking cookies thatmayaccompany banner ads.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2e5"
+      },
+      {
+        "id": 245,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Browser helper objects (BHOs) .Sometimes they take theform ofhelpful toolbars ,butatother times they arecompletely invisible and“stealthy .” BHOs canbeused totrack useofusers’ Webbrowsers.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2e6"
+      },
+      {
+        "id": 246,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Anti-virus programs arefound inmany places inanorganization aspartof adefense indepth toprevent theunwanted consequences ofmalware.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2e7"
+      },
+      {
+        "id": 247,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Theplaces where anti-virus software canbefound include : End user workstations.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2e8"
+      },
+      {
+        "id": 248,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "There are four common spam blocking architectures inuse, including : Client -based.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2e9"
+      },
+      {
+        "id": 249,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Spam blocking service .Inthismodel, incoming e-mailisdelivered toanoff- sitespam blocking service provider thatfilters outthespam anddelivers only legitimate e-mailtocorporate e-mailservers.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2ea"
+      },
+      {
+        "id": 250,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Asidebenefit ofreducing user privileges toenduser level isa decreased number oftech support calls torepair uh-oh’s, when often-inexperienced end users muddle upoperating system configurations.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2eb"
+      },
+      {
+        "id": 251,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Execution ofarbitrary code .Theattacker maywish torunspecific commands onthetarget system.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2ec"
+      },
+      {
+        "id": 252,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Malfunction .Theattacker may wish tocause theapplication to malfunction andbeinadisabled state forlegitimate users.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2ed"
+      },
+      {
+        "id": 253,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Abort .Theattacker maywish tocause theapplication tocompletely abort andthusbeunavailable foranylegitimate use.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2ee"
+      },
+      {
+        "id": 254,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Integer overflow .Anattack where theattacker attempts tocause an application toperform aninteger operation thatwillcreate anumeric value larger thancanberepresented intheavailable storage.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2ef"
+      },
+      {
+        "id": 255,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "SQL injection .Inthistypeofattack, theattacker inserts specially coded and delimited SQLstatements intoaninput fieldinthehopes thattheinjected SQL willbeexecuted ontheback end.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2f0"
+      },
+      {
+        "id": 256,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Script injection .Similar toSQLinjection, anattacker inserts script language intoaninput fieldinthehopes thatthescripting language willbeexecuted.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2f1"
+      },
+      {
+        "id": 257,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Cross -site scripting (XSS) .Anattack where anattacker caninject a malicious script intoHTML content inorder tosteal session cookies andother sensitive information.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2f2"
+      },
+      {
+        "id": 258,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Developer training .Software developers should betrained in secure application development techniques.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2f3"
+      },
+      {
+        "id": 259,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Developer training .Software developers canbeshown how towrite secure software thatdoes notleave residual code thatcanbeused by other processes.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2f4"
+      },
+      {
+        "id": 260,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data & Application Security",
+        "question": "Downloaded software .This includes software ofevery kind from legitimate (and not-so-legitimate) sites.Some ofthissoftware maybe purely benign, butothers canbeTrojan horse programs andworse.",
+        "options": [
+          "TRUE",
+          "FALSE"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Based on Chapter 4: Data & Application Security course materials.",
+        "points": 1,
+        "isBlock": false,
+        "isCompiler": false,
+        "compilerConfig": {
+          "language": "javascript",
+          "allowedLanguages": [
+            "javascript"
+          ]
+        },
+        "_id": "695af039fde35b59229ed2f5"
+      }
+    ],
+    "reviewMode": true,
+    "timeLimit": 0,
+    "title": "Information Systems Security - Chapter 4",
+    "xpReward": 5000,
+    "id": "iss-chapter-4"
+  }
+]
