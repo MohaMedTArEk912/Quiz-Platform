@@ -5,6 +5,7 @@ const studyCardSchema = new mongoose.Schema({
     title: { type: String, required: true },
     content: { type: String, required: true }, // Markdown content
     category: { type: String, default: 'General' },
+    language: { type: String, default: 'General' }, // Add language support
     tags: [String],
     createdBy: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },

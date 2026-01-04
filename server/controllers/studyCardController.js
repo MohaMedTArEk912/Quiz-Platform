@@ -55,3 +55,26 @@ export const deleteCard = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const deleteStack = async (req, res) => {
+    try {
+        const { category } = req.params;
+        await StudyCard.deleteMany({ category });
+        res.json({ message: `Stack ${category} deleted` });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const updateStack = async (req, res) => {
+    try {
+        const { oldCategory, newCategory } = req.body;
+        await StudyCard.updateMany(
+            { category: oldCategory },
+            { $set: { category: newCategory } }
+        );
+        res.json({ message: `Stack renamed to ${newCategory}` });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

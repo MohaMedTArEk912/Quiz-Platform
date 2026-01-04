@@ -1,11 +1,11 @@
 import React from 'react';
-import StudyMode from '../components/engage/StudyMode';
+import StudyCardComponent from '../components/engage/StudyCard';
 import PageLayout from '../layouts/PageLayout';
 
 const StudyModePage: React.FC = () => {
     return (
         <PageLayout title="Study Mode">
-            <StudyMode />
+            <StudyCardComponent />
         </PageLayout>
     );
 };

@@ -684,6 +684,25 @@ export const api = {
         return response.json();
     },
 
+    async deleteStudyStack(category: string, adminId: string) {
+        const response = await fetch(`${API_URL}/study-cards/stack/${encodeURIComponent(category)}`, {
+            method: 'DELETE',
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) throw new Error('Failed to delete study stack');
+        return response.json();
+    },
+
+    async updateStudyStack(oldCategory: string, newCategory: string, adminId: string) {
+        const response = await fetch(`${API_URL}/study-cards/stack/rename`, {
+            method: 'PUT',
+            headers: getHeaders(adminId),
+            body: JSON.stringify({ oldCategory, newCategory })
+        });
+        if (!response.ok) throw new Error('Failed to rename study stack');
+        return response.json();
+    },
+
     // Badge Tree System
     // Badge Nodes
     async getBadgeNodes() {

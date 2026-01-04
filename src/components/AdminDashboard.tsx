@@ -23,7 +23,7 @@ import Avatar from './Avatar.tsx';
 import UserManagement from './admin/UserManagement.tsx';
 import QuizManagement from './admin/QuizManagement.tsx';
 import ReviewManagement from './admin/ReviewManagement.tsx';
-import StudyManagement from './admin/StudyManagement.tsx';
+import StudyCardManagement from './admin/StudyCardManagement';
 import DailyChallengeManagement from './admin/DailyChallengeManagement.tsx';
 import TournamentManagement from './admin/TournamentManagement.tsx';
 import BadgeManagement from './admin/BadgeManagement.tsx';
@@ -352,7 +352,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <AttemptsLog attempts={attempts} />
                         )}
                         {selectedTab === 'study' && (
-                            <StudyManagement
+                            <StudyCardManagement
                                 currentUser={currentUser}
                                 onNotification={handleNotification}
                             />

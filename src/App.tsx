@@ -22,7 +22,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import TournamentsPage from './pages/TournamentsPage';
 import SkillTracksPage from './pages/SkillTracksPage';
 import DailyChallengePage from './pages/DailyChallengePage';
-import StudyModePage from './pages/StudyModePage';
+import StudyModePage from './pages/StudyCardPage.tsx';
 import QuizTakingPage from './pages/QuizTakingPage';
 import QuizResultsPage from './pages/QuizResultsPage';
 import AsyncChallengePage from './pages/AsyncChallengePage';
