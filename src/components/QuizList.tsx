@@ -233,7 +233,7 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, attempts, onSelectQu
                                                 {quiz.questions.length} Qs
                                             </span>
                                             <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                                                {quiz.timeLimit} Min
+                                                {quiz.timeLimit === 0 ? 'Unlimited' : `${quiz.timeLimit} Min`}
                                             </span>
                                         </div>
 

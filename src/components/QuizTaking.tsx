@@ -53,6 +53,9 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
     // Review Mode States
     const [questionSubmitted, setQuestionSubmitted] = useState(false);
     const [isCurrentAnswerCorrect, setIsCurrentAnswerCorrect] = useState(false);
+    // Track submitted state for each question in review mode
+    const [submittedQuestions, setSubmittedQuestions] = useState<Record<number, boolean>>({});
+    const [questionCorrectness, setQuestionCorrectness] = useState<Record<number, boolean>>({});
 
     const quizIdentifier = quiz.id || quiz._id || quiz.title;
     const storageKey = `quiz_progress_${user.userId}_${quizIdentifier}`;
@@ -126,9 +129,20 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         setCodeSnippetMessage(null);
         setDebugHelperUsed(false);
         setDebugHelperMessage(null);
-        setQuestionSubmitted(false);
-        setIsCurrentAnswerCorrect(false);
+        // Don't reset these in review mode - we want to preserve state
+        if (!quiz.reviewMode) {
+            setQuestionSubmitted(false);
+            setIsCurrentAnswerCorrect(false);
+        }
     };
+
+    // Restore question state when navigating in review mode
+    useEffect(() => {
+        if (quiz.reviewMode) {
+            setQuestionSubmitted(submittedQuestions[currentQuestion] || false);
+            setIsCurrentAnswerCorrect(questionCorrectness[currentQuestion] || false);
+        }
+    }, [currentQuestion, quiz.reviewMode, submittedQuestions, questionCorrectness]);
 
     const handleAnswer = (answer: string | number, code?: string) => {
         if (isSubmitting) return;
@@ -359,6 +373,10 @@ def solution():
         const isCorrect = checkAnswerCorrectness(currentQuestion, answer);
         setIsCurrentAnswerCorrect(isCorrect);
         setQuestionSubmitted(true);
+
+        // Save submitted state for this question
+        setSubmittedQuestions(prev => ({ ...prev, [currentQuestion]: true }));
+        setQuestionCorrectness(prev => ({ ...prev, [currentQuestion]: isCorrect }));
     };
 
     const handleQuizComplete = useCallback(() => {
@@ -557,25 +575,69 @@ def solution():
             // Ignore if typing in an input
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-            // Number keys 1-4 for options
-            if (['1', '2', '3', '4'].includes(e.key)) {
-                if (isTextQuestion) return;
-                const index = parseInt(e.key) - 1;
-                // Check if option exists and not eliminated
-                if (quiz.questions[currentQuestion].options && index < (quiz.questions[currentQuestion].options?.length || 0)) {
-                    if (!eliminatedOptions.has(index)) {
-                        handleAnswer(index);
+            // Review Mode Keyboard Shortcuts
+            if (quiz.reviewMode) {
+                // Enter: Submit answer or Continue
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!questionSubmitted && selectedAnswer !== undefined) {
+                        handleSubmitAnswer();
+                    } else if (questionSubmitted) {
+                        nextQuestion();
                     }
+                    return;
                 }
-            }
 
-            // Enter for Next / Submit
-            if (e.key === 'Enter') {
-                if (selectedAnswer !== undefined) {
+                // Arrow Right or Space: Next question (if submitted)
+                if ((e.key === 'ArrowRight' || e.key === ' ') && questionSubmitted) {
+                    e.preventDefault();
                     if (currentQuestion < quiz.questions.length - 1) {
                         nextQuestion();
-                    } else {
-                        handleQuizComplete();
+                    }
+                    return;
+                }
+
+                // Arrow Left or Backspace: Previous question
+                if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
+                    e.preventDefault();
+                    if (currentQuestion > 0) {
+                        previousQuestion();
+                    }
+                    return;
+                }
+
+                // Number keys 1-4 for options (only if not submitted)
+                if (['1', '2', '3', '4'].includes(e.key) && !questionSubmitted) {
+                    if (isTextQuestion) return;
+                    const index = parseInt(e.key) - 1;
+                    if (quiz.questions[currentQuestion].options && index < (quiz.questions[currentQuestion].options?.length || 0)) {
+                        if (!eliminatedOptions.has(index)) {
+                            handleAnswer(index);
+                        }
+                    }
+                    return;
+                }
+            } else {
+                // Normal Mode Keyboard Shortcuts
+                // Number keys 1-4 for options
+                if (['1', '2', '3', '4'].includes(e.key)) {
+                    if (isTextQuestion) return;
+                    const index = parseInt(e.key) - 1;
+                    if (quiz.questions[currentQuestion].options && index < (quiz.questions[currentQuestion].options?.length || 0)) {
+                        if (!eliminatedOptions.has(index)) {
+                            handleAnswer(index);
+                        }
+                    }
+                }
+
+                // Enter for Next / Submit
+                if (e.key === 'Enter') {
+                    if (selectedAnswer !== undefined) {
+                        if (currentQuestion < quiz.questions.length - 1) {
+                            nextQuestion();
+                        } else {
+                            handleQuizComplete();
+                        }
                     }
                 }
             }
@@ -583,7 +645,7 @@ def solution():
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [currentQuestion, answers, showResumePrompt, isSubmitting, quiz.questions, selectedAnswer, eliminatedOptions]);
+    }, [currentQuestion, answers, showResumePrompt, isSubmitting, quiz.questions, quiz.reviewMode, selectedAnswer, eliminatedOptions, questionSubmitted]);
 
     if (!quiz.questions || quiz.questions.length === 0) {
         return (
@@ -639,7 +701,15 @@ def solution():
                                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{quiz.title}</h1>
                                 <p className="text-gray-600 dark:text-gray-400 text-sm hidden md:block">
                                     <span className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs mr-2">Pro Tip</span>
-                                    Use <kbd className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">1</kbd>-<kbd className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">4</kbd> to answer, <kbd className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">Enter</kbd> for next
+                                    {quiz.reviewMode ? (
+                                        <>
+                                            Use <kbd className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">←</kbd>/<kbd className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">→</kbd> to navigate, <kbd className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">Enter</kbd> to submit/continue
+                                        </>
+                                    ) : (
+                                        <>
+                                            Use <kbd className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">1</kbd>-<kbd className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">4</kbd> to answer, <kbd className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">Enter</kbd> for next
+                                        </>
+                                    )}
                                 </p>
                             </div>
                         </div>
@@ -1199,12 +1269,23 @@ def solution():
 
                         {/* Navigation Buttons */}
                         <div className="flex gap-4">
-                            {currentQuestion > 0 && !quiz.reviewMode && (
+                            {currentQuestion > 0 && (
                                 <button
                                     onClick={previousQuestion}
-                                    className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-4 rounded-xl font-bold text-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+                                    disabled={isSubmitting}
+                                    className={`flex-1 py-4 rounded-xl font-bold text-xl transition-all ${!isSubmitting
+                                        ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
+                                        }`}
                                 >
-                                    Previous
+                                    {quiz.reviewMode ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            ← Previous
+                                            <span className="text-xs font-normal opacity-70 hidden lg:inline-block border border-current px-1.5 rounded ml-1">Backspace</span>
+                                        </span>
+                                    ) : (
+                                        'Previous'
+                                    )}
                                 </button>
                             )}
 
