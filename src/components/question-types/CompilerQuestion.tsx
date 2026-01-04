@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { Play, Terminal as TerminalIcon, RotateCcw } from 'lucide-react';
+import { api } from '../../lib/api';
 import { COMPILER_ALLOWED_LANGUAGES, COMPILER_INITIAL_CODE } from '../../constants/quizDefaults.ts';
 
 interface CompilerQuestionProps {
@@ -46,72 +47,25 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
         setIsRunning(true);
         setOutput([]); // Clear previous output
 
-        // Simulate network delay for "compilation"
-        await new Promise(resolve => setTimeout(resolve, 800));
-
         try {
-            if (language === 'javascript' || language === 'typescript') {
-                // Capture console.log
-                const logs: string[] = [];
-                const originalLog = console.log;
-                console.log = (...args: unknown[]) => {
-                    logs.push(args.map(a => String(a)).join(' '));
-                };
+            const result = await api.compileCode(code, language);
 
-                try {
-                    // Safe-ish eval using Function constructor
-                    const runnable = new Function(code);
-                    runnable();
-                    setOutput(logs.length > 0 ? logs : ['> Program finished with no output.']);
-                } catch (e: unknown) {
-                    const err = e instanceof Error ? e : new Error(String(e));
-                    const errorMsg = `Error: ${err.message}`;
-                    let suggestion = "";
-                    if (err.name === 'ReferenceError') suggestion = "💡 Hint: Check if you defined all your variables.";
-                    else if (err.name === 'SyntaxError') suggestion = "💡 Hint: Check for missing brackets, parentheses, or semicolons.";
-                    else if (err.name === 'TypeError') suggestion = "💡 Hint: Check if you are using the correct methods for this data type.";
-
-                    setOutput(prev => [...prev, errorMsg, ...(suggestion ? [suggestion] : [])]);
-                } finally {
-                    console.log = originalLog;
-                }
-            } else if (language === 'python') {
-                // Simple Mock for Python: Check for print statements
-                const lines = code.split('\n');
-                const mockOutput: string[] = [];
-                let hasPrint = false;
-                let syntaxError = null;
-
-                for (const line of lines) {
-                    // Check for Python 2 style print
-                    if (/^\s*print\s+["']/.test(line)) {
-                        syntaxError = "SyntaxError: Missing parentheses in call to 'print'. Did you mean print(...)?";
-                        break;
-                    }
-
-                    const printMatch = line.match(/^\s*print\s*\((["'])(.*?)\1\)/);
-                    if (printMatch) {
-                        mockOutput.push(printMatch[2]);
-                        hasPrint = true;
-                    }
-                };
-
-                if (syntaxError) {
-                    setOutput([syntaxError, "💡 Hint: Python 3 requires parentheses for print function. ex: print('Hello')"]);
-                } else if (hasPrint) {
-                    setOutput(mockOutput);
-                } else {
-                    setOutput(['> Executing Python script...', '> Program finished with no output.']);
-                }
+            if (result.output) {
+                setOutput(result.output.split('\n'));
             } else {
-                // Mock execution for other languages
-                setOutput(['> Compiling...', '> Executing...', `> Output for ${language} code:`, 'Hello World! (Simulated Output)']);
+                setOutput(['> Program finished with no output.']);
             }
-        } catch {
-            setOutput(['Error executing code.']);
-        }
 
-        setIsRunning(false);
+            if (result.isError) {
+                // Optional: Visual cue for error could be added here
+            }
+
+        } catch (error: any) {
+            console.error(error);
+            setOutput(['Error executing code:', error.message || 'Unknown error', 'Make sure the backend is running and Judge0 API key is set.']);
+        } finally {
+            setIsRunning(false);
+        }
     };
 
     return (

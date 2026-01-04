@@ -1,0 +1,72 @@
+# Judge0 Integration Plan
+
+This plan outlines the steps to replace the client-side mock compiler with a robust backend integration using the Judge0 API.
+
+## Prerequisites
+
+1.  **API Key**: Obtain a RapidAPI key for Judge0 (or set up a self-hosted instance).
+2.  **Environment Variables**:
+    *   `JUDGE0_API_KEY`: Your RapidAPI key.
+    *   `JUDGE0_API_URL`: `https://judge0-ce.p.rapidapi.com` (or your instance URL).
+
+## Step 1: Backend Setup
+
+### 1.1 Install Dependencies
+We need an HTTP client to communicate with Judge0.
+```bash
+npm install axios
+```
+
+### 1.2 Create Compiler Controller
+Create a new controller `server/controllers/compilerController.js` to handle compilation requests.
+
+**Key Logic:**
+*   Receive `sourceCode`, `languageId`, and optional `stdin` from the frontend.
+*   Submit a generic submission to Judge0: `POST /submissions?base64_encoded=false&wait=true`.
+    *   *Note*: Using `wait=true` is simpler for synchronous feedback. For production at scale, consider asynchronous callbacks.
+*   Handle the response:
+    *   `stdout` (Standard Output)
+    *   `stderr` (Error Output)
+    *   `compile_output` (Compilation Errors)
+    *   `time` (Execution Time)
+    *   `memory` (Memory Usage)
+    *   `status` (id and description, e.g., "Accepted", "Wrong Answer")
+
+### 1.3 Add Route
+Add the route to `server/routes/quizRoutes.js` (or create a new `compilerRoutes.js`).
+*   `POST /api/compile` -> `compilerController.runCode`
+
+## Step 2: Language Mapping
+
+Define a shared constant or a backend map for Judge0 Language IDs.
+
+| Language   | Judge0 ID |
+| :---       | :---:     |
+| Javascript | 63        |
+| Python     | 71        |
+| Java       | 62        |
+| C++        | 54        |
+
+*Update `src/components/question-types/CompilerQuestion.tsx` to send these IDs.*
+
+## Step 3: Frontend Integration
+
+### 3.1 Update `CompilerQuestion.tsx`
+Refactor the `handleRun` function to:
+1.  Set `isRunning` to true.
+2.  Call `POST /api/compile` with the code and language ID.
+3.  Parse the JSON response.
+4.  Display the output.
+    *   If `status.id` is not 3 (Accepted), show `stderr` or `compile_output`.
+    *   Show execution time/memory if desired.
+
+### 3.2 Security
+*   Remove any client-side `eval()` logic.
+*   Ensure API keys are ONLY stored in `.env` on the backend, never exposed to the client.
+
+## Step 4: Verification
+1.  Run the backend and frontend.
+2.  Select a "Compiler" question.
+3.  Write code (e.g., `console.log("hello")`).
+4.  Click "Run".
+5.  Verify the output comes from the server/Judge0.

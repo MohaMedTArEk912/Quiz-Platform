@@ -103,9 +103,18 @@ export const api = {
             headers: getHeaders(),
             body: JSON.stringify(credentials),
         });
+
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Login failed');
+            let errorMessage = 'Login failed';
+            try {
+                const error = await response.json();
+                errorMessage = error.message || errorMessage;
+            } catch (e) {
+                // If JSON parse fails, it's likely an HTML error page (500/502/504)
+                console.error('Non-JSON response received:', await response.text());
+                errorMessage = `Server Error (${response.status}): The server returned an invalid response. Check console for details.`;
+            }
+            throw new Error(errorMessage);
         }
         return response.json();
     },
@@ -956,6 +965,19 @@ export const api = {
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.message || 'Failed to update role');
+        }
+        return response.json();
+    },
+
+    async compileCode(sourceCode: string, language: string) {
+        const response = await fetch(`${API_URL}/compile`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ sourceCode, language }),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Compilation failed');
         }
         return response.json();
     },

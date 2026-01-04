@@ -19,6 +19,7 @@
     "@tailwindcss/postcss": "^4.1.18",
     "@types/canvas-confetti": "^1.9.0",
     "@types/react-window": "^1.8.8",
+    "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "blockly": "^12.3.1",
     "canvas-confetti": "^1.9.4",
