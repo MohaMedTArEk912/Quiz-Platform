@@ -35,7 +35,7 @@ const quizSchema = new mongoose.Schema({
   description: { type: String, required: true },
   category: { type: String, required: true },
   difficulty: { type: String, required: true },
-  timeLimit: { type: Number, required: true }, // in minutes
+  timeLimit: { type: Number, required: true }, // in minutes, 0 for unlimited
   passingScore: { type: Number, required: true }, // percentage
   coinsReward: { type: Number, default: 10 },
   xpReward: { type: Number, default: 50 },

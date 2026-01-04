@@ -53,19 +53,21 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
     const quizIdentifier = quiz.id || quiz._id || quiz.title;
     const storageKey = `quiz_progress_${user.userId}_${quizIdentifier}`;
 
+    const isUnlimitedTime = quiz.timeLimit === 0;
+
     const initialSavedState = useMemo(() => {
         const saved = sessionStorage.getItem(storageKey);
         if (!saved) return null;
         try {
             const parsed = JSON.parse(saved);
-            if (parsed.quizId === quizIdentifier && parsed.timeLeft > 0) {
+            if (parsed.quizId === quizIdentifier && (parsed.timeLeft > 0 || isUnlimitedTime)) {
                 return parsed as SavedQuizState;
             }
         } catch (e) {
             console.error("Failed to parse saved state", e);
         }
         return null;
-    }, [quizIdentifier, storageKey]);
+    }, [quizIdentifier, storageKey, isUnlimitedTime]);
 
     // Resume State
     const [showResumePrompt, setShowResumePrompt] = useState(Boolean(initialSavedState));
@@ -421,7 +423,7 @@ def solution():
     }, [answers, answerCodes, onComplete, quiz, storageKey, usedPowerUps, isSubmitting]);
 
     useEffect(() => {
-        if (showResumePrompt || isSubmitting) return; // Pause timer while prompting or submitting
+        if (showResumePrompt || isSubmitting || isUnlimitedTime) return; // Pause timer while prompting or submitting, or if unlimited
 
         const timer = setInterval(() => {
             setTimeLeft((prev) => {
@@ -434,7 +436,7 @@ def solution():
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [handleQuizComplete, showResumePrompt, isSubmitting]);
+    }, [handleQuizComplete, showResumePrompt, isSubmitting, isUnlimitedTime]);
 
     const nextQuestion = () => {
         if (isSubmitting) return;
@@ -561,16 +563,26 @@ def solution():
                             </div>
                         </div>
                         <div className="flex items-center gap-6">
-                            <div className={`text-center transition-colors duration-300 ${timeLeft < 60 ? 'animate-pulse' : ''}`}>
-                                <div className={`flex items-center gap-2 text-lg font-bold ${timeLeft < 60
+                            <div className={`text-center transition-colors duration-300 ${!isUnlimitedTime && timeLeft < 60 ? 'animate-pulse' : ''}`}>
+                                <div className={`flex items-center gap-2 text-lg font-bold ${!isUnlimitedTime && timeLeft < 60
                                     ? 'text-red-600 dark:text-red-400 scale-110'
                                     : 'text-purple-600 dark:text-purple-400'
                                     } transition-all duration-300`}>
-                                    <Clock className={`w-5 h-5 ${timeLeft < 60 ? 'animate-bounce' : ''}`} />
-                                    {formatTime(timeLeft)}
+                                    {isUnlimitedTime ? (
+                                        <>
+                                            <span className="text-2xl">∞</span>
+                                            <span>Unlimited</span>
+                                        </>
+
+                                    ) : (
+                                        <>
+                                            <Clock className={`w-5 h-5 ${timeLeft < 60 ? 'animate-bounce' : ''}`} />
+                                            {formatTime(timeLeft)}
+                                        </>
+                                    )}
                                 </div>
-                                <div className={`text-xs ${timeLeft < 60 ? 'text-red-500' : 'text-gray-600 dark:text-gray-400'}`}>
-                                    {timeLeft < 60 ? 'Hurry up!' : 'Time Left'}
+                                <div className={`text-xs ${!isUnlimitedTime && timeLeft < 60 ? 'text-red-500' : 'text-gray-600 dark:text-gray-400'}`}>
+                                    {!isUnlimitedTime && timeLeft < 60 ? 'Hurry up!' : 'Time Left'}
                                 </div>
                             </div>
                             <div className="text-center">
@@ -582,7 +594,7 @@ def solution():
 
                     <div className="relative h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                         <div
-                            className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${timeLeft < 60 ? 'bg-red-500' : 'bg-gradient-to-r from-indigo-500 to-purple-500'
+                            className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${!isUnlimitedTime && timeLeft < 60 ? 'bg-red-500' : 'bg-gradient-to-r from-indigo-500 to-purple-500'
                                 }`}
                             style={{ width: `${progress}%` }}
                         />
@@ -661,8 +673,8 @@ def solution():
                             {/* Time Freeze Power-Up */}
                             <button
                                 onClick={useTimeFreeze}
-                                disabled={timeFreezeUsed || countPowerUp('time_freeze') <= 0}
-                                className={`group relative w-full p-3 rounded-xl border-2 transition-all duration-300 overflow-hidden ${timeFreezeUsed || countPowerUp('time_freeze') <= 0
+                                disabled={timeFreezeUsed || countPowerUp('time_freeze') <= 0 || isUnlimitedTime}
+                                className={`group relative w-full p-3 rounded-xl border-2 transition-all duration-300 overflow-hidden ${timeFreezeUsed || countPowerUp('time_freeze') <= 0 || isUnlimitedTime
                                     ? 'border-gray-300 dark:border-slate-700 bg-gray-100 dark:bg-slate-800/30 cursor-not-allowed opacity-50'
                                     : 'border-orange-400 dark:border-orange-500/50 bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/40 dark:to-red-900/40 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/20 hover:-translate-y-0.5 cursor-pointer'
                                     }`}
@@ -674,7 +686,7 @@ def solution():
 
                                 <div className="relative z-10">
                                     {/* Icon */}
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 mx-auto transition-all ${timeFreezeUsed || countPowerUp('time_freeze') <= 0
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 mx-auto transition-all ${timeFreezeUsed || countPowerUp('time_freeze') <= 0 || isUnlimitedTime
                                         ? 'bg-gray-300 dark:bg-slate-700'
                                         : 'bg-gradient-to-br from-orange-500 to-red-500 group-hover:scale-105 shadow-md'
                                         }`}>
@@ -683,7 +695,7 @@ def solution():
 
                                     {/* Title */}
                                     <div className="text-center mb-1.5">
-                                        <div className={`text-base font-black ${timeFreezeUsed || countPowerUp('time_freeze') <= 0
+                                        <div className={`text-base font-black ${timeFreezeUsed || countPowerUp('time_freeze') <= 0 || isUnlimitedTime
                                             ? 'text-gray-500 dark:text-slate-500'
                                             : 'text-orange-700 dark:text-white'
                                             }`}>
@@ -693,13 +705,13 @@ def solution():
                                             ? 'text-gray-400 dark:text-slate-600'
                                             : 'text-orange-600 dark:text-orange-300'
                                             }`}>
-                                            +20 seconds
+                                            {isUnlimitedTime ? 'Not needed' : '+20 seconds'}
                                         </div>
                                     </div>
 
                                     {/* Quantity Badge */}
                                     <div className="flex justify-center">
-                                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${timeFreezeUsed || countPowerUp('time_freeze') <= 0
+                                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${timeFreezeUsed || countPowerUp('time_freeze') <= 0 || isUnlimitedTime
                                             ? 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-500'
                                             : 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300'
                                             }`}>

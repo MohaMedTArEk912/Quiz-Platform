@@ -66,8 +66,8 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
             onNotification('error', 'Title and Description are required');
             return;
         }
-        if (editingQuiz.timeLimit < 1) {
-            onNotification('error', 'Time limit must be at least 1 minute');
+        if (editingQuiz.timeLimit < 0) {
+            onNotification('error', 'Time limit cannot be negative');
             return;
         }
         if (editingQuiz.questions.length === 0) {
@@ -306,7 +306,7 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                                 <textarea placeholder="Description" value={editingQuiz.description} onChange={e => setEditingQuiz({ ...editingQuiz, description: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
-                                        <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Time Limit (min)</label>
+                                        <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Time Limit (min) - 0 for unlimited</label>
                                         <input type="number" placeholder="Time Limit" value={editingQuiz.timeLimit} onChange={e => setEditingQuiz({ ...editingQuiz, timeLimit: parseInt(e.target.value) })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
                                     </div>
                                     <div className="space-y-1">
