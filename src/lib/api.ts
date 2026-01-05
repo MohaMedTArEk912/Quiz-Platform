@@ -501,7 +501,7 @@ export const api = {
     },
 
     async usePowerUp(type: string, userId: string) {
-        const response = await fetch(`${API_URL}/powerups/use`, {
+        const response = await fetch(`${API_URL}/shop/powerups/use`, {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify({ type })

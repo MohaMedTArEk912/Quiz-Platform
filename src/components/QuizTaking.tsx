@@ -620,6 +620,9 @@ def solution():
             // Ignore if typing in an input
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
+            const qIndex = questionOrder[currentQuestion];
+            const currentOptionsOrder = optionsOrder[qIndex];
+
             // Review Mode Keyboard Shortcuts
             if (quiz.reviewMode) {
                 // Enter: Submit answer or Continue
@@ -654,11 +657,15 @@ def solution():
                 // Number keys 1-4 for options (only if not submitted)
                 if (['1', '2', '3', '4'].includes(e.key) && !questionSubmitted) {
                     if (isTextQuestion) return;
-                    const index = parseInt(e.key) - 1;
-                    const question = quiz.questions[questionOrder[currentQuestion]];
-                    if (question.options && index < (question.options?.length || 0)) {
-                        if (!eliminatedOptions.has(index)) {
-                            handleAnswer(index);
+                    const visualIndex = parseInt(e.key) - 1;
+                    const question = quiz.questions[qIndex];
+
+                    if (question.options && visualIndex < (question.options.length || 0)) {
+                        // Map visual index to original index if options are shuffled
+                        const originalIndex = currentOptionsOrder ? currentOptionsOrder[visualIndex] : visualIndex;
+
+                        if (!eliminatedOptions.has(originalIndex)) {
+                            handleAnswer(originalIndex);
                         }
                     }
                     return;
@@ -668,11 +675,15 @@ def solution():
                 // Number keys 1-4 for options
                 if (['1', '2', '3', '4'].includes(e.key)) {
                     if (isTextQuestion) return;
-                    const index = parseInt(e.key) - 1;
-                    const question = quiz.questions[questionOrder[currentQuestion]];
-                    if (question.options && index < (question.options?.length || 0)) {
-                        if (!eliminatedOptions.has(index)) {
-                            handleAnswer(index);
+                    const visualIndex = parseInt(e.key) - 1;
+                    const question = quiz.questions[qIndex];
+
+                    if (question.options && visualIndex < (question.options.length || 0)) {
+                        // Map visual index to original index if options are shuffled
+                        const originalIndex = currentOptionsOrder ? currentOptionsOrder[visualIndex] : visualIndex;
+
+                        if (!eliminatedOptions.has(originalIndex)) {
+                            handleAnswer(originalIndex);
                         }
                     }
                 }

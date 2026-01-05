@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { AvatarConfig, UserData } from '../types';
 import Avatar from './Avatar';
-import { Sparkles, Smile, User, Save, RefreshCw, Shirt, Crown } from 'lucide-react';
+import { Sparkles, Smile, User, Save, RefreshCw, Shirt, Crown, Lock } from 'lucide-react';
 import { AVATAR_OPTIONS, DEFAULT_AVATAR_CONFIG } from '../constants/avatarDefaults';
 import { api } from '../lib/api';
 
@@ -65,6 +65,30 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
         { id: 'style', icon: <Crown className="w-5 h-5" />, label: 'Accessory' },
         { id: 'mood', icon: <Smile className="w-5 h-5" />, label: 'Mood' },
     ] as const;
+
+    // Premium Item Mapping: Option Value -> Shop Item ID
+    const PREMIUM_ITEMS: Record<string, string> = {
+        'sunglasses': 'cool-glasses',
+        'crown': 'golden-crown',
+        'wizard_hat': 'wizard-hat',
+        'pirate': 'pirate-hat',
+        'ninja': 'ninja-band',
+        'viking': 'viking-helm',
+        'astro': 'astro-helm',
+        'cat_ears': 'cat-ears',
+        'bowtie': 'bowtie',
+        'bg-galaxy': 'galaxy-theme',
+        'bg-neon': 'neon-rave',
+        'bg-slate-900': 'midnight-theme',
+        'bg-emerald-900': 'forest-theme',
+        'bg-orange-100': 'sunset-theme',
+    };
+
+    const isLocked = (value: string) => {
+        const shopItemId = PREMIUM_ITEMS[value];
+        if (!shopItemId) return false;
+        return !user.unlockedItems?.includes(shopItemId);
+    };
 
     // options definition removed, using AVATAR_OPTIONS from constants
 
@@ -214,14 +238,24 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                                 <div>
                                     <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Background</h3>
                                     <div className="flex flex-wrap gap-4">
-                                        {AVATAR_OPTIONS.base.backgroundColor.map(bg => (
-                                            <button
-                                                key={bg}
-                                                onClick={() => setConfig({ ...config, backgroundColor: bg })}
-                                                className={`w-12 h-12 rounded-xl border-4 transition-transform hover:scale-110 ${bg} ${config.backgroundColor === bg ? 'border-indigo-500 scale-110' : 'border-transparent'
-                                                    }`}
-                                            />
-                                        ))}
+                                        {AVATAR_OPTIONS.base.backgroundColor.map(bg => {
+                                            const locked = isLocked(bg);
+                                            return (
+                                                <button
+                                                    key={bg}
+                                                    disabled={locked}
+                                                    onClick={() => setConfig({ ...config, backgroundColor: bg })}
+                                                    className={`w-12 h-12 rounded-xl border-4 transition-transform hover:scale-110 relative ${bg} ${config.backgroundColor === bg ? 'border-indigo-500 scale-110' : 'border-transparent'} ${locked ? 'opacity-50 cursor-not-allowed' : ''}
+                                                    `}
+                                                >
+                                                    {locked && (
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+                                                            <Lock className="w-4 h-4 text-white/80" />
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            )
+                                        })}
                                     </div>
                                 </div>
                             </div>
@@ -290,18 +324,27 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                             <div>
                                 <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Accessories</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    {AVATAR_OPTIONS.style.accessories.map(item => (
-                                        <button
-                                            key={item}
-                                            onClick={() => setConfig({ ...config, accessory: item })}
-                                            className={`p-4 rounded-xl border-2 text-sm font-bold capitalize transition-all ${config.accessory === item
-                                                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
-                                                : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-indigo-300'
-                                                }`}
-                                        >
-                                            {item}
-                                        </button>
-                                    ))}
+                                    {AVATAR_OPTIONS.style.accessories.map(item => {
+                                        const locked = isLocked(item);
+                                        return (
+                                            <button
+                                                key={item}
+                                                disabled={locked}
+                                                onClick={() => setConfig({ ...config, accessory: item })}
+                                                className={`p-4 rounded-xl border-2 text-sm font-bold capitalize transition-all relative ${config.accessory === item
+                                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
+                                                    : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-indigo-300'
+                                                    } ${locked ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-white/5' : ''}`}
+                                            >
+                                                {item.replace(/_/g, ' ')}
+                                                {locked && (
+                                                    <div className="absolute top-2 right-2">
+                                                        <Lock className="w-3 h-3 text-gray-400" />
+                                                    </div>
+                                                )}
+                                            </button>
+                                        )
+                                    })}
                                 </div>
                             </div>
                         )}

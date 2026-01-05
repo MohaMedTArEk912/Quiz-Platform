@@ -12,7 +12,10 @@ export const DEFAULT_AVATAR_CONFIG = {
 export const AVATAR_OPTIONS = {
     base: {
         skinColor: ['#F5D0C5', '#E8B4A5', '#D49D8B', '#C68642', '#8D5524', '#5A3921', '#3C2E28'],
-        backgroundColor: ['bg-indigo-100', 'bg-blue-100', 'bg-purple-100', 'bg-green-100', 'bg-yellow-100', 'bg-red-100', 'bg-pink-100', 'bg-gray-100', 'bg-slate-800'],
+        backgroundColor: [
+            'bg-indigo-100', 'bg-blue-100', 'bg-purple-100', 'bg-green-100', 'bg-yellow-100', 'bg-red-100', 'bg-pink-100', 'bg-gray-100', 'bg-slate-800',
+            'bg-galaxy', 'bg-neon', 'bg-slate-900', 'bg-emerald-900', 'bg-orange-100'
+        ],
         gender: ['male', 'female']
     },
     hair: {
@@ -27,7 +30,10 @@ export const AVATAR_OPTIONS = {
         types: ['shirt', 'tshirt', 'hoodie', 'blazer', 'dress']
     },
     style: {
-        accessories: ['none', 'glasses', 'sunglasses', 'crown', 'headphones', 'cap', 'mask']
+        accessories: [
+            'none', 'glasses', 'sunglasses', 'headphones', 'cap', 'mask',
+            'crown', 'wizard_hat', 'pirate', 'ninja', 'viking', 'astro', 'cat_ears', 'bowtie'
+        ]
     },
     mood: {
         moods: ['happy', 'neutral', 'cool', 'excited']

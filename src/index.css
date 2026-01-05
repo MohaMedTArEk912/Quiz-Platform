@@ -20,3 +20,11 @@ html.dark body {
   background-color: var(--color-background-dark);
   color: var(--color-text-dark);
 }
+
+.bg-galaxy {
+  background: radial-gradient(circle at 50% 50%, #4c1d95 0%, #1e1b4b 100%);
+}
+
+.bg-neon {
+  background: linear-gradient(135deg, #06b6d4 0%, #d946ef 100%);
+}

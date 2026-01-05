@@ -9,6 +9,7 @@ router.post('/items', verifyAdmin, shopController.createShopItem); // POST /api/
 router.put('/items/:itemId', verifyAdmin, shopController.updateShopItem); // PUT /api/shop/items/:itemId
 router.delete('/items/:itemId', verifyAdmin, shopController.deleteShopItem); // DELETE /api/shop/items/:itemId
 router.post('/purchase', verifyUser, shopController.purchaseItem); // POST /api/shop/purchase
+router.post('/powerups/use', verifyUser, shopController.usePowerUp); // POST /api/shop/powerups/use
 
 // What about powerups usage? It was /api/powerups/use. 
 // I should add it here or in a separate controller?

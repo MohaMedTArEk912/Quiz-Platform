@@ -399,6 +399,70 @@ const renderAccessory = (type: string) => {
                     <circle cx="147" cy="115" r="3" />
                 </g>
             );
+        // New Accessories
+        case 'wizard_hat':
+            return (
+                <g transform="translate(0, -35)">
+                    <ellipse cx="100" cy="85" rx="65" ry="10" fill="#3B0764" />
+                    <path d="M50,85 L150,85 L100,5" fill="#4B0082" />
+                    <path d="M50,85 Q100,95 150,85" fill="#4B0082" />
+                    <circle cx="100" cy="40" r="1.5" fill="yellow" />
+                    <circle cx="120" cy="70" r="1.5" fill="yellow" />
+                    <circle cx="80" cy="60" r="1.5" fill="yellow" />
+                </g>
+            );
+        case 'pirate':
+            return (
+                <g transform="translate(0, -35)">
+                    <path d="M20,70 Q100,40 180,70 L160,50 Q100,20 40,50 Z" fill="#1F2937" />
+                    <path d="M50,55 Q100,35 150,55" fill="none" stroke="#FCD34D" strokeWidth="2" />
+                    <circle cx="100" cy="55" r="5" fill="white" />
+                    <circle cx="98" cy="55" r="1" fill="black" />
+                    <circle cx="102" cy="55" r="1" fill="black" />
+                </g>
+            );
+        case 'ninja':
+            return (
+                <g transform="translate(0, -20)">
+                    <rect x="50" y="45" width="100" height="20" rx="2" fill="#374151" />
+                    <rect x="80" y="48" width="40" height="14" rx="1" fill="#D1D5DB" />
+                    <circle cx="100" cy="55" r="3" fill="#374151" />
+                </g>
+            );
+        case 'viking':
+            return (
+                <g transform="translate(0, -35)">
+                    <path d="M55,85 C55,40 145,40 145,85" fill="#9CA3AF" />
+                    <path d="M50,85 L150,85 Q100,110 50,85 Z" fill="#6B7280" />
+                    <path d="M55,60 Q30,40 40,20" fill="none" stroke="#F3F4F6" strokeWidth="6" strokeLinecap="round" />
+                    <path d="M145,60 Q170,40 160,20" fill="none" stroke="#F3F4F6" strokeWidth="6" strokeLinecap="round" />
+                </g>
+            );
+        case 'astro':
+            return (
+                <g>
+                    <circle cx="100" cy="95" r="55" fill="rgba(147, 197, 253, 0.3)" stroke="#60A5FA" strokeWidth="2" />
+                    <path d="M100,40 Q145,45 145,95" fill="none" stroke="white" strokeWidth="2" opacity="0.5" />
+                </g>
+            );
+        case 'cat_ears':
+            return (
+                <g transform="translate(0, -5)">
+                    <path d="M60,40 L75,70 L45,70 Z" fill="#1F2937" />
+                    <path d="M140,40 L155,70 L125,70 Z" fill="#1F2937" />
+                    <path d="M63,48 L70,65 L50,65 Z" fill="#F9A8D4" />
+                    <path d="M137,48 L144,65 L124,65 Z" fill="#F9A8D4" />
+                    <path d="M50,70 Q100,60 150,70" fill="none" stroke="#1F2937" strokeWidth="4" />
+                </g>
+            );
+        case 'bowtie':
+            return (
+                <g transform="translate(0, 50)">
+                    <path d="M85,100 L70,90 L70,110 Z" fill="#EF4444" />
+                    <path d="M115,100 L130,90 L130,110 Z" fill="#EF4444" />
+                    <circle cx="100" cy="100" r="5" fill="#B91C1C" />
+                </g>
+            );
         default: return null;
     }
 };

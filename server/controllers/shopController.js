@@ -9,20 +9,20 @@ const SHOP_CATALOG = [
     { itemId: 'smart-hint', name: 'Smart Hint', description: 'Shows a hint for the current question', type: 'power-up', price: 75, payload: { powerUpType: 'hint', uses: 1 } },
     { itemId: 'streak-shield', name: 'Streak Shield', description: 'Protects your streak from one wrong answer', type: 'power-up', price: 200, payload: { powerUpType: 'shield', uses: 1 } },
     { itemId: 'cool-glasses', name: 'Cool Glasses', description: 'A stylish pair of sunglasses for your avatar', type: 'cosmetic', price: 500, payload: { attribute: 'accessory', value: 'sunglasses' } },
-    { itemId: 'golden-crown', name: 'Golden Crown', description: 'A crown fit for a quiz king or queen', type: 'cosmetic', price: 1000, payload: { attribute: 'hat', value: 'crown' } },
-    { itemId: 'wizard-hat', name: 'Wizard Hat', description: 'Magical headgear', type: 'cosmetic', price: 750, payload: { attribute: 'hat', value: 'wizard_hat' } },
-    { itemId: 'galaxy-theme', name: 'Galaxy Theme', description: 'Unlock the cosmic galaxy background theme', type: 'cosmetic', price: 2000, payload: { attribute: 'theme', value: 'galaxy' } },
-    { itemId: 'neon-rave', name: 'Neon Rave', description: 'Electrifying neon colors for your profile', type: 'cosmetic', price: 1500, payload: { attribute: 'theme', value: 'neon' } },
+    { itemId: 'golden-crown', name: 'Golden Crown', description: 'A crown fit for a quiz king or queen', type: 'cosmetic', price: 1000, payload: { attribute: 'accessory', value: 'crown' } },
+    { itemId: 'wizard-hat', name: 'Wizard Hat', description: 'Magical headgear', type: 'cosmetic', price: 750, payload: { attribute: 'accessory', value: 'wizard_hat' } },
+    { itemId: 'galaxy-theme', name: 'Galaxy Theme', description: 'Unlock the cosmic galaxy background theme', type: 'cosmetic', price: 2000, payload: { attribute: 'backgroundColor', value: 'bg-galaxy' } },
+    { itemId: 'neon-rave', name: 'Neon Rave', description: 'Electrifying neon colors for your profile', type: 'cosmetic', price: 1500, payload: { attribute: 'backgroundColor', value: 'bg-neon' } },
     { itemId: 'cyber-frame', name: 'Cyberpunk Frame', description: 'A futuristic glitch-art frame', type: 'cosmetic', price: 1200, payload: { attribute: 'frame', value: 'cyberpunk' } },
-    { itemId: 'midnight-theme', name: 'Midnight Theme', description: 'Deep dark blue theme for night owls', type: 'cosmetic', price: 1000, payload: { attribute: 'theme', value: 'midnight' } },
-    { itemId: 'forest-theme', name: 'Forest Theme', description: 'Calming nature vibes', type: 'cosmetic', price: 1000, payload: { attribute: 'theme', value: 'forest' } },
-    { itemId: 'sunset-theme', name: 'Sunset Theme', description: 'Warm gradients of a summer sunset', type: 'cosmetic', price: 1200, payload: { attribute: 'theme', value: 'sunset' } },
+    { itemId: 'midnight-theme', name: 'Midnight Theme', description: 'Deep dark blue theme for night owls', type: 'cosmetic', price: 1000, payload: { attribute: 'backgroundColor', value: 'bg-slate-900' } },
+    { itemId: 'forest-theme', name: 'Forest Theme', description: 'Calming nature vibes', type: 'cosmetic', price: 1000, payload: { attribute: 'backgroundColor', value: 'bg-emerald-900' } },
+    { itemId: 'sunset-theme', name: 'Sunset Theme', description: 'Warm gradients of a summer sunset', type: 'cosmetic', price: 1200, payload: { attribute: 'backgroundColor', value: 'bg-orange-100' } },
     { itemId: 'gold-frame', name: 'Gold Frame', description: 'Shiny golden border for your avatar', type: 'cosmetic', price: 2500, payload: { attribute: 'frame', value: 'gold' } },
     { itemId: 'diamond-frame', name: 'Diamond Frame', description: 'Sparkling diamond border', type: 'cosmetic', price: 5000, payload: { attribute: 'frame', value: 'diamond' } },
-    { itemId: 'pirate-hat', name: 'Pirate Hat', description: 'Yarrr! Sail the seven seas.', type: 'cosmetic', price: 800, payload: { attribute: 'hat', value: 'pirate' } },
-    { itemId: 'ninja-band', name: 'Ninja Headband', description: 'Silent but deadly knowledge.', type: 'cosmetic', price: 600, payload: { attribute: 'hat', value: 'ninja' } },
-    { itemId: 'viking-helm', name: 'Viking Helmet', description: 'For the brave warriors.', type: 'cosmetic', price: 900, payload: { attribute: 'hat', value: 'viking' } },
-    { itemId: 'astro-helm', name: 'Astro Helmet', description: 'Take your knowledge to the moon.', type: 'cosmetic', price: 1500, payload: { attribute: 'hat', value: 'astro' } },
+    { itemId: 'pirate-hat', name: 'Pirate Hat', description: 'Yarrr! Sail the seven seas.', type: 'cosmetic', price: 800, payload: { attribute: 'accessory', value: 'pirate' } },
+    { itemId: 'ninja-band', name: 'Ninja Headband', description: 'Silent but deadly knowledge.', type: 'cosmetic', price: 600, payload: { attribute: 'accessory', value: 'ninja' } },
+    { itemId: 'viking-helm', name: 'Viking Helmet', description: 'For the brave warriors.', type: 'cosmetic', price: 900, payload: { attribute: 'accessory', value: 'viking' } },
+    { itemId: 'astro-helm', name: 'Astro Helmet', description: 'Take your knowledge to the moon.', type: 'cosmetic', price: 1500, payload: { attribute: 'accessory', value: 'astro' } },
     { itemId: 'cat-ears', name: 'Cat Ears', description: 'Cute feline ears.', type: 'cosmetic', price: 700, payload: { attribute: 'accessory', value: 'cat_ears' } },
     { itemId: 'bowtie', name: 'Fancy Bowtie', description: 'Classy look for smart people.', type: 'cosmetic', price: 400, payload: { attribute: 'accessory', value: 'bowtie' } },
     { itemId: 'double-xp-1h', name: 'Double XP (1h)', description: 'Earn 2x XP for 1 hour', type: 'boost', price: 300, payload: { boost: 'xp', multiplier: 2, duration: 3600 } },
@@ -55,7 +55,7 @@ export const getShopItems = async (req, res) => {
 
 export const createShopItem = async (req, res) => {
   try {
-    constData = req.body;
+    const quizData = req.body;
     // ... (Keep existing create logic if needed for custom admin items although admin panel is gone)
     const created = await ShopItem.create(req.body);
     res.status(201).json(created);
@@ -75,7 +75,7 @@ export const updateShopItem = async (req, res) => {
 
 export const deleteShopItem = async (req, res) => {
     // ... existing logic
-     try {
+    try {
         const { itemId } = req.params;
         await ShopItem.findOneAndDelete({ itemId });
         res.json({ message: 'Deleted' });
@@ -152,4 +152,32 @@ export const purchaseItem = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error purchasing item', error: error.message });
   }
+};
+
+export const usePowerUp = async (req, res) => {
+    try {
+        const { type } = req.body;
+        const userId = req.user.userId;
+
+        const user = await User.findOne({ userId });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const powerUps = user.powerUps || [];
+        const index = powerUps.findIndex(p => p.type === type);
+
+        if (index === -1 || powerUps[index].quantity <= 0) {
+            return res.status(400).json({ message: 'Power-up not available' });
+        }
+
+        // Decrement
+        powerUps[index].quantity -= 1;
+        user.powerUps = powerUps;
+
+        // Save
+        await user.save();
+
+        res.json({ message: 'Power-up used', powerUps: user.powerUps });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
