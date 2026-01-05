@@ -1,0 +1,2938 @@
+[
+  {
+    "id": "Information Systems Security - The Mega Bank (200 Questions)",
+    "category": "ISS",
+    "coinsReward": 10000,
+    "description": "The ultimate exam preparation resource. Contains 200 questions covering every detail of the provided Information Systems Security course material, including Access Control, Attacks, Management, and Application Security.",
+    "difficulty": "Expert",
+    "icon": "🎓",
+    "isTournamentOnly": false,
+    "passingScore": 80,
+    "questions": [
+      {
+        "id": 1,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is the correct order of the access control process?",
+        "options": [
+          "Identification -> Authorization -> Authentication -> Accountability",
+          "Authentication -> Identification -> Authorization -> Accountability",
+          "Identification -> Authentication -> Authorization -> Accountability",
+          "Authorization -> Identification -> Authentication -> Accountability"
+        ],
+        "correctAnswer": 2,
+        "explanation": "The standard flow is Identification (who you are), Authentication (prove it), Authorization (what you can do), and Accountability (tracking what you did).",
+        "points": 1
+      },
+      {
+        "id": 2,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which security principle ensures that data is not modified by unauthorized users?",
+        "options": [
+          "Confidentiality",
+          "Integrity",
+          "Availability",
+          "Non-repudiation"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Integrity ensures information is accurate, complete, and protected from unauthorized modification.",
+        "points": 1
+      },
+      {
+        "id": 3,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "In the context of access control, a 'Subject' is:",
+        "options": [
+          "A passive entity containing data",
+          "An active entity requesting access to an object",
+          "A rule defining access rights",
+          "A database schema"
+        ],
+        "correctAnswer": 1,
+        "explanation": "A subject is an active entity (user, program, process) that requests access to an object.",
+        "points": 1
+      },
+      {
+        "id": 4,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "An 'Object' in access control is defined as:",
+        "options": [
+          "An active entity requesting data",
+          "A passive entity that contains information",
+          "The security administrator",
+          "The login process"
+        ],
+        "correctAnswer": 1,
+        "explanation": "An object is a passive entity that contains information (e.g., file, database, computer).",
+        "points": 1
+      },
+      {
+        "id": 5,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which of the following is a Type 1 Authentication Factor?",
+        "options": [
+          "Fingerprint",
+          "Smart Card",
+          "Password",
+          "Voice Print"
+        ],
+        "correctAnswer": 2,
+        "explanation": "Type 1 is 'Something you know', such as a password, PIN, or passphrase.",
+        "points": 1
+      },
+      {
+        "id": 6,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which of the following is a Type 2 Authentication Factor?",
+        "options": [
+          "PIN code",
+          "Retina Scan",
+          "Token Device",
+          "Signature Dynamics"
+        ],
+        "correctAnswer": 2,
+        "explanation": "Type 2 is 'Something you have', such as a token, smart card, or memory card.",
+        "points": 1
+      },
+      {
+        "id": 7,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which of the following is a Type 3 Authentication Factor?",
+        "options": [
+          "Password",
+          "Smart Card",
+          "Iris Scan",
+          "Location"
+        ],
+        "correctAnswer": 2,
+        "explanation": "Type 3 is 'Something you are', which includes physical characteristics like iris scans, fingerprints, and face shapes.",
+        "points": 1
+      },
+      {
+        "id": 8,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is 'Strong Authentication'?",
+        "options": [
+          "A password longer than 20 characters",
+          "Authentication requiring two or more factors (Multi-factor authentication)",
+          "Using a biometric scan only",
+          "Changing passwords daily"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Strong authentication (or two-factor) requires two or more factors, preferably of different types.",
+        "points": 1
+      },
+      {
+        "id": 9,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is a 'Cognitive Password'?",
+        "options": [
+          "A password based on a math problem",
+          "A series of fact-based questions only the user should know (e.g., mother's maiden name)",
+          "A password stored in the brain",
+          "A random string of characters"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Cognitive passwords are a series of questions about facts or predefined responses (e.g., 'What is your favorite color?').",
+        "points": 1
+      },
+      {
+        "id": 10,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which biometric error rate represents the percentage of valid users who are incorrectly denied access?",
+        "options": [
+          "False Acceptance Rate (FAR)",
+          "False Rejection Rate (FRR)",
+          "Crossover Error Rate (CER)",
+          "Throughput Rate"
+        ],
+        "correctAnswer": 1,
+        "explanation": "FRR (Type 1 error) is the ratio of valid subjects who are incorrectly rejected by the system.",
+        "points": 1
+      },
+      {
+        "id": 11,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which biometric error rate represents the percentage of invalid users who are incorrectly granted access?",
+        "options": [
+          "False Acceptance Rate (FAR)",
+          "False Rejection Rate (FRR)",
+          "Crossover Error Rate (CER)",
+          "Enrollment Rate"
+        ],
+        "correctAnswer": 0,
+        "explanation": "FAR (Type 2 error) is the ratio of invalid subjects who are incorrectly authenticated.",
+        "points": 1
+      },
+      {
+        "id": 12,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What does the Crossover Error Rate (CER) indicate?",
+        "options": [
+          "The speed of the system",
+          "The point where FRR and FAR are equal; used to compare accuracy",
+          "The cost of the device",
+          "The failure rate of the hardware"
+        ],
+        "correctAnswer": 1,
+        "explanation": "CER is the point where the False Rejection Rate and False Acceptance Rate intersect. A lower CER implies a more accurate system.",
+        "points": 1
+      },
+      {
+        "id": 13,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which biometric method is considered the most accurate?",
+        "options": [
+          "Voice Print",
+          "Retina Scan",
+          "Face Recognition",
+          "Keystroke Dynamics"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Retina scans are the most accurate biometric but are also considered intrusive.",
+        "points": 1
+      },
+      {
+        "id": 14,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which biometric method analyzes the colored area around the pupil?",
+        "options": [
+          "Retina Scan",
+          "Iris Scan",
+          "Pupil Dilation",
+          "Face Scan"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Iris scans focus on the colored area around the pupil and are the second most accurate biometric.",
+        "points": 1
+      },
+      {
+        "id": 15,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which biometric factor changes the most over a person's life?",
+        "options": [
+          "Iris Pattern",
+          "Fingerprint",
+          "Voice Pattern",
+          "Retina Pattern"
+        ],
+        "correctAnswer": 2,
+        "explanation": "Voice patterns can change due to age, illness, or emotion, making them less stable than iris or retina patterns.",
+        "points": 1
+      },
+      {
+        "id": 16,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is 'Keystroke Dynamics'?",
+        "options": [
+          "Measuring how hard you press keys",
+          "Measuring flight time and dwell time while typing",
+          "The sound of typing",
+          "The layout of the keyboard"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Keystroke dynamics measure behavior like 'flight time' (between keys) and 'dwell time' (key press duration).",
+        "points": 1
+      },
+      {
+        "id": 17,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is 'Hand Geometry'?",
+        "options": [
+          "Palm prints",
+          "Measuring the physical dimensions (width/length) of the hand and fingers",
+          "Analyzing vein patterns",
+          "Checking for calluses"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Hand geometry recognizes physical dimensions such as the width and length of the palm and fingers.",
+        "points": 1
+      },
+      {
+        "id": 18,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is a 'Zephyr Chart' used for?",
+        "options": [
+          "To track network traffic",
+          "To compare different biometric factors based on accuracy, acceptance, and cost",
+          "To map access control lists",
+          "To schedule password changes"
+        ],
+        "correctAnswer": 1,
+        "explanation": "A Zephyr chart rates various aspects (accuracy, intrusiveness, cost) of different biometrics on a single diagram.",
+        "points": 1
+      },
+      {
+        "id": 19,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which access control model is based on the discretion of the object owner?",
+        "options": [
+          "MAC",
+          "DAC",
+          "RBAC",
+          "Rule-Based"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Discretionary Access Control (DAC) allows the owner to decide who has access.",
+        "points": 1
+      },
+      {
+        "id": 20,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which access control model relies on security labels (Clearance vs. Classification)?",
+        "options": [
+          "MAC",
+          "DAC",
+          "RBAC",
+          "List-Based"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Mandatory Access Control (MAC) uses labels (e.g., Top Secret) to enforce security domains.",
+        "points": 1
+      },
+      {
+        "id": 21,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which access control model is best for high-turnover environments?",
+        "options": [
+          "MAC",
+          "DAC",
+          "RBAC",
+          "Lattice"
+        ],
+        "correctAnswer": 2,
+        "explanation": "Role-Based Access Control (RBAC) assigns permissions to roles (job functions) rather than individuals, making it ideal for high turnover.",
+        "points": 1
+      },
+      {
+        "id": 22,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "In MAC, a 'Compartmentalized' environment means:",
+        "options": [
+          "There is no relationship between one security domain and another",
+          "Domains are ordered low-to-high",
+          "Users determine access",
+          "All data is public"
+        ],
+        "correctAnswer": 0,
+        "explanation": "In compartmentalized environments, there is no relationship between security domains; users need specific clearance for that specific compartment.",
+        "points": 1
+      },
+      {
+        "id": 23,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is 'Task-Based Access Control' (TBAC)?",
+        "options": [
+          "Access based on physical location",
+          "Access based on assigned work tasks rather than a broad role",
+          "Access controlled by the file owner",
+          "Access based on time of day"
+        ],
+        "correctAnswer": 1,
+        "explanation": "TBAC is similar to RBAC but assigns permissions based on specific assigned tasks rather than a single role.",
+        "points": 1
+      },
+      {
+        "id": 24,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is an 'Access Control List' (ACL)?",
+        "options": [
+          "A list of all users on a system",
+          "A list attached to an object defining which subjects can access it and how",
+          "A list of passwords",
+          "A list of biometric templates"
+        ],
+        "correctAnswer": 1,
+        "explanation": "An ACL is bound to an object and defines the types of access granted to individual subjects.",
+        "points": 1
+      },
+      {
+        "id": 25,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is a 'Capability Table'?",
+        "options": [
+          "A table bound to a subject listing what objects they can access",
+          "A table bound to an object listing allowed users",
+          "A list of system capabilities",
+          "A biometric database"
+        ],
+        "correctAnswer": 0,
+        "explanation": "A capability table is bound to a subject (row in a matrix) and lists the rights that subject has.",
+        "points": 1
+      },
+      {
+        "id": 26,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is 'Single Sign-On' (SSO)?",
+        "options": [
+          "Authenticating once to access multiple resources without re-authenticating",
+          "Using only one password for life",
+          "Using only one server",
+          "Logging in with a guest account"
+        ],
+        "correctAnswer": 0,
+        "explanation": "SSO allows a subject to authenticate once and access multiple resources freely.",
+        "points": 1
+      },
+      {
+        "id": 27,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which is a disadvantage of Single Sign-On?",
+        "options": [
+          "It is hard to use",
+          "If the account is compromised, the attacker has unrestricted access to all resources",
+          "It requires biometrics",
+          "It is slower than manual login"
+        ],
+        "correctAnswer": 1,
+        "explanation": "A primary disadvantage of SSO is that once an account is compromised, the malicious user has access to everything.",
+        "points": 1
+      },
+      {
+        "id": 28,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is 'Centralized Access Control'?",
+        "options": [
+          "Authorization is verification performed by a single entity",
+          "Authorization is performed by every server locally",
+          "Each user manages their own access",
+          "No authorization is used"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Centralized access control implies all authorization verification is performed by a single entity (e.g., RADIUS, TACACS).",
+        "points": 1
+      },
+      {
+        "id": 29,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which of the following is a benefit of Decentralized Access Control?",
+        "options": [
+          "Lower administrative overhead",
+          "No single point of failure",
+          "Easy to maintain consistency",
+          "Changes propagate instantly"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Decentralized access control does not have a single point of failure; if one point fails, others can continue.",
+        "points": 1
+      },
+      {
+        "id": 30,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is 'Account Lockout'?",
+        "options": [
+          "Deleting an account",
+          "Disabling an account after a specific number of failed login attempts",
+          "Locking the server room",
+          "Encrypting the password file"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Account lockout disables an account after failed logons to prevent brute-force attacks.",
+        "points": 1
+      },
+      {
+        "id": 31,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: Identification proves who you are.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Identification only *claims* identity. Authentication *proves* it.",
+        "points": 1
+      },
+      {
+        "id": 32,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: Authorization can occur before Authentication.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. You must prove who you are (Authenticate) before the system determines what you can do (Authorize).",
+        "points": 1
+      },
+      {
+        "id": 33,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: A passphrase is usually longer and stronger than a simple password.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. Passphrases are longer strings (often sentences) converted to virtual passwords, making them harder to crack.",
+        "points": 1
+      },
+      {
+        "id": 34,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: Synchronous tokens require the clock on the token and server to be synchronized.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. Synchronous dynamic password tokens generate passwords at fixed time intervals requiring time sync.",
+        "points": 1
+      },
+      {
+        "id": 35,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: In a DAC model, the administrator always controls file access.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. In DAC, the object *owner* controls access.",
+        "points": 1
+      },
+      {
+        "id": 36,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: 'Availability' is one of the three main security principles.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. The principles are Confidentiality, Integrity, and Availability.",
+        "points": 1
+      },
+      {
+        "id": 37,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: Passwords should be stored in clear text in the database.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Passwords should always be hashed or encrypted.",
+        "points": 1
+      },
+      {
+        "id": 38,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: A retina scan detects the pattern of blood vessels at the back of the eye.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. That is the definition of a retina scan.",
+        "points": 1
+      },
+      {
+        "id": 39,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: Iris scans change significantly as a person ages.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Iris patterns remain relatively unchanged throughout a person's life.",
+        "points": 1
+      },
+      {
+        "id": 40,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: Auditing is the process of tracking user activities.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. Auditing tracks and records online activities.",
+        "points": 1
+      },
+      {
+        "id": 41,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which of the following is NOT a requirement for audit data recording (NISTIR 5153)?",
+        "options": [
+          "Protect the audit trail from unauthorized access",
+          "Record the user's password in clear text",
+          "Provide a mechanism to generate a security audit trail",
+          "Provide end-to-end user accountability"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Passwords should NEVER be recorded in the audit trail.",
+        "points": 1
+      },
+      {
+        "id": 42,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is an 'Asynchronous Dynamic Password Token'?",
+        "options": [
+          "Generates passwords based on time",
+          "Generates passwords based on an event (e.g., pressing a button)",
+          "A static key",
+          "A challenge-response system"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Asynchronous tokens generate passwords based on an event, like a button press, rather than a clock.",
+        "points": 1
+      },
+      {
+        "id": 43,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is a 'Challenge-Response Token'?",
+        "options": [
+          "Token generates a password based on a server-provided challenge string",
+          "Token generates a password every 60 seconds",
+          "Token is a USB stick",
+          "Token checks your fingerprint"
+        ],
+        "correctAnswer": 0,
+        "explanation": "The server displays a challenge, the user enters it into the token, and the token generates a response.",
+        "points": 1
+      },
+      {
+        "id": 44,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which authentication factor typically relies on 'Flight Time' and 'Dwell Time'?",
+        "options": [
+          "Voice Recognition",
+          "Keystroke Dynamics",
+          "Signature Dynamics",
+          "Hand Geometry"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Keystroke dynamics analyze typing rhythm via flight time (between keys) and dwell time (key hold).",
+        "points": 1
+      },
+      {
+        "id": 45,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which of these is a common 'Something you do' factor?",
+        "options": [
+          "Fingerprint",
+          "Signature",
+          "PIN",
+          "Smart Card"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Signing your name is a behavioral action ('Something you do').",
+        "points": 1
+      },
+      {
+        "id": 46,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is 'Minutia Matching' used for?",
+        "options": [
+          "Retina scans",
+          "Fingerprint analysis",
+          "Voice recognition",
+          "Password hashing"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Minutia matching examines the microscopic ridge bifurcations and endings in fingerprints.",
+        "points": 1
+      },
+      {
+        "id": 47,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which access control model uses a 'Lattice' of permissions?",
+        "options": [
+          "DAC",
+          "MAC (Lattice-Based)",
+          "RBAC",
+          "Decentralized"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Lattice-based access controls define upper and lower bounds of access (e.g., in MAC) relating subjects to objects.",
+        "points": 1
+      },
+      {
+        "id": 48,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What defines a 'Static Password'?",
+        "options": [
+          "It changes every login",
+          "It remains the same until manually changed",
+          "It is generated by a token",
+          "It is based on biology"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Static passwords remain the same over time.",
+        "points": 1
+      },
+      {
+        "id": 49,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is a 'Composition Password'?",
+        "options": [
+          "A random string",
+          "Two or more unrelated words joined by a number or symbol",
+          "A sentence",
+          "A biometric hash"
+        ],
+        "correctAnswer": 1,
+        "explanation": "A composition password combines unrelated words with symbols/numbers (e.g., 'Apple$Tree').",
+        "points": 1
+      },
+      {
+        "id": 50,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is a 'One-Time Password' (OTP)?",
+        "options": [
+          "A password used for only one login session",
+          "A password you use once a year",
+          "A password for one application only",
+          "A backup password"
+        ],
+        "correctAnswer": 0,
+        "explanation": "OTP changes every time it is used, making it very secure against replay attacks.",
+        "points": 1
+      },
+      {
+        "id": 51,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is the primary function of an IDS?",
+        "options": [
+          "Block all traffic",
+          "Detect and alert on intrusion attempts",
+          "Encrypt the database",
+          "Manage user passwords"
+        ],
+        "correctAnswer": 1,
+        "explanation": "An Intrusion Detection System (IDS) automates the inspection of logs/traffic to detect intrusions.",
+        "points": 1
+      },
+      {
+        "id": 52,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Host-Based IDS' (HIDS)?",
+        "options": [
+          "Monitors the entire network",
+          "Monitors activity on a single computer system",
+          "Monitors the firewall",
+          "Monitors internet traffic"
+        ],
+        "correctAnswer": 1,
+        "explanation": "HIDS focuses on a single computer, examining logs and processes in detail.",
+        "points": 1
+      },
+      {
+        "id": 53,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Network-Based IDS' (NIDS)?",
+        "options": [
+          "Monitors a single PC",
+          "Monitors traffic over the network medium",
+          "Monitors keyboard input",
+          "Monitors file integrity"
+        ],
+        "correctAnswer": 1,
+        "explanation": "NIDS detects attacks by capturing and evaluating network packets on the wire.",
+        "points": 1
+      },
+      {
+        "id": 54,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "Which detection method uses a database of known attack signatures?",
+        "options": [
+          "Behavior-based",
+          "Knowledge-based (Signature-based)",
+          "Heuristic",
+          "Anomaly"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Knowledge-based detection matches events against a database of known attack signatures.",
+        "points": 1
+      },
+      {
+        "id": 55,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "Which detection method learns 'normal' behavior and flags deviations?",
+        "options": [
+          "Knowledge-based",
+          "Behavior-based (Anomaly)",
+          "Signature-based",
+          "Pattern matching"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Behavior-based detection learns normal activity and alerts on abnormalities.",
+        "points": 1
+      },
+      {
+        "id": 56,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is the main disadvantage of Behavior-based IDS?",
+        "options": [
+          "Cannot detect new attacks",
+          "High rate of false alarms",
+          "Requires frequent signature updates",
+          "Does not monitor network"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Behavior-based systems often generate many false positives because normal behavior can vary.",
+        "points": 1
+      },
+      {
+        "id": 57,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Honey Pot'?",
+        "options": [
+          "A secure server",
+          "A decoy system designed to lure and study attackers",
+          "A type of firewall",
+          "An antivirus tool"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Honey pots are fake systems meant to snare intruders to study their methods.",
+        "points": 1
+      },
+      {
+        "id": 58,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Padded Cell' in security?",
+        "options": [
+          "A physical jail",
+          "A simulated environment an intruder is transferred to automatically",
+          "A backup drive",
+          "A password manager"
+        ],
+        "correctAnswer": 1,
+        "explanation": "A padded cell is a simulated environment an intruder is moved to seamlessly to contain them.",
+        "points": 1
+      },
+      {
+        "id": 59,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What distinguishes an IPS from an IDS?",
+        "options": [
+          "IPS detects, IDS blocks",
+          "IPS actively blocks attacks, IDS detects and alerts",
+          "There is no difference",
+          "IPS is software only"
+        ],
+        "correctAnswer": 1,
+        "explanation": "IPS (Intrusion Prevention System) is proactive and blocks attacks; IDS is detective.",
+        "points": 1
+      },
+      {
+        "id": 60,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a Denial-of-Service (DoS) attack?",
+        "options": [
+          "Stealing data",
+          "Preventing a system from processing legitimate requests",
+          "Guessing passwords",
+          "Injecting code"
+        ],
+        "correctAnswer": 1,
+        "explanation": "DoS attacks prevent the system from responding to legitimate traffic (e.g., by flooding it).",
+        "points": 1
+      },
+      {
+        "id": 61,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "Which attack exploits the TCP three-way handshake?",
+        "options": [
+          "Smurf Attack",
+          "SYN Flood",
+          "Teardrop",
+          "Ping of Death"
+        ],
+        "correctAnswer": 1,
+        "explanation": "SYN Flood sends SYN packets but never completes the handshake with ACK, consuming resources.",
+        "points": 1
+      },
+      {
+        "id": 62,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Smurf Attack'?",
+        "options": [
+          "Oversized pings",
+          "Broadcast ping flood using a spoofed victim IP",
+          "Email spam",
+          "SQL injection"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Smurf attacks send a broadcast ping with the victim's spoofed IP, causing all hosts to reply to the victim.",
+        "points": 1
+      },
+      {
+        "id": 63,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'DDoS' attack?",
+        "options": [
+          "Direct Denial of Service",
+          "Distributed Denial of Service (using multiple compromised systems)",
+          "Database Denial of Service",
+          "Digital Denial of Service"
+        ],
+        "correctAnswer": 1,
+        "explanation": "DDoS uses many compromised systems (zombies/botnet) to flood a target.",
+        "points": 1
+      },
+      {
+        "id": 64,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What are compromised computers in a DDoS attack called?",
+        "options": [
+          "Masters",
+          "Zombies or Slaves",
+          "Servers",
+          "Hosts"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Compromised machines used in DDoS are called zombies or slaves.",
+        "points": 1
+      },
+      {
+        "id": 65,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is 'Spoofing'?",
+        "options": [
+          "Encrypting data",
+          "Pretending to be someone else (e.g., faking an IP address)",
+          "Deleting logs",
+          "Scanning ports"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Spoofing involves falsifying data (like an IP address) to hide identity or impersonate another.",
+        "points": 1
+      },
+      {
+        "id": 66,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Man-in-the-Middle' attack?",
+        "options": [
+          "Attacking the central server",
+          "Intercepting/altering communications between two parties",
+          "A physical attack",
+          "A password guess"
+        ],
+        "correctAnswer": 1,
+        "explanation": "MITM involves an attacker positioning themselves between two endpoints to intercept or modify data.",
+        "points": 1
+      },
+      {
+        "id": 67,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Replay Attack'?",
+        "options": [
+          "Playing a video virus",
+          "Capturing authentication traffic and retransmitting it to gain access",
+          "Rebooting a server",
+          "A backup restoration"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Replay attacks involve capturing valid credentials and sending them later to impersonate the user.",
+        "points": 1
+      },
+      {
+        "id": 68,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Sniffer'?",
+        "options": [
+          "A packet capturing tool",
+          "A biometric device",
+          "A firewall",
+          "An antivirus"
+        ],
+        "correctAnswer": 0,
+        "explanation": "A sniffer captures network packets for analysis (or data theft).",
+        "points": 1
+      },
+      {
+        "id": 69,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is 'Spam'?",
+        "options": [
+          "A virus",
+          "Unwanted email/messages",
+          "A password cracker",
+          "A firewall rule"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Spam is unsolicited junk email.",
+        "points": 1
+      },
+      {
+        "id": 70,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Teardrop Attack'?",
+        "options": [
+          "Sending oversized pings",
+          "Exploiting fragmentation reassembly bugs with overlapping packets",
+          "Sending SYN packets",
+          "Spoofing DNS"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Teardrop exploits OS bugs in reassembling fragmented IP packets.",
+        "points": 1
+      },
+      {
+        "id": 71,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Ping of Death'?",
+        "options": [
+          "Sending a ping larger than 65,535 bytes to crash a system",
+          "A continuous ping",
+          "A broadcast ping",
+          "A fast ping"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Ping of Death uses an oversized ICMP packet to crash the victim's TCP/IP stack.",
+        "points": 1
+      },
+      {
+        "id": 72,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Land Attack'?",
+        "options": [
+          "Attacking from the ground",
+          "Sending a packet with the same source and destination IP (the victim's)",
+          "A wireless attack",
+          "A database attack"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Land attack confuses the system by making it reply to itself (Source IP = Dest IP = Victim IP).",
+        "points": 1
+      },
+      {
+        "id": 73,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is 'WinNuke'?",
+        "options": [
+          "A virus",
+          "An OOB (Out of Band) data attack crashing Windows 95",
+          "A password tool",
+          "A firewall"
+        ],
+        "correctAnswer": 1,
+        "explanation": "WinNuke sent OOB data to NetBIOS to crash older Windows systems.",
+        "points": 1
+      },
+      {
+        "id": 74,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Bot Herder'?",
+        "options": [
+          "A person who controls a botnet",
+          "A firewall admin",
+          "A software update",
+          "A type of virus"
+        ],
+        "correctAnswer": 0,
+        "explanation": "A bot herder is the criminal who controls the botnet.",
+        "points": 1
+      },
+      {
+        "id": 75,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is 'Distributed Reflective Denial of Service' (DRDoS)?",
+        "options": [
+          "Using routers/DNS to reflect attacks to a victim",
+          "Using mirrors",
+          "A local attack",
+          "A virus"
+        ],
+        "correctAnswer": 0,
+        "explanation": "DRDoS uses legitimate servers (like DNS) to reflect traffic to a victim, amplifying the volume.",
+        "points": 1
+      },
+      {
+        "id": 76,
+        "type": "true-false",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "True or False: An IDS actively blocks traffic by default.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. An IDS (Detection) detects/alerts. An IPS (Prevention) blocks.",
+        "points": 1
+      },
+      {
+        "id": 77,
+        "type": "true-false",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "True or False: Network-Based IDS can monitor encrypted traffic content.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. NIDS cannot read the content of encrypted packets.",
+        "points": 1
+      },
+      {
+        "id": 78,
+        "type": "true-false",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "True or False: A Host-Based IDS monitors a single system.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. HIDS is installed on a specific host.",
+        "points": 1
+      },
+      {
+        "id": 79,
+        "type": "true-false",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "True or False: Signature-based detection can easily detect new, unknown attacks.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Signature-based relies on known databases. Anomaly/Behavioral is better for new attacks.",
+        "points": 1
+      },
+      {
+        "id": 80,
+        "type": "true-false",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "True or False: A brute-force attack tries common words first.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. That is a Dictionary attack. Brute-force tries ALL combinations.",
+        "points": 1
+      },
+      {
+        "id": 81,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is 'Penetration Testing'?",
+        "options": [
+          "Installing antivirus",
+          "A rigorous attempt to break into a system to find vulnerabilities (with permission)",
+          "A hacker attack",
+          "Updating software"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Pen testing is authorized simulated attacking to find weaknesses.",
+        "points": 1
+      },
+      {
+        "id": 82,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Vulnerability Scanner'?",
+        "options": [
+          "A tool to find known weaknesses in a system",
+          "A virus",
+          "A firewall",
+          "A lock"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Scanners automate checking for known vulnerabilities (missing patches, etc.).",
+        "points": 1
+      },
+      {
+        "id": 83,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is 'Impersonation' vs 'Masquerading'?",
+        "options": [
+          "Impersonation is active (capturing credentials); Masquerading is passive (using stolen credentials)",
+          "They are the same",
+          "Masquerading is active; Impersonation is passive",
+          "Impersonation is physical only"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Impersonation implies active capture/replay; masquerading implies using already stolen credentials.",
+        "points": 1
+      },
+      {
+        "id": 84,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "Which tool might an attacker use to capture passwords on a LAN?",
+        "options": [
+          "Sniffer",
+          "Dictionary",
+          "Compiler",
+          "Editor"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Sniffers capture network traffic, including cleartext passwords.",
+        "points": 1
+      },
+      {
+        "id": 85,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "How can you prevent a SYN Flood?",
+        "options": [
+          "Increase timeout duration",
+          "Decrease timeout for half-open connections or use SYN cookies",
+          "Use a hub instead of a switch",
+          "Disable the firewall"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Reducing the wait time for ACKs or using SYN cookies helps mitigate SYN floods.",
+        "points": 1
+      },
+      {
+        "id": 86,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is an 'Active Response' by an IDS?",
+        "options": [
+          "Logging the event",
+          "Sending an email",
+          "Resetting the TCP connection or blocking the IP",
+          "Doing nothing"
+        ],
+        "correctAnswer": 2,
+        "explanation": "Active responses intervene to stop the attack (e.g., firewall reconfiguration, TCP reset).",
+        "points": 1
+      },
+      {
+        "id": 87,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Passive Response' by an IDS?",
+        "options": [
+          "Blocking the IP",
+          "Logging the event and notifying the admin",
+          "Shutting down the server",
+          "Deleting the virus"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Passive responses (logging, alerting) do not directly stop the attack traffic.",
+        "points": 1
+      },
+      {
+        "id": 88,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is 'Stealth Mode' for an IDS?",
+        "options": [
+          "It is invisible on the network (no IP address)",
+          "It is hidden in a closet",
+          "It is encrypted",
+          "It is turned off"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Stealth mode means the IDS interface has no IP stack and cannot be addressed or attacked directly.",
+        "points": 1
+      },
+      {
+        "id": 89,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is 'Data Reduction' in monitoring?",
+        "options": [
+          "Deleting log files",
+          "Extracting relevant details from large volumes of log data",
+          "Compressing files",
+          "Hiding data"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Data reduction involves filtering meaningful events from the noise of massive log files.",
+        "points": 1
+      },
+      {
+        "id": 90,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is a 'Hybrid' IDS response?",
+        "options": [
+          "Logging and Blocking",
+          "Logging only",
+          "Blocking only",
+          "None"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Hybrid responses combine passive (logging) and active (blocking) actions.",
+        "points": 1
+      },
+      {
+        "id": 91,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Defense in Depth'?",
+        "options": [
+          "Using a single firewall",
+          "Layering multiple security controls in series",
+          "Hiding the server",
+          "Using passwords"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Defense in depth uses multiple layers of controls so if one fails, others protect the asset.",
+        "points": 1
+      },
+      {
+        "id": 92,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "Why use 'Series' configurations in layering?",
+        "options": [
+          "It is faster",
+          "It ensures the threat must pass through every control",
+          "It is cheaper",
+          "It allows parallel processing"
+        ],
+        "correctAnswer": 1,
+        "explanation": "In series, an attacker must defeat Control A AND Control B. In parallel, they could bypass one.",
+        "points": 1
+      },
+      {
+        "id": 93,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Abstraction'?",
+        "options": [
+          "Grouping similar elements (e.g., roles) to manage security efficiently",
+          "Making things vague",
+          "Hiding data",
+          "Deleting data"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Abstraction simplifies management by grouping users into roles or objects into classes.",
+        "points": 1
+      },
+      {
+        "id": 94,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Data Hiding'?",
+        "options": [
+          "Positioning data in logical compartments inaccessible to the subject",
+          "Deleting files",
+          "Encryption",
+          "Steganography"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Data hiding structures systems so users only see/access data relevant to them (e.g., private class members).",
+        "points": 1
+      },
+      {
+        "id": 95,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Encryption'?",
+        "options": [
+          "Hiding the meaning of communication",
+          "Hiding the existence of communication",
+          "Deleting data",
+          "Compressing data"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Encryption transforms data into unreadable text to hide its meaning.",
+        "points": 1
+      },
+      {
+        "id": 96,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is the goal of 'Change Management'?",
+        "options": [
+          "Stop all changes",
+          "Ensure changes do not compromise security",
+          "Speed up development",
+          "Reduce costs"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Change management ensures alterations are controlled, tested, and do not introduce vulnerabilities.",
+        "points": 1
+      },
+      {
+        "id": 97,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "Who is the 'Owner' of data?",
+        "options": [
+          "The user",
+          "The person with final corporate responsibility for protection and classification",
+          "The IT admin",
+          "The database"
+        ],
+        "correctAnswer": 1,
+        "explanation": "The owner is the senior person responsible for the asset's security classification.",
+        "points": 1
+      },
+      {
+        "id": 98,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "Who is the 'Custodian' of data?",
+        "options": [
+          "The owner",
+          "The person handling day-to-day storage/protection (e.g., IT staff)",
+          "The user",
+          "The hacker"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Custodians (often IT) implement the controls defined by the Owner.",
+        "points": 1
+      },
+      {
+        "id": 99,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is the highest Government classification?",
+        "options": [
+          "Secret",
+          "Confidential",
+          "Top Secret",
+          "Unclassified"
+        ],
+        "correctAnswer": 2,
+        "explanation": "Top Secret is the highest level; disclosure causes grave damage.",
+        "points": 1
+      },
+      {
+        "id": 100,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is the highest Commercial classification?",
+        "options": [
+          "Private",
+          "Confidential",
+          "Sensitive",
+          "Public"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Confidential is typically the highest commercial level (extremely sensitive).",
+        "points": 1
+      },
+      {
+        "id": 101,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Private' data in a commercial setting?",
+        "options": [
+          "Personal nature (e.g., HR records), internal use only",
+          "Company secrets",
+          "Public info",
+          "Trade secrets"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Private data refers to personal information (HR, medical) intended for internal use.",
+        "points": 1
+      },
+      {
+        "id": 102,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Declassification'?",
+        "options": [
+          "Deleting data",
+          "Lowering the security label when high protection is no longer needed",
+          "Encrypting data",
+          "Hiding data"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Declassification is removing or lowering security labels when data is no longer sensitive.",
+        "points": 1
+      },
+      {
+        "id": 103,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Separation of Duties'?",
+        "options": [
+          "One person does everything",
+          "Splitting critical tasks among multiple people",
+          "Separating servers",
+          "Separating networks"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Prevents fraud by ensuring no single person can complete a critical process alone.",
+        "points": 1
+      },
+      {
+        "id": 104,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Least Privilege'?",
+        "options": [
+          "Giving users admin rights",
+          "Giving users only the minimum access needed for their job",
+          "Giving users no access",
+          "Sharing passwords"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Users should have only the permissions necessary for their specific tasks.",
+        "points": 1
+      },
+      {
+        "id": 105,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Need to Know'?",
+        "options": [
+          "Curiosity",
+          "Access based on necessity for a specific task, even if clearance exists",
+          "Global access",
+          "Admin access"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Even with the right clearance, you only get access if you specifically need that data for a task.",
+        "points": 1
+      },
+      {
+        "id": 106,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Parallel Run' testing?",
+        "options": [
+          "Running two servers",
+          "Running new and old systems simultaneously to compare results",
+          "Running antivirus",
+          "Running cables"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Parallel run ensures the new system performs exactly as the old one did before switching.",
+        "points": 1
+      },
+      {
+        "id": 107,
+        "type": "true-false",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "True or False: Change management includes the ability to reverse (rollback) changes.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. You must be able to revert if the change causes issues.",
+        "points": 1
+      },
+      {
+        "id": 108,
+        "type": "true-false",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "True or False: 'Public' data requires strict confidentiality controls.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Public data disclosure causes no harm.",
+        "points": 1
+      },
+      {
+        "id": 109,
+        "type": "true-false",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "True or False: An Owner is usually a technical IT staff member.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Owners are usually business managers; Custodians are IT staff.",
+        "points": 1
+      },
+      {
+        "id": 110,
+        "type": "true-false",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "True or False: 'Secret' is a higher classification than 'Confidential'.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. The order is Top Secret > Secret > Confidential > Unclassified.",
+        "points": 1
+      },
+      {
+        "id": 111,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Buffer Overflow'?",
+        "options": [
+          "Filling the hard drive",
+          "Sending more data to an input buffer than it can hold, overwriting memory",
+          "A database error",
+          "A network flood"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Buffer overflows occur when input data exceeds the reserved memory space, spilling into adjacent memory.",
+        "points": 1
+      },
+      {
+        "id": 112,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Stack Buffer Overflow'?",
+        "options": [
+          "Overwriting the stack",
+          "Overwriting the heap",
+          "Overwriting the hard drive",
+          "Overwriting the BIOS"
+        ],
+        "correctAnswer": 0,
+        "explanation": "A stack overflow corrupts the call stack, often to hijack program execution flow.",
+        "points": 1
+      },
+      {
+        "id": 113,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'NOP Sled'?",
+        "options": [
+          "A winter sport",
+          "A string of 'No Operation' instructions used to slide execution to malicious code",
+          "A password cracker",
+          "A firewall rule"
+        ],
+        "correctAnswer": 1,
+        "explanation": "NOP Sleds are used in buffer overflows to increase the chance of hitting the malicious payload.",
+        "points": 1
+      },
+      {
+        "id": 114,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Heap Overflow'?",
+        "options": [
+          "Overflowing the stack",
+          "Overflowing the dynamically allocated memory (heap)",
+          "Overflowing the CPU",
+          "Overflowing the network"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Heap overflows target dynamically allocated memory.",
+        "points": 1
+      },
+      {
+        "id": 115,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is the best countermeasure for Buffer Overflows?",
+        "options": [
+          "Firewalls",
+          "Safe programming languages (Java/.NET) and boundary checking",
+          "Antivirus",
+          "Complex passwords"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Safe languages manage memory automatically; boundary checking prevents the overflow.",
+        "points": 1
+      },
+      {
+        "id": 116,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Virus'?",
+        "options": [
+          "Standalone malware",
+          "Malware that attaches to a host file and requires human action to spread",
+          "Hardware failure",
+          "Network packet"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Viruses need a host program and user interaction (execution) to replicate.",
+        "points": 1
+      },
+      {
+        "id": 117,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Worm'?",
+        "options": [
+          "Malware that attaches to files",
+          "Self-propagating malware that spreads via networks without human help",
+          "A database script",
+          "A text editor"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Worms propagate automatically over networks.",
+        "points": 1
+      },
+      {
+        "id": 118,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Trojan Horse'?",
+        "options": [
+          "A legitimate program",
+          "Malware disguised as legitimate software",
+          "A history book",
+          "A firewall"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Trojans look useful but contain malicious payloads.",
+        "points": 1
+      },
+      {
+        "id": 119,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Rootkit'?",
+        "options": [
+          "Admin tool",
+          "Malware that hides deep in the OS/Kernel to avoid detection",
+          "A boot disk",
+          "A password"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Rootkits modify OS files to hide their presence.",
+        "points": 1
+      },
+      {
+        "id": 120,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Botnet'?",
+        "options": [
+          "A robot",
+          "A network of compromised computers controlled by a master",
+          "A local network",
+          "A server farm"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Botnets are armies of zombie PCs used for attacks like DDoS.",
+        "points": 1
+      },
+      {
+        "id": 121,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Phishing'?",
+        "options": [
+          "Fishing",
+          "Sending fake emails to trick users into revealing credentials",
+          "Scanning ports",
+          "Encrypting files"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Phishing uses social engineering via email to steal data.",
+        "points": 1
+      },
+      {
+        "id": 122,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Pharming'?",
+        "options": [
+          "Farming",
+          "Redirecting valid traffic to a fake site via DNS poisoning",
+          "Sending spam",
+          "Deleting data"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Pharming redirects users to malicious sites even if they type the correct URL.",
+        "points": 1
+      },
+      {
+        "id": 123,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Spyware'?",
+        "options": [
+          "A spy movie",
+          "Software that tracks user activity without consent",
+          "A firewall",
+          "A chat app"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Spyware monitors behavior (keystrokes, browsing) for the attacker.",
+        "points": 1
+      },
+      {
+        "id": 124,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'SQL Injection'?",
+        "options": [
+          "Injecting commands into a database input field",
+          "Injecting a virus",
+          "Installing SQL server",
+          "Backing up a database"
+        ],
+        "correctAnswer": 0,
+        "explanation": "SQL Injection manipulates database queries via unsecured input fields.",
+        "points": 1
+      },
+      {
+        "id": 125,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Cross-Site Scripting' (XSS)?",
+        "options": [
+          "Running scripts on the server",
+          "Injecting malicious client-side scripts into web pages viewed by others",
+          "Designing a website",
+          "Cracking passwords"
+        ],
+        "correctAnswer": 1,
+        "explanation": "XSS executes malicious scripts in the victim's browser.",
+        "points": 1
+      },
+      {
+        "id": 126,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Logic Bomb'?",
+        "options": [
+          "Malicious code that triggers on a specific event (e.g., a date)",
+          "A physical bomb",
+          "A virus",
+          "A firewall"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Logic bombs lie dormant until a condition (time, event) is met.",
+        "points": 1
+      },
+      {
+        "id": 127,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Object Reuse'?",
+        "options": [
+          "Recycling hardware",
+          "Reading residual data left in memory by a previous process",
+          "Reusing code classes",
+          "Using the same password"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Object reuse vulnerability allows reading old data from unscrubbed memory.",
+        "points": 1
+      },
+      {
+        "id": 128,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Mobile Code'?",
+        "options": [
+          "Code on a phone",
+          "Code downloaded from a server and executed locally (e.g., Java Applets)",
+          "Wireless protocols",
+          "GPS software"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Mobile code (like ActiveX/Java) moves from server to client to execute.",
+        "points": 1
+      },
+      {
+        "id": 129,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Social Engineering'?",
+        "options": [
+          "Civil engineering",
+          "Manipulating people into divulging confidential info",
+          "Building networks",
+          "Programming AI"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Social engineering attacks the human element of security.",
+        "points": 1
+      },
+      {
+        "id": 130,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Pretexting'?",
+        "options": [
+          "Texting",
+          "Creating a fabricated scenario to steal info (Social Engineering)",
+          "Writing code",
+          "Testing software"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Pretexting is acting out a scenario (e.g., 'I am IT support') to trick a victim.",
+        "points": 1
+      },
+      {
+        "id": 131,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Back Door'?",
+        "options": [
+          "A physical exit",
+          "A hidden bypass in code to allow unauthorized access",
+          "A firewall rule",
+          "A recovery disk"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Back doors are developer-planted shortcuts that bypass security.",
+        "points": 1
+      },
+      {
+        "id": 132,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is an 'Applet'?",
+        "options": [
+          "A small program running inside another application (e.g., browser)",
+          "A standalone app",
+          "A mobile phone",
+          "A server"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Applets (like Java applets) run within the context of a browser.",
+        "points": 1
+      },
+      {
+        "id": 133,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is an 'Agent'?",
+        "options": [
+          "A secret spy",
+          "A standalone program performing a specific function (e.g., antivirus update agent)",
+          "A web browser",
+          "A user"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Agents are small programs performing background tasks like updates or monitoring.",
+        "points": 1
+      },
+      {
+        "id": 134,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Object-Oriented Programming' (OOP)?",
+        "options": [
+          "Linear coding",
+          "Programming based on objects containing data and methods",
+          "Assembly language",
+          "Scripting"
+        ],
+        "correctAnswer": 1,
+        "explanation": "OOP structures code around objects (data + behavior) rather than logic flows.",
+        "points": 1
+      },
+      {
+        "id": 135,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Encapsulation'?",
+        "options": [
+          "Hiding internal implementation details of an object",
+          "Inheriting code",
+          "Polymorphism",
+          "Compiling code"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Encapsulation hides the inner workings of an object, exposing only an interface.",
+        "points": 1
+      },
+      {
+        "id": 136,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Inheritance'?",
+        "options": [
+          "A class deriving attributes from a parent class",
+          "Hiding data",
+          "Repeating code",
+          "Running loops"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Inheritance allows a subclass to reuse properties of a parent class.",
+        "points": 1
+      },
+      {
+        "id": 137,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Polymorphism'?",
+        "options": [
+          "Objects responding differently to the same message based on their type",
+          "Changing shapes",
+          "Encrypting code",
+          "Hiding data"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Polymorphism allows different objects to handle the same method call in unique ways.",
+        "points": 1
+      },
+      {
+        "id": 138,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Knowledge-Based System'?",
+        "options": [
+          "A database",
+          "AI applications (Expert Systems/Neural Networks) that make decisions",
+          "A wiki",
+          "A file server"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Knowledge-based systems use rules/data to simulate human reasoning.",
+        "points": 1
+      },
+      {
+        "id": 139,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Neural Network'?",
+        "options": [
+          "The internet",
+          "Computing model simulating the human brain's neurons to learn",
+          "A LAN",
+          "A firewall"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Neural networks simulate biological learning processes.",
+        "points": 1
+      },
+      {
+        "id": 140,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Expert System'?",
+        "options": [
+          "A smart user",
+          "Software that accumulates knowledge to predict outcomes (If-Then rules)",
+          "A hardware device",
+          "A monitoring tool"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Expert systems use a knowledge base of rules to solve problems.",
+        "points": 1
+      },
+      {
+        "id": 141,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Structured Programming'?",
+        "options": [
+          "Using GOTO statements",
+          "Using blocks, loops, and subroutines (without GOTO) for better logic flow",
+          "Object-oriented",
+          "Random coding"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Structured programming avoids 'spaghetti code' by using logical structures.",
+        "points": 1
+      },
+      {
+        "id": 142,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Control Flow' language?",
+        "options": [
+          "Sequential execution, often using GOTO",
+          "Object oriented",
+          "Knowledge based",
+          "Web scripts"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Early languages were control flow, executing step-by-step.",
+        "points": 1
+      },
+      {
+        "id": 143,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "Which countermeasure protects against Input Attacks?",
+        "options": [
+          "Input Validation/Filtering",
+          "More RAM",
+          "Faster CPU",
+          "Backups"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Filtering input removes malicious characters before processing.",
+        "points": 1
+      },
+      {
+        "id": 144,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "Which attack is a specific type of Stack Overflow?",
+        "options": [
+          "NOP Sled",
+          "SQL Injection",
+          "XSS",
+          "Phishing"
+        ],
+        "correctAnswer": 0,
+        "explanation": "NOP Sleds are used to exploit stack overflows.",
+        "points": 1
+      },
+      {
+        "id": 145,
+        "type": "true-false",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "True or False: Java is safer than C++ regarding buffer overflows.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. Java has automatic boundary checking; C++ does not.",
+        "points": 1
+      },
+      {
+        "id": 146,
+        "type": "true-false",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "True or False: A Polymorphic virus changes its code to avoid signature detection.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. It changes signature while keeping functionality.",
+        "points": 1
+      },
+      {
+        "id": 147,
+        "type": "true-false",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "True or False: Spyware is purely malicious and has no legitimate use.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Adware/tracking cookies are annoying but often legal/used for marketing.",
+        "points": 1
+      },
+      {
+        "id": 148,
+        "type": "true-false",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "True or False: Anti-virus software can detect 100% of all viruses.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. New (zero-day) viruses may bypass detection.",
+        "points": 1
+      },
+      {
+        "id": 149,
+        "type": "true-false",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "True or False: Client-side scripts run on the web server.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Client-side scripts run in the user's browser.",
+        "points": 1
+      },
+      {
+        "id": 150,
+        "type": "true-false",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "True or False: Distributed applications run on a single machine.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Distributed apps run across multiple systems.",
+        "points": 1
+      },
+      {
+        "id": 151,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "A user provides a username and a fingerprint. This is an example of:",
+        "options": [
+          "Identification and Authentication",
+          "Authorization",
+          "Two-factor authentication",
+          "Auditing"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Username is ID; Fingerprint is Authentication. It is NOT two-factor because only one factor (fingerprint) was used for authentication.",
+        "points": 1
+      },
+      {
+        "id": 152,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "A user enters a password and a PIN. Is this strong two-factor authentication?",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "correctAnswer": 1,
+        "explanation": "No. Both password and PIN are Type 1 (Something you know). Strong auth requires different types.",
+        "points": 1
+      },
+      {
+        "id": 153,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "An attacker uses a program to try 'password', '123456', 'qwerty'. What attack is this?",
+        "options": [
+          "Brute Force",
+          "Dictionary Attack",
+          "Rainbow Table",
+          "Social Engineering"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Trying a list of common words is a Dictionary attack.",
+        "points": 1
+      },
+      {
+        "id": 154,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "A company requires two admins to sign off before deleting a backup. This is:",
+        "options": [
+          "Least Privilege",
+          "Separation of Duties",
+          "Job Rotation",
+          "Need to Know"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Requiring two people for a critical task is Separation of Duties.",
+        "points": 1
+      },
+      {
+        "id": 155,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "A developer leaves a debug command in the final code to bypass login. This is a:",
+        "options": [
+          "Logic Bomb",
+          "Back Door",
+          "Trojan",
+          "Virus"
+        ],
+        "correctAnswer": 1,
+        "explanation": "A deliberate bypass left by a developer is a Back Door.",
+        "points": 1
+      },
+      {
+        "id": 156,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "Your IDS alerts on a packet containing a known virus signature. What detection method is this?",
+        "options": [
+          "Behavioral",
+          "Knowledge-based (Signature)",
+          "Heuristic",
+          "Anomaly"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Matching a known signature is Knowledge-based detection.",
+        "points": 1
+      },
+      {
+        "id": 157,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "Your IDS alerts because network traffic spiked at 3 AM. What detection method is this?",
+        "options": [
+          "Signature",
+          "Behavioral (Anomaly)",
+          "Static",
+          "Pattern"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Detecting deviation from a baseline (normal traffic) is Behavioral/Anomaly detection.",
+        "points": 1
+      },
+      {
+        "id": 158,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "If a firewall fails, it should close all ports. This is an example of:",
+        "options": [
+          "Fail Secure (Fail Closed)",
+          "Fail Open",
+          "Fail Safe",
+          "Fail Soft"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Failing in a way that maintains security (blocking traffic) is Fail Secure/Closed.",
+        "points": 1
+      },
+      {
+        "id": 159,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which biometrics are 'Behavioral'?",
+        "options": [
+          "Fingerprint",
+          "Retina",
+          "Keystroke Dynamics and Signature Dynamics",
+          "Iris"
+        ],
+        "correctAnswer": 2,
+        "explanation": "Keystrokes and Signatures depend on how you *do* something, not physical traits.",
+        "points": 1
+      },
+      {
+        "id": 160,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "A system that actively shuts down a connection when an attack is detected is:",
+        "options": [
+          "Passive IDS",
+          "Active IDS (IPS)",
+          "Sniffer",
+          "Honey Pot"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Active systems intervene; Passive systems only alert.",
+        "points": 1
+      },
+      {
+        "id": 161,
+        "type": "true-false",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "True or False: Web Beacons (pixel tags) are easily blocked by standard pop-up blockers.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Web beacons are tiny images loaded by the browser, harder to block than pop-ups.",
+        "points": 1
+      },
+      {
+        "id": 162,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: In RBAC, a user can have multiple roles.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. Users can be assigned multiple roles.",
+        "points": 1
+      },
+      {
+        "id": 163,
+        "type": "true-false",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "True or False: Encryption is a protection mechanism.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. Encryption protects confidentiality.",
+        "points": 1
+      },
+      {
+        "id": 164,
+        "type": "true-false",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "True or False: A Ping of Death uses a UDP packet.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. It uses an oversized ICMP packet.",
+        "points": 1
+      },
+      {
+        "id": 165,
+        "type": "true-false",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "True or False: SQL Injection targets the database layer.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. It exploits the database query processing.",
+        "points": 1
+      },
+      {
+        "id": 166,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which access control method is 'User-Centric'?",
+        "options": [
+          "MAC",
+          "DAC",
+          "RBAC",
+          "Identity-Based"
+        ],
+        "correctAnswer": 1,
+        "explanation": "DAC is identity-based; the owner decides access based on the user's identity.",
+        "points": 1
+      },
+      {
+        "id": 167,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which access control method is 'Data-Centric'?",
+        "options": [
+          "MAC",
+          "DAC",
+          "RBAC",
+          "Role-based"
+        ],
+        "correctAnswer": 0,
+        "explanation": "MAC focuses on the sensitivity label of the data.",
+        "points": 1
+      },
+      {
+        "id": 168,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is 'Entrapment' in security?",
+        "options": [
+          "Honey Pot",
+          "Illegal inducement to commit a crime",
+          "Padded Cell",
+          "Firewall"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Entrapment is a legal term for tricking someone into committing a crime; Honey Pots (Enticement) are legal.",
+        "points": 1
+      },
+      {
+        "id": 169,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "If you classify data as 'Private', who is it for?",
+        "options": [
+          "The public",
+          "Internal personnel only",
+          "Top management only",
+          "Everyone"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Private data is for internal use.",
+        "points": 1
+      },
+      {
+        "id": 170,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Garbage Collection' in Java?",
+        "options": [
+          "Deleting files",
+          "Automatic memory management to prevent leaks/overflows",
+          "Recycling hardware",
+          "Cleaning the screen"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Java's garbage collection manages memory, helping prevent buffer overflows.",
+        "points": 1
+      },
+      {
+        "id": 171,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Does a 'Smart Card' have a processor?",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Smart cards contain integrated circuits (processor + memory).",
+        "points": 1
+      },
+      {
+        "id": 172,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Does a 'Memory Card' (magnetic stripe) have a processor?",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Memory cards only store data; they cannot process it.",
+        "points": 1
+      },
+      {
+        "id": 173,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "Can a NIDS detect attacks inside an encrypted SSL tunnel?",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "correctAnswer": 1,
+        "explanation": "NIDS cannot inspect the payload of encrypted traffic.",
+        "points": 1
+      },
+      {
+        "id": 174,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What protocol does 'Ping' use?",
+        "options": [
+          "TCP",
+          "UDP",
+          "ICMP",
+          "IP"
+        ],
+        "correctAnswer": 2,
+        "explanation": "Ping uses Internet Control Message Protocol (ICMP).",
+        "points": 1
+      },
+      {
+        "id": 175,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Input Validation'?",
+        "options": [
+          "Checking user input for malicious characters before processing",
+          "Validating a user login",
+          "Checking hardware",
+          "Verifying a backup"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Input validation ensures input is safe and expected, preventing injection attacks.",
+        "points": 1
+      },
+      {
+        "id": 176,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is 'Accountability'?",
+        "options": [
+          "Logging",
+          "Tracing an action to a specific subject",
+          "Authentication",
+          "Authorization"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Accountability ensures actions can be traced to the responsible individual.",
+        "points": 1
+      },
+      {
+        "id": 177,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Non-repudiation'?",
+        "options": [
+          "Denying an action",
+          "Ensuring a sender cannot deny having sent a message",
+          "Encrypting data",
+          "Hiding data"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Non-repudiation prevents a subject from denying their actions.",
+        "points": 1
+      },
+      {
+        "id": 178,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is 'War Dialing'?",
+        "options": [
+          "Dialing random numbers to find modems",
+          "Attacking via WiFi",
+          "Calling users",
+          "Yelling at the server"
+        ],
+        "correctAnswer": 0,
+        "explanation": "War dialing searches for modems/remote access points.",
+        "points": 1
+      },
+      {
+        "id": 179,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is 'War Driving'?",
+        "options": [
+          "Driving a tank",
+          "Driving around searching for open WiFi networks",
+          "Attacking modems",
+          "GPS spoofing"
+        ],
+        "correctAnswer": 1,
+        "explanation": "War driving searches for unsecured wireless networks.",
+        "points": 1
+      },
+      {
+        "id": 180,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is a 'Macro Virus'?",
+        "options": [
+          "A large virus",
+          "A virus written in macro language embedded in documents (Word, Excel)",
+          "A boot sector virus",
+          "A file virus"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Macro viruses exploit scripting in productivity software.",
+        "points": 1
+      },
+      {
+        "id": 181,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is 'Kerberos'?",
+        "options": [
+          "A dog",
+          "A network authentication protocol using tickets",
+          "A biometric device",
+          "A firewall"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Kerberos is a ticket-based authentication protocol.",
+        "points": 1
+      },
+      {
+        "id": 182,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is 'RADIUS'?",
+        "options": [
+          "A circle measurement",
+          "A centralized authentication service",
+          "A biometric",
+          "A token"
+        ],
+        "correctAnswer": 1,
+        "explanation": "RADIUS is a centralized authentication protocol.",
+        "points": 1
+      },
+      {
+        "id": 183,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "Which is more secure: Centralized or Decentralized access control?",
+        "options": [
+          "Centralized (easier to manage/monitor)",
+          "Decentralized",
+          "Both are equal",
+          "Neither"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Centralized is generally more secure due to consistent policy enforcement.",
+        "points": 1
+      },
+      {
+        "id": 184,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Object-Oriented' inheritance?",
+        "options": [
+          "Passing money",
+          "Passing attributes/methods from parent to child class",
+          "Hiding data",
+          "Polymorphism"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Inheritance allows subclasses to acquire traits from parent classes.",
+        "points": 1
+      },
+      {
+        "id": 185,
+        "type": "true-false",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "True or False: Separation of Duties is designed to prevent collusion.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Separation of Duties *requires* collusion to bypass security, thus making fraud harder.",
+        "points": 1
+      },
+      {
+        "id": 186,
+        "type": "true-false",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "True or False: A worm needs a host file.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. A Virus needs a host; a Worm is standalone.",
+        "points": 1
+      },
+      {
+        "id": 187,
+        "type": "true-false",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "True or False: Rootkits are easy to detect.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Rootkits hide within the OS kernel.",
+        "points": 1
+      },
+      {
+        "id": 188,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: Passwords are Type 2 factors.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 1,
+        "explanation": "False. Passwords are Type 1 (Something you know).",
+        "points": 1
+      },
+      {
+        "id": 189,
+        "type": "true-false",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "True or False: 'Something you do' is a biometric.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. Behavioral biometrics (typing, signing).",
+        "points": 1
+      },
+      {
+        "id": 190,
+        "type": "true-false",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "True or False: Promiscuous mode is used by sniffers.",
+        "options": [
+          "True",
+          "False"
+        ],
+        "correctAnswer": 0,
+        "explanation": "True. Promiscuous mode allows a NIC to capture all traffic, not just its own.",
+        "points": 1
+      },
+      {
+        "id": 191,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is 'Dual Control'?",
+        "options": [
+          "Two people required to perform an action",
+          "Two passwords",
+          "Two servers",
+          "Two firewalls"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Dual control requires two authenticated users to act simultaneously.",
+        "points": 1
+      },
+      {
+        "id": 192,
+        "type": "multiple-choice",
+        "part": "Chapter 1: Accountability and Access Control",
+        "question": "What is a 'Clipping Level'?",
+        "options": [
+          "A threshold for errors (e.g., 3 failed logins) before triggering an alarm",
+          "A wire cutter",
+          "A biometric error",
+          "A network speed"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Clipping levels set a baseline for ignoring standard user errors before alerting.",
+        "points": 1
+      },
+      {
+        "id": 193,
+        "type": "multiple-choice",
+        "part": "Chapter 2: Attacks and Monitoring",
+        "question": "What is 'Audit Trail'?",
+        "options": [
+          "A log of system activities",
+          "A path in the woods",
+          "A network cable",
+          "A plan"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Audit trails record chronological system events.",
+        "points": 1
+      },
+      {
+        "id": 194,
+        "type": "multiple-choice",
+        "part": "Chapter 4: Data and Application Security",
+        "question": "What is 'Adware'?",
+        "options": [
+          "Software displaying ads",
+          "A virus",
+          "A firewall",
+          "A database"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Adware is software that automatically displays advertisements.",
+        "points": 1
+      },
+      {
+        "id": 195,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Availability'?",
+        "options": [
+          "Ensuring resources are accessible when needed",
+          "Hiding data",
+          "Verifying identity",
+          "Logging access"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Availability ensures authorized users can access resources upon demand.",
+        "points": 1
+      },
+      {
+        "id": 196,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Integrity'?",
+        "options": [
+          "Ensuring data accuracy and completeness",
+          "Hiding data",
+          "Availability",
+          "Identification"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Integrity prevents unauthorized modification.",
+        "points": 1
+      },
+      {
+        "id": 197,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Confidentiality'?",
+        "options": [
+          "Preventing unauthorized disclosure",
+          "Data accuracy",
+          "Availability",
+          "Authentication"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Confidentiality keeps data secret from unauthorized users.",
+        "points": 1
+      },
+      {
+        "id": 198,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "Which principle states that security should not rely on secrecy of the mechanism?",
+        "options": [
+          "Kerckhoffs's Principle (Security through Obscurity is bad)",
+          "Least Privilege",
+          "Need to Know",
+          "Separation of Duties"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Open design is better; relying on 'obscurity' (hiding how it works) is weak.",
+        "points": 1
+      },
+      {
+        "id": 199,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Due Care'?",
+        "options": [
+          "Acting responsibly to protect assets (Prudent Man Rule)",
+          "Paying bills",
+          "Installing antivirus",
+          "Hiring staff"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Due care is the standard of care a reasonable person would exercise.",
+        "points": 1
+      },
+      {
+        "id": 200,
+        "type": "multiple-choice",
+        "part": "Chapter 3: Security Management Concepts",
+        "question": "What is 'Due Diligence'?",
+        "options": [
+          "The ongoing process of maintaining Due Care",
+          "Buying hardware",
+          "Writing code",
+          "A firewall"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Due diligence is the management of due care (verification, monitoring).",
+        "points": 1
+      }
+    ],
+    "reviewMode": true,
+    "timeLimit": 0,
+    "title": "Information Systems Security - Ultimate Quiz Bank",
+    "xpReward": 10000
+  }
+]
