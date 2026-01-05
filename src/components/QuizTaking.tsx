@@ -76,6 +76,20 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         generateShuffledIndices(quiz.questions ? quiz.questions.length : 0)
     );
 
+    // Store shuffled option indices for each question
+    const [optionsOrder, setOptionsOrder] = useState<Record<number, number[]>>({});
+
+    // Initialize options shuffling
+    useEffect(() => {
+        const newOptionsOrder: Record<number, number[]> = {};
+        quiz.questions.forEach((q, index) => {
+            if (q.options && q.options.length > 0) {
+                newOptionsOrder[index] = generateShuffledIndices(q.options.length);
+            }
+        });
+        setOptionsOrder(newOptionsOrder);
+    }, [quiz.questions, generateShuffledIndices]);
+
     const initialSavedState = useMemo(() => {
         const saved = sessionStorage.getItem(storageKey);
         if (!saved) return null;
@@ -131,6 +145,15 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
 
     const handleStartNew = () => {
         setQuestionOrder(generateShuffledIndices(quiz.questions.length));
+        // Reshuffle options
+        const newOptionsOrder: Record<number, number[]> = {};
+        quiz.questions.forEach((q, index) => {
+            if (q.options && q.options.length > 0) {
+                newOptionsOrder[index] = generateShuffledIndices(q.options.length);
+            }
+        });
+        setOptionsOrder(newOptionsOrder);
+
         sessionStorage.removeItem(storageKey);
         setSavedState(null);
         setShowResumePrompt(false);
@@ -1104,7 +1127,7 @@ def solution():
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 md:p-8 border border-gray-100 dark:border-gray-700">
                         <div className="mb-6">
                             <div className="inline-block bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-4 py-2 rounded-full font-semibold mb-4">
-                                Question {q.id}
+                                Question {currentQuestion + 1}
                             </div>
                             <h2 className="text-2xl font-bold text-gray-800 dark:text-white whitespace-pre-line">{q.question}</h2>
                             {q.imageUrl && (
@@ -1221,28 +1244,60 @@ def solution():
                                     className="w-full p-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none min-h-[150px]"
                                 />
                             ) : (
-                                q.options?.map((option, index) => {
+                                (optionsOrder[questionOrder[currentQuestion]] || q.options?.map((_, i) => i) || []).map((originalIndex, visualIndex) => {
+                                    const option = q.options![originalIndex];
+                                    const index = originalIndex; // Use original index for logic handling
+
                                     const isSelected = selectedAnswer === index;
+                                    const showResult = quiz.reviewMode && questionSubmitted;
+                                    const isCorrect = index === q.correctAnswer;
+
                                     if (eliminatedOptions.has(index)) return null;
+
+                                    let buttonClass = "";
+                                    let badgeClass = "";
+
+                                    if (showResult) {
+                                        if (isCorrect) {
+                                            // Correct Answer: Green and Glowing
+                                            buttonClass = "bg-green-100 dark:bg-green-900/40 border-2 border-green-500 text-green-900 dark:text-green-100 shadow-[0_0_20px_rgba(34,197,94,0.6)] scale-[1.02] z-10 ring-1 ring-green-400/50";
+                                            badgeClass = "bg-green-500 text-white";
+                                        } else if (isSelected) {
+                                            // Wrong Selection: Red
+                                            buttonClass = "bg-red-100 dark:bg-red-900/40 border-2 border-red-500 text-red-900 dark:text-red-100";
+                                            badgeClass = "bg-red-500 text-white";
+                                        } else {
+                                            // Other Options: Dimmed
+                                            buttonClass = "bg-gray-100 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 opacity-50 grayscale";
+                                            badgeClass = "bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300";
+                                        }
+                                    } else {
+                                        // Normal Mode
+                                        if (isSelected) {
+                                            buttonClass = "bg-purple-100 dark:bg-purple-900/40 border-2 border-purple-500 text-purple-900 dark:text-purple-100";
+                                            badgeClass = "bg-purple-500 text-white";
+                                        } else {
+                                            buttonClass = "bg-gray-100 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 hover:bg-gray-200 dark:hover:bg-purple-900/20 text-gray-700 dark:text-gray-200";
+                                            badgeClass = "bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300";
+                                        }
+                                    }
 
                                     return (
                                         <button
                                             key={index}
                                             onClick={() => handleAnswer(index)}
-                                            disabled={quiz.reviewMode && questionSubmitted}
-                                            className={`w-full p-5 rounded-xl text-left transition-all flex items-center gap-4 font-medium text-lg group ${isSelected
-                                                ? 'bg-purple-100 dark:bg-purple-900/40 border-2 border-purple-500 text-purple-900 dark:text-purple-100'
-                                                : 'bg-gray-100 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 hover:bg-gray-200 dark:hover:bg-purple-900/20 text-gray-700 dark:text-gray-200'
-                                                } ${quiz.reviewMode && questionSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                            disabled={showResult}
+                                            className={`w-full p-5 rounded-xl text-left transition-all flex items-center gap-4 font-medium text-lg group ${buttonClass} ${showResult ? 'cursor-default' : ''}`}
                                         >
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold ${isSelected ? 'bg-purple-500 text-white' : 'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
-                                                }`}>
-                                                {String.fromCharCode(65 + index)}
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold ${badgeClass}`}>
+                                                {showResult && isCorrect ? '✓' : (showResult && isSelected && !isCorrect ? '✕' : String.fromCharCode(65 + visualIndex))}
                                             </div>
                                             <span className="flex-1">{option}</span>
-                                            <span className="opacity-0 group-hover:opacity-50 text-xs font-mono border border-current px-1.5 rounded hidden lg:inline-block">
-                                                {index + 1}
-                                            </span>
+                                            {!showResult && (
+                                                <span className="opacity-0 group-hover:opacity-50 text-xs font-mono border border-current px-1.5 rounded hidden lg:inline-block">
+                                                    {visualIndex + 1}
+                                                </span>
+                                            )}
                                         </button>
                                     );
                                 })
