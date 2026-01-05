@@ -309,9 +309,9 @@ const StudyCardComponent: React.FC = () => {
                 <div className="w-20 h-20 bg-gray-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Folder className="w-10 h-10 text-gray-300 dark:text-gray-600" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Library is Empty</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Study Stacks Available</h3>
                 <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                  Get started by creating a new card or importing a stack json file.
+                  Check back soon for new study materials!
                 </p>
               </div>
             )}

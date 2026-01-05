@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Zap, Plus, Edit2 } from 'lucide-react';
+import { Zap, Plus, Edit2, Trash2, RefreshCw } from 'lucide-react';
 import type { UserData, Quiz, BadgeDefinition } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 import { staticItems } from '../../constants/shopItems';
@@ -15,6 +15,7 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
     const [dailyChallenges, setDailyChallenges] = useState<any[]>([]);
     const [editingChallenge, setEditingChallenge] = useState<any | null>(null);
     const [badges, setBadges] = useState<BadgeDefinition[]>([]);
+    const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'reschedule', item: any } | null>(null);
 
     useEffect(() => {
         loadData();
@@ -38,21 +39,60 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
             // Check if exists
             const exists = dailyChallenges.some(c => new Date(c.date).toDateString() === new Date(editingChallenge.date).toDateString());
 
+            // Prepare payload without UI-only flags
+            const { _isNew, _id, ...payload } = editingChallenge;
+
             // Just use API logic
-            if (!exists || editingChallenge._isNew) {
-                await api.createDailyChallenge(editingChallenge, currentUser.userId);
-                setDailyChallenges(prev => [editingChallenge, ...prev]);
+            if (!editingChallenge._id) {
+                if (exists && editingChallenge._isNew) {
+                    // Check strictly if date conflict actually exists in DB or just in list
+                    // For now, let backend handle duplicate date error (409)
+                }
+                await api.createDailyChallenge(payload, currentUser.userId);
                 onNotification('success', 'Challenge created');
             } else {
-                const dateStr = new Date(editingChallenge.date).toISOString();
-                await api.updateDailyChallenge(dateStr, editingChallenge, currentUser.userId);
-                setDailyChallenges(prev => prev.map(c => new Date(c.date).toDateString() === new Date(editingChallenge.date).toDateString() ? editingChallenge : c));
+                await api.updateDailyChallenge(editingChallenge._id, payload, currentUser.userId);
                 onNotification('success', 'Challenge updated');
             }
             setEditingChallenge(null);
+            loadData(); // Refresh to be safe
         } catch (error) {
             console.error('Save challenge error:', error);
             onNotification('error', 'Failed to save challenge');
+        }
+    };
+
+    const executeAction = async () => {
+        if (!confirmAction) return;
+        const { type, item } = confirmAction;
+
+        try {
+            if (type === 'delete') {
+                await api.deleteDailyChallenge(item._id, currentUser.userId);
+                setDailyChallenges(prev => prev.filter(c => c._id !== item._id));
+                onNotification('success', 'Challenge deleted');
+            } else if (type === 'reschedule') {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayStr = today.toISOString();
+
+                // Update the challenge with new date via ID
+                const { _id, ...rest } = item;
+                const newPayload = { ...rest, date: todayStr };
+
+                await api.updateDailyChallenge(item._id, newPayload, currentUser.userId);
+                loadData();
+                onNotification('success', 'Challenge rescheduled to today');
+            }
+        } catch (err: any) {
+            console.error(err);
+            if (err.message && err.message.includes('exists')) {
+                onNotification('error', 'A challenge already exists for today. Delete it first.');
+            } else {
+                onNotification('error', `Failed to ${type} challenge`);
+            }
+        } finally {
+            setConfirmAction(null);
         }
     };
 
@@ -77,8 +117,8 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                        {dailyChallenges.map((challenge, idx) => (
-                            <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                        {dailyChallenges.map((challenge) => (
+                            <tr key={challenge._id || challenge.date} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                 <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
                                     {new Date(challenge.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                                 </td>
@@ -99,8 +139,27 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex justify-end gap-2">
-                                        <button onClick={() => setEditingChallenge(challenge)} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-lg"><Edit2 className="w-4 h-4" /></button>
-                                        {/* No delete for daily challenges usually */}
+                                        <button
+                                            onClick={() => setEditingChallenge(challenge)}
+                                            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-lg"
+                                            title="Edit Challenge"
+                                        >
+                                            <Edit2 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => setConfirmAction({ type: 'delete', item: challenge })}
+                                            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg"
+                                            title="Delete Challenge"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => setConfirmAction({ type: 'reschedule', item: challenge })}
+                                            className="p-2 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/20 rounded-lg"
+                                            title="Reschedule to Today"
+                                        >
+                                            <RefreshCw className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -118,6 +177,35 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                     </tbody>
                 </table>
             </div>
+
+            {/* Confirmation Modal */}
+            {confirmAction && createPortal(
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] w-full max-w-md p-8 shadow-2xl relative">
+                        <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Confirm Action</h3>
+                        <p className="text-gray-600 dark:text-gray-400 mb-6">
+                            {confirmAction.type === 'delete'
+                                ? 'Are you sure you want to delete this challenge? This action cannot be undone.'
+                                : 'Move this challenge to today? This will update its date to the current date.'}
+                        </p>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setConfirmAction(null)}
+                                className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 rounded-xl font-bold"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={executeAction}
+                                className={`flex-1 py-3 text-white rounded-xl font-bold ${confirmAction.type === 'delete' ? 'bg-red-600' : 'bg-green-600'}`}
+                            >
+                                {confirmAction.type === 'delete' ? 'Delete' : 'Reschedule'}
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
 
             {/* Edit Challenge Modal */}
             {editingChallenge && createPortal(

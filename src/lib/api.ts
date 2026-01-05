@@ -538,13 +538,22 @@ export const api = {
         return response.json();
     },
 
-    async updateDailyChallenge(date: string, data: Partial<DailyChallengeDef>, adminId: string) {
-        const response = await fetch(`${API_URL}/daily-challenge/admin/${date}`, {
+    async updateDailyChallenge(id: string, data: Partial<DailyChallengeDef>, adminId: string) {
+        const response = await fetch(`${API_URL}/daily-challenge/admin/${id}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
             body: JSON.stringify(data)
         });
         if (!response.ok) throw new Error('Failed to update daily challenge');
+        return response.json();
+    },
+
+    async deleteDailyChallenge(id: string, adminId: string) {
+        const response = await fetch(`${API_URL}/daily-challenge/admin/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) throw new Error('Failed to delete daily challenge');
         return response.json();
     },
 

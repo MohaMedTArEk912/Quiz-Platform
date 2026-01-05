@@ -69,7 +69,7 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart,
       onUserUpdate({
         dailyChallengeStreak: res.streak,
         coins: res.coins,
-        streak: res.streak
+        // streak: res.streak // Don't overwrite global streak with daily challenge streak
       });
       setData(prev => ({ ...prev, completed: true, streak: res.streak }));
 
@@ -87,7 +87,7 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, quizzes, onStart,
   };
 
   const quiz = quizzes.find(q => q.id === data.quizId || q._id === data.quizId);
-  const streak = data.streak || 0;
+  const streak = user.streak || 0;
   const isCompleted = data.completed;
 
   const getStreakLevel = (streak: number) => {

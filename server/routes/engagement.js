@@ -11,7 +11,8 @@ router.post('/daily-challenge/complete', verifyUser, engagementController.comple
 // Daily Challenge Management (Admin)
 router.get('/daily-challenge/admin/all', verifyUser, verifyAdmin, engagementController.getDailyChallengesAdmin);
 router.post('/daily-challenge/admin', verifyUser, verifyAdmin, engagementController.createDailyChallenge);
-router.put('/daily-challenge/admin/:date', verifyUser, verifyAdmin, engagementController.updateDailyChallenge);
+router.put('/daily-challenge/admin/:id', verifyUser, verifyAdmin, engagementController.updateDailyChallenge);
+router.delete('/daily-challenge/admin/:id', verifyUser, verifyAdmin, engagementController.deleteDailyChallenge);
 
 // Skill Tracks
 router.get('/skill-tracks', engagementController.getSkillTracks); // GET /api/skill-tracks

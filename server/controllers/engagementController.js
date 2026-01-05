@@ -135,8 +135,14 @@ export const getDailyChallenge = async (req, res) => {
 
 export const createDailyChallenge = async (req, res) => {
     try {
-        const { date, ...data } = req.body;
+        const { date, title, description, rewardCoins, rewardXP, quizId, criteria, rewardBadgeId, rewardItemId } = req.body;
+        
+        if (!date) return res.status(400).json({ message: 'Date is required' });
+
         const challengeDate = new Date(date);
+        if (isNaN(challengeDate.getTime())) {
+            return res.status(400).json({ message: 'Invalid date format' });
+        }
         challengeDate.setHours(0, 0, 0, 0);
 
         const existing = await DailyChallenge.findOne({ date: challengeDate });
@@ -144,21 +150,31 @@ export const createDailyChallenge = async (req, res) => {
             return res.status(409).json({ message: 'Challenge already exists for this date' });
         }
 
-        const challenge = new DailyChallenge({ ...data, date: challengeDate });
+        const payload = {
+            date: challengeDate,
+            title,
+            description,
+            rewardCoins: Number(rewardCoins) || 0,
+            rewardXP: Number(rewardXP) || 0,
+            criteria,
+            quizId: quizId || undefined,
+            rewardBadgeId: rewardBadgeId || undefined,
+            rewardItemId: rewardItemId || undefined
+        };
+
+        const challenge = new DailyChallenge(payload);
         await challenge.save();
         res.status(201).json(challenge);
     } catch (error) {
+        console.error('Create Daily Challenge Error:', error);
         res.status(500).json({ message: 'Error creating daily challenge', error: error.message });
     }
 };
 
 export const updateDailyChallenge = async (req, res) => {
     try {
-        const { date } = req.params; // Expecting ISO date string or timestamp in URL
-        const queryDate = new Date(date);
-        queryDate.setHours(0,0,0,0);
-
-        const challenge = await DailyChallenge.findOneAndUpdate({ date: queryDate }, req.body, { new: true });
+        const { id } = req.params;
+        const challenge = await DailyChallenge.findByIdAndUpdate(id, req.body, { new: true });
         if (!challenge) return res.status(404).json({ message: 'Challenge not found' });
         res.json(challenge);
     } catch (error) {
@@ -174,6 +190,17 @@ export const getDailyChallengesAdmin = async (req, res) => {
          res.status(500).json({ message: 'Error fetching challenges', error: error.message });
     }
 }
+
+export const deleteDailyChallenge = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await DailyChallenge.deleteOne({ _id: id });
+        if (result.deletedCount === 0) return res.status(404).json({ message: 'Challenge not found' });
+        res.json({ message: 'Challenge deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting challenge', error: error.message });
+    }
+};
 
 
 export const completeDailyChallenge = async (req, res) => {
