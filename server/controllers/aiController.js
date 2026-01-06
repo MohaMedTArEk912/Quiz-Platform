@@ -12,8 +12,9 @@ const __dirname = path.dirname(__filename);
 
 // Initialize require for CommonJS modules
 const require = createRequire(import.meta.url);
-const pdfParseLib = require('pdf-parse');
-const pdfParse = (typeof pdfParseLib === 'function') ? pdfParseLib : pdfParseLib.PDFParse;
+
+// PDF Parse will be lazy-loaded
+
 
 // Lazy load extractor for other file types (PPTX)
 let extractor = null;
@@ -103,24 +104,35 @@ export const generateQuiz = async (req, res) => {
                         // Read file buffer for pdf-parse
                         const dataBuffer = fs.readFileSync(filePath);
                         
-                        // Use pdf-parse v2 API (Class-based)
+                        // Use pdf-parse v2 API (Class-based) or v1 (Function-based)
                         let parser = null;
                         try {
+                             // Lazy load pdf-parse
+                            const pdfParseLib = require('pdf-parse');
+                            const pdfParse = (typeof pdfParseLib === 'function') ? pdfParseLib : pdfParseLib.PDFParse;
+
                             // Extract Class from the required library
                             // In v2, it exports { PDFParse }
                             const PDFParseClass = pdfParse.PDFParse || pdfParse;
-                            
-                            parser = new PDFParseClass({ data: dataBuffer });
-                            
-                            text = await Promise.race([
-                                (async () => {
-                                    const result = await parser.getText();
-                                    return result.text;
-                                })(),
-                                new Promise((_, reject) => 
-                                    setTimeout(() => reject(new Error('PDF extraction timeout')), MAX_EXTRACTION_TIME)
-                                )
-                            ]);
+                           
+                            // Check if it's a class (constructor) or function
+                            if (typeof PDFParseClass === 'function' && /^class\s/.test(Function.prototype.toString.call(PDFParseClass))) {
+                                // It is a class
+                                parser = new PDFParseClass({ data: dataBuffer });
+                                text = await Promise.race([
+                                     (async () => {
+                                        const result = await parser.getText();
+                                        return result.text;
+                                     })(),
+                                     new Promise((_, reject) => 
+                                        setTimeout(() => reject(new Error('PDF extraction timeout')), MAX_EXTRACTION_TIME)
+                                     )
+                                ]);
+                            } else {
+                                // It is likely the v1 function (returns promise with .text)
+                                const data = await pdfParse(dataBuffer);
+                                text = data.text;
+                            }
                         } finally {
                             if (parser && typeof parser.destroy === 'function') {
                                 try { await parser.destroy(); } catch (e) {

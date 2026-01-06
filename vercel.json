@@ -48,7 +48,7 @@
   "functions": {
     "api/index.js": {
       "memory": 1024,
-      "maxDuration": 120,
+      "maxDuration": 300,
       "includeFiles": "server/**"
     }
   }
