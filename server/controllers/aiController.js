@@ -4,8 +4,11 @@ import { getTextExtractor } from 'office-text-extractor';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-// Use the Node.js ESM export from pdf-parse
-import { PDFParse } from 'pdf-parse';
+import { createRequire } from 'module';
+
+// pdf-parse is CommonJS; load via createRequire to avoid ESM default export issues
+const require = createRequire(import.meta.url);
+const { PDFParse } = require('pdf-parse');
 
 const extractor = getTextExtractor();
 dotenv.config();
@@ -14,8 +17,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const standardFontDataUrl = path.join(__dirname, '../../node_modules/pdfjs-dist/standard_fonts/');
 
-// Initialize Gemini API with new @google/generative-ai SDK
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MISSING_KEY');
+// Initialize Gemini API
+// Note: It's safe to instantiate even if key is missing, but calls will fail. Check in handler.
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MISSING_KEY', { apiVersion: 'v1' });
 
 export const generateQuiz = async (req, res) => {
     try {
@@ -27,15 +31,14 @@ export const generateQuiz = async (req, res) => {
             const processFile = async (fileObj) => {
                 const filePath = fileObj.path;
                 let text = '';
-                let parser = null;
                 try {
                     console.log(`Processing file: ${fileObj.originalname} (${fileObj.mimetype})`);
                     if (fileObj.mimetype === 'application/pdf') {
                         const dataBuffer = fs.readFileSync(filePath);
-                        parser = new PDFParse({ data: dataBuffer });
-                        const result = await parser.getText();
-                        text = result.text || '';
-                        await parser.destroy(); // Clean up resources
+                        const uint8Array = new Uint8Array(dataBuffer);
+                        const parser = new PDFParse(uint8Array);
+                        const pdfData = await parser.text();
+                        text = pdfData || '';
                     } else if (fileObj.mimetype === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
                          text = await extractor.extractText({ input: filePath, type: 'file' });
                     } else {
@@ -91,7 +94,7 @@ export const generateQuiz = async (req, res) => {
             return res.status(400).json({ success: false, message: "No content found. Please provide text or a valid readable file (PDF/PPTX)." });
         }
 
-        const geminiModel = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
         console.log('Model initialized, sending prompt with material length:', material.length);
 
         // Construct Prompt
