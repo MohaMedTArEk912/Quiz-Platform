@@ -2,20 +2,21 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 import { getTextExtractor } from 'office-text-extractor';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 
-// pdf-parse is CommonJS; load via createRequire to avoid ESM default export issues
+// Lazy-load pdf-parse only when a PDF is actually processed to avoid pulling in
+// heavy canvas/DOM polyfills at server start (which break in Vercel lambdas).
 const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+let pdfParse;
+const loadPdfParse = async () => {
+    if (!pdfParse) {
+        pdfParse = require('pdf-parse');
+    }
+    return pdfParse;
+};
 
 const extractor = getTextExtractor();
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const standardFontDataUrl = path.join(__dirname, '../../node_modules/pdfjs-dist/standard_fonts/');
 
 // Initialize Gemini API
 // Note: It's safe to instantiate even if key is missing, but calls will fail. Check in handler.
@@ -65,7 +66,8 @@ export const generateQuiz = async (req, res) => {
                     console.log(`Processing file: ${fileObj.originalname} (${fileObj.mimetype})`);
                     if (fileObj.mimetype === 'application/pdf') {
                         const dataBuffer = fs.readFileSync(filePath);
-                        const pdfData = await pdfParse(dataBuffer);
+                        const pdfParseLib = await loadPdfParse();
+                        const pdfData = await pdfParseLib(dataBuffer);
                         text = pdfData.text || '';
                     } else if (fileObj.mimetype === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
                          text = await extractor.extractText({ input: filePath, type: 'file' });
