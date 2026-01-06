@@ -8,7 +8,7 @@ import { createRequire } from 'module';
 
 // pdf-parse is CommonJS; load via createRequire to avoid ESM default export issues
 const require = createRequire(import.meta.url);
-const { PDFParse } = require('pdf-parse');
+const pdfParse = require('pdf-parse');
 
 const extractor = getTextExtractor();
 dotenv.config();
@@ -19,7 +19,37 @@ const standardFontDataUrl = path.join(__dirname, '../../node_modules/pdfjs-dist/
 
 // Initialize Gemini API
 // Note: It's safe to instantiate even if key is missing, but calls will fail. Check in handler.
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MISSING_KEY', { apiVersion: 'v1' });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MISSING_KEY');
+
+const ATTEMPT_MODELS = [
+    "gemini-2.0-flash", 
+    "gemini-2.0-flash-lite-preview-02-05", 
+    "gemini-2.5-flash",
+    "gemini-2.0-flash-exp"
+];
+
+async function generateContentWithFallback(prompt) {
+    let lastError = null;
+    for (const modelName of ATTEMPT_MODELS) {
+        try {
+            console.log(`Attempting generation with model: ${modelName}...`);
+            const model = genAI.getGenerativeModel({ 
+                model: modelName,
+                generationConfig: { responseMimeType: "application/json" }
+            });
+            const result = await model.generateContent(prompt);
+            console.log(`Success with model: ${modelName}`);
+            return result;
+        } catch (error) {
+            console.warn(`Model ${modelName} failed: ${error.message.split('\n')[0]}`);
+            if (error.message.includes('429')) {
+                console.warn('Rate limit hit, switching to next model...');
+            }
+            lastError = error;
+        }
+    }
+    throw lastError;
+}
 
 export const generateQuiz = async (req, res) => {
     try {
@@ -35,10 +65,8 @@ export const generateQuiz = async (req, res) => {
                     console.log(`Processing file: ${fileObj.originalname} (${fileObj.mimetype})`);
                     if (fileObj.mimetype === 'application/pdf') {
                         const dataBuffer = fs.readFileSync(filePath);
-                        const uint8Array = new Uint8Array(dataBuffer);
-                        const parser = new PDFParse(uint8Array);
-                        const pdfData = await parser.text();
-                        text = pdfData || '';
+                        const pdfData = await pdfParse(dataBuffer);
+                        text = pdfData.text || '';
                     } else if (fileObj.mimetype === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
                          text = await extractor.extractText({ input: filePath, type: 'file' });
                     } else {
@@ -94,8 +122,6 @@ export const generateQuiz = async (req, res) => {
             return res.status(400).json({ success: false, message: "No content found. Please provide text or a valid readable file (PDF/PPTX)." });
         }
 
-        const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
-        console.log('Model initialized, sending prompt with material length:', material.length);
 
         // Construct Prompt
         let prompt = `You are a strict and precise exam creator. 
@@ -132,7 +158,7 @@ export const generateQuiz = async (req, res) => {
         - The questions should test understanding, not just recall.
         `;
 
-        const result = await geminiModel.generateContent(prompt);
+        const result = await generateContentWithFallback(prompt);
         console.log('Content generated, getting response...');
         const response = await result.response;
         let text = response.text();
