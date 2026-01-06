@@ -12,7 +12,8 @@ const __dirname = path.dirname(__filename);
 
 // Initialize require for CommonJS modules
 const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+const pdfParseLib = require('pdf-parse');
+const pdfParse = (typeof pdfParseLib === 'function') ? pdfParseLib : pdfParseLib.PDFParse;
 
 // Lazy load extractor for other file types (PPTX)
 let extractor = null;
@@ -102,16 +103,31 @@ export const generateQuiz = async (req, res) => {
                         // Read file buffer for pdf-parse
                         const dataBuffer = fs.readFileSync(filePath);
                         
-                        // Use pdf-parse with timeout protection
-                        text = await Promise.race([
-                            (async () => {
-                                const data = await pdfParse(dataBuffer);
-                                return data.text;
-                            })(),
-                            new Promise((_, reject) => 
-                                setTimeout(() => reject(new Error('PDF extraction timeout')), MAX_EXTRACTION_TIME)
-                            )
-                        ]);
+                        // Use pdf-parse v2 API (Class-based)
+                        let parser = null;
+                        try {
+                            // Extract Class from the required library
+                            // In v2, it exports { PDFParse }
+                            const PDFParseClass = pdfParse.PDFParse || pdfParse;
+                            
+                            parser = new PDFParseClass({ data: dataBuffer });
+                            
+                            text = await Promise.race([
+                                (async () => {
+                                    const result = await parser.getText();
+                                    return result.text;
+                                })(),
+                                new Promise((_, reject) => 
+                                    setTimeout(() => reject(new Error('PDF extraction timeout')), MAX_EXTRACTION_TIME)
+                                )
+                            ]);
+                        } finally {
+                            if (parser && typeof parser.destroy === 'function') {
+                                try { await parser.destroy(); } catch (e) {
+                                    console.warn('Failed to destroy PDF parser:', e.message);
+                                }
+                            }
+                        }
                     } else if (fileObj.mimetype === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
                         const extractor = await getExtractorInstance();
                         text = await Promise.race([
