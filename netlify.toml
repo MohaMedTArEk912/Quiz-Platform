@@ -34,7 +34,8 @@
 
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["express", "socket.io", "mongoose", "serverless-http", "pdfjs-dist"]
   
 [functions."api"]
   node_bundler = "esbuild"
-  external_node_modules = ["express", "socket.io", "mongoose", "serverless-http"]
+  external_node_modules = ["express", "socket.io", "mongoose", "serverless-http", "pdfjs-dist"]

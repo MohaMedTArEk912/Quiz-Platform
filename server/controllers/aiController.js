@@ -5,6 +5,10 @@ import { createRequire } from 'module';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Polyfill browser globals BEFORE importing pdfjs-dist
 const globalContext = (typeof globalThis !== 'undefined' ? globalThis : typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this) || {};
 if (!globalContext.DOMMatrix) {
@@ -35,12 +39,15 @@ const getPdfjsLib = async () => {
 const configurePdfWorker = () => {
     try {
         if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
-            const workerPath = new URL('pdfjs-dist/legacy/build/pdf.worker.js', import.meta.url).href;
-            pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
-            console.log('PDF.js worker configured successfully');
+            // For serverless/bundled environments, use CDN-based worker
+            // This is the most reliable approach for Netlify Functions
+            const workerUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.12.313/pdf.worker.min.js';
+            pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+            console.log('PDF.js worker configured with CDN URL');
         }
     } catch (e) {
         console.warn('Failed to configure PDF.js worker path:', e.message);
+        // Continue anyway - some operations might still work
     }
 };
 
