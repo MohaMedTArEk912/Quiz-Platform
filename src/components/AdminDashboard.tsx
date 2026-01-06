@@ -363,6 +363,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 onNotification={handleNotification}
                             />
                         )}
+                        {selectedTab === 'roadmaps' && (
+                            <RoadmapManagement
+                                adminId={currentUser.userId}
+                                onNotification={handleNotification}
+                            />
+                        )}
                     </div>
                 </div>
             </div>

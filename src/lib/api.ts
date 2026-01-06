@@ -1009,4 +1009,32 @@ export const api = {
         }
         return response.json();
     },
+
+    // AI Quiz Generation
+    async generateAiQuiz(data: FormData | {
+        material: string;
+        difficulty: string;
+        questionCount: number;
+        questionType: string;
+        styleExamples?: string;
+    }, adminId: string) {
+        const isFormData = data instanceof FormData;
+        const headers = getHeaders(adminId);
+        if (isFormData) {
+            // Let the browser set Content-Type for FormData
+            // @ts-ignore
+            delete headers['Content-Type'];
+        }
+
+        const response = await fetch(`${API_URL}/ai/generate`, {
+            method: 'POST',
+            headers: headers,
+            body: isFormData ? (data as FormData) : JSON.stringify(data),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to generate quiz');
+        }
+        return response.json();
+    },
 };

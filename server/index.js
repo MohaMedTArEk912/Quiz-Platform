@@ -27,6 +27,7 @@ import badgeTreesRoutes from './routes/badgeTrees.js';
 import studyCardsRoutes from './routes/studyCards.js';
 import clanRoutes from './routes/clanRoutes.js';
 import compilerRoutes from './routes/compiler.js';
+import aiRoutes from './routes/ai.js';
 
 dotenv.config();
 
@@ -110,6 +111,7 @@ app.use('/api', analyticsRoutes); // mounts /analytics/summary, /data
 app.use('/api/study-cards', studyCardsRoutes);
 app.use('/api/clans', clanRoutes);
 app.use('/api', compilerRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.use('/api/badges', badgeRoutes);
 app.use('/api/badge-nodes', badgeNodesRoutes);
