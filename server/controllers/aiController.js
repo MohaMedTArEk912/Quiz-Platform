@@ -1,6 +1,22 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
-import { getTextExtractor } from 'office-text-extractor';
+// Lazy load extractor to prevent startup crashes in serverless environments
+let extractor = null;
+
+const getExtractorInstance = async () => {
+    if (!extractor) {
+        try {
+            const { getTextExtractor } = await import('office-text-extractor');
+            extractor = getTextExtractor();
+        } catch (error) {
+            console.warn('Failed to initialize text extractor:', error.message);
+            // Return a dummy extractor that throws explicitly when used
+            return { extractText: async () => { throw new Error("Text extraction not available: " + error.message); } };
+        }
+    }
+    return extractor;
+};
+
 import dotenv from 'dotenv';
 import { createRequire } from 'module';
 
@@ -31,22 +47,6 @@ if (!globalContext.DOMMatrix) {
 if (!globalContext.Path2D) globalContext.Path2D = class Path2D {};
 if (!globalContext.ImageData) globalContext.ImageData = class ImageData { constructor() { this.width=0;this.height=0;this.data=new Uint8ClampedArray(0); } };
 if (!globalContext.HTMLCanvasElement) globalContext.HTMLCanvasElement = class HTMLCanvasElement { getContext() { return null; } };
-
-
-// Lazy load extractor to prevent startup crashes in serverless environments
-let extractor = null;
-const getExtractorInstance = () => {
-    if (!extractor) {
-        try {
-            extractor = getTextExtractor();
-        } catch (error) {
-            console.warn('Failed to initialize text extractor:', error.message);
-            // Return a dummy extractor or null, validation will fail later if file upload attempted
-            return { extractText: async () => { throw new Error("Text extraction not available on this environment"); } };
-        }
-    }
-    return extractor;
-};
 
 dotenv.config();
 
@@ -97,7 +97,8 @@ export const generateQuiz = async (req, res) => {
                 try {
                     console.log(`Processing file: ${fileObj.originalname} (${fileObj.mimetype})`);
                     if (fileObj.mimetype === 'application/pdf' || fileObj.mimetype === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
-                         text = await getExtractorInstance().extractText({ input: filePath, type: 'file' });
+                         const extractor = await getExtractorInstance();
+                         text = await extractor.extractText({ input: filePath, type: 'file' });
                     } else {
                         text = fs.readFileSync(filePath, 'utf8');
                     }
