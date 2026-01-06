@@ -107,12 +107,17 @@ export const api = {
         if (!response.ok) {
             let errorMessage = 'Login failed';
             try {
-                const error = await response.json();
-                errorMessage = error.message || errorMessage;
+                const text = await response.text();
+                try {
+                    const error = JSON.parse(text);
+                    errorMessage = error.message || errorMessage;
+                } catch {
+                    // If JSON parse fails, it's likely an HTML error page or plain text
+                    console.error('Non-JSON response received:', text);
+                    errorMessage = `Server Error (${response.status}): The server returned an invalid response.`;
+                }
             } catch (e) {
-                // If JSON parse fails, it's likely an HTML error page (500/502/504)
-                console.error('Non-JSON response received:', await response.text());
-                errorMessage = `Server Error (${response.status}): The server returned an invalid response. Check console for details.`;
+                console.error('Failed to read response body:', e);
             }
             throw new Error(errorMessage);
         }
