@@ -127,27 +127,37 @@ export const generateQuiz = async (req, res) => {
                             const pdfParseLib = require('pdf-parse');
                             const pdfParse = (typeof pdfParseLib === 'function') ? pdfParseLib : pdfParseLib.PDFParse;
 
-                            // Extract Class from the required library
-                            // In v2, it exports { PDFParse }
-                            const PDFParseClass = pdfParse.PDFParse || pdfParse;
-                           
-                            // Check if it's a class (constructor) or function
-                            if (typeof PDFParseClass === 'function' && /^class\s/.test(Function.prototype.toString.call(PDFParseClass))) {
-                                // It is a class
-                                parser = new PDFParseClass({ data: dataBuffer });
-                                text = await Promise.race([
-                                     (async () => {
-                                        const result = await parser.getText();
-                                        return result.text;
-                                     })(),
-                                     new Promise((_, reject) => 
-                                        setTimeout(() => reject(new Error('PDF extraction timeout')), MAX_EXTRACTION_TIME)
-                                     )
-                                ]);
-                            } else {
-                                // It is likely the v1 function (returns promise with .text)
-                                const data = await pdfParse(dataBuffer);
-                                text = data.text;
+                            // Extract exported entity
+                            const PDFParseEntity = pdfParseLib.PDFParse || pdfParseLib;
+
+                            // unified handler: Always try 'new' first as it works for both Classes and Factory functions that return objects/promises
+                            // We attempt to instantiate with the dataBuffer first (v1 style)
+                            try {
+                                const instance = new PDFParseEntity(dataBuffer);
+                                
+                                if (instance instanceof Promise || (typeof instance === 'object' && typeof instance.then === 'function')) {
+                                    // It behaved like valid v1 (returning a Promise)
+                                    const data = await instance;
+                                    text = data.text;
+                                } else if (instance && typeof instance.getText === 'function') {
+                                    // It behaves like a v2 Class instance that accepts buffer directly
+                                    const result = await instance.getText();
+                                    text = result.text;
+                                } else {
+                                    // Fallback: Try instantiating with config object (v2 style)
+                                    const instanceV2 = new PDFParseEntity({ data: dataBuffer });
+                                    if (instanceV2 && typeof instanceV2.getText === 'function') {
+                                         const result = await instanceV2.getText();
+                                         text = result.text;
+                                    } else {
+                                        throw new Error('Unrecognized PDF parser API');
+                                    }
+                                }
+                            } catch (instantiationError) {
+                                console.warn('PDF instantiation with buffer failed, trying object config:', instantiationError.message);
+                                // Retry with object immediately if strictly strict class
+                                const instanceV2 = new PDFParseEntity({ data: dataBuffer });
+                                text = (await instanceV2.getText()).text;
                             }
                         } finally {
                             if (parser && typeof parser.destroy === 'function') {
