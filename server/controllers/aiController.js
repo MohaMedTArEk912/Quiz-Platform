@@ -1,38 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
-// Lazy load extractor to prevent startup crashes in serverless environments
-let extractor = null;
-
-const getExtractorInstance = async () => {
-    if (!extractor) {
-        try {
-            const { getTextExtractor } = await import('office-text-extractor');
-            extractor = getTextExtractor();
-        } catch (error) {
-            console.warn('Failed to initialize text extractor:', error.message);
-            // Return a dummy extractor that throws explicitly when used
-            return { extractText: async () => { throw new Error("Text extraction not available: " + error.message); } };
-        }
-    }
-    return extractor;
-};
-
 import dotenv from 'dotenv';
 import { createRequire } from 'module';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Polyfill standard Promise.withResolvers if missing (Node < 22)
-if (typeof Promise.withResolvers === 'undefined') {
-    Promise.withResolvers = function () {
-        let resolve, reject;
-        const promise = new Promise((res, rej) => {
-            resolve = res;
-            reject = rej;
-        });
-        return { promise, resolve, reject };
-    };
-}
-
-// Polyfill browser globals for pdfjs-dist used by text extractors in Node
+// Polyfill browser globals BEFORE importing pdfjs-dist
 const globalContext = (typeof globalThis !== 'undefined' ? globalThis : typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this) || {};
 if (!globalContext.DOMMatrix) {
     globalContext.DOMMatrix = class DOMMatrix {
@@ -47,6 +20,63 @@ if (!globalContext.DOMMatrix) {
 if (!globalContext.Path2D) globalContext.Path2D = class Path2D {};
 if (!globalContext.ImageData) globalContext.ImageData = class ImageData { constructor() { this.width=0;this.height=0;this.data=new Uint8ClampedArray(0); } };
 if (!globalContext.HTMLCanvasElement) globalContext.HTMLCanvasElement = class HTMLCanvasElement { getContext() { return null; } };
+
+// Lazy load pdfjs-dist only when needed
+let pdfjsLib = null;
+const getPdfjsLib = async () => {
+    if (!pdfjsLib) {
+        pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.js');
+        configurePdfWorker();
+    }
+    return pdfjsLib;
+};
+
+// Configure PDF.js worker for serverless environments
+const configurePdfWorker = () => {
+    try {
+        if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
+            const workerPath = new URL('pdfjs-dist/legacy/build/pdf.worker.js', import.meta.url).href;
+            pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
+            console.log('PDF.js worker configured successfully');
+        }
+    } catch (e) {
+        console.warn('Failed to configure PDF.js worker path:', e.message);
+    }
+};
+
+// Polyfill standard Promise.withResolvers if missing (Node < 22)
+if (typeof Promise.withResolvers === 'undefined') {
+    Promise.withResolvers = function () {
+        let resolve, reject;
+        const promise = new Promise((res, rej) => {
+            resolve = res;
+            reject = rej;
+        });
+        return { promise, resolve, reject };
+    };
+}
+
+// Lazy load extractor to prevent startup crashes in serverless environments
+let extractor = null;
+
+const getExtractorInstance = async () => {
+    if (!extractor) {
+        try {
+            const { getTextExtractor } = await import('office-text-extractor');
+            extractor = getTextExtractor();
+            console.log('Text extractor initialized successfully');
+        } catch (error) {
+            console.warn('Failed to initialize text extractor:', error.message);
+            // Return a dummy extractor that throws explicitly when used
+            return { 
+                extractText: async () => { 
+                    throw new Error(`Text extraction unavailable: ${error.message}`); 
+                } 
+            };
+        }
+    }
+    return extractor;
+};
 
 dotenv.config();
 
@@ -94,24 +124,62 @@ export const generateQuiz = async (req, res) => {
             const processFile = async (fileObj) => {
                 const filePath = fileObj.path;
                 let text = '';
+                const MAX_EXTRACTION_TIME = 30000; // 30 second timeout
+                
                 try {
                     console.log(`Processing file: ${fileObj.originalname} (${fileObj.mimetype})`);
-                    if (fileObj.mimetype === 'application/pdf' || fileObj.mimetype === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
-                         const extractor = await getExtractorInstance();
-                         text = await extractor.extractText({ input: filePath, type: 'file' });
-                    } else {
-                        text = fs.readFileSync(filePath, 'utf8');
+                    
+                    // Validate file exists and is readable
+                    if (!fs.existsSync(filePath)) {
+                        throw new Error('Uploaded file not found');
                     }
+                    
+                    const stats = fs.statSync(filePath);
+                    if (stats.size === 0) {
+                        throw new Error('Uploaded file is empty');
+                    }
+                    
+                    // Process based on MIME type
+                    if (fileObj.mimetype === 'application/pdf') {
+                        const extractor = await getExtractorInstance();
+                        // Add timeout protection for extraction
+                        text = await Promise.race([
+                            extractor.extractText({ input: filePath, type: 'file' }),
+                            new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('PDF extraction timeout')), MAX_EXTRACTION_TIME)
+                            )
+                        ]);
+                    } else if (fileObj.mimetype === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
+                        const extractor = await getExtractorInstance();
+                        text = await Promise.race([
+                            extractor.extractText({ input: filePath, type: 'file' }),
+                            new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('PPTX extraction timeout')), MAX_EXTRACTION_TIME)
+                            )
+                        ]);
+                    } else if (fileObj.mimetype === 'text/plain' || fileObj.mimetype === 'text/markdown') {
+                        text = fs.readFileSync(filePath, 'utf8');
+                    } else {
+                        throw new Error(`Unsupported file type: ${fileObj.mimetype}`);
+                    }
+                    
+                    if (!text || !text.trim()) {
+                        throw new Error('No text extracted from file');
+                    }
+                    
+                    console.log(`Successfully extracted ${text.length} characters from ${fileObj.originalname}`);
                 } catch (fileError) {
                     console.error(`Error processing file ${fileObj.originalname}:`, fileError);
                     throw new Error(`Failed to process file ${fileObj.originalname}: ${fileError.message}`);
                 } finally {
-                     // Always cleanup
-                     if (fs.existsSync(filePath)) {
+                    // Always cleanup
+                    if (fs.existsSync(filePath)) {
                         try {
                             fs.unlinkSync(filePath);
-                        } catch (e) { console.error('Failed to delete temp file:', filePath); }
-                     }
+                        } catch (e) { 
+                            console.error('Failed to delete temp file:', filePath, e.message); 
+                        }
+                    }
                 }
                 return text;
             };
@@ -121,20 +189,30 @@ export const generateQuiz = async (req, res) => {
             if (req.files.file && req.files.file[0]) {
                 try {
                     const fileText = await processFile(req.files.file[0]);
-                    if (fileText) material = (material || '') + '\n\n' + fileText;
-                    console.log('File text extracted, length:', fileText?.length);
+                    if (fileText && fileText.trim()) {
+                        material = (material || '') + '\n\n' + fileText;
+                        console.log('Study material extracted, length:', fileText.length);
+                    }
                 } catch (e) {
-                    return res.status(400).json({ success: false, message: e.message });
+                    console.error('Main file processing failed:', e.message);
+                    return res.status(400).json({ 
+                        success: false, 
+                        message: e.message,
+                        errorType: 'FILE_PROCESSING_ERROR'
+                    });
                 }
             }
 
             if (req.files.styleFile && req.files.styleFile[0]) {
                 try {
                     const styleText = await processFile(req.files.styleFile[0]);
-                    if (styleText) styleExamples = (styleExamples || '') + '\n\n' + styleText;
-                    console.log('Style text extracted');
+                    if (styleText && styleText.trim()) {
+                        styleExamples = (styleExamples || '') + '\n\n' + styleText;
+                        console.log('Style guide extracted');
+                    }
                 } catch (e) {
-                     console.warn('Style file failed to process, ignoring:', e.message);
+                    console.warn('Style file processing failed, continuing without style guide:', e.message);
+                    // Don't fail the request, just continue without style guide
                 }
             }
         }
