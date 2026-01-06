@@ -25,31 +25,32 @@ if (!globalContext.Path2D) globalContext.Path2D = class Path2D {};
 if (!globalContext.ImageData) globalContext.ImageData = class ImageData { constructor() { this.width=0;this.height=0;this.data=new Uint8ClampedArray(0); } };
 if (!globalContext.HTMLCanvasElement) globalContext.HTMLCanvasElement = class HTMLCanvasElement { getContext() { return null; } };
 
-// Lazy load pdfjs-dist only when needed
-let pdfjsLib = null;
-const getPdfjsLib = async () => {
-    if (!pdfjsLib) {
-        pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.js');
-        configurePdfWorker();
-    }
-    return pdfjsLib;
-};
-
-// Configure PDF.js worker for serverless environments
-const configurePdfWorker = () => {
+// Configure PDF.js worker BEFORE any imports that might use pdfjs-dist
+// This ensures office-text-extractor finds the worker when it initializes
+const initializePdfWorker = async () => {
     try {
-        if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
+        // Import pdfjs-dist using the correct legacy .mjs entry point (recommended for Node.js)
+        const pdfjsModule = await import('pdfjs-dist/legacy/build/pdf.mjs');
+        
+        if (pdfjsModule.GlobalWorkerOptions) {
             // For serverless/bundled environments, use CDN-based worker
             // This is the most reliable approach for Netlify Functions
             const workerUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.12.313/pdf.worker.min.js';
-            pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+            pdfjsModule.GlobalWorkerOptions.workerSrc = workerUrl;
             console.log('PDF.js worker configured with CDN URL');
         }
+        
+        return pdfjsModule;
     } catch (e) {
-        console.warn('Failed to configure PDF.js worker path:', e.message);
+        console.warn('Failed to configure PDF.js worker:', e.message);
         // Continue anyway - some operations might still work
+        return null;
     }
 };
+
+// Store the initialized module
+let pdfjsLib = null;
+let pdfjsInitialized = false;
 
 // Polyfill standard Promise.withResolvers if missing (Node < 22)
 if (typeof Promise.withResolvers === 'undefined') {
@@ -69,6 +70,12 @@ let extractor = null;
 const getExtractorInstance = async () => {
     if (!extractor) {
         try {
+            // Initialize PDF.js worker BEFORE importing extractor
+            if (!pdfjsInitialized) {
+                pdfjsLib = await initializePdfWorker();
+                pdfjsInitialized = true;
+            }
+            
             const { getTextExtractor } = await import('office-text-extractor');
             extractor = getTextExtractor();
             console.log('Text extractor initialized successfully');
@@ -86,6 +93,19 @@ const getExtractorInstance = async () => {
 };
 
 dotenv.config();
+
+// Initialize PDF.js worker early to prevent module resolution errors
+// This ensures it's ready before office-text-extractor tries to use it
+(async () => {
+    try {
+        if (!pdfjsInitialized) {
+            pdfjsLib = await initializePdfWorker();
+            pdfjsInitialized = true;
+        }
+    } catch (e) {
+        console.warn('Failed to pre-initialize PDF.js worker:', e.message);
+    }
+})();
 
 // Initialize Gemini API
 // Note: It's safe to instantiate even if key is missing, but calls will fail. Check in handler.
