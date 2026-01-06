@@ -107,6 +107,22 @@ export const generateQuiz = async (req, res) => {
                         // Use pdf-parse v2 API (Class-based) or v1 (Function-based)
                         let parser = null;
                         try {
+                            // Polyfill DOMMatrix for pdfjs-dist in Node.js environment
+                            if (typeof DOMMatrix === 'undefined') {
+                                global.DOMMatrix = class DOMMatrix {
+                                    constructor() {
+                                        this.a = 1; this.b = 0; this.c = 0; this.d = 1;
+                                        this.e = 0; this.f = 0;
+                                    }
+                                    setMatrixValue(str) {} 
+                                    multiply(m) { return this; }
+                                    translate(x, y) { return this; }
+                                    scale(x, y) { return this; }
+                                    rotate(angle) { return this; }
+                                    toString() { return 'matrix(1, 0, 0, 1, 0, 0)'; }
+                                };
+                            }
+
                              // Lazy load pdf-parse
                             const pdfParseLib = require('pdf-parse');
                             const pdfParse = (typeof pdfParseLib === 'function') ? pdfParseLib : pdfParseLib.PDFParse;
