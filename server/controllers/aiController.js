@@ -4,16 +4,34 @@ import { getTextExtractor } from 'office-text-extractor';
 import dotenv from 'dotenv';
 import { createRequire } from 'module';
 
-// Lazy-load pdf-parse only when a PDF is actually processed to avoid pulling in
-// heavy canvas/DOM polyfills at server start (which break in Vercel lambdas).
-const require = createRequire(import.meta.url);
-let pdfParse;
-const loadPdfParse = async () => {
-    if (!pdfParse) {
-        pdfParse = require('pdf-parse');
-    }
-    return pdfParse;
-};
+// Polyfill standard Promise.withResolvers if missing (Node < 22)
+if (typeof Promise.withResolvers === 'undefined') {
+    Promise.withResolvers = function () {
+        let resolve, reject;
+        const promise = new Promise((res, rej) => {
+            resolve = res;
+            reject = rej;
+        });
+        return { promise, resolve, reject };
+    };
+}
+
+// Polyfill browser globals for pdfjs-dist used by text extractors in Node
+const globalContext = (typeof globalThis !== 'undefined' ? globalThis : typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this) || {};
+if (!globalContext.DOMMatrix) {
+    globalContext.DOMMatrix = class DOMMatrix {
+        constructor() { this.a=1;this.b=0;this.c=0;this.d=1;this.e=0;this.f=0; }
+        toString() { return "matrix(1, 0, 0, 1, 0, 0)"; }
+        multiply() { return this; }
+        translate() { return this; }
+        scale() { return this; }
+        transformPoint(p) { return p; }
+    };
+}
+if (!globalContext.Path2D) globalContext.Path2D = class Path2D {};
+if (!globalContext.ImageData) globalContext.ImageData = class ImageData { constructor() { this.width=0;this.height=0;this.data=new Uint8ClampedArray(0); } };
+if (!globalContext.HTMLCanvasElement) globalContext.HTMLCanvasElement = class HTMLCanvasElement { getContext() { return null; } };
+
 
 const extractor = getTextExtractor();
 dotenv.config();
@@ -64,12 +82,7 @@ export const generateQuiz = async (req, res) => {
                 let text = '';
                 try {
                     console.log(`Processing file: ${fileObj.originalname} (${fileObj.mimetype})`);
-                    if (fileObj.mimetype === 'application/pdf') {
-                        const dataBuffer = fs.readFileSync(filePath);
-                        const pdfParseLib = await loadPdfParse();
-                        const pdfData = await pdfParseLib(dataBuffer);
-                        text = pdfData.text || '';
-                    } else if (fileObj.mimetype === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
+                    if (fileObj.mimetype === 'application/pdf' || fileObj.mimetype === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
                          text = await extractor.extractText({ input: filePath, type: 'file' });
                     } else {
                         text = fs.readFileSync(filePath, 'utf8');
