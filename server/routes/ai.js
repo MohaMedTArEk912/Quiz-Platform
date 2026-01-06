@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { generateQuiz } from '../controllers/aiController.js';
 import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
 
@@ -10,9 +11,10 @@ const router = express.Router();
 // Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadDir = path.join(process.cwd(), 'uploads');
+        // Use OS temp to stay writable in serverless environments
+        const uploadDir = path.join(os.tmpdir(), 'uploads');
         if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir);
+            fs.mkdirSync(uploadDir, { recursive: true });
         }
         cb(null, uploadDir);
     },

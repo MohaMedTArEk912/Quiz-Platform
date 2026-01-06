@@ -56,7 +56,13 @@ export const importQuizzes = async (req, res) => {
 
 export const updateQuiz = async (req, res) => {
   try {
-    const { id } = req.params;
+    let { id } = req.params;
+    if (!id && req.params && typeof req.params[0] === 'string') {
+      id = decodeURIComponent(req.params[0].replace(/^\/+/, ''));
+    }
+    if (!id) {
+      return res.status(400).json({ message: 'Invalid quiz id' });
+    }
     const updates = req.body;
     const updatedQuiz = await Quiz.findOneAndUpdate({ id: id }, updates, { new: true });
     
@@ -72,7 +78,13 @@ export const updateQuiz = async (req, res) => {
 
 export const deleteQuiz = async (req, res) => {
   try {
-    const { id } = req.params;
+    let { id } = req.params;
+    if (!id && req.params && typeof req.params[0] === 'string') {
+      id = decodeURIComponent(req.params[0].replace(/^\/+/, ''));
+    }
+    if (!id) {
+      return res.status(400).json({ message: 'Invalid quiz id' });
+    }
     const deletedQuiz = await Quiz.findOneAndDelete({ id: id });
     
     if (!deletedQuiz) {
