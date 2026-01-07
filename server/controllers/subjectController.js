@@ -519,8 +519,18 @@ export const updateSubject = async (req, res) => {
 };
 
 export const generateQuizFromSubject = async (req, res) => {
+    const startTime = Date.now();
+    const isServerless = !!process.env.VERCEL;
+    
+    // In serverless (Vercel), we need to abort before hitting the hard timeout
+    // Vercel Pro allows max 900 seconds, set warning at 840 seconds (14 min safety margin)
+    const timeoutMs = isServerless ? 840000 : 300000; // 14 min vs 5 min
+    
     try {
         const { subjectIds, filters, difficulty = 'Medium', questionCount = 10, useOldQuestions = true, includeNewQuestions = true } = req.body;
+        
+        const environment = isServerless ? 'VERCEL SERVERLESS' : 'LOCAL/SELF-HOSTED';
+        console.log(`[Quiz Generation] Started for subjects: ${Array.isArray(subjectIds) ? subjectIds.join(', ') : subjectIds} (${environment})`);
         
         // Validation
         if (!subjectIds || (Array.isArray(subjectIds) && subjectIds.length === 0)) {
@@ -654,6 +664,15 @@ export const generateQuizFromSubject = async (req, res) => {
                 const remainingNeeded = needed - generatedNewQs.length;
                 const chunksLeft = textChunks.length - i;
                 const qsPerChunk = Math.ceil(remainingNeeded / chunksLeft) + 1; // Buffer
+
+                // Check timeout in serverless environment before making API call
+                if (isServerless) {
+                    const elapsed = Date.now() - startTime;
+                    if (elapsed > timeoutMs - 60000) { // 1 minute safety margin before timeout
+                        console.warn(`[Quiz Generation] Approaching serverless timeout after ${(elapsed / 1000).toFixed(2)}s. Stopping generation.`);
+                        break; // Exit chunk loop and return what we have
+                    }
+                }
 
                 console.log(`[Subject AI] Processing Chunk ${i + 1}/${textChunks.length}... requesting ~${qsPerChunk} questions`);
 

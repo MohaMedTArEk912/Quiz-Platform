@@ -38,6 +38,11 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
+        // Timeout adapted for both development and production
+        // In production (Vercel), API calls are handled serverlessly with enforced timeouts
+        // In development, we allow up to 5 minutes for AI generation
+        timeout: process.env.NODE_ENV === 'production' ? 120000 : 300000,  // 2 min prod, 5 min dev
+        proxyTimeout: process.env.NODE_ENV === 'production' ? 120000 : 300000,
       },
     },
   },

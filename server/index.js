@@ -47,6 +47,17 @@ import subjectRoutes from './routes/subjects.js';
 const app = express();
 const httpServer = createServer(app);
 
+// Set timeout for long-running requests (like AI quiz generation)
+// IMPORTANT: In Vercel serverless, these settings are ignored.
+// Vercel enforces maxDuration in vercel.json (currently 900 seconds/15 minutes)
+// Only apply timeouts for non-serverless environments
+const isServerless = !!process.env.VERCEL;
+if (!isServerless) {
+  httpServer.setTimeout(300000);           // Socket timeout: 5 minutes
+  httpServer.keepAliveTimeout = 300000;    // Keep-alive: 5 minutes  
+  httpServer.headersTimeout = 310000;      // Headers: ~5.2 minutes
+}
+
 // Socket.io configuration optimized for Netlify
 const io = new Server(httpServer, {
   cors: {

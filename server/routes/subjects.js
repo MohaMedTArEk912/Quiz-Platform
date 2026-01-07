@@ -65,6 +65,24 @@ const handleMulterError = (err, req, res, next) => {
     next();
 };
 
+// Timeout middleware for long-running requests like quiz generation
+const timeoutMiddleware = (timeoutMs) => {
+    return (req, res, next) => {
+        const timeoutId = setTimeout(() => {
+            if (!res.headersSent) {
+                res.status(504).json({
+                    success: false,
+                    message: `Request timeout. Quiz generation took longer than ${timeoutMs / 1000} seconds. Please try again with fewer questions or simpler content.`
+                });
+            }
+        }, timeoutMs);
+
+        res.on('finish', () => clearTimeout(timeoutId));
+        res.on('close', () => clearTimeout(timeoutId));
+        next();
+    };
+};
+
 router.post('/', verifyUser, verifyAdmin, upload.fields([
     { name: 'contentFiles', maxCount: 5 },  // Multiple content files
     { name: 'oldExamFiles', maxCount: 5 }   // Multiple old exam files
@@ -77,8 +95,8 @@ router.put('/:id', verifyUser, verifyAdmin, upload.fields([
     { name: 'replacementFiles', maxCount: 10 }
 ]), handleMulterError, updateSubject);
 
-// Generate Quiz from Subject
-router.post('/generate-quiz', verifyUser, verifyAdmin, generateQuizFromSubject);
+// Generate Quiz from Subject (with 5-minute timeout)
+router.post('/generate-quiz', verifyUser, verifyAdmin, timeoutMiddleware(300000), generateQuizFromSubject);
 
 router.get('/', verifyUser, verifyAdmin, getSubjects);
 router.get('/:id', verifyUser, verifyAdmin, getSubjectDetails);
