@@ -15,8 +15,9 @@ export async function connectToDatabase() {
   }
 
   if (!uri) {
-    console.error('MONGODB_URI is not defined in .env');
-    throw new Error('MONGODB_URI is not defined');
+    const errorMsg = 'MONGODB_URI is not defined in environment variables';
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
   }
 
   const opts = {
@@ -35,12 +36,17 @@ export async function connectToDatabase() {
     .then((mongooseInstance) => {
       cachedConnection = mongooseInstance.connection;
       const ms = Date.now() - start;
-      console.info(`MongoDB connected in ${ms}ms`);
+      console.info(`✅ MongoDB connected in ${ms}ms`);
       return cachedConnection;
     })
     .catch((err) => {
       cachedPromise = null; // allow retries on next request
-      console.error('MongoDB connection error:', err);
+      console.error('❌ MongoDB connection error:', {
+        message: err.message,
+        code: err.code,
+        name: err.name,
+        uri: uri ? `${uri.split('@')[0]}@***` : 'undefined' // Log URI pattern without credentials
+      });
       throw err;
     });
 
@@ -52,6 +58,10 @@ export const dbMiddleware = async (req, res, next) => {
     await connectToDatabase();
     next();
   } catch (error) {
-    res.status(500).json({ message: 'Database connection failed', error: error.message });
+    res.status(500).json({ 
+      message: 'Database connection failed', 
+      error: error.message,
+      env_configured: !!process.env.MONGODB_URI
+    });
   }
 };

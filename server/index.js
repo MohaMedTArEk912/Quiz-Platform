@@ -1,7 +1,10 @@
 import dotenv from 'dotenv';
 
 // Load environment variables FIRST before any other imports
-dotenv.config();
+// Only load from .env files in development (Vercel handles env vars automatically)
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 // Provider and key presence checks (non-fatal)
 if (!process.env.GROQ_API_KEY || !String(process.env.GROQ_API_KEY).trim()) {
