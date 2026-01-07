@@ -1,9 +1,10 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 import fs from 'fs';
-import dotenv from 'dotenv';
 import { createRequire } from 'module';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import limiter, { scheduleNormal } from '../utils/aiLimiter.js';
+import { smartTruncate, validateTokenBudget } from '../utils/tokenOptimizer.js';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -38,40 +39,91 @@ const getExtractorInstance = async () => {
     return extractor;
 };
 
-dotenv.config();
+// Lazy Groq client init to avoid crashing when key is missing
+const getGroqClient = () => {
+    const key = (process.env.GROQ_API_KEY || '').trim();
+    if (!key) return null;
+    try { return new Groq({ apiKey: key }); } catch (e) {
+        console.warn('Failed to initialize Groq client:', e.message);
+        return null;
+    }
+};
 
-// Initialize Gemini API
-// Note: It's safe to instantiate even if key is missing, but calls will fail. Check in handler.
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MISSING_KEY');
+// Groq-only setup; no Google SDK or key debug logs
 
-const ATTEMPT_MODELS = [
-    "gemini-2.0-flash", 
-    "gemini-2.0-flash-lite-preview-02-05", 
-    "gemini-2.5-flash",
-    "gemini-2.0-flash-exp"
+export const aiHealth = async (req, res) => {
+    try {
+        const groq = getGroqClient();
+        if (!groq) {
+            return res.status(400).json({ ok: false, message: 'GROQ_API_KEY is missing in environment.' });
+        }
+        const resp = await groq.chat.completions.create({
+            model: 'llama-3.2-11b-vision-preview',
+            messages: [{ role: 'user', content: 'healthcheck' }],
+            max_tokens: 64
+        });
+        const text = resp?.choices?.[0]?.message?.content || '';
+        return res.json({ ok: true, provider: 'groq', model: 'llama-3.2-11b-vision-preview', sampleLength: text.length });
+    } catch (error) {
+        return res.status(400).json({ ok: false, message: error.message });
+    }
+};
+
+// PRODUCTION MODELS: Confirmed available for this API key
+// Note: Try stable models first, then experimental as fallback
+const GROQ_ATTEMPT_MODELS = [
+    'llama-3.2-90b-text-preview',
+    'llama-3.2-11b-vision-preview',
+    'mixtral-8x7b-32768',
 ];
 
-async function generateContentWithFallback(prompt) {
+/**
+ * PRODUCTION-GRADE AI GENERATION WITH RATE LIMITING
+ * 
+ * Architecture:
+ * 1. Rate Limiter: Enforces 4-second gaps (15 RPM limit)
+ * 2. Model Fallback: Tries stable models in order
+ * 3. Exponential Backoff: 1s, 2s, 4s delays on failures
+ * 4. Smart Retry: Only retry 429 errors, skip 404/403
+ */
+async function generateContentWithFallback(prompt, jobId = `Gen-${Date.now()}`) {
     let lastError = null;
-    for (const modelName of ATTEMPT_MODELS) {
-        try {
-            console.log(`Attempting generation with model: ${modelName}...`);
-            const model = genAI.getGenerativeModel({ 
-                model: modelName,
-                generationConfig: { responseMimeType: "application/json" }
-            });
-            const result = await model.generateContent(prompt);
-            console.log(`Success with model: ${modelName}`);
-            return result;
-        } catch (error) {
-            console.warn(`Model ${modelName} failed: ${error.message.split('\n')[0]}`);
-            if (error.message.includes('429')) {
-                console.warn('Rate limit hit, switching to next model...');
+    // Wrap entire generation in rate limiter
+    return scheduleNormal(jobId, async () => {
+        const groq = getGroqClient();
+        if (!groq) throw new Error('GROQ_API_KEY missing');
+        for (const modelName of GROQ_ATTEMPT_MODELS) {
+            try {
+                console.log(`[AI Gen][Groq] Attempting model: ${modelName}`);
+                const resp = await groq.chat.completions.create({
+                    model: modelName,
+                    messages: [{ role: 'user', content: prompt }],
+                    // Encourage JSON output
+                    response_format: { type: 'json_object' },
+                    max_tokens: 4096,
+                });
+                const text = resp?.choices?.[0]?.message?.content || '';
+                console.log(`[AI Gen][Groq] ✅ Success with ${modelName}`);
+                return { response: { text: () => text } };
+            } catch (error) {
+                const errorMsg = (error?.message || String(error)).split('\n')[0].substring(0, 100);
+                console.warn(`[AI Gen][Groq] ❌ Model ${modelName} failed: ${errorMsg}`);
+                if (String(errorMsg).includes('429')) error.status = 429;
+                lastError = error;
+                if (String(errorMsg).includes('404') || String(errorMsg).includes('403')) {
+                    console.warn(`[AI Gen][Groq] Skipping to next model`);
+                    continue;
+                }
+                if (String(errorMsg).includes('429')) {
+                    throw error; // Let limiter retry
+                }
+                continue;
             }
-            lastError = error;
         }
-    }
-    throw lastError;
+
+        // All models failed
+        throw lastError;
+    });
 }
 
 export const generateQuiz = async (req, res) => {
@@ -234,11 +286,12 @@ export const generateQuiz = async (req, res) => {
             }
         }
 
-        if (!process.env.GEMINI_API_KEY) {
-            console.error('Missing GEMINI_API_KEY in environment variables');
+        // Validate Groq key availability
+        if (!process.env.GROQ_API_KEY) {
+            console.error('Missing GROQ_API_KEY in environment variables');
             return res.status(500).json({ 
                 success: false, 
-                message: 'Server configuration error: AI API Key missing.' 
+                message: 'Server configuration error: GROQ API Key missing.' 
             });
         }
 
@@ -246,47 +299,61 @@ export const generateQuiz = async (req, res) => {
         if (!material || !material.trim()) {
             return res.status(400).json({ success: false, message: "No content found. Please provide text or a valid readable file (PDF/PPTX)." });
         }
-
-
-        // Construct Prompt
-        let prompt = `You are a strict and precise exam creator. 
-        Your task is to generate a quiz based strictly on the provided study material.
+        // OPTIMIZATION: Smart truncation to reduce token usage
+        // Free tier has strict token limits per minute
+        const MAX_MATERIAL_TOKENS = 8000; // Conservative limit
+        material = smartTruncate(material, MAX_MATERIAL_TOKENS);
         
-        **Configuration:**
-        - Number of Questions: ${questionCount || 5}
-        - Difficulty Level: ${difficulty || 'Medium'}
-        - Question Types: ${questionType || 'Multiple Choice'}
-        
-        **Input Material:**
-        """
-        ${material.substring(0, 30000)} 
-        """
-        
-        ${styleExamples ? `**Style Guide / Examples:**\n"""\n${styleExamples}\n"""\nMake sure the generated questions follow this style.` : ''}
+        if (styleExamples) {
+            styleExamples = smartTruncate(styleExamples, 1000);
+        }
 
-        **Output Requirements:**
-        1. Return ONLY a valid JSON array. No markdown, no explanations, no prologue.
-        2. The JSON must be an ARRAY of question objects.
-        3. Each object MUST strictly follow this schema:
-        {
-            "question": "The question text here",
-            "options": ["Option A", "Option B", "Option C", "Option D"], 
-            "correctAnswer": 0, // Index of the correct option (0-based)
-            "explanation": "Brief explanation of why this answer is correct",
-            "type": "multiple-choice" // or "true-false"
+        // Construct Prompt (optimized for token efficiency)
+        let prompt = `You are an exam creator. Generate a quiz from the study material.
+
+**Config:**
+- Questions: ${questionCount || 5}
+- Difficulty: ${difficulty || 'Medium'}
+- Type: ${questionType || 'Multiple Choice'}
+
+**Material:**
+"""
+${material}
+"""
+
+${styleExamples ? `**Style:**\n${styleExamples}\n` : ''}
+**Output:** JSON array only. No markdown, no text.
+Schema:
+{
+  "question": "text",
+  "options": ["A", "B", "C", "D"],
+  "correctAnswer": 0,
+  "explanation": "brief",
+  "type": "multiple-choice"
+}
+
+Rules:
+- Multiple Choice: 4 options
+- True/False: ["True", "False"], correctAnswer 0 or 1
+- Valid correctAnswer index
+`;
+
+        // Validate token budget before sending
+        const budgetCheck = validateTokenBudget(prompt, 12000);
+        if (!budgetCheck.valid) {
+            console.warn(`[Token Warning] ${budgetCheck.message}`);
+            return res.status(400).json({
+                success: false,
+                message: 'Input too large. Please reduce content size or question count.'
+            });
         }
         
-        **Important Rules:**
-        - For "Multiple Choice", provide 4 distinct options.
-        - For "True/False", provided options ["True", "False"] and set correctAnswer to 0 or 1.
-        - Ensure "correctAnswer" is a valid index for the "options" array.
-        - The questions should test understanding, not just recall.
-        `;
+        console.log(`[Token Budget] Prompt: ~${budgetCheck.tokens} tokens`);
 
         const result = await generateContentWithFallback(prompt);
         console.log('Content generated, getting response...');
         const response = await result.response;
-        let text = response.text();
+        let text = typeof response?.text === 'function' ? response.text() : (response?.text || '');
 
         // Cleaning the output to ensure valid JSON
         // Sometimes models wrap responses in ```json ... ```
@@ -335,10 +402,39 @@ export const generateQuiz = async (req, res) => {
     } catch (error) {
         console.error('AI Controller Error - Detailed:', error);
         console.error('Error Stack:', error.stack);
-        res.status(500).json({ 
+        
+        // Provide specific error messages based on error type
+        let statusCode = 500;
+        let userMessage = 'Failed to generate quiz.';
+        let errorType = 'UNKNOWN_ERROR';
+        
+        if (error.message.includes('API_KEY_INVALID') || error.message.includes('API key not valid')) {
+            statusCode = 500;
+            userMessage = 'AI service API key is invalid or expired. Please contact the administrator to update the API key.';
+            errorType = 'INVALID_API_KEY';
+        } else if (error.message.includes('429')) {
+            statusCode = 429;
+            userMessage = 'Rate limit exceeded. The AI service is temporarily unavailable due to quota limits. Please try again in a few minutes.';
+            errorType = 'RATE_LIMIT_ERROR';
+        } else if (error.message.includes('403')) {
+            statusCode = 500;
+            userMessage = 'AI service authentication failed. Please contact support.';
+            errorType = 'AUTH_ERROR';
+        } else if (error.message.includes('404')) {
+            statusCode = 500;
+            userMessage = 'AI model not available. The service may be temporarily down.';
+            errorType = 'MODEL_NOT_FOUND';
+        } else if (error.message.includes('MISSING_KEY')) {
+            statusCode = 500;
+            userMessage = 'Server configuration error. AI service is not configured.';
+            errorType = 'CONFIG_ERROR';
+        }
+        
+        res.status(statusCode).json({ 
             success: false, 
-            message: 'Failed to generate quiz.', 
-            error: error.message,
+            message: userMessage, 
+            errorType,
+            technicalError: process.env.NODE_ENV === 'development' ? error.message : undefined,
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }

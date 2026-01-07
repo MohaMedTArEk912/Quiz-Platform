@@ -11,7 +11,8 @@ import {
     LogOut,
     Activity,
     Route,
-    Settings
+    Settings,
+    Menu
 } from 'lucide-react';
 
 import type { UserData, Quiz, AttemptData } from '../types/index.ts';
@@ -29,6 +30,7 @@ import TournamentManagement from './admin/TournamentManagement.tsx';
 import BadgeManagement from './admin/BadgeManagement.tsx';
 import AttemptsLog from './admin/AttemptsLog.tsx';
 import RoadmapManagement from './admin/RoadmapManagement.tsx';
+import SubjectManagement from './admin/SubjectManagement.tsx';
 import AdminSettings from './AdminSettings.tsx';
 
 // --- Types ---
@@ -50,9 +52,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onLogout
 }) => {
     // --- State ---
-    const [selectedTab, setSelectedTab] = useState<'users' | 'attempts' | 'quizzes' | 'reviews' | 'study' | 'daily' | 'tournaments' | 'badges' | 'roadmaps'>('users');
+    const [selectedTab, setSelectedTab] = useState<'users' | 'attempts' | 'quizzes' | 'reviews' | 'study' | 'daily' | 'tournaments' | 'badges' | 'roadmaps' | 'subjects'>('users');
     const [pendingReviews, setPendingReviews] = useState<AttemptData[]>([]);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [stats, setStats] = useState({
         totalUsers: 0,
         totalQuizzes: 0,
@@ -122,6 +125,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             items: [
                 { id: 'attempts', label: 'Attempts', icon: BarChart3 },
                 { id: 'study', label: 'Study', icon: Zap },
+                { id: 'subjects', label: 'Subjects', icon: BookOpen },
                 { id: 'roadmaps', label: 'Roadmaps', icon: Route },
             ]
         }
@@ -138,17 +142,41 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* Custom Admin Header */}
             <div className="z-40 bg-white/70 dark:bg-[#0a0a0b]/70 backdrop-blur-2xl border-b border-gray-200/50 dark:border-white/10 sticky top-0 shadow-sm dark:shadow-purple-900/10">
-                <div className="w-full px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-gradient-to-br from-purple-600 to-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-purple-500/30 ring-1 ring-white/20">
-                            <Trophy className="w-6 h-6" />
+                <div className="w-full px-4 sm:px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        {/* Mobile Menu Button */}
+                        <button
+                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                            className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+                            aria-label="Toggle menu"
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
+
+                        <div className="bg-gradient-to-br from-purple-600 to-indigo-600 p-2 sm:p-2.5 rounded-xl text-white shadow-lg shadow-purple-500/30 ring-1 ring-white/20">
+                            <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
-                        <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight drop-shadow-sm">
-                            Admin <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-500 dark:from-purple-400 dark:to-indigo-400">Dashboard</span>
-                        </h1>
+                        <div>
+                            <h1 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white tracking-tight drop-shadow-sm">
+                                <span className="hidden sm:inline">Admin </span><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-500 dark:from-purple-400 dark:to-indigo-400">Dashboard</span>
+                            </h1>
+                            {/* Mobile: Show current tab */}
+                            <div className="md:hidden text-xs text-gray-500 dark:text-gray-400 font-medium capitalize">
+                                {selectedTab === 'users' && 'User Management'}
+                                {selectedTab === 'quizzes' && 'Quiz Management'}
+                                {selectedTab === 'badges' && 'Badge Management'}
+                                {selectedTab === 'daily' && 'Daily Challenges'}
+                                {selectedTab === 'tournaments' && 'Tournaments'}
+                                {selectedTab === 'reviews' && 'Reviews'}
+                                {selectedTab === 'attempts' && 'Attempts Log'}
+                                {selectedTab === 'study' && 'Study Cards'}
+                                {selectedTab === 'subjects' && 'Subjects'}
+                                {selectedTab === 'roadmaps' && 'Roadmaps'}
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4">
 
                         <ThemeToggle />
 
@@ -186,9 +214,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             <div className="flex flex-1 overflow-hidden z-10">
-                {/* Sidebar */}
-                <div className="w-64 bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl border-r border-gray-200/50 dark:border-white/5 flex flex-col py-6">
-                    <div className="flex-1 overflow-y-auto px-4 space-y-6">
+                {/* Mobile Sidebar Overlay */}
+                {isSidebarOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[90] md:hidden"
+                        onClick={() => setIsSidebarOpen(false)}
+                    />
+                )}
+
+                {/* Sidebar - Desktop */}
+                <div className="hidden md:flex w-64 bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl border-r border-gray-200/50 dark:border-white/5 flex-col py-6">
+                    <div className="flex-1 overflow-y-auto px-4 space-y-16 pt-24">
                         {navItems.map((group, idx) => (
                             <div key={idx}>
                                 <h3 className="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{group.title}</h3>
@@ -224,8 +260,49 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                 </div>
 
+                {/* Sidebar - Mobile Drawer */}
+                <div className={`md:hidden fixed inset-y-0 left-0 w-64 bg-white dark:bg-[#13141f] backdrop-blur-xl border-r border-gray-200/50 dark:border-white/5 flex flex-col py-6 z-[95] transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                    <div className="flex-1 overflow-y-auto px-4 space-y-16 pt-24">
+                        {navItems.map((group, idx) => (
+                            <div key={idx}>
+                                <h3 className="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{group.title}</h3>
+                                <div className="space-y-1">
+                                    {group.items.map((item) => {
+                                        const Icon = item.icon;
+                                        const isActive = selectedTab === item.id;
+                                        // @ts-ignore
+                                        return (
+                                            <button
+                                                key={item.id}
+                                                onClick={() => {
+                                                    setSelectedTab(item.id as any);
+                                                    setIsSidebarOpen(false);
+                                                }}
+                                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 font-bold group ${isActive
+                                                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30 ring-1 ring-white/20'
+                                                    : 'text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-white/10 hover:shadow-md dark:hover:shadow-black/20'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-purple-500 dark:group-hover:text-purple-400'}`} />
+                                                    <span>{item.label}</span>
+                                                </div>
+                                                {item.badge && item.badge > 0 && (
+                                                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm shadow-red-500/50">
+                                                        {item.badge}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Main Content */}
-                <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+                <div className="flex-1 flex flex-col h-full overflow-hidden relative bg-gray-50 dark:bg-[#0a0a0b]">
                     {/* Notification Toast */}
                     {notification && (
                         <div className={`absolute top-6 right-6 z-50 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right duration-300 border backdrop-blur-xl ${notification.type === 'success'
@@ -238,11 +315,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     )}
 
                     {/* Header Stats */}
-                    <div className="p-8 pb-0">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div className="p-4 sm:p-8 pb-0">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
                             {[
                                 {
                                     label: 'Total Users',
+                                    shortLabel: 'Users',
                                     value: stats.totalUsers,
                                     icon: Users,
                                     color: 'from-blue-500 to-violet-500',
@@ -251,6 +329,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 },
                                 {
                                     label: 'Total Quizzes',
+                                    shortLabel: 'Quizzes',
                                     value: stats.totalQuizzes,
                                     icon: BookOpen,
                                     color: 'from-emerald-500 to-teal-500',
@@ -259,6 +338,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 },
                                 {
                                     label: 'Total Attempts',
+                                    shortLabel: 'Attempts',
                                     value: stats.totalAttempts,
                                     icon: Activity,
                                     color: 'from-orange-500 to-red-500',
@@ -267,6 +347,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 },
                                 {
                                     label: 'Avg Score',
+                                    shortLabel: 'Avg Score',
                                     value: `${stats.avgScore}%`,
                                     icon: Trophy,
                                     color: 'from-amber-400 to-yellow-500',
@@ -276,20 +357,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             ].map((stat, i) => {
                                 const Icon = stat.icon;
                                 return (
-                                    <div key={i} className="relative overflow-hidden bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl p-6 rounded-3xl border border-white/40 dark:border-white/5 shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 group hover:-translate-y-1 hover:border-white/60 dark:hover:border-white/20">
-                                        <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${stat.color} opacity-[0.03] dark:opacity-[0.08] rounded-bl-full pointer-events-none transition-opacity group-hover:opacity-10`} />
+                                    <div key={i} className="relative overflow-hidden bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/40 dark:border-white/5 shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 group hover:-translate-y-1 hover:border-white/60 dark:hover:border-white/20">
+                                        <div className={`absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br ${stat.color} opacity-[0.03] dark:opacity-[0.08] rounded-bl-full pointer-events-none transition-opacity group-hover:opacity-10`} />
 
-                                        <div className="flex items-center justify-between mb-4 relative z-10">
-                                            <div className={`p-3 rounded-2xl ${stat.bg} shadow-inner`}>
-                                                <Icon className={`w-6 h-6 ${stat.iconColor}`} />
+                                        <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
+                                            <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${stat.bg} shadow-inner`}>
+                                                <Icon className={`w-4 h-4 sm:w-6 sm:h-6 ${stat.iconColor}`} />
                                             </div>
-                                            {/* Optional Trend Indicator - static for now or calculate dynamic */}
-                                            {/* <div className={`text-xs font-bold px-2 py-1 rounded-lg ${stat.bg} text-gray-600 dark:text-gray-300 uppercase tracking-wider`}>+12%</div> */}
                                         </div>
 
                                         <div className="relative z-10">
-                                            <div className="text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wider mb-1 opacity-70">{stat.label}</div>
-                                            <div className="text-4xl font-black text-gray-900 dark:text-white bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-gray-900 group-hover:to-gray-600 dark:group-hover:from-white dark:group-hover:to-gray-300 transition-all">
+                                            <div className="text-gray-500 dark:text-gray-400 font-bold text-[10px] sm:text-xs uppercase tracking-wider mb-1 opacity-70">
+                                                <span className="hidden sm:inline">{stat.label}</span>
+                                                <span className="sm:hidden">{stat.shortLabel}</span>
+                                            </div>
+                                            <div className="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-gray-900 group-hover:to-gray-600 dark:group-hover:from-white dark:group-hover:to-gray-300 transition-all">
                                                 {stat.value}
                                             </div>
                                         </div>
@@ -299,7 +381,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-8 pt-0 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-8 pt-0 custom-scrollbar">
                         {/* Dynamic Content Rendering */}
                         {selectedTab === 'users' && (
                             <UserManagement
@@ -363,8 +445,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 onNotification={handleNotification}
                             />
                         )}
-                        {selectedTab === 'roadmaps' && (
-                            <RoadmapManagement
+                        {selectedTab === 'subjects' && (
+                            <SubjectManagement
                                 adminId={currentUser.userId}
                                 onNotification={handleNotification}
                             />

@@ -1,6 +1,17 @@
+import dotenv from 'dotenv';
+
+// Load environment variables FIRST before any other imports
+dotenv.config();
+
+// Provider and key presence checks (non-fatal)
+if (!process.env.GROQ_API_KEY || !String(process.env.GROQ_API_KEY).trim()) {
+  console.warn('⚠️  GROQ_API_KEY is missing. Groq requests will fail until set.');
+} else {
+  console.log('✅ Groq API Key loaded successfully');
+}
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { connectToDatabase } from './middleware/dbMiddleware.js';
@@ -28,8 +39,7 @@ import studyCardsRoutes from './routes/studyCards.js';
 import clanRoutes from './routes/clanRoutes.js';
 import compilerRoutes from './routes/compiler.js';
 import aiRoutes from './routes/ai.js';
-
-dotenv.config();
+import subjectRoutes from './routes/subjects.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -112,6 +122,7 @@ app.use('/api/study-cards', studyCardsRoutes);
 app.use('/api/clans', clanRoutes);
 app.use('/api', compilerRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/subjects', subjectRoutes);
 
 app.use('/api/badges', badgeRoutes);
 app.use('/api/badge-nodes', badgeNodesRoutes);

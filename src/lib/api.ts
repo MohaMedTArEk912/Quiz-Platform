@@ -1042,4 +1042,76 @@ export const api = {
         }
         return response.json();
     },
+
+    // Subjects
+    async getAllSubjects(adminId: string) {
+        const response = await fetch(`${API_URL}/subjects`, {
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) throw new Error('Failed to fetch subjects');
+        return response.json();
+    },
+
+    async createSubject(data: FormData, adminId: string) {
+        const headers = getHeaders(adminId);
+        // @ts-ignore
+        delete headers['Content-Type']; // Allow browser to set boundary
+
+        const response = await fetch(`${API_URL}/subjects`, {
+            method: 'POST',
+            headers: headers,
+            body: data
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to create subject');
+        }
+        return response.json();
+    },
+
+    async deleteSubject(id: string, adminId: string) {
+        const response = await fetch(`${API_URL}/subjects/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) throw new Error('Failed to delete subject');
+        return response.json();
+    },
+
+    async updateSubject(id: string, data: FormData, adminId: string) {
+        const headers = getHeaders(adminId);
+        // @ts-ignore
+        delete headers['Content-Type']; // Allow browser to set boundary
+
+        const response = await fetch(`${API_URL}/subjects/${id}`, {
+            method: 'PUT',
+            headers: headers,
+            body: data
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to update subject');
+        }
+        return response.json();
+    },
+
+    async generateQuizFromSubject(data: {
+        subjectIds: string | string[];
+        filters?: Record<string, string[]>;
+        questionCount: number;
+        difficulty: string;
+        useOldQuestions: boolean;
+        includeNewQuestions: boolean;
+    }, adminId: string) {
+        const response = await fetch(`${API_URL}/subjects/generate-quiz`, {
+            method: 'POST',
+            headers: getHeaders(adminId),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to generate quiz');
+        }
+        return response.json();
+    },
 };

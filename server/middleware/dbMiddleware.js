@@ -1,15 +1,11 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 
-dotenv.config();
-
-const uri = process.env.MONGODB_URI;
-
-// Cache the connection/promise so serverless cold starts don't reconnect on every request
 let cachedConnection = null;
 let cachedPromise = null;
 
 export async function connectToDatabase() {
+  const uri = process.env.MONGODB_URI;
+  
   // 1 = connected, 2 = connecting. Reuse existing sockets when possible.
   if (mongoose.connection.readyState === 1 && cachedConnection) {
     return cachedConnection;
