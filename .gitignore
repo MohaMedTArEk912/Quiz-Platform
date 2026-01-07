@@ -36,3 +36,5 @@ build
 docs/
 *.md
 !README.md
+
+.env.corrupt
