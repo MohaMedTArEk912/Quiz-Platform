@@ -1022,6 +1022,7 @@ export const api = {
         questionCount: number;
         questionType: string;
         styleExamples?: string;
+        mode?: 'generate' | 'extract';
     }, adminId: string) {
         const isFormData = data instanceof FormData;
         const headers = getHeaders(adminId);
@@ -1100,8 +1101,9 @@ export const api = {
         filters?: Record<string, string[]>;
         questionCount: number;
         difficulty: string;
-        useOldQuestions: boolean;
-        includeNewQuestions: boolean;
+        mode?: 'generate' | 'extract';
+        useOldQuestions?: boolean;
+        includeNewQuestions?: boolean;
     }, adminId: string) {
         const response = await fetch(`${API_URL}/subjects/generate-quiz`, {
             method: 'POST',

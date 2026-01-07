@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import {
     Users,
@@ -52,10 +52,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onLogout
 }) => {
     // --- State ---
-    const [selectedTab, setSelectedTab] = useState<'users' | 'attempts' | 'quizzes' | 'reviews' | 'study' | 'daily' | 'tournaments' | 'badges' | 'roadmaps' | 'subjects'>('users');
+    const [selectedTab, setSelectedTab] = useState<'main' | 'users' | 'attempts' | 'quizzes' | 'reviews' | 'study' | 'daily' | 'tournaments' | 'badges' | 'roadmaps' | 'subjects'>('main');
     const [pendingReviews, setPendingReviews] = useState<AttemptData[]>([]);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [statsCollapsed, setStatsCollapsed] = useState(false);
     const [stats, setStats] = useState({
         totalUsers: 0,
         totalQuizzes: 0,
@@ -63,6 +64,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         avgScore: 0
     });
     const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+    const mainScrollRef = useRef<HTMLDivElement>(null);
 
 
     // --- Effects ---
@@ -70,6 +72,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         calculateStats();
         loadPendingReviews();
     }, [users, quizzes, attempts]);
+
+    // Auto-collapse stats when scrolling down on Main tab
+    useEffect(() => {
+        const el = mainScrollRef.current;
+        if (!el) return;
+        const onScroll = () => {
+            if (selectedTab !== 'main') return;
+            setStatsCollapsed(el.scrollTop > 80);
+        };
+        el.addEventListener('scroll', onScroll);
+        return () => el.removeEventListener('scroll', onScroll);
+    }, [selectedTab]);
 
     const calculateStats = () => {
         const totalScore = attempts.reduce((acc, curr) => acc + curr.score, 0);
@@ -162,6 +176,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </h1>
                             {/* Mobile: Show current tab */}
                             <div className="md:hidden text-xs text-gray-500 dark:text-gray-400 font-medium capitalize">
+                                {selectedTab === 'main' && 'Dashboard'}
                                 {selectedTab === 'users' && 'User Management'}
                                 {selectedTab === 'quizzes' && 'Quiz Management'}
                                 {selectedTab === 'badges' && 'Badge Management'}
@@ -185,7 +200,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <div className="text-sm font-bold text-gray-900 dark:text-white">{currentUser.name}</div>
                                 <div className="text-xs text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 font-bold">Administrator</div>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 p-0.5 shadow-lg shadow-purple-500/20 transition-transform hover:scale-105">
+                            <button
+                                type="button"
+                                onClick={() => setSelectedTab('main')}
+                                aria-label="Go to Main Dashboard"
+                                title="Go to Main"
+                                className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 p-0.5 shadow-lg shadow-purple-500/20 transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500/60 cursor-pointer"
+                            >
                                 <div className="w-full h-full rounded-[10px] bg-white dark:bg-[#0a0a0b] flex items-center justify-center overflow-hidden">
                                     {currentUser.avatar ? (
                                         <Avatar config={currentUser.avatar} size="md" className="w-full h-full" />
@@ -193,7 +214,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         <span className="font-bold text-purple-600 dark:text-purple-400">{currentUser.name.charAt(0)}</span>
                                     )}
                                 </div>
-                            </div>
+                            </button>
                             <button
                                 onClick={() => setIsSettingsOpen(true)}
                                 className="p-2.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-xl transition-all hover:scale-105 active:scale-95"
@@ -314,8 +335,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </div>
                     )}
 
-                    {/* Header Stats */}
-                    <div className="p-4 sm:p-8 pb-0">
+                    {/* Header Stats shown only on Main tab */}
+                    {selectedTab === 'main' && (
+                    <div className={`p-4 sm:p-8 pb-0 transition-all duration-300 ${statsCollapsed ? 'max-h-0 opacity-0 -mt-2' : 'max-h-[1000px] opacity-100'}`}> 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
                             {[
                                 {
@@ -379,10 +401,204 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 )
                             })}
                         </div>
+                        {/* Collapse control */}
+                        <div className="flex justify-end -mt-2">
+                            <button
+                                type="button"
+                                onClick={() => setStatsCollapsed(!statsCollapsed)}
+                                className="text-xs font-bold px-3 py-1 rounded-lg bg-white/60 dark:bg-white/10 border border-white/40 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-white/20"
+                                aria-expanded={!statsCollapsed}
+                            >
+                                {statsCollapsed ? 'Show Stats' : 'Hide Stats'}
+                            </button>
+                        </div>
                     </div>
+                    )}
 
-                    <div className="flex-1 overflow-y-auto p-4 sm:p-8 pt-0 custom-scrollbar">
+                    <div ref={mainScrollRef} className="flex-1 overflow-y-auto p-4 sm:p-8 pt-0 custom-scrollbar">
                         {/* Dynamic Content Rendering */}
+                        {selectedTab === 'main' && (
+                            <div className="space-y-8">
+                                {/* Quick Actions */}
+                                <div className="bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h2 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white">Quick Actions</h2>
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">Boost your workflow</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                                        <button onClick={() => setSelectedTab('quizzes')} className="group flex items-center gap-3 w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-500/10 to-indigo-500/10 hover:from-purple-500/20 hover:to-indigo-500/20 border border-white/40 dark:border-white/10 transition-all">
+                                            <div className="p-2 rounded-lg bg-purple-500/10">
+                                                <BookOpen className="w-5 h-5 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-bold text-gray-900 dark:text-white">Create or Manage Quizzes</div>
+                                                <div className="text-[11px] text-gray-500 dark:text-gray-400">Add new content</div>
+                                            </div>
+                                        </button>
+                                        <button onClick={() => setSelectedTab('users')} className="group flex items-center gap-3 w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500/10 to-violet-500/10 hover:from-blue-500/20 hover:to-violet-500/20 border border-white/40 dark:border-white/10 transition-all">
+                                            <div className="p-2 rounded-lg bg-blue-500/10">
+                                                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-bold text-gray-900 dark:text-white">Manage Users</div>
+                                                <div className="text-[11px] text-gray-500 dark:text-gray-400">Roles, access, details</div>
+                                            </div>
+                                        </button>
+                                        <button onClick={() => setSelectedTab('reviews')} className="group flex items-center gap-3 w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border border-white/40 dark:border-white/10 transition-all">
+                                            <div className="p-2 rounded-lg bg-emerald-500/10">
+                                                <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-bold text-gray-900 dark:text-white">Review Submissions</div>
+                                                <div className="text-[11px] text-gray-500 dark:text-gray-400">Handle pending reviews</div>
+                                            </div>
+                                        </button>
+                                        <button onClick={() => setSelectedTab('subjects')} className="group flex items-center gap-3 w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400/10 to-yellow-500/10 hover:from-amber-400/20 hover:to-yellow-500/20 border border-white/40 dark:border-white/10 transition-all">
+                                            <div className="p-2 rounded-lg bg-amber-400/10">
+                                                <Route className="w-5 h-5 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-bold text-gray-900 dark:text-white">Subjects & Tracks</div>
+                                                <div className="text-[11px] text-gray-500 dark:text-gray-400">Organize learning paths</div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Engagement Overview */}
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    <div className="bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm">
+                                        <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Engagement Overview</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                                            {(() => {
+                                                const total = attempts.length || 1;
+                                                const passed = attempts.filter(a => a.passed).length;
+                                                const passRate = Math.round((passed / total) * 100);
+                                                const avgTime = Math.round((attempts.reduce((acc, a) => acc + (a.timeTaken || 0), 0) / total) || 0);
+                                                const attemptsToday = attempts.filter(a => {
+                                                    try {
+                                                        const d = new Date(a.completedAt);
+                                                        const now = new Date();
+                                                        return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+                                                    } catch { return false; }
+                                                }).length;
+                                                const items = [
+                                                    { label: 'Pending Reviews', value: pendingReviews.length, color: 'from-orange-500 to-red-500', icon: Check },
+                                                    { label: 'Pass Rate', value: `${passRate}%`, color: 'from-emerald-500 to-teal-500', icon: Trophy },
+                                                    { label: 'Avg Time', value: `${Math.floor(avgTime/60)}m ${avgTime%60}s`, color: 'from-blue-500 to-violet-500', icon: Activity },
+                                                    { label: 'Attempts Today', value: attemptsToday, color: 'from-amber-400 to-yellow-500', icon: BarChart3 },
+                                                ];
+                                                return items.map((s, i) => {
+                                                    const Icon = s.icon as any;
+                                                    return (
+                                                        <div key={i} className="relative overflow-hidden bg-white/60 dark:bg-[#0f1020]/60 backdrop-blur-xl p-4 rounded-xl border border-white/30 dark:border-white/10">
+                                                            <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${s.color} opacity-[0.06] dark:opacity-[0.1] rounded-bl-full`} />
+                                                            <div className="flex items-center justify-between mb-2 relative z-10">
+                                                                <div className="p-2 rounded-lg bg-white/50 dark:bg-white/5">
+                                                                    <Icon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{s.label}</div>
+                                                            <div className="text-2xl font-black text-gray-900 dark:text-white">{s.value}</div>
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
+                                        </div>
+                                    </div>
+
+                                    {/* Top Quizzes */}
+                                    <div className="lg:col-span-2 bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Top Quizzes</h3>
+                                            <button onClick={() => setSelectedTab('quizzes')} className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">View all</button>
+                                        </div>
+                                        {(() => {
+                                            const counts: Record<string, { title: string; attempts: number; avg: number; }> = {};
+                                            attempts.forEach(a => {
+                                                const key = a.quizId;
+                                                const title = a.quizTitle;
+                                                const entry = counts[key] || { title, attempts: 0, avg: 0 };
+                                                entry.attempts += 1;
+                                                entry.avg += a.percentage || 0;
+                                                counts[key] = entry;
+                                            });
+                                            const items = Object.values(counts).map(e => ({
+                                                title: e.title,
+                                                attempts: e.attempts,
+                                                avg: Math.round(e.avg / (e.attempts || 1))
+                                            }))
+                                            .sort((a,b) => b.attempts - a.attempts)
+                                            .slice(0, 6);
+                                            if (items.length === 0) {
+                                                return <div className="text-sm text-gray-500 dark:text-gray-400">No attempts yet.</div>;
+                                            }
+                                            return (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    {items.map((q, i) => (
+                                                        <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#0f1020]/60">
+                                                            <div>
+                                                                <div className="text-sm font-bold text-gray-900 dark:text-white">{q.title}</div>
+                                                                <div className="text-[11px] text-gray-500 dark:text-gray-400">{q.attempts} attempts</div>
+                                                            </div>
+                                                            <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400">Avg {q.avg}%</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+
+                                {/* Recent Attempts */}
+                                <div className="bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white">Recent Attempts</h3>
+                                        <button onClick={() => setSelectedTab('attempts')} className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">Open Log</button>
+                                    </div>
+                                    {(() => {
+                                        const items = [...attempts].sort((a,b) => {
+                                            const ad = new Date(a.completedAt).getTime();
+                                            const bd = new Date(b.completedAt).getTime();
+                                            return bd - ad;
+                                        }).slice(0, 6);
+                                        const formatDate = (iso?: string) => {
+                                            try {
+                                                const d = new Date(iso || '');
+                                                return d.toLocaleString();
+                                            } catch { return iso || ''; }
+                                        };
+                                        if (items.length === 0) {
+                                            return <div className="text-sm text-gray-500 dark:text-gray-400">No recent activity.</div>;
+                                        }
+                                        return (
+                                            <div className="overflow-x-auto">
+                                                <table className="min-w-full text-sm">
+                                                    <thead>
+                                                        <tr className="text-left text-gray-500 dark:text-gray-400">
+                                                            <th className="py-2 pr-4">User</th>
+                                                            <th className="py-2 pr-4">Quiz</th>
+                                                            <th className="py-2 pr-4">Score</th>
+                                                            <th className="py-2 pr-4">Completed</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {items.map((a, i) => (
+                                                            <tr key={i} className="border-t border-white/40 dark:border-white/10">
+                                                                <td className="py-3 pr-4 font-bold text-gray-900 dark:text-white">{a.userName}</td>
+                                                                <td className="py-3 pr-4 text-gray-700 dark:text-gray-300">{a.quizTitle}</td>
+                                                                <td className="py-3 pr-4 font-bold text-indigo-600 dark:text-indigo-400">{a.percentage}%</td>
+                                                                <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{formatDate(a.completedAt)}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
+                        )}
                         {selectedTab === 'users' && (
                             <UserManagement
                                 users={users}
