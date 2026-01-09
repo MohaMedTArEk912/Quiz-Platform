@@ -129,7 +129,7 @@ app.use(async (req, res, next) => {
     // Use Mongoose's internal connection logic
     await connectToDatabase();
 
-    if (timeoutId) clearTimeout(timeoutId);
+
     
     next();
   } catch (error) {
