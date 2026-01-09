@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Layout, Upload, FileText, CheckCircle2, Play,
-    RotateCcw, Sparkles, AlertCircle, Trash2, Library,
-    Bot, GraduationCap, ArrowRight, Loader2, Search
+    Upload, FileText, CheckCircle2,
+    Sparkles, Trash2, Library,
+    Bot, Loader2
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useAiJobs } from '../../contexts/AiJobContext'; // Assuming context is set up in App
@@ -34,7 +34,6 @@ const AiStudio: React.FC = () => {
     const { addJob } = useAiJobs();
     const [activeTab, setActiveTab] = useState<'ingest' | 'library' | 'generate'>('ingest');
     const [subjects, setSubjects] = useState<Subject[]>([]);
-    const [loading, setLoading] = useState(false);
 
     // Ingest State
     const [selectedSubjectId, setSelectedSubjectId] = useState('');
@@ -54,13 +53,10 @@ const AiStudio: React.FC = () => {
 
     const loadSubjects = async () => {
         try {
-            setLoading(true);
             const res = await api.getAllSubjects(adminId);
             if (res.success) setSubjects(res.data);
         } catch (e) {
             console.error(e);
-        } finally {
-            setLoading(false);
         }
     };
 

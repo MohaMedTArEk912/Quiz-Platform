@@ -30,7 +30,6 @@ import VsGamePage from './pages/VsGamePage';
 import BadgeTreeDetailPage from './pages/BadgeTreeDetailPage';
 import { AiJobProvider } from './contexts/AiJobContext';
 import ClanPage from './pages/ClanPage';
-import AiStudio from './pages/admin/AiStudio';
 
 const App: React.FC = () => {
   return (
