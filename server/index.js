@@ -113,13 +113,32 @@ app.get('/api/health-check', (req, res) => {
   });
 });
 
-// Middleware to ensure DB connection
+// Middleware to ensure DB connection (with timeout protection for serverless)
 app.use(async (req, res, next) => {
+  // Skip DB check for health check endpoint
+  if (req.path === '/api/health-check') {
+    return next();
+  }
+  
   try {
-    await connectToDatabase();
+    // Set a timeout for DB connection in serverless environments
+    const connectionTimeout = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database connection timeout')), 5000);
+    });
+    
+    await Promise.race([
+      connectToDatabase(),
+      connectionTimeout
+    ]);
+    
     next();
   } catch (error) {
-    res.status(500).json({ message: 'Database connection failed', error: error.message });
+    console.error('DB middleware error:', error.message);
+    res.status(500).json({ 
+      message: 'Database connection failed', 
+      error: error.message,
+      hint: 'Check MongoDB URI and network connectivity'
+    });
   }
 });
 

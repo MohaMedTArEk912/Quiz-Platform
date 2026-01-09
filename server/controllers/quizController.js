@@ -2,14 +2,23 @@ import { Quiz } from '../models/Quiz.js';
 
 export const getQuizzes = async (req, res) => {
   try {
+    console.log('📚 Fetching quizzes...');
     const quizzes = await Quiz.find({}).lean();
+    console.log(`✅ Found ${quizzes.length} quizzes`);
+    
     const normalized = quizzes.map((quiz) => ({
       ...quiz,
       id: quiz.id || quiz._id?.toString()
     }));
+    
     res.json(normalized);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('❌ Error fetching quizzes:', error);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 

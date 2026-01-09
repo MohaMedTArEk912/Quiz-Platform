@@ -2,15 +2,18 @@ import mongoose from 'mongoose';
 
 let cachedConnection = null;
 let cachedPromise = null;
+let connectionAttemptTime = null;
 
 export async function connectToDatabase() {
   const uri = process.env.MONGODB_URI;
   
   // 1 = connected, 2 = connecting. Reuse existing sockets when possible.
   if (mongoose.connection.readyState === 1 && cachedConnection) {
+    console.log('♻️  Reusing existing MongoDB connection');
     return cachedConnection;
   }
   if (mongoose.connection.readyState === 2 && cachedPromise) {
+    console.log('⏳ Waiting for pending MongoDB connection...');
     return cachedPromise;
   }
 
@@ -20,17 +23,26 @@ export async function connectToDatabase() {
     throw new Error(errorMsg);
   }
 
+  // Prevent multiple connection attempts within a short time
+  if (connectionAttemptTime && (Date.now() - connectionAttemptTime < 1000)) {
+    console.log('⏸️  Skipping duplicate connection attempt');
+    if (cachedPromise) return cachedPromise;
+  }
+  
+  connectionAttemptTime = Date.now();
+
   const opts = {
     maxPoolSize: 10,
     minPoolSize: 1,
-    serverSelectionTimeoutMS: 3000, // fail faster if cluster is unreachable
-    connectTimeoutMS: 3000,
+    serverSelectionTimeoutMS: 5000, // 5 seconds for serverless
+    connectTimeoutMS: 5000,
     socketTimeoutMS: 20000,
-    heartbeatFrequencyMS: 8000,
+    heartbeatFrequencyMS: 10000,
     family: 4, // prefer IPv4 to avoid slow DNS/IPv6 fallbacks
   };
 
   const start = Date.now();
+  console.log('🔌 Attempting MongoDB connection...');
 
   cachedPromise = mongoose.connect(uri, opts)
     .then((mongooseInstance) => {
@@ -41,7 +53,9 @@ export async function connectToDatabase() {
     })
     .catch((err) => {
       cachedPromise = null; // allow retries on next request
-      console.error('❌ MongoDB connection error:', {
+      cachedConnection = null;
+      const ms = Date.now() - start;
+      console.error(`❌ MongoDB connection failed after ${ms}ms:`, {
         message: err.message,
         code: err.code,
         name: err.name,
@@ -58,6 +72,7 @@ export const dbMiddleware = async (req, res, next) => {
     await connectToDatabase();
     next();
   } catch (error) {
+    console.error('❌ DB Middleware Error:', error.message);
     res.status(500).json({ 
       message: 'Database connection failed', 
       error: error.message,
