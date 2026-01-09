@@ -1,0 +1,913 @@
+{
+  "id": "ai-exam-comprehensive-batch-1",
+  "title": "AI Comprehensive Exam Bank - Batch 1",
+  "description": "Fundamental definitions, Intelligent Agents, Search Strategies, and Logic.",
+  "category": "Artificial Intelligence",
+  "difficulty": "Medium",
+  "timeLimit": 45,
+  "passingScore": 60,
+  "coinsReward": 100,
+  "xpReward": 250,
+  "icon": "Cpu",
+  "isTournamentOnly": false,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "In the context of self-driving cars, an AI approach concerned with making decisions closely like a human driver is an example of [___], while a recommendation system optimizing user satisfaction is an example of [___].",
+      "options": [
+        "Thinking Humanly / Thinking Rationally",
+        "Acting Humanly / Acting Rationally",
+        "Acting Rationally / Acting Humanly",
+        "Both are Acting Humanly"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Acting Humanly focuses on mimicry (Turing Test), while Acting Rationally focuses on achieving the best outcome (maximizing utility)."
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "The Turing Test measures intelligence as:",
+      "options": [
+        "A machine's ability to detect a human's presence.",
+        "A human's ability to detect a machine's presence.",
+        "A human's inability to distinguish a machine from a human.",
+        "A machine's ability to solve complex mathematical proofs."
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "If the interrogator cannot distinguish the machine from a human, the machine passes the test (Acting Humanly)."
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "In a robot designed to clean your house, which component of PEAS represents the rooms, furniture, and obstacles?",
+      "options": [
+        "Performance Measure",
+        "Sensors",
+        "Environment",
+        "Actuators"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "The Environment is the physical world the agent operates in."
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "If an Intelligent Agent is performing 'Autonomous Driving', its environment is best described as:",
+      "options": [
+        "Static, Discrete, and Fully Observable",
+        "Dynamic, Continuous, and Partially Observable",
+        "Episodic, Discrete, and Deterministic",
+        "Static, Sequential, and Single Agent"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Driving is Dynamic (world changes), Continuous (speed/steering are not discrete steps), and Partially Observable (blind spots)."
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Which search algorithm requires the least amount of memory?",
+      "options": [
+        "Breadth-First Search (BFS)",
+        "Depth-First Search (DFS)",
+        "A* Search",
+        "Uniform Cost Search"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "DFS has linear space complexity O(bm), whereas BFS has exponential space complexity O(b^d)."
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "In the game tree of Chess, the Minimax algorithm is applied to:",
+      "options": [
+        "Maximize the opponent's winning chances.",
+        "Choose the move that minimizes the maximum possible loss.",
+        "Find the shortest path to the end of the game regardless of score.",
+        "Randomly select a move to confuse the opponent."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Minimax assumes the opponent plays optimally to hurt you; you choose the move that gives the best result against their best counter-play."
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Predicting a student's mark as a percentage (e.g., 85.5%) is [___], while predicting a student's result as Pass/Fail is [___].",
+      "options": [
+        "Classification / Regression",
+        "Regression / Classification",
+        "Clustering / Classification",
+        "Reinforcement Learning / Regression"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Regression predicts continuous values (percentages); Classification predicts discrete categories (Pass/Fail)."
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "In Genetic Algorithms, the trade-off between Exploration and Exploitation is handled respectively by:",
+      "options": [
+        "Crossover / Mutation",
+        "Mutation / Crossover",
+        "Selection / Encoding",
+        "Encoding / Selection"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Mutation introduces random changes (Exploration). Crossover combines known good traits (Exploitation)."
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Heuristic Search",
+      "question": "A heuristic function h(n) is considered 'Admissible' if:",
+      "options": [
+        "It equals the true cost to the goal.",
+        "It never underestimates the cost to the goal.",
+        "It never overestimates the cost to the goal.",
+        "It is always zero."
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Admissibility requires h(n) <= h*(n). It must be optimistic."
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Which data structure is used to store the fringe (frontier) nodes in Breadth-First Search (BFS)?",
+      "options": [
+        "Stack (LIFO)",
+        "Queue (FIFO)",
+        "Priority Queue",
+        "Hash Map"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "BFS uses a FIFO Queue to explore level by level."
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which type of learning involves an agent receiving rewards or penalties at the end of a sequence of steps?",
+      "options": [
+        "Supervised Learning",
+        "Unsupervised Learning",
+        "Reinforcement Learning",
+        "Semi-Supervised Learning"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Reinforcement Learning is based on the reward/punishment mechanism."
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Which search algorithm is optimal and complete if the heuristic is consistent?",
+      "options": [
+        "Depth-First Search",
+        "Greedy Best-First Search",
+        "A* Search",
+        "Hill Climbing"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "A* is optimal and complete given an admissible (tree) or consistent (graph) heuristic."
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Data Science",
+      "question": "In the context of Big Data, 'Veracity' refers to:",
+      "options": [
+        "The speed of data generation.",
+        "The volume of data.",
+        "The messiness or trustworthiness of the data.",
+        "The variety of data formats."
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Veracity deals with the quality, accuracy, and uncertainty of data."
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which technique is used to reduce the dimensionality of data?",
+      "options": [
+        "K-Means Clustering",
+        "Principal Component Analysis (PCA)",
+        "Linear Regression",
+        "Decision Trees"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "PCA is a classic dimensionality reduction technique."
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Adversarial Search",
+      "question": "What is the 'Horizon Effect' in game playing AI?",
+      "options": [
+        "When the game ends in a draw.",
+        "When the search space is too small.",
+        "When an inevitable bad event is pushed just beyond the search depth limit.",
+        "When the heuristic value is zero."
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "The agent delays a loss to the next move beyond its lookahead, thinking it is safe."
+    },
+    {
+      "id": 16,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "Which of the following is NOT a Horn Clause?",
+      "options": [
+        "p",
+        "p → q",
+        "p → ¬q",
+        "¬p ∨ q"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "A Horn clause has at most one positive literal. 'p -> ~q' is equivalent to '~p v ~q' (Horn). However, in many contexts of the uploaded exams, 'p -> ~q' is flagged because definite clauses usually imply a positive conclusion."
+    },
+    {
+      "id": 17,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "The action 'STACK(A,B)' in a robot arm problem usually specifies:",
+      "options": [
+        "Place block B on Block A",
+        "Place block A on Block B",
+        "Place both on the table",
+        "Clear the top of A"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Standard STRIPS notation: Stack(x, y) puts x on top of y."
+    },
+    {
+      "id": 18,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Bagging (Bootstrap Aggregating) relies on which method?",
+      "options": [
+        "Gradient Descent",
+        "Bootstrap Resampling",
+        "Backpropagation",
+        "Clustering"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Bagging creates multiple datasets by resampling the original data with replacement."
+    },
+    {
+      "id": 19,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "Object Detection involves:",
+      "options": [
+        "Only assigning a label to the image.",
+        "Classifying and locating objects (bounding boxes).",
+        "Pixel-wise segmentation of the image.",
+        "Removing noise from the image."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Detection identifies 'what' is where (classification + localization)."
+    },
+    {
+      "id": 20,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "Who is known as the 'Father of AI'?",
+      "options": [
+        "Alan Turing",
+        "John McCarthy",
+        "Elon Musk",
+        "Charles Babbage"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "John McCarthy coined the term 'Artificial Intelligence' in 1956."
+    },
+    {
+      "id": 21,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "Rational agents are designed to:",
+      "options": [
+        "Always mimic human thought processes.",
+        "Maximize their performance measure given their knowledge.",
+        "Always succeed regardless of the environment.",
+        "Use brute force for every problem."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Rationality is about doing the 'right thing' (maximizing expected utility), not necessarily being perfect or human-like."
+    },
+    {
+      "id": 22,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "How do you represent 'All dogs have tails' in First-Order Logic?",
+      "options": [
+        "∀x: dog(x) → has_tail(x)",
+        "∃x: dog(x) ∧ has_tail(x)",
+        "∀x: dog(x) ∧ has_tail(x)",
+        "∃x: dog(x) → has_tail(x)"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Universal quantification (For all) is usually paired with implication (→)."
+    },
+    {
+      "id": 23,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "What is the time complexity of Breadth-First Search (BFS)?",
+      "options": [
+        "O(d)",
+        "O(b^d)",
+        "O(bd)",
+        "O(b/d)"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "BFS expands all nodes at each level, leading to exponential time complexity O(b^d)."
+    },
+    {
+      "id": 24,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Uniform Cost Search (UCS) is equivalent to BFS if:",
+      "options": [
+        "The graph is a tree.",
+        "All step costs are equal.",
+        "The heuristic is consistent.",
+        "The depth is infinite."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "If all steps cost the same (e.g., 1), searching by lowest path cost is identical to searching by shallowest depth."
+    },
+    {
+      "id": 25,
+      "type": "multiple-choice",
+      "part": "Adversarial Search",
+      "question": "Alpha-Beta Pruning is used to:",
+      "options": [
+        "Change the outcome of the Minimax algorithm.",
+        "Reduce the number of nodes evaluated in Minimax without changing the result.",
+        "Increase the depth of the search tree indefinitely.",
+        "Convert a game tree into a graph."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "It prunes branches that cannot influence the final decision, optimizing speed but not changing the Minimax result."
+    },
+    {
+      "id": 26,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Unsupervised Learning deals with:",
+      "options": [
+        "Labeled data.",
+        "Unlabeled data.",
+        "Data with rewards.",
+        "Time-series data only."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Unsupervised learning finds patterns in data that has no pre-existing labels."
+    },
+    {
+      "id": 27,
+      "type": "multiple-choice",
+      "part": "Constraint Satisfaction",
+      "question": "In CSP, the 'Minimum Remaining Values' (MRV) heuristic selects:",
+      "options": [
+        "The variable with the largest domain.",
+        "The variable with the fewest legal values remaining.",
+        "The value that constraints the fewest neighbors.",
+        "The first variable alphabetically."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Also known as 'Fail First', it picks the variable most likely to cause a failure soon."
+    },
+    {
+      "id": 28,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "Which selection method in Genetic Algorithms selects individuals with probability proportional to their fitness?",
+      "options": [
+        "Tournament Selection",
+        "Rank Selection",
+        "Roulette Wheel Selection",
+        "Elitism"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Roulette Wheel Selection allocates a slice of the wheel proportional to fitness."
+    },
+    {
+      "id": 29,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "John Searle's 'Chinese Room Argument' attempts to refute:",
+      "options": [
+        "Weak AI",
+        "Strong AI",
+        "Logic Programming",
+        "Neural Networks"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Searle argues that syntax (manipulating symbols) does not equal semantics (understanding), thus challenging Strong AI."
+    },
+    {
+      "id": 30,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Hill Climbing is often susceptible to getting stuck in:",
+      "options": [
+        "Global Maxima",
+        "Local Maxima",
+        "The Start State",
+        "The Goal State"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Hill climbing is a greedy local search that can get stuck on a peak that is not the highest point (Local Maxima)."
+    },
+    {
+      "id": 31,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "For a 'Medical Diagnosis System', the Performance Measure (P in PEAS) would likely be:",
+      "options": [
+        "Patient, Hospital, Staff",
+        "Keyboard, Screen",
+        "Healthy patient, minimized cost, correct diagnosis",
+        "Sensors, Cameras"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Performance is the metric of success: curing the patient and accurate diagnosis."
+    },
+    {
+      "id": 32,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Greedy Best-First Search expands nodes based on:",
+      "options": [
+        "f(n) = g(n) + h(n)",
+        "f(n) = g(n)",
+        "f(n) = h(n)",
+        "f(n) = max(g(n), h(n))"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Greedy search only looks at the heuristic h(n) (closeness to goal), ignoring path cost g(n)."
+    },
+    {
+      "id": 33,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which of the following is an Ensemble Learning method?",
+      "options": [
+        "Decision Tree",
+        "Random Forest",
+        "K-Nearest Neighbors",
+        "Support Vector Machine"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Random Forest is an ensemble of multiple Decision Trees."
+    },
+    {
+      "id": 34,
+      "type": "multiple-choice",
+      "part": "NLP",
+      "question": "Tokenization in NLP refers to:",
+      "options": [
+        "Translating text to another language.",
+        "Splitting text into individual words or units.",
+        "Removing stop words.",
+        "Converting text to speech."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Tokenization breaks a stream of text into words, phrases, symbols, or other meaningful elements (tokens)."
+    },
+    {
+      "id": 35,
+      "type": "multiple-choice",
+      "part": "Adversarial Search",
+      "question": "In a Zero-Sum game:",
+      "options": [
+        "The sum of all payoffs is always 100.",
+        "One player's gain is exactly the other player's loss.",
+        "Both players can win simultaneously.",
+        "Cooperation is required."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "The utility values of the players sum to zero (e.g., +1 vs -1)."
+    },
+    {
+      "id": 36,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "What is 'Segmentation' in Image Processing?",
+      "options": [
+        "Reducing the size of the image.",
+        "Partitioning an image into multiple segments (sets of pixels).",
+        "Blurring the image to remove noise.",
+        "Converting color images to black and white."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Segmentation groups pixels to locate objects or boundaries."
+    },
+    {
+      "id": 37,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "Modus Ponens is a rule of inference that states:",
+      "options": [
+        "If P implies Q, and Q is true, then P is true.",
+        "If P implies Q, and P is true, then Q is true.",
+        "If P implies Q, and not Q, then not P.",
+        "If P or Q is true, and not P, then Q."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "P -> Q, P, therefore Q."
+    },
+    {
+      "id": 38,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Overfitting occurs when a model:",
+      "options": [
+        "Is too simple to capture the data structure.",
+        "Learns the noise in the training data rather than the signal.",
+        "Performs well on test data but poorly on training data.",
+        "Has too few parameters."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Overfitting means the model fits the training data too closely, failing to generalize to new data."
+    },
+    {
+      "id": 39,
+      "type": "multiple-choice",
+      "part": "Neural Networks",
+      "question": "What is the purpose of an Activation Function in a Neural Network?",
+      "options": [
+        "To initialize the weights.",
+        "To introduce non-linearity into the model.",
+        "To reduce the learning rate.",
+        "To store the input data."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Without non-linear activation functions, a Neural Network is just a linear regression model."
+    },
+    {
+      "id": 40,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "The 'State List' in a Backtracking algorithm contains:",
+      "options": [
+        "All visited nodes.",
+        "The nodes in the current path being explored.",
+        "Only the goal nodes.",
+        "The dead-end nodes."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "In backtracking (DFS), the state list tracks the current branch from root to leaf."
+    },
+    {
+      "id": 41,
+      "type": "multiple-choice",
+      "part": "General AI",
+      "question": "Weak AI is defined as:",
+      "options": [
+        "AI that possesses consciousness.",
+        "AI that simulates intelligence for a specific task but doesn't have a mind.",
+        "AI that is smarter than humans in every way.",
+        "AI that cannot perform calculations."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Weak AI acts *as if* it is intelligent within a domain, without claiming sentience."
+    },
+    {
+      "id": 42,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "A Simple Reflex Agent selects actions based on:",
+      "options": [
+        "The entire percept history.",
+        "The current percept only.",
+        "Projected future states.",
+        "Utility functions."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Simple Reflex Agents use Condition-Action rules on the *current* percept, ignoring history."
+    },
+    {
+      "id": 43,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "As a Genetic Algorithm converges, the population diversity:",
+      "options": [
+        "Increases significantly.",
+        "Decreases, with solutions becoming similar.",
+        "Remains exactly the same.",
+        "Fluctuates randomly."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Convergence implies the population is settling on a fitness peak, so individuals become very similar."
+    },
+    {
+      "id": 44,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Bidirectional Search is feasible in Chess.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "False. Bidirectional search requires searching backward from the goal. In Chess, there are millions of possible 'Checkmate' goal states, making backward search impossible."
+    },
+    {
+      "id": 45,
+      "type": "multiple-choice",
+      "part": "Expert Systems",
+      "question": "Which of the following is a core component of an Expert System?",
+      "options": [
+        "Inference Engine",
+        "Neural Network",
+        "Genetic Mutation",
+        "Backpropagation"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Expert Systems consist of a Knowledge Base and an Inference Engine."
+    },
+    {
+      "id": 46,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Which search algorithm uses a Last-In-First-Out (LIFO) data structure?",
+      "options": [
+        "Breadth-First Search",
+        "Depth-First Search",
+        "Uniform Cost Search",
+        "A* Search"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "DFS uses a Stack (LIFO)."
+    },
+    {
+      "id": 47,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which metric is commonly used to evaluate a Classification model?",
+      "options": [
+        "Mean Squared Error",
+        "Confusion Matrix",
+        "Euclidean Distance",
+        "Manhattan Distance"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "A Confusion Matrix shows True Positives, False Positives, etc."
+    },
+    {
+      "id": 48,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "Propositional Logic uses:",
+      "options": [
+        "Variables, Quantifiers, and Predicates.",
+        "True/False symbols and Connectives (AND, OR, NOT).",
+        "Probabilities.",
+        "Fuzzy sets."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Propositional logic deals with atomic facts and connectives, unlike First-Order logic which adds quantifiers."
+    },
+    {
+      "id": 49,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "K-Nearest Neighbors (KNN) is an example of:",
+      "options": [
+        "Lazy Learning",
+        "Eager Learning",
+        "Reinforcement Learning",
+        "Deep Learning"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "KNN is a lazy learner because it does not build a model during training; it waits until a query is made to compute distances."
+    },
+    {
+      "id": 50,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "The 'Chinese Room' thought experiment was proposed by:",
+      "options": [
+        "Alan Turing",
+        "John McCarthy",
+        "John Searle",
+        "Marvin Minsky"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "John Searle proposed it to argue against Strong AI."
+    },
+    {
+      "id": 51,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "A* search is equivalent to Uniform Cost Search if:",
+      "options": [
+        "h(n) = 0",
+        "g(n) = 0",
+        "f(n) = 1",
+        "h(n) is admissible"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "If the heuristic is zero, A* ($f = g + h$) becomes ($f = g$), which is Uniform Cost Search."
+    },
+    {
+      "id": 52,
+      "type": "multiple-choice",
+      "part": "Adversarial Search",
+      "question": "Which values are assigned to Alpha and Beta initially in Alpha-Beta Pruning?",
+      "options": [
+        "Alpha = 0, Beta = 0",
+        "Alpha = +Infinity, Beta = -Infinity",
+        "Alpha = -Infinity, Beta = +Infinity",
+        "Alpha = 1, Beta = -1"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Alpha starts at worst case for Max (-Inf), Beta starts at worst case for Min (+Inf)."
+    },
+    {
+      "id": 53,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "A system that filters emails into 'Spam' or 'Not Spam' is performing:",
+      "options": [
+        "Clustering",
+        "Regression",
+        "Classification",
+        "Association Rule Learning"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "It is assigning data to discrete categories (Classes)."
+    },
+    {
+      "id": 54,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Consistency of a heuristic h(n) implies:",
+      "options": [
+        "It is Admissible.",
+        "It is Random.",
+        "It is inadmissible.",
+        "It overestimates the cost."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Consistency is a stronger condition than admissibility. If a heuristic is consistent, it is automatically admissible."
+    },
+    {
+      "id": 55,
+      "type": "multiple-choice",
+      "part": "General AI",
+      "question": "Arthur Samuel is famous for writing a program that played which game?",
+      "options": [
+        "Chess",
+        "Checkers",
+        "Go",
+        "Poker"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Arthur Samuel wrote the first significant Checkers playing program which learned from experience."
+    },
+    {
+      "id": 56,
+      "type": "multiple-choice",
+      "part": "Data Science",
+      "question": "Data Normalization is the process of:",
+      "options": [
+        "Removing all outliers.",
+        "Scaling data to a specific range (e.g., 0 to 1).",
+        "Deleting missing values.",
+        "Converting text to numbers."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Normalization scales features so that they contribute equally to distance calculations."
+    },
+    {
+      "id": 57,
+      "type": "multiple-choice",
+      "part": "Constraint Satisfaction",
+      "question": "Which algorithm is commonly used to solve Constraint Satisfaction Problems (CSPs)?",
+      "options": [
+        "Gradient Descent",
+        "Backtracking Search",
+        "K-Means",
+        "Decision Trees"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Backtracking is the standard approach for CSPs (like N-Queens, Map Coloring)."
+    },
+    {
+      "id": 58,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "In a Decision Tree, internal nodes represent:",
+      "options": [
+        "Class Labels",
+        "Tests on Attributes",
+        "Outcomes",
+        "Errors"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Internal nodes are tests (e.g., Is Age > 50?), branches are outcomes, leaves are classes."
+    },
+    {
+      "id": 59,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "Degrees of Freedom (DOF) in robotics refers to:",
+      "options": [
+        "The battery life of the robot.",
+        "The number of independent movements the robot can make.",
+        "The processing speed of the robot.",
+        "The number of sensors installed."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "A joint that allows rotation is 1 DOF. A free-floating object has 6 DOF (3 position, 3 rotation)."
+    },
+    {
+      "id": 60,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "Cognitive Science connects AI with which field?",
+      "options": [
+        "Geology",
+        "Neuroscience and Psychology",
+        "Economics",
+        "Chemistry"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Cognitive Science studies the mind and intelligence, bridging AI with how the human brain works."
+    }
+  ]
+}

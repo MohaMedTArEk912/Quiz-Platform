@@ -33,22 +33,47 @@ export const createQuiz = async (req, res) => {
 
 export const importQuizzes = async (req, res) => {
   try {
-    const quizzes = req.body; // Expecting array of quizzes
+    let quizzes = req.body;
+    
+    // Support single quiz import by wrapping in array
     if (!Array.isArray(quizzes)) {
-      return res.status(400).json({ message: 'Expected an array of quizzes' });
+      if (typeof quizzes === 'object' && quizzes !== null && quizzes.id) {
+        quizzes = [quizzes];
+      } else {
+        return res.status(400).json({ message: 'Expected an array of quizzes or a valid quiz object' });
+      }
     }
 
     const results = [];
+    const errors = [];
+    
     for (const quiz of quizzes) {
-      const updated = await Quiz.findOneAndUpdate(
-        { id: quiz.id },
-        quiz,
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      );
-      results.push(updated);
+      if (!quiz.id || !quiz.title) {
+         errors.push(`Skipped invalid quiz: ${JSON.stringify(quiz).substring(0, 50)}...`);
+         continue;
+      }
+      
+      try {
+        const updated = await Quiz.findOneAndUpdate(
+          { id: quiz.id },
+          quiz,
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        results.push(updated);
+      } catch (err) {
+        errors.push(`Error importing quiz ${quiz.id}: ${err.message}`);
+      }
     }
     
-    res.json({ message: `Imported ${results.length} quizzes successfully`, count: results.length });
+    if (results.length === 0 && errors.length > 0) {
+        return res.status(400).json({ message: 'Failed to import quizzes', errors });
+    }
+    
+    res.json({ 
+        message: `Imported ${results.length} quizzes successfully`, 
+        count: results.length,
+        errors: errors.length > 0 ? errors : undefined
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error importing quizzes', error: error.message });
   }

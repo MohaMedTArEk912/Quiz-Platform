@@ -1,0 +1,915 @@
+{
+  "id": "ai-exam-comprehensive-batch-4",
+  "title": "AI Comprehensive Exam Bank - Batch 4",
+  "description": "Fundamental definitions, Intelligent Agents, Search Strategies, and Logic.",
+  "category": "Artificial Intelligence",
+  "difficulty": "Medium",
+  "timeLimit": 45,
+  "passingScore": 60,
+  "coinsReward": 100,
+  "xpReward": 250,
+  "icon": "Cpu",
+  "isTournamentOnly": false,
+  "questions": [
+    {
+      "id": 181,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "In A* search, if the heuristic function h(n) severely overestimates the actual cost to the goal, the algorithm:",
+      "options": [
+        "Becomes more like Greedy Best-First Search and loses optimality.",
+        "Becomes like Breadth-First Search.",
+        "Guarantees finding the optimal path faster.",
+        "Will never reach the goal."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "If h(n) overestimates (is inadmissible), A* is no longer optimal and behaves greedily, potentially finding a suboptimal path."
+    },
+    {
+      "id": 182,
+      "type": "multiple-choice",
+      "part": "Constraint Satisfaction",
+      "question": "Which technique in CSPs helps detect inevitable failures early by looking ahead at the constraints of neighbors?",
+      "options": [
+        "Forward Checking",
+        "Backward Chaining",
+        "Random Restart",
+        "Simulated Annealing"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Forward Checking keeps track of remaining legal values for unassigned variables and backtracks immediately if a domain becomes empty."
+    },
+    {
+      "id": 183,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "A Knowledge Base (KB) 'Entails' a sentence α (KB ⊨ α) if:",
+      "options": [
+        "In every model where KB is true, α is also true.",
+        "KB derives α using an algorithm.",
+        "α is true in some models.",
+        "KB is false."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Entailment is a semantic relationship: logical consequence."
+    },
+    {
+      "id": 184,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "In Gradient Descent, if the 'Learning Rate' is set too high:",
+      "options": [
+        "The algorithm may overshoot the minimum and fail to converge.",
+        "The algorithm will converge very slowly.",
+        "The model will overfit.",
+        "The model will stop learning immediately."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "A large learning rate causes the updates to take huge steps, bouncing around or diverging from the minimum."
+    },
+    {
+      "id": 185,
+      "type": "multiple-choice",
+      "part": "Python for AI",
+      "question": "What is the output of the following list comprehension? `[x**2 for x in range(5) if x % 2 == 0]`",
+      "options": [
+        "[0, 4, 16]",
+        "[0, 1, 4, 9, 16]",
+        "[0, 2, 4]",
+        "[0, 4, 8]"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Range(5) is 0,1,2,3,4. Evens are 0,2,4. Squares are 0, 4, 16."
+    },
+    {
+      "id": 186,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "An 'Image Histogram' represents:",
+      "options": [
+        "The frequency distribution of pixel intensity values.",
+        "The size of the image.",
+        "The metadata of the file.",
+        "The objects detected."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It shows how many pixels have a specific brightness level (0-255)."
+    },
+    {
+      "id": 187,
+      "type": "multiple-choice",
+      "part": "NLP",
+      "question": "An 'N-gram' model predicts the next item in a sequence based on:",
+      "options": [
+        "The previous N-1 items.",
+        "The entire document.",
+        "Grammar rules.",
+        "Future items."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "A bigram (N=2) looks at the previous 1 word; a trigram (N=3) looks at the previous 2."
+    },
+    {
+      "id": 188,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "Which of these is NOT a characteristic of a 'Rational Agent'?",
+      "options": [
+        "Omniscience (Knowing the actual outcome of actions).",
+        "Perceiving the environment.",
+        "Acting to maximize expected performance.",
+        "Using knowledge."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Rationality is not Omniscience. An agent can be rational (make the best bet) but still fail due to bad luck or limited info."
+    },
+    {
+      "id": 189,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "The 'Branching Factor' in a game of Tic-Tac-Toe decreases as the game progresses because:",
+      "options": [
+        "There are fewer empty squares available to play in.",
+        "The rules change.",
+        "The board gets larger.",
+        "The heuristic changes."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Initially 9 moves are possible, then 8, 7, etc."
+    },
+    {
+      "id": 190,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "In a Neural Network, 'Backpropagation' is essentially an application of which mathematical rule?",
+      "options": [
+        "Chain Rule of Calculus",
+        "Pythagorean Theorem",
+        "Bayes' Theorem",
+        "Euclidean Distance"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It computes gradients of compound functions using the Chain Rule."
+    },
+    {
+      "id": 191,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Graph Search differs from Tree Search by:",
+      "options": [
+        "Maintaining a 'Closed List' to avoid re-expanding visited states.",
+        "Using a different heuristic.",
+        "Being slower.",
+        "Not finding optimal paths."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Tree search can get stuck in infinite loops on graphs; Graph search remembers visited nodes."
+    },
+    {
+      "id": 192,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "Converting a First-Order Logic sentence to 'Conjunctive Normal Form' (CNF) is a prerequisite for:",
+      "options": [
+        "Resolution Theorem Proving",
+        "Forward Chaining",
+        "Backward Chaining",
+        "Unification"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Resolution requires sentences to be in CNF (Clause form)."
+    },
+    {
+      "id": 193,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "In 'Tournament Selection':",
+      "options": [
+        "A small group of individuals is chosen efficiently, and the best one is selected.",
+        "The whole population fights.",
+        "Parents are chosen sequentially.",
+        "The best individual is always removed."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It picks k random individuals and selects the fittest among them."
+    },
+    {
+      "id": 194,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "A 'Holonomic' robot is one that:",
+      "options": [
+        "Can move in any direction instantly (like a person walking).",
+        "Is restricted to specific paths (like a car/train).",
+        "Has no sensors.",
+        "Cannot rotate."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Holonomic constraints are about freedom of movement. A car is non-holonomic (can't slide sideways)."
+    },
+    {
+      "id": 195,
+      "type": "multiple-choice",
+      "part": "Python for AI",
+      "question": "Which Python library is primarily used for data manipulation and analysis (DataFrames)?",
+      "options": [
+        "Pandas",
+        "NumPy",
+        "Matplotlib",
+        "Scikit-learn"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Pandas provides the DataFrame structure."
+    },
+    {
+      "id": 196,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "The Manhattan Distance heuristic is appropriate for which problem?",
+      "options": [
+        "Sliding Tile Puzzle (8-Puzzle)",
+        "Euclidean Travelling Salesman",
+        "Route Finding on a map",
+        "Chess"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Tiles move grid-wise (up/down/left/right), matching the Manhattan geometry."
+    },
+    {
+      "id": 197,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "A 'False Positive' (Type I Error) in a medical test means:",
+      "options": [
+        "The patient is healthy, but the test says they are sick.",
+        "The patient is sick, but the test says they are healthy.",
+        "The patient is sick, and the test confirms it.",
+        "The patient is healthy, and the test confirms it."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "The system falsely claims a positive (sickness) result."
+    },
+    {
+      "id": 198,
+      "type": "multiple-choice",
+      "part": "NLP",
+      "question": "Which of these is a challenging problem in NLP?",
+      "options": [
+        "Sarcasm detection",
+        "Spell checking",
+        "Keyword search",
+        "Sorting words"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Sarcasm requires deep contextual and emotional understanding."
+    },
+    {
+      "id": 199,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "A 'Learning Agent' has four components: Learning Element, Performance Element, Problem Generator, and:",
+      "options": [
+        "Critic",
+        "Teacher",
+        "Student",
+        "Observer"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "The Critic provides feedback on how the agent is doing relative to a performance standard."
+    },
+    {
+      "id": 200,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Which search algorithm is intended to address the memory problem of A*?",
+      "options": [
+        "IDA* (Iterative Deepening A*)",
+        "BFS",
+        "Greedy Search",
+        "Uniform Cost Search"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "IDA* cuts off search at a cost threshold (f-limit) instead of depth, using linear memory."
+    },
+    {
+      "id": 201,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "Skolem constants are used to remove:",
+      "options": [
+        "Existential Quantifiers (∃)",
+        "Universal Quantifiers (∀)",
+        "Implications (→)",
+        "Negations (¬)"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "'Exists x such that P(x)' becomes 'P(A)' where A is a new Skolem constant."
+    },
+    {
+      "id": 202,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "Semantic Segmentation differs from Instance Segmentation because:",
+      "options": [
+        "Semantic Segmentation treats all objects of the same class (e.g., all cars) as one label/region, while Instance distinguishes individual cars.",
+        "Instance Segmentation is faster.",
+        "Semantic Segmentation draws bounding boxes.",
+        "Instance Segmentation is only for video."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Semantic: 'These pixels are Car'. Instance: 'These pixels are Car #1, those are Car #2'."
+    },
+    {
+      "id": 203,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "In a 3-puzzle (2x2 grid), what is the maximum number of moves required to solve any solvable state?",
+      "options": [
+        "6",
+        "31",
+        "20",
+        "81"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "The state space is very small (4! / 2 = 12 reachable states). The diameter is small (6)."
+    },
+    {
+      "id": 204,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which function maps the input to a value between 0 and 1, often used for probability output?",
+      "options": [
+        "Sigmoid",
+        "ReLU",
+        "Tanh",
+        "Step"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Sigmoid function: 1 / (1 + e^-x)."
+    },
+    {
+      "id": 205,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "Single-point crossover involves:",
+      "options": [
+        "Splitting two parent chromosomes at one point and swapping the tails.",
+        "Averaging the parents.",
+        "Swapping every bit.",
+        "Randomly shuffling genes."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "The standard crossover method."
+    },
+    {
+      "id": 206,
+      "type": "multiple-choice",
+      "part": "Python for AI",
+      "question": "The 'lambda' keyword in Python is used to create:",
+      "options": [
+        "Anonymous (unnamed) functions.",
+        "Loops.",
+        "Classes.",
+        "Variables."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "e.g., `lambda x: x*2`."
+    },
+    {
+      "id": 207,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "If an admissible heuristic h(n) is multiplied by 2 (becoming 2*h(n)):",
+      "options": [
+        "It might lose admissibility and the algorithm might not find the optimal path.",
+        "It becomes more accurate.",
+        "The search becomes slower.",
+        "It guarantees finding the path twice as fast."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "If h(n) was close to the true cost, 2*h(n) will overestimate, losing admissibility."
+    },
+    {
+      "id": 208,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "Which of these is a Tautology?",
+      "options": [
+        "P ∨ ¬P",
+        "P ∧ ¬P",
+        "P → Q",
+        "P ∨ Q"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Excluded Middle: A statement is either True or False. Always valid."
+    },
+    {
+      "id": 209,
+      "type": "multiple-choice",
+      "part": "Adversarial Search",
+      "question": "In Minimax, if the maximum depth is limited due to time constraints, we use:",
+      "options": [
+        "A Heuristic Evaluation Function at the cutoff depth.",
+        "A random guess.",
+        "The user's input.",
+        "An infinite loop."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "We stop searching and estimate the value of the non-terminal state."
+    },
+    {
+      "id": 210,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which is a common method to handle missing data?",
+      "options": [
+        "Imputation (filling with mean/median).",
+        "Deleting the entire database.",
+        "Leaving it blank.",
+        "Setting it to infinity."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Imputation replaces missing values with statistical estimates."
+    },
+    {
+      "id": 211,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "A search algorithm is 'Complete' if:",
+      "options": [
+        "It guarantees finding a solution when one exists.",
+        "It finds the best solution.",
+        "It uses minimum memory.",
+        "It finishes in 1 second."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Completeness is about *finding* the goal, not necessarily the *best* one (Optimality)."
+    },
+    {
+      "id": 212,
+      "type": "multiple-choice",
+      "part": "General AI",
+      "question": "Who proposed the 'Three Laws of Robotics'?",
+      "options": [
+        "Isaac Asimov",
+        "Alan Turing",
+        "John McCarthy",
+        "Elon Musk"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Asimov introduced them in his science fiction, but they are discussed in AI ethics."
+    },
+    {
+      "id": 213,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "Localization in robotics is the problem of:",
+      "options": [
+        "Determining where the robot is in its environment.",
+        "Building a map.",
+        "Moving the arm.",
+        "Recognizing faces."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "e.g., 'Where am I on the map?'"
+    },
+    {
+      "id": 214,
+      "type": "multiple-choice",
+      "part": "Python for AI",
+      "question": "Which function is used to read a CSV file in Pandas?",
+      "options": [
+        "pd.read_csv()",
+        "csv.read()",
+        "pd.load()",
+        "pd.import_csv()"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "The standard function."
+    },
+    {
+      "id": 215,
+      "type": "multiple-choice",
+      "part": "Constraint Satisfaction",
+      "question": "The 'Degree Heuristic' in CSP selects the variable that:",
+      "options": [
+        "Is involved in the largest number of constraints on other unassigned variables.",
+        "Has the smallest domain.",
+        "Has the largest domain.",
+        "Is the first alphabetically."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It breaks ties for the MRV heuristic by picking the most constraining variable."
+    },
+    {
+      "id": 216,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which of these is an example of 'Reinforcement Learning'?",
+      "options": [
+        "A robot learning to walk by trying and falling.",
+        "Predicting house prices from a dataset.",
+        "Grouping customers by purchasing history.",
+        "Recognizing handwritten digits."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Trial and error with feedback (falling/walking) is RL."
+    },
+    {
+      "id": 217,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "If P is False and Q is True, then P → Q is:",
+      "options": [
+        "True",
+        "False",
+        "Undefined",
+        "Both True and False"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "An implication is only False if True → False. False → True is valid (vacuously true)."
+    },
+    {
+      "id": 218,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "In the Traveling Salesman Problem (TSP), the goal is to:",
+      "options": [
+        "Visit every city exactly once and return to the start with minimum cost.",
+        "Visit as many cities as possible.",
+        "Find the shortest path between two specific cities.",
+        "Visit cities in alphabetical order."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It is a Hamiltonian cycle problem with minimum weight."
+    },
+    {
+      "id": 219,
+      "type": "multiple-choice",
+      "part": "NLP",
+      "question": "Which term describes the ambiguity where a word has multiple meanings (e.g., 'Bank' of a river vs 'Bank' for money)?",
+      "options": [
+        "Lexical Ambiguity (Polysemy)",
+        "Syntactic Ambiguity",
+        "Phonetic Ambiguity",
+        "Structural Ambiguity"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Lexical refers to word-level meaning."
+    },
+    {
+      "id": 220,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "A Convolutional Neural Network (CNN) is best suited for:",
+      "options": [
+        "Image Recognition",
+        "Spreadsheet analysis",
+        "Simple Logic",
+        "Text generation"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "CNNs preserve spatial relationships in images."
+    },
+    {
+      "id": 221,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "A 'Model-Based Reflex Agent' keeps track of:",
+      "options": [
+        "The current state of the world that is not visible.",
+        "Only the current camera input.",
+        "The goal only.",
+        "Nothing."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It maintains an internal state to handle partial observability."
+    },
+    {
+      "id": 222,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Hill Climbing is similar to:",
+      "options": [
+        "Gradient Ascent",
+        "Binary Search",
+        "Quick Sort",
+        "Linear Search"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Both move in the direction of increasing value (or decreasing cost)."
+    },
+    {
+      "id": 223,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "De Morgan's Laws state that ¬(A ∧ B) is equivalent to:",
+      "options": [
+        "¬A ∨ ¬B",
+        "¬A ∧ ¬B",
+        "A ∨ B",
+        "A ∧ B"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Not (A and B) = Not A or Not B."
+    },
+    {
+      "id": 224,
+      "type": "multiple-choice",
+      "part": "Python for AI",
+      "question": "What is the result of `type(3.14)` in Python?",
+      "options": [
+        "<class 'float'>",
+        "<class 'int'>",
+        "<class 'double'>",
+        "<class 'str'>"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Python uses 'float' for decimals (doubles are C-style)."
+    },
+    {
+      "id": 225,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "One-Hot Encoding is used to:",
+      "options": [
+        "Convert categorical variables into binary vectors.",
+        "Compress images.",
+        "Encrypt passwords.",
+        "Visualize trees."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "e.g., Red=[1,0,0], Green=[0,1,0]."
+    },
+    {
+      "id": 226,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "The 'Optimality' of BFS depends on:",
+      "options": [
+        "Step costs being equal (or non-decreasing with depth).",
+        "The heuristic.",
+        "The memory available.",
+        "Luck."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "BFS finds the shallowest goal. This is optimal cost only if steps have equal cost."
+    },
+    {
+      "id": 227,
+      "type": "multiple-choice",
+      "part": "Adversarial Search",
+      "question": "In 2-player games, a 'Terminal State' is:",
+      "options": [
+        "A state where the game ends (Win/Loss/Draw).",
+        "The start state.",
+        "A state with high heuristic value.",
+        "A bad state."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Game over."
+    },
+    {
+      "id": 228,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "What is 'Elitism'?",
+      "options": [
+        "Carrying over the best individuals to the next generation unchanged.",
+        "Allowing only the rich to reproduce.",
+        "A type of mutation.",
+        "Random selection."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Preserves the best solution found so far."
+    },
+    {
+      "id": 229,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "Which color model is used for printing?",
+      "options": [
+        "CMYK",
+        "RGB",
+        "HSV",
+        "Gray"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Cyan, Magenta, Yellow, Key (Black)."
+    },
+    {
+      "id": 230,
+      "type": "multiple-choice",
+      "part": "Expert Systems",
+      "question": "A 'Shell' in Expert Systems refers to:",
+      "options": [
+        "An expert system environment with an empty knowledge base.",
+        "The outer casing of the computer.",
+        "A Python library.",
+        "A specific rule."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It provides the inference engine and UI, allowing users to add their own rules."
+    },
+    {
+      "id": 231,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "A* search with h(n) = 0 is equivalent to:",
+      "options": [
+        "Uniform Cost Search",
+        "BFS",
+        "DFS",
+        "Best-First Search"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Repeated concept, but key for exams."
+    },
+    {
+      "id": 232,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "A 'Valid' argument implies that:",
+      "options": [
+        "If the premises are true, the conclusion must be true.",
+        "The conclusion is always true.",
+        "The premises are always true.",
+        "It makes sense."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Validity preserves truth."
+    },
+    {
+      "id": 233,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "In K-Means clustering, 'K' represents:",
+      "options": [
+        "The number of clusters to form.",
+        "The number of neighbors.",
+        "The number of iterations.",
+        "The error rate."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "User defines K clusters."
+    },
+    {
+      "id": 234,
+      "type": "multiple-choice",
+      "part": "Python for AI",
+      "question": "What does `range(2, 6)` produce?",
+      "options": [
+        "2, 3, 4, 5",
+        "2, 3, 4, 5, 6",
+        "3, 4, 5, 6",
+        "2, 4, 6"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Start inclusive, stop exclusive."
+    },
+    {
+      "id": 235,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "The 'Path Cost' is:",
+      "options": [
+        "The sum of the costs of the actions (edges) along the path.",
+        "The number of nodes.",
+        "The heuristic value.",
+        "The depth."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "g(n) is the cumulative cost."
+    },
+    {
+      "id": 236,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "SLAM stands for:",
+      "options": [
+        "Simultaneous Localization and Mapping",
+        "Simple Learning and Mapping",
+        "Super Logic and Motion",
+        "Sensor Light and Motor"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Building a map while figuring out where you are."
+    },
+    {
+      "id": 237,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "A 'Test Set' should be used for:",
+      "options": [
+        "Final evaluation of the model.",
+        "Training the model.",
+        "Tuning hyperparameters (Validation set).",
+        "Feature selection."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Never train on the test set."
+    },
+    {
+      "id": 238,
+      "type": "multiple-choice",
+      "part": "General AI",
+      "question": "Symbolic AI (GOFAI) relies on:",
+      "options": [
+        "Explicit representation of knowledge using symbols and logic rules.",
+        "Neural networks.",
+        "Statistics.",
+        "Biological evolution."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Good Old-Fashioned AI."
+    },
+    {
+      "id": 239,
+      "type": "multiple-choice",
+      "part": "NLP",
+      "question": "Bag of Words model ignores:",
+      "options": [
+        "Grammar and word order.",
+        "Word frequency.",
+        "The existence of words.",
+        "Spelling."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It counts occurrences but loses structure."
+    },
+    {
+      "id": 240,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "The time complexity of Depth-Limited Search with limit L is:",
+      "options": [
+        "O(b^L)",
+        "O(b^d)",
+        "O(b)",
+        "O(L)"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It explores up to depth L."
+    }
+  ]
+}

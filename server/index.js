@@ -43,6 +43,7 @@ import clanRoutes from './routes/clanRoutes.js';
 import compilerRoutes from './routes/compiler.js';
 import aiRoutes from './routes/ai.js';
 import subjectRoutes from './routes/subjects.js';
+import aiStudioRoutes from './routes/aiStudio.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -137,6 +138,7 @@ app.use('/api/clans', clanRoutes);
 app.use('/api', compilerRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/subjects', subjectRoutes);
+app.use('/api/ai-studio', aiStudioRoutes);
 
 app.use('/api/badges', badgeRoutes);
 app.use('/api/badge-nodes', badgeNodesRoutes);

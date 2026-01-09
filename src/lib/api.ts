@@ -203,7 +203,8 @@ export const api = {
             body: JSON.stringify(quizData),
         });
         if (!response.ok) {
-            throw new Error('Failed to import quizzes');
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to import quizzes');
         }
         return response.json();
     },
@@ -863,7 +864,56 @@ export const api = {
         return response.json();
     },
 
+    // AI Studio & Material Management
+    async uploadMaterial(subjectId: string, file: File, type: 'lesson' | 'exam_raw', adminId: string) {
+        const formData = new FormData();
+        formData.append('subjectId', subjectId);
+        formData.append('file', file);
+        formData.append('type', type);
+
+        const response = await fetch(`${API_URL}/ai-studio/upload`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getStoredToken()}`,
+                'x-user-id': adminId // Legacy
+            },
+            body: formData
+        });
+        if (!response.ok) throw new Error('Failed to upload material');
+        return response.json();
+    },
+
+    async processMaterial(subjectId: string, materialId: string, adminId: string) {
+        const response = await fetch(`${API_URL}/ai-studio/process`, {
+            method: 'POST',
+            headers: getHeaders(adminId),
+            body: JSON.stringify({ subjectId, materialId })
+        });
+        if (!response.ok) throw new Error('Failed to process material');
+        return response.json();
+    },
+
+    async deleteMaterial(subjectId: string, materialId: string, adminId: string) {
+        const response = await fetch(`${API_URL}/ai-studio/material/${subjectId}/${materialId}`, {
+            method: 'DELETE',
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) throw new Error('Failed to delete material');
+        return response.json();
+    },
+
+    async generateQuizFromMaterials(data: { subjectId: string; materialIds: string[]; questionCount: number; difficulty: string }, adminId: string) {
+        const response = await fetch(`${API_URL}/ai-studio/generate`, {
+            method: 'POST',
+            headers: getHeaders(adminId),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('Failed to generate quiz');
+        return response.json();
+    },
+
     // Clans
+
     async createClan(data: { name: string; tag: string; description: string; isPublic: boolean }, userId: string) {
         const response = await fetch(`${API_URL}/clans/create`, {
             method: 'POST',

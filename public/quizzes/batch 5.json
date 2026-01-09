@@ -1,0 +1,915 @@
+{
+  "id": "ai-exam-comprehensive-batch-5",
+  "title": "AI Comprehensive Exam Bank - Batch 5",
+  "description": "Fundamental definitions, Intelligent Agents, Search Strategies, and Logic.",
+  "category": "Artificial Intelligence",
+  "difficulty": "Medium",
+  "timeLimit": 45,
+  "passingScore": 60,
+  "coinsReward": 100,
+  "xpReward": 250,
+  "icon": "Cpu",
+  "isTournamentOnly": false,
+  "questions": [
+    {
+      "id": 241,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "In Genetic Algorithms, 'Order 1 Crossover' is specifically designed for:",
+      "options": [
+        "Problems where the order of elements matters (e.g., Traveling Salesman Problem).",
+        "Binary encoded problems.",
+        "Continuous value optimization.",
+        "Clustering problems."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Standard crossover breaks the path (permutation). Order crossover preserves the relative order of genes from parents."
+    },
+    {
+      "id": 242,
+      "type": "multiple-choice",
+      "part": "Neural Networks",
+      "question": "Which activation function solves the 'Vanishing Gradient' problem better than Sigmoid?",
+      "options": [
+        "ReLU (Rectified Linear Unit)",
+        "Step Function",
+        "Linear Function",
+        "Binary Step"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "ReLU does not saturate for positive values, preventing gradients from becoming tiny during backpropagation."
+    },
+    {
+      "id": 243,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Beam Search is a variation of Best-First Search that:",
+      "options": [
+        "Keeps only a fixed number (k) of best candidates at each level.",
+        "Keeps all nodes in memory.",
+        "Explores randomly.",
+        "Uses no heuristic."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It sacrifices completeness for memory efficiency by pruning the frontier to a fixed width 'k'."
+    },
+    {
+      "id": 244,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "The difference between an 'Effector' and an 'Actuator' is:",
+      "options": [
+        "An Actuator is the mechanism that provides power/movement (motor), while an Effector is the part that interacts with the environment (hand/gripper).",
+        "They are exactly the same.",
+        "Effectors are sensors.",
+        "Actuators are software."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Actuator = Muscle; Effector = Hand/Foot."
+    },
+    {
+      "id": 245,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "In First-Order Logic, 'Universal Instantiation' allows us to:",
+      "options": [
+        "Infer a specific truth P(A) from a general rule ∀x P(x).",
+        "Infer a general rule from a specific truth.",
+        "Delete all variables.",
+        "Prove False."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "If something is true for everything, it is true for a specific object 'A'."
+    },
+    {
+      "id": 246,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which of these indicates 'Underfitting'?",
+      "options": [
+        "High bias and low variance (Model is too simple).",
+        "Low bias and high variance.",
+        "Perfect accuracy on training data.",
+        "Model captures too much noise."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "The model (e.g., a straight line) is not complex enough to capture the data pattern."
+    },
+    {
+      "id": 247,
+      "type": "multiple-choice",
+      "part": "Data Science",
+      "question": "Unstructured Data includes:",
+      "options": [
+        "Images, Video, Audio, and Free Text.",
+        "Relational Database tables.",
+        "Excel spreadsheets.",
+        "CSV files."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Data that does not follow a pre-defined data model."
+    },
+    {
+      "id": 248,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "What is the 'Effective Branching Factor' (b*)?",
+      "options": [
+        "The branching factor of a uniform tree that would have the same number of nodes and depth as the real search tree.",
+        "The maximum number of children.",
+        "The minimum number of children.",
+        "The depth of the solution."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "A lower b* (closer to 1) means a better heuristic."
+    },
+    {
+      "id": 249,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "Why is the Mutation probability usually kept very low (e.g., 0.01)?",
+      "options": [
+        "To avoid disrupting good solutions too much (acting like random search).",
+        "To make the algorithm faster.",
+        "Because mutation is useless.",
+        "To ensure all solutions are identical."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "High mutation turns the GA into a random walk, destroying progress."
+    },
+    {
+      "id": 250,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "A 'Grayscale' image represents each pixel with:",
+      "options": [
+        "8 bits (values 0-255).",
+        "1 bit (0 or 1).",
+        "24 bits (RGB).",
+        "32 bits."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "0 is black, 255 is white, and values in between are shades of gray."
+    },
+    {
+      "id": 251,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "The 'Unification' algorithm returns:",
+      "options": [
+        "A substitution set (bindings) that makes two terms identical.",
+        "True or False.",
+        "A new rule.",
+        "A logical contradiction."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "e.g., Unify(Knows(John, x), Knows(John, Jane)) returns {x/Jane}."
+    },
+    {
+      "id": 252,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "K-Means is different from KNN because:",
+      "options": [
+        "K-Means is Unsupervised (Clustering), while KNN is Supervised (Classification).",
+        "K-Means is Supervised.",
+        "KNN is for Clustering.",
+        "They are identical."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Common confusion. K-Means groups data; KNN classifies based on neighbors."
+    },
+    {
+      "id": 253,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "A 'Utility Function' maps a state to:",
+      "options": [
+        "A real number representing the degree of happiness/satisfaction.",
+        "True or False.",
+        "An action.",
+        "A goal state."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Utility measures the quality of the state, not just if it is a goal."
+    },
+    {
+      "id": 254,
+      "type": "multiple-choice",
+      "part": "NLP",
+      "question": "'Pragmatics' in NLP refers to:",
+      "options": [
+        "The study of how context and real-world knowledge affect meaning.",
+        "The dictionary meaning of words.",
+        "The grammar of sentences.",
+        "The sound of speech."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "e.g., 'Can you pass the salt?' is a request, not a question about ability."
+    },
+    {
+      "id": 255,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which classifier assumes that features are independent of each other?",
+      "options": [
+        "Naive Bayes",
+        "Decision Tree",
+        "Neural Network",
+        "Support Vector Machine"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "The 'Naive' assumption simplifies calculation: P(A,B) = P(A)*P(B)."
+    },
+    {
+      "id": 256,
+      "type": "multiple-choice",
+      "part": "Expert Systems",
+      "question": "The 'Knowledge Acquisition Bottleneck' refers to:",
+      "options": [
+        "The difficulty of transferring knowledge from human experts to the system.",
+        "The slow speed of the computer.",
+        "The lack of memory.",
+        "The cost of software."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Experts often cannot articulate their intuitive rules clearly."
+    },
+    {
+      "id": 257,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "Which algorithm is used for Edge Detection?",
+      "options": [
+        "Canny Edge Detector / Sobel Filter",
+        "K-Means",
+        "Bubblesort",
+        "Minimax"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Sobel and Canny are standard operators for finding gradients in images."
+    },
+    {
+      "id": 258,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "An 'Optimal Solution' in search means:",
+      "options": [
+        "The solution with the lowest path cost.",
+        "The solution found fastest.",
+        "The solution with the fewest nodes.",
+        "Any solution that reaches the goal."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Optimality is strictly about minimizing the cost of the path found."
+    },
+    {
+      "id": 259,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Validation Data is used for:",
+      "options": [
+        "Tuning hyperparameters (e.g., choosing 'k' in KNN) during training.",
+        "The final test.",
+        "Training the weights.",
+        "Nothing."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It acts as a mini-test during training to guide model configuration."
+    },
+    {
+      "id": 260,
+      "type": "multiple-choice",
+      "part": "Python for AI",
+      "question": "Which of the following is NOT a valid Python variable name?",
+      "options": [
+        "2variable",
+        "variable2",
+        "_variable",
+        "Variable_Name"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Variable names cannot start with a number."
+    },
+    {
+      "id": 261,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "'Entailment' (KB ⊨ α) means:",
+      "options": [
+        "α must be true in all worlds where KB is true.",
+        "α is derived from KB using code.",
+        "KB implies α with 50% probability.",
+        "α is false."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Strict logical consequence."
+    },
+    {
+      "id": 262,
+      "type": "multiple-choice",
+      "part": "Neural Networks",
+      "question": "An 'Epoch' in training refers to:",
+      "options": [
+        "One complete pass of the entire training dataset through the network.",
+        "One update of the weights.",
+        "One single image.",
+        "The final result."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Training usually involves multiple epochs."
+    },
+    {
+      "id": 263,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "Locomotion refers to:",
+      "options": [
+        "The mechanism of moving the robot's body (wheels, legs).",
+        "Moving the arm.",
+        "Thinking.",
+        "Sensing."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Getting from point A to B."
+    },
+    {
+      "id": 264,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "The 'Frontier' (or Fringe) in search algorithms is:",
+      "options": [
+        "The set of all leaf nodes available for expansion.",
+        "The start state.",
+        "The set of visited nodes.",
+        "The goal state."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "The boundary between the explored and unexplored parts of the state space."
+    },
+    {
+      "id": 265,
+      "type": "multiple-choice",
+      "part": "NLP",
+      "question": "Lemmatization is superior to Stemming because:",
+      "options": [
+        "It uses a vocabulary/dictionary to return the actual base word (Lemma).",
+        "It just chops off the end of the word.",
+        "It is faster.",
+        "It works on numbers."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Better -> Good (Lemma) vs Better -> Bet (Stem)."
+    },
+    {
+      "id": 266,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Principal Component Analysis (PCA) is used for:",
+      "options": [
+        "Dimensionality Reduction.",
+        "Clustering.",
+        "Classification.",
+        "Reinforcement."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It finds the axes of maximum variance to compress data."
+    },
+    {
+      "id": 267,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Dijkstra's Algorithm is essentially:",
+      "options": [
+        "Uniform Cost Search (BFS for weighted graphs).",
+        "A* Search.",
+        "DFS.",
+        "Greedy Search."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "UCS is the AI name for Dijkstra's algorithm."
+    },
+    {
+      "id": 268,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "A sentence is 'Satisfiable' if:",
+      "options": [
+        "There exists at least one model where it is true.",
+        "It is always true.",
+        "It is always false.",
+        "It has no variables."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It can be true."
+    },
+    {
+      "id": 269,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "The 'Fitness Landscape' helps visualize:",
+      "options": [
+        "How fitness changes across the search space (peaks and valleys).",
+        "The speed of the CPU.",
+        "The size of the memory.",
+        "The mutation rate."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Optimization is like climbing the peaks of this landscape."
+    },
+    {
+      "id": 270,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "Histogram Equalization is a technique to:",
+      "options": [
+        "Enhance contrast by spreading out pixel intensities.",
+        "Blur the image.",
+        "Detect edges.",
+        "Crop the image."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It makes the darks darker and lights lighter, utilizing the full range."
+    },
+    {
+      "id": 271,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "Which test was proposed to check if a machine can 'think'?",
+      "options": [
+        "The Turing Test",
+        "The IQ Test",
+        "The Vision Test",
+        "The Stress Test"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Classic AI definition question."
+    },
+    {
+      "id": 272,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which of these is a metric for Classification?",
+      "options": [
+        "F1-Score",
+        "Mean Squared Error",
+        "Euclidean Distance",
+        "Variance"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Harmonic mean of Precision and Recall."
+    },
+    {
+      "id": 273,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "In Propositional Logic, 'Modus Tollens' is:",
+      "options": [
+        "¬Q, P → Q ⊢ ¬P",
+        "P, P → Q ⊢ Q",
+        "¬P, P → Q ⊢ ¬Q",
+        "Q, P → Q ⊢ P"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "If P implies Q, and Q is false, then P must be false."
+    },
+    {
+      "id": 274,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "The State Space of the 8-Queens problem contains approximately:",
+      "options": [
+        "4 billion (wrong) or 16 million (approx) - actually $1.8 x 10^14$ if naive.",
+        "64 states.",
+        "8 states.",
+        "Infinite states."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Naive placement is 64^8. Intelligent formulation (1 per column) is 8^8 = 16.7 million."
+    },
+    {
+      "id": 275,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "Proprioceptive sensors measure:",
+      "options": [
+        "The robot's own internal status (e.g., wheel speed, joint angle).",
+        "The distance to obstacles.",
+        "The color of objects.",
+        "Sound."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Self-sensing."
+    },
+    {
+      "id": 276,
+      "type": "multiple-choice",
+      "part": "Neural Networks",
+      "question": "Which layer in a CNN is responsible for reducing the spatial dimensions (width/height) of the data?",
+      "options": [
+        "Pooling Layer (Max Pooling)",
+        "Convolution Layer",
+        "Fully Connected Layer",
+        "Input Layer"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Pooling downsamples the image features."
+    },
+    {
+      "id": 277,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "The 'Crossover Rate' determines:",
+      "options": [
+        "How often crossover is performed (usually high, e.g., 80-90%).",
+        "How often mutation happens.",
+        "The size of the population.",
+        "The length of the chromosome."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It controls the mixing of genes."
+    },
+    {
+      "id": 278,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which task involves finding association rules (e.g., 'People who buy bread also buy milk')?",
+      "options": [
+        "Market Basket Analysis",
+        "Regression",
+        "Classification",
+        "Clustering"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Association Rule Learning (Apriori)."
+    },
+    {
+      "id": 279,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "A logical sentence is in 'Clause Form' if:",
+      "options": [
+        "It is a disjunction of literals (L1 ∨ L2 ∨ ...).",
+        "It contains only ANDs.",
+        "It contains no variables.",
+        "It is a single variable."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "CNF consists of clauses combined by AND."
+    },
+    {
+      "id": 280,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Greedy Search is NOT optimal because:",
+      "options": [
+        "It ignores the path cost accumulated so far (g(n)).",
+        "It uses a bad heuristic.",
+        "It is too slow.",
+        "It uses too much memory."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It might take a step that looks good (low h) but is actually expensive (high g)."
+    },
+    {
+      "id": 281,
+      "type": "multiple-choice",
+      "part": "Python for AI",
+      "question": "In Python, which symbol is used for comments?",
+      "options": [
+        "#",
+        "//",
+        "/*",
+        "--"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "The hash symbol."
+    },
+    {
+      "id": 282,
+      "type": "multiple-choice",
+      "part": "General AI",
+      "question": "Which of these is an example of 'Symbolic AI'?",
+      "options": [
+        "Expert Systems based on IF-THEN rules.",
+        "Deep Neural Networks.",
+        "Genetic Algorithms.",
+        "Reinforcement Learning."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Symbolic AI manipulates explicit symbols/rules."
+    },
+    {
+      "id": 283,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Which search algorithm expands the node with the lowest f(n) = g(n) + h(n)?",
+      "options": [
+        "A* Search",
+        "Greedy Search",
+        "BFS",
+        "DFS"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "The definition of A*."
+    },
+    {
+      "id": 284,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "In Decision Trees, 'Pruning' is done to:",
+      "options": [
+        "Reduce the size of the tree and prevent overfitting.",
+        "Make the tree larger.",
+        "Increase training accuracy.",
+        "Add more features."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Removing branches that provide little power."
+    },
+    {
+      "id": 285,
+      "type": "multiple-choice",
+      "part": "Vision",
+      "question": "Which is a 'Binary' image format?",
+      "options": [
+        "Black and White (1 bit/pixel).",
+        "Grayscale.",
+        "RGB.",
+        "RGBA."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Only two values."
+    },
+    {
+      "id": 286,
+      "type": "multiple-choice",
+      "part": "Agents",
+      "question": "A Table-Driven Agent:",
+      "options": [
+        "Uses a giant lookup table of Percepts -> Actions (impossible for large problems).",
+        "Uses logic.",
+        "Uses learning.",
+        "Uses goals."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It memorizes every possible situation."
+    },
+    {
+      "id": 287,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "Resolution Refutation proves a sentence α by:",
+      "options": [
+        "Adding ¬α to the KB and showing it leads to a contradiction (Empty Clause).",
+        "Adding α to KB.",
+        "Checking all models.",
+        "Asking the user."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Proof by contradiction."
+    },
+    {
+      "id": 288,
+      "type": "multiple-choice",
+      "part": "Search",
+      "question": "The 'Goal Test':",
+      "options": [
+        "Determines if the current state is a goal state.",
+        "Calculates the cost.",
+        "Generates successors.",
+        "Initializes the problem."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Checks if we are done."
+    },
+    {
+      "id": 289,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which of these is a library for Machine Learning in Python?",
+      "options": [
+        "Scikit-learn",
+        "React",
+        "Laravel",
+        "Spring"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Standard ML library."
+    },
+    {
+      "id": 290,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "An autonomous robot:",
+      "options": [
+        "Operates without continuous human intervention.",
+        "Is remote controlled.",
+        "Is a toy.",
+        "Cannot move."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Autonomy = Self-governing."
+    },
+    {
+      "id": 291,
+      "type": "multiple-choice",
+      "part": "Search",
+      "question": "In the 8-puzzle, the 'Blank' tile is effectively:",
+      "options": [
+        "Moved like any other tile (Up, Down, Left, Right).",
+        "Fixed.",
+        "Destroyed.",
+        "Duplicated."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "We conceptually move the blank."
+    },
+    {
+      "id": 292,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "What happens if the Selection Pressure is too high?",
+      "options": [
+        "Premature Convergence (The population becomes identical too fast, getting stuck in local optima).",
+        "Random search.",
+        "Slow convergence.",
+        "Infinite loops."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Only the super-fit survive immediately, reducing diversity."
+    },
+    {
+      "id": 293,
+      "type": "multiple-choice",
+      "part": "NN",
+      "question": "Supervised learning in Neural Networks involves:",
+      "options": [
+        "Adjusting weights to minimize the difference between output and target.",
+        "Grouping data.",
+        "Reward signals.",
+        "Genetic mutation."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Error minimization."
+    },
+    {
+      "id": 294,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "Predicate Logic is another name for:",
+      "options": [
+        "First-Order Logic.",
+        "Propositional Logic.",
+        "Fuzzy Logic.",
+        "Boolean Logic."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It uses predicates P(x)."
+    },
+    {
+      "id": 295,
+      "type": "multiple-choice",
+      "part": "Search",
+      "question": "Which algorithm is optimal for finding the shortest path in a graph with equal step costs?",
+      "options": [
+        "BFS",
+        "DFS",
+        "Greedy",
+        "Hill Climbing"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "BFS explores by layer (distance)."
+    },
+    {
+      "id": 296,
+      "type": "multiple-choice",
+      "part": "Expert Systems",
+      "question": "A 'Rule' in an Expert System typically has the form:",
+      "options": [
+        "IF <condition> THEN <action/conclusion>.",
+        "FOR loop.",
+        "WHILE loop.",
+        "Function call."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Production rules."
+    },
+    {
+      "id": 297,
+      "type": "multiple-choice",
+      "part": "General AI",
+      "question": "The 'Chinese Room' argument concludes that:",
+      "options": [
+        "Syntax is not sufficient for Semantics (Running a program isn't understanding).",
+        "Computers can think.",
+        "Strong AI is true.",
+        "AI is impossible."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Searle's conclusion."
+    },
+    {
+      "id": 298,
+      "type": "multiple-choice",
+      "part": "Vision",
+      "question": "Pixel 'Connectivity' (4-connected vs 8-connected) determines:",
+      "options": [
+        "Which pixels are considered neighbors.",
+        "The color.",
+        "The size.",
+        "The format."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "4-connected shares edges; 8-connected shares edges and corners."
+    },
+    {
+      "id": 299,
+      "type": "multiple-choice",
+      "part": "Agents",
+      "question": "For an autonomous taxi, 'Safety' is a part of its:",
+      "options": [
+        "Performance Measure.",
+        "Sensors.",
+        "Actuators.",
+        "Environment."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It is a metric of success."
+    },
+    {
+      "id": 300,
+      "type": "multiple-choice",
+      "part": "General AI",
+      "question": "Which type of AI focuses on mimicking the evolutionary process of nature?",
+      "options": [
+        "Genetic Algorithms / Evolutionary Computation",
+        "Neural Networks",
+        "Logic",
+        "Expert Systems"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Survival of the fittest applied to code."
+    }
+  ]
+}

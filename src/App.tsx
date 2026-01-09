@@ -28,7 +28,9 @@ import QuizResultsPage from './pages/QuizResultsPage';
 import AsyncChallengePage from './pages/AsyncChallengePage';
 import VsGamePage from './pages/VsGamePage';
 import BadgeTreeDetailPage from './pages/BadgeTreeDetailPage';
+import { AiJobProvider } from './contexts/AiJobContext';
 import ClanPage from './pages/ClanPage';
+import AiStudio from './pages/admin/AiStudio';
 
 const App: React.FC = () => {
   return (
@@ -37,55 +39,57 @@ const App: React.FC = () => {
         <NotificationProvider>
           <SocketProvider>
             <DataProvider>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <AiJobProvider>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-                  {/* Async Challenge (Can be accessed with link) - handled by page logic wrapper? 
+                    {/* Async Challenge (Can be accessed with link) - handled by page logic wrapper? 
                                         If user not logged in, they should login first.
                                         Deep linking flow: /challenge/:token -> Login -> Redirect back?
                                         For now, protect it. AsyncChallengePage checks currentUser.
                                     */}
-                  <Route path="/challenge/:token" element={
-                    <ProtectedRoute>
-                      <AsyncChallengePage />
-                    </ProtectedRoute>
-                  } />
+                    <Route path="/challenge/:token" element={
+                      <ProtectedRoute>
+                        <AsyncChallengePage />
+                      </ProtectedRoute>
+                    } />
 
-                  {/* Admin Route */}
-                  <Route path="/admin" element={
-                    <AdminRoute>
-                      <AdminDashboardPage />
-                    </AdminRoute>
-                  } />
+                    {/* Admin Route */}
+                    <Route path="/admin" element={
+                      <AdminRoute>
+                        <AdminDashboardPage />
+                      </AdminRoute>
+                    } />
 
-                  {/* Protected User Routes wrapped in MainLayout */}
-                  <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-                    <Route path="/" element={<DashboardPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/leaderboard" element={<LeaderboardPage />} />
-                    <Route path="/shop" element={<ShopPage />} />
-                    <Route path="/social" element={<SocialPage />} />
-                    <Route path="/analytics" element={<AnalyticsPage />} />
-                    <Route path="/tournaments" element={<TournamentsPage />} />
-                    <Route path="/tracks" element={<SkillTracksPage />} />
-                    <Route path="/daily" element={<DailyChallengePage />} />
-                    <Route path="/study" element={<StudyModePage />} />
+                    {/* Protected User Routes wrapped in MainLayout */}
+                    <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+                      <Route path="/" element={<DashboardPage />} />
+                      <Route path="/profile" element={<ProfilePage />} />
+                      <Route path="/leaderboard" element={<LeaderboardPage />} />
+                      <Route path="/shop" element={<ShopPage />} />
+                      <Route path="/social" element={<SocialPage />} />
+                      <Route path="/analytics" element={<AnalyticsPage />} />
+                      <Route path="/tournaments" element={<TournamentsPage />} />
+                      <Route path="/tracks" element={<SkillTracksPage />} />
+                      <Route path="/daily" element={<DailyChallengePage />} />
+                      <Route path="/study" element={<StudyModePage />} />
 
-                    <Route path="/quiz/:quizId" element={<QuizTakingPage />} />
-                    <Route path="/results" element={<QuizResultsPage />} />
-                    <Route path="/game/vs" element={<VsGamePage />} />
-                    <Route path="/badge-tree/:treeId" element={<BadgeTreeDetailPage />} />
-                    <Route path="/clans" element={<ClanPage />} />
-                  </Route>
+                      <Route path="/quiz/:quizId" element={<QuizTakingPage />} />
+                      <Route path="/results" element={<QuizResultsPage />} />
+                      <Route path="/game/vs" element={<VsGamePage />} />
+                      <Route path="/badge-tree/:treeId" element={<BadgeTreeDetailPage />} />
+                      <Route path="/clans" element={<ClanPage />} />
+                    </Route>
 
-                  {/* Catch all redirect */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Suspense>
+                    {/* Catch all redirect */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Suspense>
+              </AiJobProvider>
             </DataProvider>
           </SocketProvider>
         </NotificationProvider>
