@@ -72,11 +72,19 @@ export const dbMiddleware = async (req, res, next) => {
     await connectToDatabase();
     next();
   } catch (error) {
-    console.error('❌ DB Middleware Error:', error.message);
+    console.error('❌ DB Middleware Error Details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      cause: error.cause
+    });
+    
     res.status(500).json({ 
       message: 'Database connection failed', 
-      error: error.message,
-      env_configured: !!process.env.MONGODB_URI
+      error_name: error.name,
+      error_msg: error.message,
+      // Only show full stack in dev
+      ...(process.env.NODE_ENV === 'development' ? { stack: error.stack } : {})
     });
   }
 };
