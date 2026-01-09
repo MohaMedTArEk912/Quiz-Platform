@@ -178,7 +178,16 @@ export const api = {
     async getQuizzes() {
         const response = await fetch(`${API_URL}/quizzes`);
         if (!response.ok) {
-            throw new Error('Failed to load quizzes');
+            let errorMessage = 'Failed to load quizzes';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+                console.error('SERVER ERROR (getQuizzes):', errorData);
+            } catch (e) {
+                const text = await response.text();
+                console.error('SERVER ERROR (getQuizzes) [Non-JSON]:', text);
+            }
+            throw new Error(errorMessage);
         }
         return response.json();
     },
