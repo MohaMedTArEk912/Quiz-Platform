@@ -15,38 +15,34 @@ const getGroqClient = () => {
     return new Groq({ apiKey: key });
 };
 
-const extractTextFromFile = async (filePath, mimetype) => {
+const extractTextFromFile = async (fileBuffer, mimetype) => {
     let text = '';
-    const MAX_EXTRACTION_TIME = 30000;
+    
+    if (!fileBuffer) throw new Error('File buffer is empty');
 
-    try {
-        if (!fs.existsSync(filePath)) throw new Error('File not found');
-
-        if (mimetype === 'application/pdf') {
-            const dataBuffer = fs.readFileSync(filePath);
-            // Polyfill DOMMatrix for some PDF parsers if needed
-            if (typeof DOMMatrix === 'undefined') {
-                global.DOMMatrix = class DOMMatrix { constructor() { this.a = 1; this.b = 0; this.c = 0; this.d = 1; this.e = 0; this.f = 0; } setMatrixValue() { } multiply() { return this; } translate() { return this; } scale() { return this; } rotate() { return this; } toString() { return 'matrix(1, 0, 0, 1, 0, 0)'; } };
-            }
-            const pdfParseLib = require('pdf-parse');
-            const PDFParseEntity = pdfParseLib.PDFParse || pdfParseLib;
-            try {
-                const instance = new PDFParseEntity(dataBuffer);
-                text = (await instance).text || (await instance.getText()).text;
-            } catch (e) {
-                const instanceV2 = new PDFParseEntity({ data: dataBuffer });
-                text = (await instanceV2.getText()).text;
-            }
-        } else if (mimetype.includes('presentation') || mimetype.includes('powerpoint')) {
-             // Basic text extraction fallback for now or re-import office-text-extractor
-             // For stability in this refactor, we'll suggest sticking to text/pdf or implementing later
-             throw new Error('PPTX extraction not fully migrated to Studio yet. Please convert to PDF.');
-        } else {
-            text = fs.readFileSync(filePath, 'utf8');
+    if (mimetype === 'application/pdf') {
+        const dataBuffer = fileBuffer;
+        // Polyfill DOMMatrix for some PDF parsers if needed
+        if (typeof DOMMatrix === 'undefined') {
+            global.DOMMatrix = class DOMMatrix { constructor() { this.a = 1; this.b = 0; this.c = 0; this.d = 1; this.e = 0; this.f = 0; } setMatrixValue() { } multiply() { return this; } translate() { return this; } scale() { return this; } rotate() { return this; } toString() { return 'matrix(1, 0, 0, 1, 0, 0)'; } };
         }
-    } finally {
-        if (fs.existsSync(filePath)) try { fs.unlinkSync(filePath); } catch (e) { }
+        const pdfParseLib = require('pdf-parse');
+        const PDFParseEntity = pdfParseLib.PDFParse || pdfParseLib;
+        try {
+            const instance = new PDFParseEntity(dataBuffer);
+            text = (await instance).text || (await instance.getText()).text;
+        } catch (e) {
+            const instanceV2 = new PDFParseEntity({ data: dataBuffer });
+            text = (await instanceV2.getText()).text;
+        }
+    } else if (mimetype.includes('presentation') || mimetype.includes('powerpoint')) {
+         // Basic text extraction fallback for now or re-import office-text-extractor
+         // For stability in this refactor, we'll suggest sticking to text/pdf or implementing later
+         throw new Error('PPTX extraction not fully migrated to Studio yet. Please convert to PDF.');
+    } else {
+        text = fileBuffer.toString('utf8');
     }
+    
     return text || '';
 };
 
@@ -60,7 +56,7 @@ export const uploadMaterial = async (req, res) => {
         if (!file) return res.status(400).json({ success: false, message: 'No file uploaded' });
         if (!subjectId) return res.status(400).json({ success: false, message: 'Subject ID required' });
 
-        const rawText = await extractTextFromFile(file.path, file.mimetype);
+        const rawText = await extractTextFromFile(file.buffer, file.mimetype);
         if (!rawText.trim()) return res.status(400).json({ success: false, message: 'Failed to extract text from file.' });
 
         const subject = await Subject.findById(subjectId);

@@ -3,7 +3,7 @@ import multer from 'multer';
 import * as studioController from '../controllers/aiStudioController.js';
 
 const router = express.Router();
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Material Management
 router.post('/upload', upload.single('file'), studioController.uploadMaterial);
