@@ -1,0 +1,615 @@
+{
+  "id": "ai-exam-comprehensive-batch-7",
+  "title": "AI Comprehensive Exam Bank - Batch 7",
+  "description": "Fundamental definitions, Intelligent Agents, Search Strategies, and Logic.",
+  "category": "Artificial Intelligence",
+  "difficulty": "Medium",
+  "timeLimit": 0,
+  "passingScore": 60,
+  "coinsReward": 100,
+  "xpReward": 250,
+  "icon": "Cpu",
+  "isTournamentOnly": false,
+  "questions": [
+    {
+      "id": 361,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "In the context of the '0-1 Knapsack Problem', how is a solution typically encoded in a Genetic Algorithm?",
+      "options": [
+        "A binary string where 1 means the item is included, and 0 means excluded.",
+        "A permutation of item numbers.",
+        "A real number representing weight.",
+        "A tree structure."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Since items are either 'taken' or 'left' (0/1), a bit string is the standard chromosome representation."
+    },
+    {
+      "id": 362,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "When solving the 8-Queens problem, formulating it as an 'Incremental Search' problem involves:",
+      "options": [
+        "Placing queens one by one in successive columns.",
+        "Starting with 8 queens on the board and moving them.",
+        "Placing all 8 queens randomly and restarting.",
+        "Using a genetic algorithm."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Incremental formulation adds variables one step at a time (constructive approach)."
+    },
+    {
+      "id": 363,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "The 'Closed World Assumption' in AI databases implies:",
+      "options": [
+        "Anything not explicitly stated as True is assumed to be False.",
+        "The world is closed and static.",
+        "We know everything.",
+        "New information cannot be added."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Standard in databases and Prolog; if a fact isn't in the DB, it's false."
+    },
+    {
+      "id": 364,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "A 'Servo' motor is distinct from a standard DC motor because:",
+      "options": [
+        "It has a feedback mechanism for precise control of position/angle.",
+        "It spins faster.",
+        "It uses less power.",
+        "It has no wires."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Servos are closed-loop devices used for precise joint positioning in robots."
+    },
+    {
+      "id": 365,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "In Decision Trees, 'Entropy' is a measure of:",
+      "options": [
+        "Impurity or disorder in the dataset.",
+        "The depth of the tree.",
+        "The accuracy of the model.",
+        "The number of leaves."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "High entropy = mixed classes (dirty). Low entropy = pure class (clean)."
+    },
+    {
+      "id": 366,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "Which field provides the tools for handling 'Uncertainty' in AI?",
+      "options": [
+        "Probability Theory",
+        "Linear Algebra",
+        "Calculus",
+        "Linguistics"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Bayesian networks and probabilistic reasoning handle uncertain knowledge."
+    },
+    {
+      "id": 367,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "The 'VGG-16' architecture is a famous example of:",
+      "options": [
+        "A Deep Convolutional Neural Network (CNN).",
+        "A Genetic Algorithm.",
+        "A Search Algorithm.",
+        "A Database."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "VGG-16 is a classic deep CNN model for image classification."
+    },
+    {
+      "id": 368,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "If a problem has a Branching Factor 'b' and depth 'd', the number of leaf nodes in the search tree is approx:",
+      "options": [
+        "b^d",
+        "b*d",
+        "d^b",
+        "b+d"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Exponential growth of the frontier."
+    },
+    {
+      "id": 369,
+      "type": "multiple-choice",
+      "part": "Constraint Satisfaction",
+      "question": "Which of these is a 'Unary Constraint'?",
+      "options": [
+        "Region A must be Red (constrains 1 variable).",
+        "Region A and B must be different (constrains 2 variables).",
+        "Region A, B, and C must be distinct.",
+        "None."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Unary constraints restrict the value of a single variable directly."
+    },
+    {
+      "id": 370,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "In Prolog, variables are distinguished by:",
+      "options": [
+        "Starting with an Uppercase letter (e.g., X, Name).",
+        "Starting with a lowercase letter.",
+        "Using a $ sign.",
+        "Using brackets."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Standard Prolog syntax: lower case = atoms, Upper case = Variables."
+    },
+    {
+      "id": 371,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which loss function is commonly used for Linear Regression?",
+      "options": [
+        "Mean Squared Error (MSE)",
+        "Cross-Entropy Loss",
+        "Hinge Loss",
+        "Gini Impurity"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "MSE measures average squared difference between estimated values and the actual value."
+    },
+    {
+      "id": 372,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "A 'Stochastic' Hill Climbing algorithm:",
+      "options": [
+        "Chooses a random uphill move based on the steepness of the slope (probability).",
+        "Always chooses the best move.",
+        "Moves downhill.",
+        "Searches breadth-first."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It adds randomness to avoid local maxima, picking better moves with higher probability."
+    },
+    {
+      "id": 373,
+      "type": "multiple-choice",
+      "part": "Python for AI",
+      "question": "In Python, `range(10)[-2]` returns:",
+      "options": [
+        "8",
+        "9",
+        "Error",
+        "10"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Range is 0..9. The last item [-1] is 9. The second to last [-2] is 8."
+    },
+    {
+      "id": 374,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "An 'Omniscient' agent knows:",
+      "options": [
+        "The actual outcome of its actions and the state of the world perfectly.",
+        "Only what it perceives.",
+        "The future goals.",
+        "The best heuristic."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Omniscience is impossible in reality; Rationality is doing the best with what you have."
+    },
+    {
+      "id": 375,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "The term 'Generation Gap' in Evolutionary Computation refers to:",
+      "options": [
+        "The overlap between populations of parents and offspring.",
+        "The mutation rate.",
+        "The time it takes to run.",
+        "The memory used."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Do we replace the whole population (Generational GA) or just a few (Steady-State GA)?"
+    },
+    {
+      "id": 376,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "In image processing, 'Dilation' is a morphological operation that:",
+      "options": [
+        "Adds pixels to the boundaries of objects (makes them thicker).",
+        "Removes pixels from boundaries (Erosion).",
+        "Inverts colors.",
+        "Rotates the image."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Dilation expands white regions; Erosion shrinks them."
+    },
+    {
+      "id": 377,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "The 'Bias-Variance Tradeoff' states that:",
+      "options": [
+        "As we make a model more complex, Bias decreases but Variance increases.",
+        "Bias and Variance always increase together.",
+        "Complex models have high Bias.",
+        "Simple models have high Variance."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Complex models fit training data well (Low Bias) but fluctuate on new data (High Variance)."
+    },
+    {
+      "id": 378,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "The 'Validation' of a Knowledge Base ensures:",
+      "options": [
+        "The system builds the *right* product (meets user needs).",
+        "The system builds the product *right* (bug-free).",
+        "The code compiles.",
+        "The database is fast."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Verification = Correctness; Validation = Usefulness/Meeting Requirements."
+    },
+    {
+      "id": 379,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Constraint Propagation is a method to:",
+      "options": [
+        "Reduce the search space by ensuring local consistency.",
+        "Increase the branching factor.",
+        "Generate random values.",
+        "Sort the variables."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "e.g., Arc Consistency checks that eliminate impossible values early."
+    },
+    {
+      "id": 380,
+      "type": "multiple-choice",
+      "part": "Adversarial Search",
+      "question": "A 'Chance Node' in a game tree represents:",
+      "options": [
+        "A move determined by dice or probability (Stochastic).",
+        "A player move.",
+        "A winning state.",
+        "A heuristic."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Used in games like Backgammon where dice determine available moves."
+    },
+    {
+      "id": 381,
+      "type": "multiple-choice",
+      "part": "Python for AI",
+      "question": "Which of these creates a deep copy of a list in Python?",
+      "options": [
+        "import copy; copy.deepcopy(list)",
+        "list2 = list1",
+        "list2 = list1.copy() (Shallow)",
+        "list2 = [list1]"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Standard assignment is a reference; `.copy()` is shallow; `deepcopy` copies nested objects."
+    },
+    {
+      "id": 382,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Hyperparameters are:",
+      "options": [
+        "Parameters set *before* training (e.g., K in KNN, Learning Rate).",
+        "Parameters learned *during* training (e.g., weights).",
+        "The output labels.",
+        "The input features."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Hyperparameters control the learning process itself."
+    },
+    {
+      "id": 383,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "LIDAR stands for:",
+      "options": [
+        "Light Detection and Ranging",
+        "Light Image Data Analysis",
+        "Laser Infrared Detection",
+        "Long Integrated Data Array"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Laser-based distance measuring."
+    },
+    {
+      "id": 384,
+      "type": "multiple-choice",
+      "part": "NLP",
+      "question": "Machine Translation (e.g., Google Translate) often uses which architecture?",
+      "options": [
+        "Sequence-to-Sequence (Seq2Seq) with Attention.",
+        "Random Forest.",
+        "K-Means.",
+        "Linear Regression."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Encoder-Decoder architectures are standard for translation."
+    },
+    {
+      "id": 385,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "The diameter of a search space is:",
+      "options": [
+        "The maximum distance between any two states.",
+        "The total number of states.",
+        "The number of edges.",
+        "The branching factor."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It determines the worst-case path length."
+    },
+    {
+      "id": 386,
+      "type": "multiple-choice",
+      "part": "General AI",
+      "question": "Which of these is a heuristic used in the 'Blocks World' planning problem?",
+      "options": [
+        "Number of blocks out of place.",
+        "Manhattan distance.",
+        "Euclidean distance.",
+        "Temperature."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Similar to 8-puzzle: how many blocks are not sitting on the correct target?"
+    },
+    {
+      "id": 387,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "Existential Instantiation replaces $\\exists x P(x)$ with:",
+      "options": [
+        "$P(Sk)$ where Sk is a new unique constant (Skolem Constant).",
+        "$P(x)$ for all x.",
+        "$P(A)$ where A is a known constant.",
+        "True."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "We give the 'existing' thing a temporary name (Skolem constant)."
+    },
+    {
+      "id": 388,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "In a Confusion Matrix, 'Sensitivity' is another name for:",
+      "options": [
+        "Recall (True Positive Rate).",
+        "Precision.",
+        "Specificity.",
+        "Accuracy."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Sensitivity = Recall."
+    },
+    {
+      "id": 389,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "Gaussian Blur is primarily used to:",
+      "options": [
+        "Reduce image noise and detail (Smoothing).",
+        "Sharpen edges.",
+        "Increase contrast.",
+        "Detect corners."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It averages pixels with a Gaussian weight, blurring high-frequency noise."
+    },
+    {
+      "id": 390,
+      "type": "multiple-choice",
+      "part": "Python for AI",
+      "question": "What is the result of `\"AI\" * 3` in Python?",
+      "options": [
+        "\"AIAIAI\"",
+        "Error",
+        "\"AI3\"",
+        "[\"AI\", \"AI\", \"AI\"]"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "String multiplication repeats the string."
+    },
+    {
+      "id": 391,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Any search algorithm that guarantees finding the optimal solution is called:",
+      "options": [
+        "Admissible.",
+        "Complete.",
+        "Optimal.",
+        "Consistent."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Admissible refers to heuristics; 'Optimal' is the property of the algorithm itself."
+    },
+    {
+      "id": 392,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "In Tournament Selection, increasing the 'Tournament Size':",
+      "options": [
+        "Increases selection pressure (favors fittest individuals more strongly).",
+        "Decreases selection pressure (more random).",
+        "Has no effect.",
+        "Decreases population size."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Larger tournaments mean it's harder for a weak individual to win by luck."
+    },
+    {
+      "id": 393,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "Which of these is a 'Passive' sensor?",
+      "options": [
+        "Camera (detects existing light).",
+        "LIDAR (emits light).",
+        "Sonar (emits sound).",
+        "Radar (emits radio)."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Passive sensors receive energy (light/sound) from the environment; Active sensors emit it."
+    },
+    {
+      "id": 394,
+      "type": "multiple-choice",
+      "part": "Logic",
+      "question": "In Prolog, `?- father(X, john).` is a:",
+      "options": [
+        "Query.",
+        "Fact.",
+        "Rule.",
+        "Variable."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "`?-` denotes a query/question to the system."
+    },
+    {
+      "id": 395,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which metric is best for a dataset with Imbalanced Classes (e.g., 99% Healthy, 1% Sick)?",
+      "options": [
+        "F1-Score / Area Under ROC Curve.",
+        "Accuracy.",
+        "Mean Squared Error.",
+        "Distance."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Accuracy is misleading in imbalanced data (predicting 'Healthy' always gives 99% accuracy but is useless)."
+    },
+    {
+      "id": 396,
+      "type": "multiple-choice",
+      "part": "Intro to AI",
+      "question": "An 'Agent Function' maps:",
+      "options": [
+        "Percept Histories to Actions.",
+        "Actions to Percepts.",
+        "Goals to Environment.",
+        "State to Rewards."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Mathematical definition: f: P* -> A."
+    },
+    {
+      "id": 397,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "What is the space complexity of IDA* (Iterative Deepening A*)?",
+      "options": [
+        "O(bd) - Linear.",
+        "O(b^d) - Exponential.",
+        "O(1).",
+        "O(d^2)."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Like DFS, it only stores the current path."
+    },
+    {
+      "id": 398,
+      "type": "multiple-choice",
+      "part": "Computer Vision",
+      "question": "Binary Morphology 'Opening' is defined as:",
+      "options": [
+        "Erosion followed by Dilation.",
+        "Dilation followed by Erosion.",
+        "Two Erosions.",
+        "Two Dilations."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Opening removes small noise (salt) from the background."
+    },
+    {
+      "id": 399,
+      "type": "multiple-choice",
+      "part": "Neural Networks",
+      "question": "Softmax function is used in the output layer to:",
+      "options": [
+        "Convert raw scores (logits) into probabilities summing to 1.",
+        "Remove negative values.",
+        "Speed up training.",
+        "Stop overfitting."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Standard for multi-class classification."
+    },
+    {
+      "id": 400,
+      "type": "multiple-choice",
+      "part": "General AI",
+      "question": "What does 'No Free Lunch Theorem' imply in AI?",
+      "options": [
+        "No single algorithm works best for every problem.",
+        "AI is expensive.",
+        "Data costs money.",
+        "Heuristics are free."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Averaged over all possible problems, all algorithms perform equally."
+    }
+  ]
+}

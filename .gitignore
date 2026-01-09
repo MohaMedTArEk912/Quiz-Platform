@@ -36,5 +36,6 @@ build
 docs/
 *.md
 !README.md
-
+!PRODUCTION_READINESS.md
+public\quizzes
 .env.corrupt

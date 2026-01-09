@@ -1,37 +1,64 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext'; // Updated imports
+import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { SocketProvider } from './context/SocketContext';
 import { NotificationProvider } from './context/NotificationContext';
-import { ProtectedRoute, AdminRoute } from './components/RouteGuards'; // Updated import
+import { ProtectedRoute, AdminRoute } from './components/RouteGuards';
 import MainLayout from './layouts/MainLayout';
 import PageLoader from './components/PageLoader.tsx';
-
-// Pages
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import DashboardPage from './pages/DashboardPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import ProfilePage from './pages/ProfilePage';
-import LeaderboardPage from './pages/LeaderboardPage';
-import ShopPage from './pages/ShopPage';
-import SocialPage from './pages/SocialPage';
-import AnalyticsPage from './pages/AnalyticsPage';
-import TournamentsPage from './pages/TournamentsPage';
-import SkillTracksPage from './pages/SkillTracksPage';
-import DailyChallengePage from './pages/DailyChallengePage';
-import StudyModePage from './pages/StudyCardPage.tsx';
-import QuizTakingPage from './pages/QuizTakingPage';
-import QuizResultsPage from './pages/QuizResultsPage';
-import AsyncChallengePage from './pages/AsyncChallengePage';
-import VsGamePage from './pages/VsGamePage';
-import BadgeTreeDetailPage from './pages/BadgeTreeDetailPage';
 import { AiJobProvider } from './contexts/AiJobContext';
-import ClanPage from './pages/ClanPage';
+
+// Lazy load all pages for better code splitting and performance
+// Critical pages (login/register) loaded first, others loaded on demand
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+
+// Dashboard and core pages
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+
+// Admin pages
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
+
+// Feature pages - loaded on demand
+const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
+const ShopPage = lazy(() => import('./pages/ShopPage'));
+const SocialPage = lazy(() => import('./pages/SocialPage'));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
+const TournamentsPage = lazy(() => import('./pages/TournamentsPage'));
+const SkillTracksPage = lazy(() => import('./pages/SkillTracksPage'));
+const DailyChallengePage = lazy(() => import('./pages/DailyChallengePage'));
+const StudyModePage = lazy(() => import('./pages/StudyCardPage.tsx'));
+const ClanPage = lazy(() => import('./pages/ClanPage'));
+
+// Quiz and game pages
+const QuizTakingPage = lazy(() => import('./pages/QuizTakingPage'));
+const QuizResultsPage = lazy(() => import('./pages/QuizResultsPage'));
+const AsyncChallengePage = lazy(() => import('./pages/AsyncChallengePage'));
+const VsGamePage = lazy(() => import('./pages/VsGamePage'));
+const BadgeTreeDetailPage = lazy(() => import('./pages/BadgeTreeDetailPage'));
+
 
 const App: React.FC = () => {
+  // Mobile Performance: Preload critical pages after initial render
+  useEffect(() => {
+    // Only preload on mobile devices to save bandwidth
+    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    if (isMobile) {
+      // Preload Dashboard page chunk (most common destination after login)
+      const preloadTimer = setTimeout(() => {
+        import('./pages/DashboardPage').catch(() => {
+          // Preload failed, not critical
+        });
+      }, 2000); // Wait 2 seconds after initial load
+
+      return () => clearTimeout(preloadTimer);
+    }
+  }, []);
+
   return (
     <Router>
       <AuthProvider>
@@ -98,3 +125,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

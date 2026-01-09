@@ -39,9 +39,11 @@ export const verifyUser = async (req, res, next) => {
 // Middleware to verify admin access
 export const verifyAdmin = async (req, res, next) => {
   try {
+    console.log('🔐 Verifying admin access...');
     // Use verifyUser logic first (composition would be better, but repeating for clarity as per tools limitation)
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('❌ No authorization header found');
       return res.status(401).json({ message: 'Unauthorized: Admin token required' });
     }
 
@@ -52,18 +54,24 @@ export const verifyAdmin = async (req, res, next) => {
       return res.status(500).json({ message: 'Server configuration error' });
     }
     
+    console.log('🔍 Verifying JWT token...');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    console.log(`👤 Looking up user: ${decoded.userId}`);
     const adminUser = await User.findOne({ userId: decoded.userId });
     if (!adminUser) {
+      console.log('❌ User not found in database');
       return res.status(404).json({ message: 'Authorized user not found' });
     }
     if (adminUser.role !== 'admin') {
+      console.log(`❌ User ${decoded.userId} is not an admin (role: ${adminUser.role})`);
       return res.status(403).json({ message: 'Forbidden: You do not have permission to perform this action' });
     }
+    console.log(`✅ Admin verified: ${adminUser.userId}`);
     req.admin = adminUser;
     next();
   } catch (error) {
+     console.error('❌ Admin verification error:', error.message);
      if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Token expired' });
     }

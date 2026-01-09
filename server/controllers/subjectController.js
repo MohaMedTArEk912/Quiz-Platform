@@ -294,9 +294,12 @@ export const createSubject = async (req, res) => {
 
 export const getSubjects = async (req, res) => {
     try {
+        console.log('📚 Fetching all subjects...');
         const subjects = await Subject.find().select('-content -styleContext'); // Exclude heavy text fields for list view
+        console.log(`✅ Found ${subjects.length} subjects`);
         res.json({ success: true, data: subjects });
     } catch (error) {
+        console.error('❌ Error fetching subjects:', error.message);
         res.status(500).json({ success: false, message: error.message });
     }
 };

@@ -12,7 +12,8 @@ import {
     Activity,
     Route,
     Settings,
-    Menu
+    Menu,
+    Sparkles
 } from 'lucide-react';
 
 import type { UserData, Quiz, AttemptData } from '../types/index.ts';
@@ -30,7 +31,7 @@ import TournamentManagement from './admin/TournamentManagement.tsx';
 import BadgeManagement from './admin/BadgeManagement.tsx';
 import AttemptsLog from './admin/AttemptsLog.tsx';
 import RoadmapManagement from './admin/RoadmapManagement.tsx';
-import SubjectManagement from './admin/SubjectManagement.tsx';
+import AiStudio from './admin/AiStudio.tsx';
 import AdminSettings from './AdminSettings.tsx';
 
 // --- Types ---
@@ -52,7 +53,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onLogout
 }) => {
     // --- State ---
-    const [selectedTab, setSelectedTab] = useState<'main' | 'users' | 'attempts' | 'quizzes' | 'reviews' | 'study' | 'daily' | 'tournaments' | 'badges' | 'roadmaps' | 'subjects'>('main');
+    const [selectedTab, setSelectedTab] = useState<'main' | 'users' | 'attempts' | 'quizzes' | 'reviews' | 'study' | 'daily' | 'tournaments' | 'badges' | 'roadmaps' | 'ai-studio'>('main');
     const [pendingReviews, setPendingReviews] = useState<AttemptData[]>([]);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -67,7 +68,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const mainScrollRef = useRef<HTMLDivElement>(null);
 
 
-    // --- Effects ---
+    // --- Effects & Helpers ---
     useEffect(() => {
         calculateStats();
         loadPendingReviews();
@@ -138,8 +139,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             title: 'Content',
             items: [
                 { id: 'attempts', label: 'Attempts', icon: BarChart3 },
+                { id: 'ai-studio', label: 'AI Studio', icon: Sparkles },
                 { id: 'study', label: 'Study', icon: Zap },
-                { id: 'subjects', label: 'Subjects', icon: BookOpen },
                 { id: 'roadmaps', label: 'Roadmaps', icon: Route },
             ]
         }
@@ -185,7 +186,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 {selectedTab === 'reviews' && 'Reviews'}
                                 {selectedTab === 'attempts' && 'Attempts Log'}
                                 {selectedTab === 'study' && 'Study Cards'}
-                                {selectedTab === 'subjects' && 'Subjects'}
                                 {selectedTab === 'roadmaps' && 'Roadmaps'}
                             </div>
                         </div>
@@ -337,82 +337,82 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     {/* Header Stats shown only on Main tab */}
                     {selectedTab === 'main' && (
-                    <div className={`p-4 sm:p-8 pb-0 transition-all duration-300 ${statsCollapsed ? 'max-h-0 opacity-0 -mt-2' : 'max-h-[1000px] opacity-100'}`}> 
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
-                            {[
-                                {
-                                    label: 'Total Users',
-                                    shortLabel: 'Users',
-                                    value: stats.totalUsers,
-                                    icon: Users,
-                                    color: 'from-blue-500 to-violet-500',
-                                    bg: 'bg-blue-500/10',
-                                    iconColor: 'text-blue-600 dark:text-blue-400'
-                                },
-                                {
-                                    label: 'Total Quizzes',
-                                    shortLabel: 'Quizzes',
-                                    value: stats.totalQuizzes,
-                                    icon: BookOpen,
-                                    color: 'from-emerald-500 to-teal-500',
-                                    bg: 'bg-emerald-500/10',
-                                    iconColor: 'text-emerald-600 dark:text-emerald-400'
-                                },
-                                {
-                                    label: 'Total Attempts',
-                                    shortLabel: 'Attempts',
-                                    value: stats.totalAttempts,
-                                    icon: Activity,
-                                    color: 'from-orange-500 to-red-500',
-                                    bg: 'bg-orange-500/10',
-                                    iconColor: 'text-orange-600 dark:text-orange-400'
-                                },
-                                {
-                                    label: 'Avg Score',
-                                    shortLabel: 'Avg Score',
-                                    value: `${stats.avgScore}%`,
-                                    icon: Trophy,
-                                    color: 'from-amber-400 to-yellow-500',
-                                    bg: 'bg-yellow-500/10',
-                                    iconColor: 'text-amber-600 dark:text-amber-400'
-                                }
-                            ].map((stat, i) => {
-                                const Icon = stat.icon;
-                                return (
-                                    <div key={i} className="relative overflow-hidden bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/40 dark:border-white/5 shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 group hover:-translate-y-1 hover:border-white/60 dark:hover:border-white/20">
-                                        <div className={`absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br ${stat.color} opacity-[0.03] dark:opacity-[0.08] rounded-bl-full pointer-events-none transition-opacity group-hover:opacity-10`} />
+                        <div className={`p-4 sm:p-8 pb-0 transition-all duration-300 ${statsCollapsed ? 'max-h-0 opacity-0 -mt-2' : 'max-h-[1000px] opacity-100'}`}>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
+                                {[
+                                    {
+                                        label: 'Total Users',
+                                        shortLabel: 'Users',
+                                        value: stats.totalUsers,
+                                        icon: Users,
+                                        color: 'from-blue-500 to-violet-500',
+                                        bg: 'bg-blue-500/10',
+                                        iconColor: 'text-blue-600 dark:text-blue-400'
+                                    },
+                                    {
+                                        label: 'Total Quizzes',
+                                        shortLabel: 'Quizzes',
+                                        value: stats.totalQuizzes,
+                                        icon: BookOpen,
+                                        color: 'from-emerald-500 to-teal-500',
+                                        bg: 'bg-emerald-500/10',
+                                        iconColor: 'text-emerald-600 dark:text-emerald-400'
+                                    },
+                                    {
+                                        label: 'Total Attempts',
+                                        shortLabel: 'Attempts',
+                                        value: stats.totalAttempts,
+                                        icon: Activity,
+                                        color: 'from-orange-500 to-red-500',
+                                        bg: 'bg-orange-500/10',
+                                        iconColor: 'text-orange-600 dark:text-orange-400'
+                                    },
+                                    {
+                                        label: 'Avg Score',
+                                        shortLabel: 'Avg Score',
+                                        value: `${stats.avgScore}%`,
+                                        icon: Trophy,
+                                        color: 'from-amber-400 to-yellow-500',
+                                        bg: 'bg-yellow-500/10',
+                                        iconColor: 'text-amber-600 dark:text-amber-400'
+                                    }
+                                ].map((stat, i) => {
+                                    const Icon = stat.icon;
+                                    return (
+                                        <div key={i} className="relative overflow-hidden bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/40 dark:border-white/5 shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 group hover:-translate-y-1 hover:border-white/60 dark:hover:border-white/20">
+                                            <div className={`absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br ${stat.color} opacity-[0.03] dark:opacity-[0.08] rounded-bl-full pointer-events-none transition-opacity group-hover:opacity-10`} />
 
-                                        <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
-                                            <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${stat.bg} shadow-inner`}>
-                                                <Icon className={`w-4 h-4 sm:w-6 sm:h-6 ${stat.iconColor}`} />
+                                            <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
+                                                <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${stat.bg} shadow-inner`}>
+                                                    <Icon className={`w-4 h-4 sm:w-6 sm:h-6 ${stat.iconColor}`} />
+                                                </div>
+                                            </div>
+
+                                            <div className="relative z-10">
+                                                <div className="text-gray-500 dark:text-gray-400 font-bold text-[10px] sm:text-xs uppercase tracking-wider mb-1 opacity-70">
+                                                    <span className="hidden sm:inline">{stat.label}</span>
+                                                    <span className="sm:hidden">{stat.shortLabel}</span>
+                                                </div>
+                                                <div className="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-gray-900 group-hover:to-gray-600 dark:group-hover:from-white dark:group-hover:to-gray-300 transition-all">
+                                                    {stat.value}
+                                                </div>
                                             </div>
                                         </div>
-
-                                        <div className="relative z-10">
-                                            <div className="text-gray-500 dark:text-gray-400 font-bold text-[10px] sm:text-xs uppercase tracking-wider mb-1 opacity-70">
-                                                <span className="hidden sm:inline">{stat.label}</span>
-                                                <span className="sm:hidden">{stat.shortLabel}</span>
-                                            </div>
-                                            <div className="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-gray-900 group-hover:to-gray-600 dark:group-hover:from-white dark:group-hover:to-gray-300 transition-all">
-                                                {stat.value}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                                    )
+                                })}
+                            </div>
+                            {/* Collapse control */}
+                            <div className="flex justify-end -mt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setStatsCollapsed(!statsCollapsed)}
+                                    className="text-xs font-bold px-3 py-1 rounded-lg bg-white/60 dark:bg-white/10 border border-white/40 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-white/20"
+                                    aria-expanded={!statsCollapsed}
+                                >
+                                    {statsCollapsed ? 'Show Stats' : 'Hide Stats'}
+                                </button>
+                            </div>
                         </div>
-                        {/* Collapse control */}
-                        <div className="flex justify-end -mt-2">
-                            <button
-                                type="button"
-                                onClick={() => setStatsCollapsed(!statsCollapsed)}
-                                className="text-xs font-bold px-3 py-1 rounded-lg bg-white/60 dark:bg-white/10 border border-white/40 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-white/20"
-                                aria-expanded={!statsCollapsed}
-                            >
-                                {statsCollapsed ? 'Show Stats' : 'Hide Stats'}
-                            </button>
-                        </div>
-                    </div>
                     )}
 
                     <div ref={mainScrollRef} className="flex-1 overflow-y-auto p-4 sm:p-8 pt-0 custom-scrollbar">
@@ -453,12 +453,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 <div className="text-[11px] text-gray-500 dark:text-gray-400">Handle pending reviews</div>
                                             </div>
                                         </button>
-                                        <button onClick={() => setSelectedTab('subjects')} className="group flex items-center gap-3 w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400/10 to-yellow-500/10 hover:from-amber-400/20 hover:to-yellow-500/20 border border-white/40 dark:border-white/10 transition-all">
+                                        <button onClick={() => setSelectedTab('roadmaps')} className="group flex items-center gap-3 w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400/10 to-yellow-500/10 hover:from-amber-400/20 hover:to-yellow-500/20 border border-white/40 dark:border-white/10 transition-all">
                                             <div className="p-2 rounded-lg bg-amber-400/10">
                                                 <Route className="w-5 h-5 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
                                             </div>
                                             <div>
-                                                <div className="text-sm font-bold text-gray-900 dark:text-white">Subjects & Tracks</div>
+                                                <div className="text-sm font-bold text-gray-900 dark:text-white">Roadmaps</div>
                                                 <div className="text-[11px] text-gray-500 dark:text-gray-400">Organize learning paths</div>
                                             </div>
                                         </button>
@@ -485,7 +485,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 const items = [
                                                     { label: 'Pending Reviews', value: pendingReviews.length, color: 'from-orange-500 to-red-500', icon: Check },
                                                     { label: 'Pass Rate', value: `${passRate}%`, color: 'from-emerald-500 to-teal-500', icon: Trophy },
-                                                    { label: 'Avg Time', value: `${Math.floor(avgTime/60)}m ${avgTime%60}s`, color: 'from-blue-500 to-violet-500', icon: Activity },
+                                                    { label: 'Avg Time', value: `${Math.floor(avgTime / 60)}m ${avgTime % 60}s`, color: 'from-blue-500 to-violet-500', icon: Activity },
                                                     { label: 'Attempts Today', value: attemptsToday, color: 'from-amber-400 to-yellow-500', icon: BarChart3 },
                                                 ];
                                                 return items.map((s, i) => {
@@ -528,8 +528,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 attempts: e.attempts,
                                                 avg: Math.round(e.avg / (e.attempts || 1))
                                             }))
-                                            .sort((a,b) => b.attempts - a.attempts)
-                                            .slice(0, 6);
+                                                .sort((a, b) => b.attempts - a.attempts)
+                                                .slice(0, 6);
                                             if (items.length === 0) {
                                                 return <div className="text-sm text-gray-500 dark:text-gray-400">No attempts yet.</div>;
                                             }
@@ -557,7 +557,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         <button onClick={() => setSelectedTab('attempts')} className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">Open Log</button>
                                     </div>
                                     {(() => {
-                                        const items = [...attempts].sort((a,b) => {
+                                        const items = [...attempts].sort((a, b) => {
                                             const ad = new Date(a.completedAt).getTime();
                                             const bd = new Date(b.completedAt).getTime();
                                             return bd - ad;
@@ -661,8 +661,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 onNotification={handleNotification}
                             />
                         )}
-                        {selectedTab === 'subjects' && (
-                            <SubjectManagement
+                        {selectedTab === 'ai-studio' && (
+                            <AiStudio
                                 adminId={currentUser.userId}
                                 onNotification={handleNotification}
                             />

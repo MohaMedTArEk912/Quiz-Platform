@@ -1,0 +1,165 @@
+{
+  "id": "ai-exam-comprehensive-batch-8",
+  "title": "AI Comprehensive Exam Bank - Batch 8",
+  "description": "Fundamental definitions, Intelligent Agents, Search Strategies, and Logic.",
+  "category": "Artificial Intelligence",
+  "difficulty": "Medium",
+  "timeLimit": 0,
+  "passingScore": 60,
+  "coinsReward": 100,
+  "xpReward": 250,
+  "icon": "Cpu",
+  "isTournamentOnly": false,
+  "questions": [
+    {
+      "id": 401,
+      "type": "multiple-choice",
+      "part": "Applications",
+      "question": "In the context of the video game 'Age of Empires', why is the A* algorithm preferred over Dijkstra's algorithm for unit movement?",
+      "options": [
+        "A* uses a heuristic to guide units toward the target, making it faster/more directed.",
+        "A* finds a longer path which is safer.",
+        "Dijkstra cannot handle obstacles.",
+        "Age of Empires uses Random Search."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "In Real-Time Strategy (RTS) games, efficiency is key. A* avoids exploring the whole map (like Dijkstra) by focusing on the direction of the goal."
+    },
+    {
+      "id": 402,
+      "type": "multiple-choice",
+      "part": "Applications",
+      "question": "How does Netflix primarily use 'Content-Based Filtering' for recommendations?",
+      "options": [
+        "By recommending shows similar to those a user has watched/rated highly in the past.",
+        "By finding other users who are similar to you (Collaborative Filtering).",
+        "By recommending random movies.",
+        "By checking user demographics only."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Content-based looks at item attributes (e.g., 'You liked Action movies, here is another Action movie'). Collaborative looks at other users."
+    },
+    {
+      "id": 403,
+      "type": "multiple-choice",
+      "part": "Expert Systems",
+      "question": "In a Rule-Based Expert System for medical diagnosis, what is a potential disadvantage compared to Machine Learning?",
+      "options": [
+        "It cannot learn new rules automatically from data; rules must be hard-coded by experts.",
+        "It cannot explain its reasoning.",
+        "It is always less accurate.",
+        "It requires a GPU."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Expert Systems suffer from the 'Knowledge Acquisition Bottleneck' and lack the ability to generalize from data like ML does."
+    },
+    {
+      "id": 404,
+      "type": "multiple-choice",
+      "part": "Data Science",
+      "question": "When preprocessing data for AI, 'Skeletonization' of an image is best described as:",
+      "options": [
+        "Reducing a binary foreground object to a 1-pixel wide representation (like a stick figure).",
+        "Removing the background.",
+        "Converting color to grayscale.",
+        "Detecting faces."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It thins the object to its essential structure, often used in character recognition."
+    },
+    {
+      "id": 405,
+      "type": "multiple-choice",
+      "part": "NLP",
+      "question": "Which of these is an example of 'Information Extraction' (IE)?",
+      "options": [
+        "Automatically pulling dates, prices, and event names from emails to put in a calendar.",
+        "Checking spelling.",
+        "Translating a book.",
+        "Writing a poem."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "IE turns unstructured text into structured data (database entries)."
+    },
+    {
+      "id": 406,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "In a maze, if the heuristic h(n) is the 'Manhattan Distance', but the agent can move diagonally, is h(n) admissible?",
+      "options": [
+        "No, it might overestimate the cost (diagonal move is cost 1, but Manhattan says 2).",
+        "Yes, it is always admissible.",
+        "It depends on the maze size.",
+        "Manhattan is only for puzzles."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "If you can move diagonally (cost 1 or sqrt(2)), Manhattan (cost 2) overestimates. Admissibility requires never overestimating."
+    },
+    {
+      "id": 407,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "What is the 'Scramble Mutation' operator?",
+      "options": [
+        "Selecting a subset of genes and randomly shuffling their order.",
+        "Flipping a single bit.",
+        "Swapping the head and tail.",
+        "Adding a random number."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "It mixes up a specific section of the chromosome."
+    },
+    {
+      "id": 408,
+      "type": "multiple-choice",
+      "part": "Robotics",
+      "question": "For a 'Line Following Robot', which sensor is most critical?",
+      "options": [
+        "IR (Infrared) Sensor to detect contrast between the line and floor.",
+        "Microphone.",
+        "Temperature Sensor.",
+        "GPS."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "IR sensors detect the difference in reflection between the black line and white floor."
+    },
+    {
+      "id": 409,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "In the 'K-Nearest Neighbors' (KNN) algorithm, if K is equal to the total number of data points (N), the prediction becomes:",
+      "options": [
+        "The majority class of the entire dataset (constant prediction).",
+        "The closest neighbor only.",
+        "Random.",
+        "Very accurate."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "If K=N, you look at everyone. You will simply pick the class that appears most often in the whole database."
+    },
+    {
+      "id": 410,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "Which of these is a component of the 'Total Turing Test' but NOT the standard Turing Test?",
+      "options": [
+        "Computer Vision and Robotics (to perceive objects and move).",
+        "Natural Language Processing.",
+        "Knowledge Representation.",
+        "Automated Reasoning."
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "The standard test is text-only. The Total test requires physical interaction (vision/movement)."
+    }
+  ]
+}

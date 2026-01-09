@@ -27,7 +27,7 @@ const storage = multer.diskStorage({
 const upload = multer({ 
     storage: storage,
     limits: { 
-        fileSize: 50 * 1024 * 1024, // Increased to 50MB
+        fileSize: 200 * 1024 * 1024, // Increased to 200MB
         files: 10 // Max 10 files total
     },
     fileFilter: (req, file, cb) => {
@@ -52,7 +52,7 @@ const upload = multer({
 const handleMulterError = (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ success: false, message: 'File too large. Maximum size is 50MB.' });
+            return res.status(400).json({ success: false, message: 'File too large. Maximum size is 200MB.' });
         }
         if (err.code === 'LIMIT_FILE_COUNT') {
             return res.status(400).json({ success: false, message: 'Too many files. Maximum is 10 files.' });

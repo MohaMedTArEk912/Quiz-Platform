@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Upload, Download, Edit2, Trash2, Code, X, MoreVertical, Search, Sparkles } from 'lucide-react';
-import AiQuizGenerator from './AiQuizGenerator.tsx';
+import { Plus, Upload, Download, Edit2, Trash2, Code, X, MoreVertical, Search } from 'lucide-react';
 import type { Quiz, Question, UserData } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 import { DEFAULT_BLOCKLY_TOOLBOX, COMPILER_ALLOWED_LANGUAGES, COMPILER_INITIAL_CODE, DIFFICULTY_LEVELS } from '../../constants/quizDefaults.ts';
@@ -209,9 +208,6 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; id: string } | null>(null);
     const [activeHeaderMenu, setActiveHeaderMenu] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-
-    // AI Generator Modal State
-    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
     const filteredQuizzes = localQuizzes.filter(q =>
         !q.isTournamentOnly &&
@@ -454,13 +450,6 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                     </div>
 
                     <button
-                        onClick={() => setIsAiModalOpen(true)}
-                        className="px-4 py-3 bg-white dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/20 rounded-xl font-bold transition-all shadow-lg flex items-center gap-2"
-                    >
-                        <Sparkles className="w-5 h-5 text-purple-500" /> AI Generator
-                    </button>
-
-                    <button
                         onClick={() => { setEditingQuiz({ id: '', title: '', description: '', timeLimit: 10, passingScore: 60, coinsReward: 10, xpReward: 50, category: 'General', difficulty: DIFFICULTY_LEVELS[0], icon: 'Code', questions: [] }); setActiveModalTab('general'); }}
                         className="px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-violet-500/25 flex items-center gap-2"
                     >
@@ -504,33 +493,6 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                     </div>
                 )}
             </div>
-
-            {/* AI Generator Modal */}
-            {isAiModalOpen && createPortal(
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] w-full max-w-5xl h-[85vh] overflow-hidden shadow-2xl relative flex flex-col">
-                        <button
-                            onClick={() => setIsAiModalOpen(false)}
-                            className="absolute top-6 right-6 text-gray-400 hover:text-white z-10 p-2 bg-black/10 dark:bg-white/10 rounded-full hover:bg-black/20 dark:hover:bg-white/20 transition-colors"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-
-                        <div className="flex-1 overflow-hidden p-8">
-                            <AiQuizGenerator
-                                adminId={currentUser.userId}
-                                onQuizCreated={() => {
-                                    onRefresh();
-                                    setIsAiModalOpen(false);
-                                    onNotification('success', 'Quiz Generated from AI!');
-                                }}
-                                onNotification={onNotification}
-                            />
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
 
             {/* Quiz Editor Modal */}
             {

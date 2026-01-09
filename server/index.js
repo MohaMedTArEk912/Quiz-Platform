@@ -86,7 +86,8 @@ app.use(cors({
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id'] // Keep x-user-id for now if legacy still sends it, but add Authorization
 }));
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ limit: '200mb', extended: true }));
 
 
 // Security Middleware
@@ -95,8 +96,10 @@ app.use(helmet());
 // Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 2000, // Relaxed limit for development
-  message: 'Too many requests from this IP, please try again after 15 minutes'
+  max: process.env.NODE_ENV === 'production' ? 500 : 2000, // Stricter in production
+  message: 'Too many requests from this IP, please try again after 15 minutes',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 app.use('/api', limiter);
 
