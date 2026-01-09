@@ -45,34 +45,38 @@ import aiRoutes from './routes/ai.js';
 import subjectRoutes from './routes/subjects.js';
 import aiStudioRoutes from './routes/aiStudio.js';
 
-const app = express();
-const httpServer = createServer(app);
-
-// Set timeout for long-running requests (like AI quiz generation)
-// IMPORTANT: In Vercel serverless, these settings are ignored.
-// Vercel enforces maxDuration in vercel.json (currently 900 seconds/15 minutes)
-// Only apply timeouts for non-serverless environments
+// IMPORTANT: Vercel serverless functions are not compatible with long-lived
+// HTTP servers / Socket.IO the same way as a traditional Node process.
+// Initialize Socket.IO only for non-serverless environments.
 const isServerless = !!process.env.VERCEL;
+
+const app = express();
+let httpServer = null;
+let io = null;
+
 if (!isServerless) {
+  httpServer = createServer(app);
+
+  // Set timeout for long-running requests (like AI quiz generation)
   httpServer.setTimeout(300000);           // Socket timeout: 5 minutes
-  httpServer.keepAliveTimeout = 300000;    // Keep-alive: 5 minutes  
+  httpServer.keepAliveTimeout = 300000;    // Keep-alive: 5 minutes
   httpServer.headersTimeout = 310000;      // Headers: ~5.2 minutes
+
+  // Socket.io configuration optimized for Netlify
+  io = new Server(httpServer, {
+    cors: {
+      origin: process.env.CLIENT_URL || ["http://localhost:5173", "http://localhost:3000", "https://thequizplatform.netlify.app"],
+      methods: ["GET", "POST"],
+      credentials: true
+    },
+    transports: ['websocket', 'polling'],
+    allowEIO3: true,
+    pingTimeout: 60000,
+    pingInterval: 25000
+  });
 }
 
-// Socket.io configuration optimized for Netlify
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CLIENT_URL || ["http://localhost:5173", "http://localhost:3000", "https://thequizplatform.netlify.app"],
-    methods: ["GET", "POST"],
-    credentials: true
-  },
-  transports: ['websocket', 'polling'],
-  allowEIO3: true,
-  pingTimeout: 60000,
-  pingInterval: 25000
-});
-
-// Attach IO to app for controllers
+// Attach IO to app for controllers (null on serverless)
 app.set('io', io);
 
 const PORT = process.env.PORT || 5000;
@@ -122,14 +126,17 @@ app.use(async (req, res, next) => {
   
   try {
     // Set a timeout for DB connection in serverless environments
+    let timeoutId;
     const connectionTimeout = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Database connection timeout')), 5000);
+      timeoutId = setTimeout(() => reject(new Error('Database connection timeout')), 5000);
     });
     
     await Promise.race([
       connectToDatabase(),
       connectionTimeout
     ]);
+
+    if (timeoutId) clearTimeout(timeoutId);
     
     next();
   } catch (error) {
@@ -164,8 +171,8 @@ app.use('/api/badge-nodes', badgeNodesRoutes);
 app.use('/api/badge-trees', badgeTreesRoutes);
 
 
-// Socket.io event handlers
-io.on('connection', (socket) => {
+// Socket.io event handlers (disabled on Vercel serverless)
+if (io) io.on('connection', (socket) => {
   if (process.env.NODE_ENV !== 'production') {
     console.log('✅ Client connected:', socket.id);
   }
@@ -276,9 +283,13 @@ app.use((req, res) => {
 // connectToDatabase(); // Removed to prevent cold-start crashes. Handled by middleware.
 
 if (process.env.NODE_ENV !== 'production') {
-  httpServer.listen(PORT, () => {
+  if (!httpServer) {
+    console.warn('⚠️  httpServer not initialized; running serverless mode.');
+  } else {
+    httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
+  }
 }
 
 export default app;
