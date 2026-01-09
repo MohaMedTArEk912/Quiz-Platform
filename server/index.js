@@ -126,15 +126,8 @@ app.use(async (req, res, next) => {
   
   try {
     // Set a timeout for DB connection in serverless environments
-    let timeoutId;
-    const connectionTimeout = new Promise((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error('Database connection timeout')), 5000);
-    });
-    
-    await Promise.race([
-      connectToDatabase(),
-      connectionTimeout
-    ]);
+    // Use Mongoose's internal connection logic
+    await connectToDatabase();
 
     if (timeoutId) clearTimeout(timeoutId);
     

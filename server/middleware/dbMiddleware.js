@@ -34,10 +34,10 @@ export async function connectToDatabase() {
   const opts = {
     maxPoolSize: 10,
     minPoolSize: 1,
-    serverSelectionTimeoutMS: 5000, // 5 seconds for serverless
-    connectTimeoutMS: 5000,
-    socketTimeoutMS: 20000,
-    heartbeatFrequencyMS: 10000,
+    serverSelectionTimeoutMS: 15000, // 15 seconds for serverless
+    connectTimeoutMS: 15000,
+    socketTimeoutMS: 30000,
+    heartbeatFrequencyMS: 15000,
     family: 4, // prefer IPv4 to avoid slow DNS/IPv6 fallbacks
   };
 

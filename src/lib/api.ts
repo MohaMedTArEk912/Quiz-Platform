@@ -180,12 +180,17 @@ export const api = {
         if (!response.ok) {
             let errorMessage = 'Failed to load quizzes';
             try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorMessage;
-                console.error('SERVER ERROR (getQuizzes):', errorData);
-            } catch (e) {
                 const text = await response.text();
-                console.error('SERVER ERROR (getQuizzes) [Non-JSON]:', text);
+                try {
+                    const errorData = JSON.parse(text);
+                    errorMessage = errorData.message || errorMessage;
+                    console.error('SERVER ERROR (getQuizzes):', errorData);
+                } catch {
+                    console.error('SERVER ERROR (getQuizzes) [Non-JSON]:', text);
+                    errorMessage = `Server Error (${response.status})`;
+                }
+            } catch (e) {
+                console.error('Failed to read response body:', e);
             }
             throw new Error(errorMessage);
         }
