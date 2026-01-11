@@ -11,10 +11,38 @@ Whether you are an institution looking to host exams, a coding bootcamp assessin
 ### 🎮 Gamified Learning Ecosystem
 Learning shouldn't be boring. We've built a system that rewards consistency and mastery.
 - **Interactive Quizzes**: Support for multiple formats including multiple-choice, true/false, and code-based questions.
+- **Multi-Line Questions**: **New!** Questions now support multi-line text formatting, perfect for code examples and complex scenarios.
+- **Image Support**: **New!** Attach images to questions for visual context, diagrams, and code screenshots.
 - **Blockly Integration**: **New!** A drag-and-drop coding interface that allows users to solve logic puzzles visually, with semantic grading that understands the *logic* of the code.
 - **XP & Leveling**: Earn Experience Points (XP) for every correct answer, leveling up to unlock prestige and new features.
 - **Dynamic Shop**: A virtual economy where users spend earned currency on power-ups (e.g., "50/50", "Time Freeze"), cosmetic avatars, and badges.
 - **Daily Challenges**: Unique, time-limited quizzes generated daily to keep engagement high.
+
+### 📝 Question Enhancement Features
+Create richer, more engaging quiz questions with our new features:
+- **Multi-Line Text Support**: 
+  - Questions can span multiple lines for better readability
+  - Perfect for code snippets, mathematical expressions, and detailed scenarios
+  - Preserves formatting with proper line breaks
+  - Example:
+    ```
+    What prints after the following code:
+    val = input('Num: ') (user types 5)
+    then print(val * 3)?
+    ```
+
+- **Image Attachments**:
+  - Add visual context to questions with image URLs
+  - Supports all standard image formats (PNG, JPG, GIF, WebP)
+  - Automatic preview in the admin panel
+  - Responsive display on all devices
+  - Example use cases:
+    - Code output screenshots
+    - Data structure diagrams
+    - UI/UX mockups
+    - Mathematical graphs
+    - Algorithm flowcharts
+
 
 ### 🤝 Social & Competitive Hub
 Knowledge is better shared. Our social suite connects learners.

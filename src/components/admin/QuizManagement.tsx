@@ -69,7 +69,40 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
                 </div>
             </div>
 
-            <input placeholder="Question Text" value={question.question} onChange={e => onChange({ ...question, question: e.target.value })} className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+            <div className="space-y-1">
+                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Question Text</label>
+                <textarea
+                    placeholder="Enter your question here (supports multiple lines)"
+                    value={question.question}
+                    onChange={e => onChange({ ...question, question: e.target.value })}
+                    className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[100px] resize-y"
+                    rows={4}
+                />
+            </div>
+
+            <div className="space-y-1">
+                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Image URL (Optional)</label>
+                <input
+                    type="url"
+                    placeholder="https://example.com/image.png"
+                    value={question.imageUrl || ''}
+                    onChange={e => onChange({ ...question, imageUrl: e.target.value })}
+                    className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                />
+                {question.imageUrl && (
+                    <div className="mt-2 p-2 bg-gray-50 dark:bg-black/20 rounded-lg border border-gray-200 dark:border-white/10">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Image Preview:</p>
+                        <img
+                            src={question.imageUrl}
+                            alt="Question preview"
+                            className="max-h-32 rounded-lg border border-gray-200 dark:border-gray-700 object-contain"
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                        />
+                    </div>
+                )}
+            </div>
 
             <div className="grid grid-cols-1 gap-2">
                 {/* Multiple Choice Editor */}
@@ -370,11 +403,12 @@ const QuizManagement: React.FC<QuizManagementProps> = ({ quizzes, currentUser, o
                     id: 1,
                     type: 'multiple-choice',
                     part: 'Part 1',
-                    question: 'Multiple Choice Example',
+                    question: 'What prints after: val = input(\'Num: \') (user types 5) then print(val * 3)?',
                     options: ['Option A', 'Option B', 'Option C', 'Option D'],
                     correctAnswer: 0,
                     points: 10,
-                    explanation: 'Explanation for the correct answer.'
+                    explanation: 'Explanation for the correct answer.',
+                    imageUrl: 'https://example.com/question-image.png' // Optional: Add image URL here
                 },
                 {
                     id: 2,

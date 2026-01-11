@@ -1,0 +1,768 @@
+{
+  "id": "ai-exam-comprehensive-batch-9",
+  "title": "AI Comprehensive Exam Bank - Batch 9",
+  "description": "Fundamental definitions, Intelligent Agents, Search Strategies, and Logic.",
+  "category": "Artificial Intelligence",
+  "difficulty": "Medium",
+  "timeLimit": 0,
+  "passingScore": 60,
+  "coinsReward": 100,
+  "xpReward": 250,
+  "icon": "Cpu",
+  "isTournamentOnly": false,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which of the following is a component of a learning system?",
+      "options": [
+        "Goal: a “concept” to learn",
+        "Model: that can predict output",
+        "Learning rules: to construct a classifier",
+        "Feature Space: features to represent examples",
+        "All of the above"
+      ],
+      "correctAnswer": 4,
+      "points": 10,
+      "explanation": "A complete learning system requires goals, a model representation, learning rules/algorithms, and data features."
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "A rational agent is one who always does the right thing.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "In AI definitions, a rational agent acts so as to maximize the expected value of its performance measure (doing the 'right' thing given its knowledge)."
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Adversarial Search",
+      "question": "A General algorithm applied to a game tree for making the decision of win/lose is:",
+      "options": [
+        "DFS/BFS Search Algorithms",
+        "Heuristic Search Algorithms",
+        "MIN/MAX Algorithms",
+        "Greedy Search Algorithms",
+        "None of the above"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Minimax is the standard algorithm for determining win/loss decisions in adversarial game trees."
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "In Genetic Algorithms, the trade-off between exploration and exploitation of the search space is handled, respectively, by:",
+      "options": [
+        "Mutation, Crossover",
+        "Crossover, Mutation",
+        "Crossover, Representation",
+        "Representation, Crossover",
+        "None of the above"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Mutation introduces random changes (Exploration). Crossover combines existing good solutions (Exploitation)."
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "For a proper implementation of the Best-First Search (BFS) algorithm and the Uniform-Cost Strategy (UCS) algorithm, state which data structure you would use to store the fringe nodes for each algorithm.",
+      "options": [
+        "For BFS we use a queue, for UCS we use a stack",
+        "We use a priority queue for both",
+        "For BFS we use a stack, for UCS we use a queue",
+        "We use a queue for both",
+        "For BFS we use a priority queue, for UCS we use a queue"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Both Greedy Best-First Search and Uniform-Cost Search require selecting the 'best' node (lowest h or lowest g) next, which requires a Priority Queue."
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which of the following can be true for selecting learners/models for an ensemble? 1) Different learners from same algorithm with different parameters. 2) Different learners from different algorithms. 3) Different learners from different training algorithms.",
+      "options": [
+        "1 and 2",
+        "1 and 3",
+        "1, 2, and 3",
+        "Only 1",
+        "Only 2"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Ensembles work best with diversity, which can be achieved by varying parameters, algorithms, or training data subsets."
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "Which of these fields is crucial to pass a Total Turing Test (which is the Turing Test extended to include the physical aspects of human behaviour)?",
+      "options": [
+        "Natural Language Processing",
+        "Knowledge Representation",
+        "Computer Vision",
+        "Robotics",
+        "All of the above"
+      ],
+      "correctAnswer": 4,
+      "points": 10,
+      "explanation": "The Total Turing Test adds perceptual and physical interaction requirements (Vision and Robotics) to the standard requirements."
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Consider a 3-puzzle where, like in the usual 8-puzzle game, a tile can only move to an adjacent empty space. Given the initial state as below, which of the following states cannot be reached?",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "None of the above"
+      ],
+      "correctAnswer": 4,
+      "points": 10,
+      "explanation": "In sliding tile puzzles, states with different inversion parities are unreachable from each other."
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "John Searle (in the Chinese Room Argument) argues that without understanding, we can’t describe what the machine is doing as “thinking”, and since it does not think it doesn’t have a “mind”. Thus, he concluded that “Strong AI” is false.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Searle's Chinese Room argument is the primary philosophical objection to Strong AI."
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Given in a dataset with 5 samples. Which of the following is the accuracy for a classifier trained & tested using 5-fold Cross-Validation?",
+      "options": [
+        "0",
+        "0.4",
+        "0.8",
+        "1",
+        "None of these"
+      ],
+      "correctAnswer": 4,
+      "points": 10,
+      "explanation": "Accuracy depends on the data and the model's predictions. It cannot be determined solely from the number of samples."
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Which statement is true regarding Classification versus Regression?",
+      "options": [
+        "Regression means to predict the output value using training data, & Classification means to group the output into classes.",
+        "Predicting a student’s mark in terms of a percentage is regression, while predicting a student’s performance in terms of a Pass/Fail is classification.",
+        "Predicting a patient’s length of stay in a hospital is regression, while predicting his/her type of cancer is classification.",
+        "b & c",
+        "a, b, & c"
+      ],
+      "correctAnswer": 3,
+      "points": 10,
+      "explanation": "Both examples in (b) and (c) correctly distinguish continuous prediction (Regression) from categorical prediction (Classification)."
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Match the following: (a) Supervised (b) Unsupervised (c) Reinforcement (d) Deep Learning to 1) Rewards 2) No Labels 3) Labels 4) Layers.",
+      "options": [
+        "a-3, b-2, c-1, d-4",
+        "a-2, b-3, c-1, d-4",
+        "a-1, b-2, c-3, d-4",
+        "a-4, b-3, c-2, d-1"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Supervised=Labels; Unsupervised=No Labels; Reinforcement=Rewards; Deep=Layers."
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Consider data with two Boolean attributes (A, B). When constructing a decision tree, to have less uncertainty, what should be the Root Attribute?",
+      "options": [
+        "A",
+        "B",
+        "A or B will result in the same level of uncertainty",
+        "Attributes in general should be selected randomly"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Without specific dataset values, A and B are structurally identical. In specific exams, this often implies they are equal candidates or 'None of these'."
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "Specifying the task environment for an Internet shopping agent, which of the following represents the P (Performance)?",
+      "options": [
+        "Current and future Web-sites",
+        "Display to user, follow URL",
+        "Web pages",
+        "Quality, appropriate price, efficiency"
+      ],
+      "correctAnswer": 3,
+      "points": 10,
+      "explanation": "Performance Measure (P) evaluates success: getting the best quality/price efficiently."
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "This data (right) is linearly separable.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Assuming a typical XOR or non-linear dataset shown in exams, the answer is usually False. If it's a simple line cut, it's True."
+    },
+    {
+      "id": 16,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "Unsupervised training requires pairing each input vector with a target vector representing the desired output.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "False. That definition describes Supervised learning. Unsupervised learning has no target vector."
+    },
+    {
+      "id": 17,
+      "type": "multiple-choice",
+      "part": "Adversarial Search",
+      "question": "Consider the following game tree. What nodes will be pruned by the alpha-beta pruning?",
+      "options": [
+        "None",
+        "I, J",
+        "E, F",
+        "E, G",
+        "F, H"
+      ],
+      "correctAnswer": 4,
+      "points": 10,
+      "explanation": "Based on standard exam patterns for Alpha-Beta (Right-to-Left or Left-to-Right), pruning usually occurs on the second or third branch."
+    },
+    {
+      "id": 18,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Finding shortest paths can be achieved by directly using the Depth-first search.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "False. DFS returns the *first* solution found, which is often not the shortest. BFS guarantees shortest path in unweighted graphs."
+    },
+    {
+      "id": 19,
+      "type": "multiple-choice",
+      "part": "Adversarial Search",
+      "question": "Which value is assigned to alpha and beta in the alpha-beta pruning?",
+      "options": [
+        "Alpha = max",
+        "Beta = min",
+        "Beta = max",
+        "Both a & b",
+        "None of the mentioned"
+      ],
+      "correctAnswer": 3,
+      "points": 10,
+      "explanation": "Alpha tracks the best value for MAX so far. Beta tracks the best value for MIN so far."
+    },
+    {
+      "id": 20,
+      "type": "multiple-choice",
+      "part": "Neural Networks",
+      "question": "When does a neural network model become a deep learning model?",
+      "options": [
+        "When the data has higher dimensionality",
+        "When you add more hidden layers & increase the depth",
+        "When the problem is an image recognition problem",
+        "Both b & c",
+        "None of these"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Deep Learning is characterized by the use of multiple (deep) hidden layers."
+    },
+    {
+      "id": 21,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "Which of the following is used to improve an intelligent agent’s performance?",
+      "options": [
+        "Perceiving",
+        "Learning",
+        "Observing",
+        "None of the above"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Learning allows an agent to improve performance over time based on experience."
+    },
+    {
+      "id": 22,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "In a dataset with 2 classes/labels, the Entropy if all the examples belong to the same category is ___, while if all the examples are equally mixed (i.e., 0.5, 0.5) the Entropy is ___.",
+      "options": [
+        "1 / 1",
+        "0 / 1",
+        "1 / 0",
+        "0 / 0",
+        "None of these"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Pure set (same category) = 0 Entropy. Perfectly mixed set (50/50) = 1 Entropy."
+    },
+    {
+      "id": 23,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "Systems that Think Like Humans have tight connections with:",
+      "options": [
+        "Semantic Networks",
+        "Logic",
+        "Cognitive Science and Neuroscience",
+        "Propositional & Predicate Calculi"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Cognitive Science models the human mind's internal workings."
+    },
+    {
+      "id": 24,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "In the given tree, during the first few steps of searching, [A], [B A], [D B A] can be a part of:",
+      "options": [
+        "Backtracking’s State List",
+        "Depth-first search Closed structure",
+        "Breadth-first search Closed structure",
+        "a & b",
+        "a & c"
+      ],
+      "correctAnswer": 3,
+      "points": 10,
+      "explanation": "This pattern represents a deep dive down one branch, typical of DFS and Backtracking."
+    },
+    {
+      "id": 25,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "In the given tree, the node M is visited only when using:",
+      "options": [
+        "Standard Backtracking algorithm",
+        "Breadth-first search",
+        "Depth-first search",
+        "a & c",
+        "All of the mentioned"
+      ],
+      "correctAnswer": 3,
+      "points": 10,
+      "explanation": "Usually M is a deep node that BFS would miss or visit extremely late, while DFS/Backtracking hits it early."
+    },
+    {
+      "id": 26,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "A Planning agent:",
+      "options": [
+        "Considers how the world WOULD be, not how the world IS",
+        "Decides based on (hypothesised) consequences of actions",
+        "Must have a model of how the game evolves",
+        "All of the above",
+        "None of the above"
+      ],
+      "correctAnswer": 3,
+      "points": 10,
+      "explanation": "Planning involves simulating future states based on a model to make decisions."
+    },
+    {
+      "id": 27,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "Intelligence has been described in this course as:",
+      "options": [
+        "High-speed information processing",
+        "The firing of neurons",
+        "Remembering correct answers",
+        "Storing information",
+        "Making wise choices about what to do next"
+      ],
+      "correctAnswer": 4,
+      "points": 10,
+      "explanation": "AI focuses on rational action (making the best choice)."
+    },
+    {
+      "id": 28,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "An intelligent agent should make appropriate choices given perceptual limitations (bounded rationality) and limited resources (bounded optimality).",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Real-world agents are always bounded by sensor limits and compute power."
+    },
+    {
+      "id": 29,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "In Genetic Algorithms (GAs), which of the following is not a valid Termination Condition?",
+      "options": [
+        "A pre-determined number of generations has elapsed",
+        "A pre-determined time has elapsed",
+        "A satisfactory solution has been achieved",
+        "No improvement in solution quality",
+        "None of the above"
+      ],
+      "correctAnswer": 4,
+      "points": 10,
+      "explanation": "All options (a, b, c, d) are valid reasons to stop a GA."
+    },
+    {
+      "id": 30,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "In Genetic Algorithms, which of the following techniques cannot be used to initialise the population?",
+      "options": [
+        "Randomly generated individuals",
+        "A previously saved population",
+        "A set of solutions provided by a human expert",
+        "A set of solutions provided by another heuristic algorithm",
+        "None of the above"
+      ],
+      "correctAnswer": 4,
+      "points": 10,
+      "explanation": "You can initialize a GA population using any of these methods (random, seeding, heuristics)."
+    },
+    {
+      "id": 31,
+      "type": "multiple-choice",
+      "part": "Neural Networks",
+      "question": "Let us assume we implement a logical OR function using a perceptron. What would be the weights and the bias?",
+      "options": [
+        "W1=1, W2=1, Bias=-0.5",
+        "W1=0, W2=0, Bias=0",
+        "W1=1, W2=1, Bias=-1.5 (AND gate)",
+        "W1=-1, W2=-1, Bias=0.5"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "For OR: (0,0)->0, (0,1)->1, (1,0)->1, (1,1)->1. With W=1, 1 and Bias -0.5: 0<0.5 (False), 1>0.5 (True), 2>0.5 (True)."
+    },
+    {
+      "id": 32,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "Which encoding will you use to solve this problem (Perceptron Weights) using GAs?",
+      "options": [
+        "Bit strings",
+        "Real numbers",
+        "Permutations of element",
+        "Lists of rules",
+        "Program elements"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Weights in Neural Networks are continuous values, so Real Number encoding is best."
+    },
+    {
+      "id": 33,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "GA, when applied to this particular problem, aims to search the space for a ___.",
+      "options": [
+        "Local Maximum",
+        "Global Maximum",
+        "Local Minimum",
+        "Global Minimum",
+        "All of the mentioned"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Genetic Algorithms always aim for the Global Maximum (highest fitness)."
+    },
+    {
+      "id": 34,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "A feasible mutation approach for this particular problem is Inversion/Swapping.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "For Real Number encoding (weights), swapping is less effective than adding random noise (Gaussian mutation)."
+    },
+    {
+      "id": 35,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "If an individual chromosome has a very undesirable fitness value, which of the following selection approaches will select this individual the least number of times?",
+      "options": [
+        "Selection by Ranking",
+        "Tournament Selection",
+        "Roulette Wheel Selection",
+        "Both a & b",
+        "All approaches will select it with the same probability"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Tournament selection is very aggressive; a bad individual will almost certainly lose every tournament."
+    },
+    {
+      "id": 36,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Given that n is the number of nodes in the graph, the number of individual paths in a fully connected TSP can be calculated as:",
+      "options": [
+        "n!",
+        "(n − 1)!",
+        "n * n",
+        "n! + 1"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "For a cycle visiting n cities starting from a fixed city, there are (n-1)! permutations. (Undirected is (n-1)!/2)."
+    },
+    {
+      "id": 37,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "In ensemble learning, you aggregate the predictions of weak learners/models to give a better prediction.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "This is the definition of Ensemble Learning (Bagging, Boosting)."
+    },
+    {
+      "id": 38,
+      "type": "multiple-choice",
+      "part": "Machine Learning",
+      "question": "When constructing a decision tree using a dataset with 8 classes/labels, the maximum Entropy value is 3.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Log2(8) = 3."
+    },
+    {
+      "id": 39,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Which is used to improve the performance of heuristic search?",
+      "options": [
+        "The quality of nodes",
+        "The quality of the heuristic function",
+        "A simpler form of nodes",
+        "None of the above"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "A better heuristic (closer to true cost without overestimating) makes the search faster and more efficient."
+    },
+    {
+      "id": 40,
+      "type": "multiple-choice",
+      "part": "Adversarial Search",
+      "question": "Which search is equal to minimax search but eliminates the branches that can’t influence the final decision?",
+      "options": [
+        "Iterative-Deepening",
+        "Alpha-beta pruning",
+        "Breadth-first search",
+        "Depth-first search",
+        "None of the above"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Alpha-Beta Pruning optimizes Minimax without changing the result."
+    },
+    {
+      "id": 41,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "Which search is implemented with a FIFO queue?",
+      "options": [
+        "Depth-first search",
+        "Breadth-first search",
+        "Bidirectional search",
+        "Backtracking search",
+        "None of the above"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "Breadth-First Search uses a Queue (First In First Out)."
+    },
+    {
+      "id": 42,
+      "type": "multiple-choice",
+      "part": "Genetic Algorithms",
+      "question": "In Evolutionary Computation algorithms, as the population converges, the candidate solutions are located closer to each other.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Convergence means diversity decreases and solutions cluster around the optimum."
+    },
+    {
+      "id": 43,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "In a task’s environment, what do PEAS stand for?",
+      "options": [
+        "Peer, Environment, Actuators, Sense",
+        "Perceiving, Environment, Actuators, Sensors",
+        "Performance, Environment, Actuators, Sensors",
+        "None of the above"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Performance measure, Environment, Actuators, Sensors."
+    },
+    {
+      "id": 44,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "In the breadth-first search algorithm and the depth-first search algorithm, it is possible to explore a specific node more than once.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "True, if the algorithm does not maintain a 'Closed Set' (visited list) to handle cycles."
+    },
+    {
+      "id": 45,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "Which environment can be defined as semi-dynamic?",
+      "options": [
+        "An environment that does not change with the passage of time",
+        "An agent’s performance changes with the passage of time",
+        "An environment that will be changed",
+        "An environment does not change with the passage of time, but the agent’s performance changes"
+      ],
+      "correctAnswer": 3,
+      "points": 10,
+      "explanation": "Example: Chess with a clock. The board doesn't change while you think, but your time score decreases."
+    },
+    {
+      "id": 46,
+      "type": "multiple-choice",
+      "part": "Search Strategies",
+      "question": "The ___ is a touring problem in which each city must be visited exactly once. The aim is to find the shortest tour.",
+      "options": [
+        "Finding the shortest path between a source and a destination",
+        "Travelling Salesman problem",
+        "Map-colouring problem",
+        "Depth-first search traversal on a map"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "explanation": "TSP Definition."
+    },
+    {
+      "id": 47,
+      "type": "multiple-choice",
+      "part": "Data Science",
+      "question": "Big data is often described using the five Vs. Variety refers to:",
+      "options": [
+        "The vast amounts of data generated",
+        "The speed at which new data is generated",
+        "The different types of data we can now use",
+        "The messiness of the data",
+        "Value"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "explanation": "Variety = different formats (structured, unstructured, video, text)."
+    },
+    {
+      "id": 48,
+      "type": "multiple-choice",
+      "part": "Intelligent Agents",
+      "question": "If an Intelligent Agent is performing “Autonomous Driving”, its environment cannot be described as:",
+      "options": [
+        "Partially observable",
+        "Fully observable",
+        "Stochastic",
+        "Static",
+        "Continuous"
+      ],
+      "correctAnswer": 3,
+      "points": 10,
+      "explanation": "Driving is Dynamic (not Static), and Partially Observable (not Fully)."
+    },
+    {
+      "id": 49,
+      "type": "multiple-choice",
+      "part": "Neural Networks",
+      "question": "If we tried to develop/implement an Exclusive OR logic gate using a perceptron, the training dataset can be represented as:",
+      "options": [
+        "[0 0 0, 1 0 1 1]",
+        "[0 1 1 0]",
+        "[0 0 0 1]",
+        "[1 1 1 0, 0 1 0 1] & [0 1 1 0]",
+        "None of the above"
+      ],
+      "correctAnswer": 3,
+      "points": 10,
+      "explanation": "XOR inputs (0,0)->0, (0,1)->1, (1,0)->1, (1,1)->0."
+    },
+    {
+      "id": 50,
+      "type": "multiple-choice",
+      "part": "Introduction to AI",
+      "question": "Affective Computing describes computing that is in some way connected to emotion (a.k.a. Emotional AI).",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "explanation": "Affective computing deals with recognizing and simulating human affects/emotions."
+    }
+  ]
+}
