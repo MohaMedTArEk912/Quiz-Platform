@@ -1,0 +1,707 @@
+{
+  "_id": "logical-operators-quiz",
+  "id": "python-logical-operators-quiz",
+  "title": "Python Logical Operators Quiz",
+  "category": "Python",
+  "coinsReward": 300,
+  "description": "Master logical operators (AND, OR, NOT) in programming.",
+  "difficulty": "Medium",
+  "icon": "Python",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Part 1: AND Operator",
+      "question": "What does the AND operator require to return True?",
+      "options": [
+        "At least one True",
+        "Both must be True",
+        "Both must be False",
+        "One True, one False"
+      ],
+      "correctAnswer": 1,
+      "explanation": "AND requires both conditions to be True to return True.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Part 1: AND Operator",
+      "question": "True AND False equals?",
+      "options": [
+        "True",
+        "False",
+        "Maybe",
+        "Error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "AND needs both True. One False makes the whole expression False.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Part 2: OR Operator",
+      "question": "What does the OR operator require to return True?",
+      "options": [
+        "Both must be True",
+        "At least one True",
+        "Both must be False",
+        "Exactly one True"
+      ],
+      "correctAnswer": 1,
+      "explanation": "OR returns True if at least one condition is True.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Part 2: OR Operator",
+      "question": "False OR True equals?",
+      "options": [
+        "True",
+        "False",
+        "Maybe",
+        "Error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "OR needs at least one True. True OR anything is True.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Part 3: NOT Operator",
+      "question": "What does the NOT operator do?",
+      "options": [
+        "Adds values",
+        "Inverts True/False",
+        "Compares values",
+        "Multiplies values"
+      ],
+      "correctAnswer": 1,
+      "explanation": "NOT flips the value: True becomes False, False becomes True.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Part 3: NOT Operator",
+      "question": "NOT(True) equals?",
+      "options": [
+        "True",
+        "False",
+        "Maybe",
+        "None"
+      ],
+      "correctAnswer": 1,
+      "explanation": "NOT inverts: NOT(True) = False.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Part 4: Truth Tables",
+      "question": "True AND True equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "None"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Both are True, so AND returns True.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Part 4: Truth Tables",
+      "question": "False OR False equals?",
+      "options": [
+        "True",
+        "False",
+        "Maybe",
+        "Error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "OR needs at least one True. Both False = False.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Part 1: AND Operator",
+      "question": "If A=False, B=True, A AND B equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "Maybe"
+      ],
+      "correctAnswer": 1,
+      "explanation": "AND needs both True. One False makes it False.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Part 2: OR Operator",
+      "question": "If X=False, Y=True, X OR Y equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "Maybe"
+      ],
+      "correctAnswer": 0,
+      "explanation": "OR needs at least one True. Y=True, so result is True.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Part 3: NOT Operator",
+      "question": "If value=True, NOT(value) equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "Maybe"
+      ],
+      "correctAnswer": 1,
+      "explanation": "NOT inverts True to False.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Part 4: Truth Tables",
+      "question": "False AND True equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "Maybe"
+      ],
+      "correctAnswer": 1,
+      "explanation": "AND needs both True. One False = False.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Part 4: Truth Tables",
+      "question": "True OR False equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "Maybe"
+      ],
+      "correctAnswer": 0,
+      "explanation": "OR needs at least one True. First is True = True.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Part 5: Combined Logic",
+      "question": "NOT(False AND True) equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "None"
+      ],
+      "correctAnswer": 0,
+      "explanation": "First: False AND True = False. Then NOT(False) = True.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Part 5: Combined Logic",
+      "question": "NOT(True OR False) equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "None"
+      ],
+      "correctAnswer": 1,
+      "explanation": "First: True OR False = True. Then NOT(True) = False.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 16,
+      "type": "multiple-choice",
+      "part": "Part 1: AND Operator",
+      "question": "When checking if both condition1 AND condition2 are met, what must be true?",
+      "options": [
+        "Either one",
+        "Both",
+        "Neither",
+        "Only first"
+      ],
+      "correctAnswer": 1,
+      "explanation": "AND requires both conditions to be True.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 17,
+      "type": "multiple-choice",
+      "part": "Part 2: OR Operator",
+      "question": "When checking if condition1 OR condition2 is met, what must be true?",
+      "options": [
+        "Both",
+        "At least one",
+        "Neither",
+        "Only first"
+      ],
+      "correctAnswer": 1,
+      "explanation": "OR needs at least one condition to be True.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 18,
+      "type": "multiple-choice",
+      "part": "Part 3: NOT Operator",
+      "question": "If flag=False, NOT(flag) equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "None"
+      ],
+      "correctAnswer": 0,
+      "explanation": "NOT inverts False to True.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 19,
+      "type": "multiple-choice",
+      "part": "Part 4: Truth Tables",
+      "question": "True AND False AND True equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "Maybe"
+      ],
+      "correctAnswer": 1,
+      "explanation": "AND chain: one False makes entire chain False.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "type": "multiple-choice",
+      "part": "Part 4: Truth Tables",
+      "question": "False OR False OR True equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "Maybe"
+      ],
+      "correctAnswer": 0,
+      "explanation": "OR chain: one True makes entire chain True.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 21,
+      "type": "multiple-choice",
+      "part": "Part 5: Combined Logic",
+      "question": "NOT(False) AND True equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "None"
+      ],
+      "correctAnswer": 0,
+      "explanation": "NOT(False)=True, then True AND True = True.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 22,
+      "type": "multiple-choice",
+      "part": "Part 5: Combined Logic",
+      "question": "NOT(True OR True) equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "None"
+      ],
+      "correctAnswer": 1,
+      "explanation": "First: True OR True = True. Then NOT(True) = False.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 23,
+      "type": "multiple-choice",
+      "part": "Part 6: Python Syntax",
+      "question": "In Python, which keyword represents AND?",
+      "options": [
+        "&&",
+        "and",
+        "&",
+        "AND"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Python uses 'and' (lowercase) as the logical AND operator.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 24,
+      "type": "multiple-choice",
+      "part": "Part 6: Python Syntax",
+      "question": "In Python, which keyword represents OR?",
+      "options": [
+        "||",
+        "or",
+        "|",
+        "OR"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Python uses 'or' (lowercase) as the logical OR operator.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 25,
+      "type": "multiple-choice",
+      "part": "Part 6: Python Syntax",
+      "question": "In Python, which keyword represents NOT?",
+      "options": [
+        "!",
+        "not",
+        "~",
+        "NOT"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Python uses 'not' (lowercase) as the logical NOT operator.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 26,
+      "type": "multiple-choice",
+      "part": "Part 6: Python Syntax",
+      "question": "Which code checks if both A and B are True?",
+      "options": [
+        "A or B",
+        "A and B",
+        "not A",
+        "A == B"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The AND operator (and) checks if both conditions are True.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 27,
+      "type": "multiple-choice",
+      "part": "Part 6: Python Syntax",
+      "question": "Which code checks if either A or B is True?",
+      "options": [
+        "A or B",
+        "A and B",
+        "not A",
+        "A == B"
+      ],
+      "correctAnswer": 0,
+      "explanation": "The OR operator (or) checks if at least one condition is True.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 28,
+      "type": "multiple-choice",
+      "part": "Part 6: Python Syntax",
+      "question": "Which code checks if A is False?",
+      "options": [
+        "A or B",
+        "A and B",
+        "not A",
+        "A == B"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The NOT operator (not) inverts: not True = False, not False = True.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 29,
+      "type": "multiple-choice",
+      "part": "Part 5: Combined Logic",
+      "question": "(True and False) or (True) equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "None"
+      ],
+      "correctAnswer": 0,
+      "explanation": "First: True and False = False. Then: False or True = True.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    },
+    {
+      "id": 30,
+      "type": "multiple-choice",
+      "part": "Part 5: Combined Logic",
+      "question": "not(False or False) equals?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "None"
+      ],
+      "correctAnswer": 0,
+      "explanation": "First: False or False = False. Then: not(False) = True.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      }
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 30,
+  "xpReward": 500
+}
