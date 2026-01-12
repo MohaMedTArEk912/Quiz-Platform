@@ -1,22 +1,20 @@
 {
   "version": 2,
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/index.js"
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
     },
     {
-      "source": "/socket.io/:path*",
-      "destination": "/api/index.js"
-    }
-  ],
-  "routes": [
+      "src": "/socket.io/(.*)",
+      "dest": "/api/index.js"
+    },
     {
       "src": "/assets/(.*)",
       "dest": "/assets/$1"
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot|json|xml|txt))",
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot|json|xml|txt))$",
       "dest": "/$1"
     },
     {
@@ -26,7 +24,7 @@
   ],
   "headers": [
     {
-      "source": "/assets/(.*).js",
+      "source": "/assets/(.*)\\.js$",
       "headers": [
         {
           "key": "Content-Type",
@@ -35,7 +33,7 @@
       ]
     },
     {
-      "source": "/assets/(.*).css",
+      "source": "/assets/(.*)\\.css$",
       "headers": [
         {
           "key": "Content-Type",
@@ -44,7 +42,7 @@
       ]
     },
     {
-      "source": "/(.*).js",
+      "source": "/(.*)\\.js$",
       "headers": [
         {
           "key": "Content-Type",
@@ -53,7 +51,7 @@
       ]
     },
     {
-      "source": "/(.*).css",
+      "source": "/(.*)\\.css$",
       "headers": [
         {
           "key": "Content-Type",
