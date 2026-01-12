@@ -118,6 +118,11 @@ export const importQuizzes = async (req, res) => {
       if (quiz.questions && Array.isArray(quiz.questions)) {
         quiz.questions = sanitizeQuestions(quiz.questions, quiz.id);
       }
+
+      // Remove _id to avoid CastError if it's not a valid ObjectId
+      if (quiz._id) {
+        delete quiz._id;
+      }
       
       try {
         const updated = await Quiz.findOneAndUpdate(
