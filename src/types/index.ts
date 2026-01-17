@@ -10,6 +10,7 @@ export interface Quiz {
     coinsReward?: number;
     xpReward?: number;
     icon: string;
+    subjectId?: string;
     isTournamentOnly?: boolean;
     linkedTrackId?: string;
     linkedModuleId?: string;
@@ -353,4 +354,29 @@ export interface Clan {
         createdAt: string;
     }[];
     createdAt: string;
+}
+
+export interface Material {
+    _id: string;
+    title: string;
+    type: 'lesson' | 'exam_raw' | 'exam_processed' | 'content' | 'exam';
+    isProcessed: boolean;
+    uploadedAt: string;
+    summary?: string;
+    extractedQuestions?: any[];
+    originalName?: string;
+    currentName?: string;
+    status?: 'unchanged' | 'renamed' | 'replaced';
+    replacementFile?: File;
+    isEditingName?: boolean;
+}
+
+export interface Subject {
+    _id: string;
+    title: string;
+    description: string;
+    icon: string;
+    materials: Material[];
+    createdAt: string;
+    oldQuestions?: any[];
 }

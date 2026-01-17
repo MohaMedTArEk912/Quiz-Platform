@@ -1,0 +1,498 @@
+{
+  "_id": "6967ba3825a1f3ce4f97384e",
+  "id": "python-jr-s01-s03",
+  "__v": 0,
+  "category": "Python",
+  "coinsReward": 10,
+  "description": "Python basics quiz covering Variables, print(), Variable Names, Boolean, and Arithmetic Operators",
+  "difficulty": "Beginner",
+  "icon": "🐍",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Part 1: Variables Basics",
+      "question": "Which symbol is used to store a value in a variable in Python?",
+      "options": [
+        "==",
+        "=",
+        ":",
+        "->"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The = sign stores a value in a variable.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15c9c"
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Part 1: Variables Basics",
+      "question": "What does this line mean?\n\nx = 3",
+      "options": [
+        "Check if x equals 3",
+        "Print 3",
+        "Store number 3 in x",
+        "Delete x"
+      ],
+      "correctAnswer": 2,
+      "explanation": "x = 3 stores the number 3 in the variable x.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15c9d"
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Part 1: Variables Basics",
+      "question": "Which line correctly stores a name in Python?",
+      "options": [
+        "name = Nora",
+        "name == \"Nora\"",
+        "name = \"Nora\"",
+        "\"Nora\" = name"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Strings must be inside quotes.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15c9e"
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Part 1: Variables Basics",
+      "question": "Which one stores a NUMBER?",
+      "options": [
+        "age = \"8\"",
+        "age = eight",
+        "age = 8",
+        "\"age\" = 8"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Numbers are stored without quotes.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15c9f"
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Part 2: print()",
+      "question": "What does print() do?",
+      "options": [
+        "Stores data",
+        "Deletes data",
+        "Shows output",
+        "Creates variables"
+      ],
+      "correctAnswer": 2,
+      "explanation": "print() shows output on the screen.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15ca0"
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Part 2: print()",
+      "question": "What will be printed?\n\nx = 23\nprint(x)",
+      "options": [
+        "x",
+        "\"x\"",
+        "23",
+        "error"
+      ],
+      "correctAnswer": 2,
+      "explanation": "print(x) prints the value stored in x.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15ca1"
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Part 2: print()",
+      "question": "What will Python print?\n\nprint(\"nora\")",
+      "options": [
+        "nora",
+        "\"nora\"",
+        "Nora",
+        "error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "print() displays text without quotes.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15ca2"
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Part 3: Variable Names",
+      "question": "Which variable name is VALID?",
+      "options": [
+        "1name",
+        "my-name",
+        "_name",
+        "name!"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Variable names can start with a letter or underscore.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15ca3"
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Part 3: Variable Names",
+      "question": "Which variable name is NOT allowed?",
+      "options": [
+        "fruit",
+        "_fruit",
+        "Fruit",
+        "9fruit"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Variable names cannot start with a number.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15ca4"
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Part 3: Variable Names",
+      "question": "Why does Python show ERROR?",
+      "options": [
+        "When Python is slow",
+        "When syntax rules are broken",
+        "When printing text",
+        "When using numbers"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Errors happen when syntax rules are broken.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15ca5"
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Part 4: Boolean",
+      "question": "Which value is a Boolean in Python?",
+      "options": [
+        "\"True\"",
+        "true",
+        "True",
+        "YES"
+      ],
+      "correctAnswer": 2,
+      "explanation": "True is a Boolean value in Python.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15ca6"
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Part 4: Boolean",
+      "question": "What will this code print?\n\nhungry = False\nprint(hungry)",
+      "options": [
+        "\"False\"",
+        "false",
+        "False",
+        "0"
+      ],
+      "correctAnswer": 2,
+      "explanation": "print() shows the Boolean value False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15ca7"
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Part 4: Boolean",
+      "question": "Which one means YES in Python?",
+      "options": [
+        "Yes",
+        "true",
+        "1",
+        "True"
+      ],
+      "correctAnswer": 3,
+      "explanation": "True represents YES in Python.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15ca8"
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Part 4: Boolean",
+      "question": "What is the type of True?",
+      "options": [
+        "String",
+        "Number",
+        "Boolean",
+        "Character"
+      ],
+      "correctAnswer": 2,
+      "explanation": "True is a Boolean value.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15ca9"
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Part 5: Arithmetic Operators",
+      "question": "What is the result of 5 + 3?",
+      "options": [
+        "8",
+        "53",
+        "15",
+        "Error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "5 + 3 equals 8.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15caa"
+    },
+    {
+      "id": 16,
+      "type": "multiple-choice",
+      "part": "Part 5: Arithmetic Operators",
+      "question": "Which symbol is used for multiplication?",
+      "options": [
+        "x",
+        "*",
+        "+",
+        "/"
+      ],
+      "correctAnswer": 1,
+      "explanation": "* is the multiplication operator.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15cab"
+    },
+    {
+      "id": 17,
+      "type": "multiple-choice",
+      "part": "Part 5: Arithmetic Operators",
+      "question": "What will this code print?\n\nprint(10 - 4)",
+      "options": [
+        "6",
+        "14",
+        "Error",
+        "10"
+      ],
+      "correctAnswer": 0,
+      "explanation": "10 minus 4 equals 6.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15cac"
+    },
+    {
+      "id": 18,
+      "type": "multiple-choice",
+      "part": "Part 5: Arithmetic Operators",
+      "question": "What is the output of:\n\nprint(10 / 2)",
+      "options": [
+        "5",
+        "2",
+        "20",
+        "Error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "10 divided by 2 equals 5.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15cad"
+    },
+    {
+      "id": 19,
+      "type": "multiple-choice",
+      "part": "Part 5: Arithmetic Operators",
+      "question": "What happens if you add a number and a string?",
+      "options": [
+        "It works",
+        "Python converts them",
+        "Error happens",
+        "Python ignores it"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Strings and numbers cannot be added together.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15cae"
+    },
+    {
+      "id": 20,
+      "type": "multiple-choice",
+      "part": "Part 5: Arithmetic Operators",
+      "question": "What is the result of:\n\nprint(2 * 5)",
+      "options": [
+        "10",
+        "7",
+        "25",
+        "Error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "2 multiplied by 5 equals 10.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6967ba381aef2ea2e7e15caf"
+    }
+  ],
+  "reviewMode": false,
+  "timeLimit": 25,
+  "title": "Python JR Session 01, 02 & 03 Quiz",
+  "xpReward": 50
+}

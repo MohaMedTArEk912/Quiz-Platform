@@ -43,6 +43,15 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, user, attempts, onSelectQu
         const matchesCategory = categoryFilter === 'all' || quiz.category === categoryFilter;
         const matchesDifficulty = difficultyFilter === 'all' || quiz.difficulty === difficultyFilter;
         return matchesSearch && matchesCategory && matchesDifficulty;
+    }).sort((a, b) => {
+        const getNum = (str: string) => {
+            const match = str.match(/(\d+)/);
+            return match ? parseInt(match[0], 10) : Number.MAX_SAFE_INTEGER;
+        };
+        const numA = getNum(a.title);
+        const numB = getNum(b.title);
+        if (numA !== numB) return numA - numB;
+        return a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' });
     });
 
 

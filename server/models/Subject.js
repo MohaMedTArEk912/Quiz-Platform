@@ -28,6 +28,7 @@ const materialSchema = new mongoose.Schema({
 const subjectSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
+  icon: { type: String, default: 'BookOpen' },
   
   // --- NEW GRANULAR CONTENT MODEL ---
   materials: [materialSchema],

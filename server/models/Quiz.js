@@ -40,6 +40,7 @@ const quizSchema = new mongoose.Schema({
   coinsReward: { type: Number, default: 10 },
   xpReward: { type: Number, default: 50 },
   icon: { type: String, default: '📝' },
+  subjectId: { type: String }, // Link to standard Subject model
   isTournamentOnly: { type: Boolean, default: false },
   linkedTrackId: { type: String }, // Links this quiz to a specific skill track
   linkedModuleId: { type: String }, // Links this quiz to a specific module within that track

@@ -131,17 +131,17 @@ app.use(async (req, res, next) => {
     // Set a timeout for DB connection in serverless environments
     // Use Mongoose's internal connection logic
     await connectToDatabase();
-
-
-    
     next();
   } catch (error) {
-    console.error('DB middleware error:', error.message);
-    res.status(500).json({ 
-      message: 'Database connection failed', 
-      error: error.message,
-      hint: 'Check MongoDB URI and network connectivity'
-    });
+    console.error('❌ DB_MIDDLEWARE_ERROR:', error.message);
+    // Ensure headers aren't already sent
+    if (!res.headersSent) {
+        res.status(500).json({ 
+        message: 'Database connection failed', 
+        error: error.message,
+        hint: 'Check MongoDB URI and network connectivity'
+        });
+    }
   }
 });
 
@@ -244,6 +244,7 @@ app.use((error, req, res, next) => {
 
   // Validation errors
   if (error.name === 'ValidationError') {
+    console.error('❌ Validation Error Details:', JSON.stringify(error.errors, null, 2));
     statusCode = 400;
     message = 'Validation failed';
   }

@@ -1,0 +1,734 @@
+{
+  "_id": "694fcce7103ad8f0754c5ef0",
+  "id": "python-jr",
+  "__v": 0,
+  "category": "Python",
+  "description": "Test your Python fundamentals - Variables, Booleans, Logic, and Control Flow",
+  "difficulty": "Beginner",
+  "icon": "🐍",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Part 1: Variables & Printing",
+      "question": "Nora wants to save her name in Python. Which line is correct?",
+      "options": [
+        "name = Nora",
+        "name == \"Nora\"",
+        "name = \"Nora\"",
+        "\"Nora\" = name"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Variables are assigned using = and strings need quotes.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c17"
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Part 1: Variables & Printing",
+      "question": "Which sentence best describes a variable?",
+      "options": [
+        "A picture in Python",
+        "A place that stores information",
+        "A button",
+        "A command that prints"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A variable is like a box that stores information for later use.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c18"
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Part 1: Variables & Printing",
+      "question": "Ahmed writes this code:\n\nage = 9\nprint(age)\n\nWhat will appear on the screen?",
+      "options": [
+        "age",
+        "\"age\"",
+        "9",
+        "error"
+      ],
+      "correctAnswer": 2,
+      "explanation": "print(age) displays the VALUE stored in the variable age, which is 9.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c19"
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Part 1: Variables & Printing",
+      "question": "Which one is NOT allowed as a variable name?",
+      "options": [
+        "_score",
+        "score1",
+        "1score",
+        "score"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Variable names cannot START with a number. 1score is invalid.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c1a"
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Part 1: Variables & Printing",
+      "question": "What will Python print?\n\nprint(\"apple\")",
+      "options": [
+        "apple",
+        "\"apple\"",
+        "Apple",
+        "error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "print() displays the text without the quotes. Output: apple",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c1b"
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Part 1: Variables & Printing",
+      "question": "Lina wants to store her favorite number. Which is correct?",
+      "options": [
+        "fav = \"7\"",
+        "fav = 7",
+        "fav == 7",
+        "\"fav\" = 7"
+      ],
+      "correctAnswer": 1,
+      "explanation": "To store a number (not text), use fav = 7 without quotes.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c1c"
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Part 1: Variables & Printing",
+      "question": "Which data type is used for words and sentences?",
+      "options": [
+        "Number",
+        "Boolean",
+        "String",
+        "Operator"
+      ],
+      "correctAnswer": 2,
+      "explanation": "String is the data type for text, words, and sentences.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c1d"
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Part 1: Variables & Printing",
+      "question": "What does print() do?",
+      "options": [
+        "Saves data",
+        "Deletes data",
+        "Shows output",
+        "Checks condition"
+      ],
+      "correctAnswer": 2,
+      "explanation": "print() displays output on the screen for the user to see.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c1e"
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Part 2: Boolean & Comparisons",
+      "question": "Which value means YES in Python?",
+      "options": [
+        "yes",
+        "1",
+        "True",
+        "ok"
+      ],
+      "correctAnswer": 2,
+      "explanation": "True (with capital T) is the Boolean value that means YES.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c1f"
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Part 2: Boolean & Comparisons",
+      "question": "What is the result of:\n\n10 > 3",
+      "options": [
+        "False",
+        "True",
+        "10",
+        "error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "10 is greater than 3, so the comparison returns True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c20"
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Part 2: Boolean & Comparisons",
+      "question": "What does Python print?\n\n5 == 5",
+      "options": [
+        "False",
+        "True",
+        "5",
+        "error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "5 equals 5, so the comparison returns True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c21"
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Part 2: Boolean & Comparisons",
+      "question": "Which symbol checks equality?",
+      "options": [
+        "=",
+        "==",
+        "!=",
+        "=>"
+      ],
+      "correctAnswer": 1,
+      "explanation": "== checks if two values are equal. = is for assignment.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c22"
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Part 2: Boolean & Comparisons",
+      "question": "What will this show?\n\n\"5\" == 5",
+      "options": [
+        "True",
+        "False",
+        "error",
+        "5"
+      ],
+      "correctAnswer": 1,
+      "explanation": "\"5\" is a string and 5 is a number. Different types are not equal.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c23"
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Part 2: Boolean & Comparisons",
+      "question": "Sara checks if two names are the same:\n\n\"Ali\" == \"Ali\"\n\nWhat is the result?",
+      "options": [
+        "False",
+        "True",
+        "error",
+        "Ali"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Both strings are identical, so the comparison returns True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c24"
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Part 2: Boolean & Comparisons",
+      "question": "Which one is a Boolean value?",
+      "options": [
+        "\"True\"",
+        "yes",
+        "False",
+        "1"
+      ],
+      "correctAnswer": 2,
+      "explanation": "False (with capital F) is a Boolean value.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c25"
+    },
+    {
+      "id": 16,
+      "type": "multiple-choice",
+      "part": "Part 3: Logic (and / or / not)",
+      "question": "A game opens only if the player is logged in AND has coins. Which operator should be used?",
+      "options": [
+        "or",
+        "not",
+        "and",
+        "=="
+      ],
+      "correctAnswer": 2,
+      "explanation": "AND requires BOTH conditions to be true.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c26"
+    },
+    {
+      "id": 17,
+      "type": "multiple-choice",
+      "part": "Part 3: Logic (and / or / not)",
+      "question": "What is the result?\n\nTrue and False",
+      "options": [
+        "True",
+        "False",
+        "1",
+        "error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "AND requires both to be True. Since one is False, result is False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c27"
+    },
+    {
+      "id": 18,
+      "type": "multiple-choice",
+      "part": "Part 3: Logic (and / or / not)",
+      "question": "A child can enter the park if they have a ticket OR a pass. Which operator fits?",
+      "options": [
+        "and",
+        "not",
+        "or",
+        "=="
+      ],
+      "correctAnswer": 2,
+      "explanation": "OR means at least ONE condition must be true.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c28"
+    },
+    {
+      "id": 19,
+      "type": "multiple-choice",
+      "part": "Part 3: Logic (and / or / not)",
+      "question": "What will Python print?\n\nnot True",
+      "options": [
+        "True",
+        "False",
+        "1",
+        "error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "NOT reverses the value. not True becomes False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c29"
+    },
+    {
+      "id": 20,
+      "type": "multiple-choice",
+      "part": "Part 3: Logic (and / or / not)",
+      "question": "Which result is correct?\n\nFalse or False",
+      "options": [
+        "True",
+        "False",
+        "0",
+        "error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "OR requires at least ONE to be True. Both are False, so result is False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c2a"
+    },
+    {
+      "id": 21,
+      "type": "multiple-choice",
+      "part": "Part 3: Logic (and / or / not)",
+      "question": "What does not do?",
+      "options": [
+        "adds values",
+        "compares values",
+        "reverses True/False",
+        "prints text"
+      ],
+      "correctAnswer": 2,
+      "explanation": "NOT flips Boolean values: True becomes False, False becomes True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c2b"
+    },
+    {
+      "id": 22,
+      "type": "multiple-choice",
+      "part": "Part 4: If / Elif / Else",
+      "question": "Python checks conditions using:",
+      "options": [
+        "print",
+        "input",
+        "if",
+        "type"
+      ],
+      "correctAnswer": 2,
+      "explanation": "if is the keyword used to check conditions in Python.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c2c"
+    },
+    {
+      "id": 23,
+      "type": "multiple-choice",
+      "part": "Part 4: If / Elif / Else",
+      "question": "What happens if the if condition is False and there is no else?",
+      "options": [
+        "Error",
+        "Program stops",
+        "Nothing happens",
+        "Prints False"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Python simply skips the if block and continues.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c2d"
+    },
+    {
+      "id": 24,
+      "type": "multiple-choice",
+      "part": "Part 4: If / Elif / Else",
+      "question": "Which code is written correctly?",
+      "options": [
+        "if x > 5 print(\"Hi\")",
+        "if x > 5: print(\"Hi\")",
+        "if (x > 5) print(\"Hi\")",
+        "if x > 5 then:"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Python if statements need a colon and indentation.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c2e"
+    },
+    {
+      "id": 25,
+      "type": "multiple-choice",
+      "part": "Part 4: If / Elif / Else",
+      "question": "You are making a calculator. Which structure is BEST?",
+      "options": [
+        "only if",
+        "only else",
+        "if-elif",
+        "print"
+      ],
+      "correctAnswer": 2,
+      "explanation": "if-elif allows checking multiple operations.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c2f"
+    },
+    {
+      "id": 26,
+      "type": "multiple-choice",
+      "part": "Part 4: If / Elif / Else",
+      "question": "What keyword lets you check another condition?",
+      "options": [
+        "else",
+        "elif",
+        "when",
+        "check"
+      ],
+      "correctAnswer": 1,
+      "explanation": "elif (else if) allows checking additional conditions after if.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c30"
+    },
+    {
+      "id": 27,
+      "type": "multiple-choice",
+      "part": "Part 4: If / Elif / Else",
+      "question": "What keyword runs when all conditions are false?",
+      "options": [
+        "elif",
+        "if",
+        "else",
+        "stop"
+      ],
+      "correctAnswer": 2,
+      "explanation": "else runs when all previous if and elif conditions are False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c31"
+    },
+    {
+      "id": 28,
+      "type": "multiple-choice",
+      "part": "Part 4: If / Elif / Else",
+      "question": "Apple color can be red, yellow, or green. Which structure is BEST to check this?",
+      "options": [
+        "if only",
+        "if-elif-else",
+        "print",
+        "and"
+      ],
+      "correctAnswer": 1,
+      "explanation": "if-elif-else is perfect for checking multiple distinct options.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c32"
+    },
+    {
+      "id": 29,
+      "type": "multiple-choice",
+      "part": "Part 4: If / Elif / Else",
+      "question": "A school allows students if they wear a white shirt OR blue pants. Which operator is correct?",
+      "options": [
+        "and",
+        "or",
+        "not",
+        "=="
+      ],
+      "correctAnswer": 1,
+      "explanation": "OR means either condition can be true.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c33"
+    },
+    {
+      "id": 30,
+      "type": "multiple-choice",
+      "part": "Part 4: If / Elif / Else",
+      "question": "What will this print?\n\nwhiteShirt = False\nbluePantalon = True\nprint(whiteShirt or bluePantalon)",
+      "options": [
+        "False",
+        "True",
+        "error",
+        "nothing"
+      ],
+      "correctAnswer": 1,
+      "explanation": "OR returns True if at least ONE value is True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "695299cb0e7c609688fd1c34"
+    }
+  ],
+  "timeLimit": 30,
+  "title": "Python JR Quiz"
+}

@@ -23,7 +23,7 @@ import Avatar from './Avatar.tsx';
 
 // Import Admin Sub-Components
 import UserManagement from './admin/UserManagement.tsx';
-import QuizManagement from './admin/QuizManagement.tsx';
+import QuizManager from '../pages/QuizManager';
 import ReviewManagement from './admin/ReviewManagement.tsx';
 import StudyCardManagement from './admin/StudyCardManagement';
 import DailyChallengeManagement from './admin/DailyChallengeManagement.tsx';
@@ -64,7 +64,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         totalAttempts: 0,
         avgScore: 0
     });
-    const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+    const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning', message: string } | null>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
 
 
@@ -106,7 +106,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         }
     };
 
-    const handleNotification = (type: 'success' | 'error', message: string) => {
+    const handleNotification = (type: 'success' | 'error' | 'warning', message: string) => {
         setNotification({ type, message });
         setTimeout(() => setNotification(null), 3000);
     };
@@ -328,9 +328,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     {notification && (
                         <div className={`absolute top-6 right-6 z-50 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right duration-300 border backdrop-blur-xl ${notification.type === 'success'
                             ? 'bg-emerald-500/90 border-emerald-400/50 text-white shadow-emerald-500/20'
-                            : 'bg-red-500/90 border-red-400/50 text-white shadow-red-500/20'
+                            : notification.type === 'warning'
+                                ? 'bg-amber-500/90 border-amber-400/50 text-white shadow-amber-500/20'
+                                : 'bg-red-500/90 border-red-400/50 text-white shadow-red-500/20'
                             }`}>
-                            {notification.type === 'success' ? <Check className="w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-white/50" />}
+                            {notification.type === 'success' ? <Check className="w-5 h-5" /> : notification.type === 'warning' ? <div className="w-5 h-5 flex items-center justify-center font-bold">!</div> : <div className="w-5 h-5 rounded-full border-2 border-white/50" />}
                             <span className="font-bold">{notification.message}</span>
                         </div>
                     )}
@@ -608,7 +610,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             />
                         )}
                         {selectedTab === 'quizzes' && (
-                            <QuizManagement
+                            <QuizManager
                                 quizzes={quizzes}
                                 currentUser={currentUser}
                                 onRefresh={handleRefresh}

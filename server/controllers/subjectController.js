@@ -69,24 +69,28 @@ async function generateContentWithFallback(prompt, jobId = `SubjectGen-${Date.no
 export const createSubject = async (req, res) => {
     const filesToDelete = [];
     try {
-        const { title, description } = req.body;
+        const { title, description, icon } = req.body;
         
         // Validation
         if (!title || title.trim().length === 0) {
+            console.warn(`[Create Subject] 400 Error: Title is missing. Body:`, req.body);
             return res.status(400).json({ success: false, message: 'Title is required.' });
         }
         
         if (title.length > 200) {
+            console.warn(`[Create Subject] 400 Error: Title too long (${title.length}).`);
             return res.status(400).json({ success: false, message: 'Title must be less than 200 characters.' });
         }
         
         if (description && description.length > 1000) {
+            console.warn(`[Create Subject] 400 Error: Description too long (${description.length}).`);
             return res.status(400).json({ success: false, message: 'Description must be less than 1000 characters.' });
         }
         
         // Check for content files (now supports multiple)
         const contentFiles = req.files?.contentFiles || [];
         if (contentFiles.length === 0) {
+            console.warn(`[Create Subject] 400 Error: No content files uploaded. Files keys: ${Object.keys(req.files || {})}`);
             return res.status(400).json({ success: false, message: 'At least one content file is required.' });
         }
 
@@ -95,6 +99,7 @@ export const createSubject = async (req, res) => {
         
         for (const file of contentFiles) {
             if (!allowedTypes.includes(file.mimetype) && !file.originalname.match(/\.(pdf|pptx|txt)$/i)) {
+                console.warn(`[Create Subject] 400 Error: Invalid file type ${file.mimetype} for ${file.originalname}`);
                 return res.status(400).json({ success: false, message: `Invalid file type for ${file.originalname}. Only PDF, PPTX, and TXT are allowed.` });
             }
             filesToDelete.push(file.path);
@@ -258,6 +263,7 @@ export const createSubject = async (req, res) => {
         const newSubject = new Subject({
             title,
             description,
+            icon: icon || 'BookOpen',
             content: combinedContent,
             styleContext,
             content: combinedContent,
@@ -294,8 +300,21 @@ export const createSubject = async (req, res) => {
 
 export const getSubjects = async (req, res) => {
     try {
-        console.log('📚 Fetching all subjects...');
-        const subjects = await Subject.find().select('-content -styleContext'); // Exclude heavy text fields for list view
+        const subjects = await Subject.find().select('-content -styleContext').lean(); // Exclude heavy text fields for list view
+        
+        // Sort subjects by extracted number
+        subjects.sort((a, b) => {
+            const getNum = (str) => {
+                const match = str.match(/(\d+)/);
+                return match ? parseInt(match[0], 10) : Number.MAX_SAFE_INTEGER;
+            };
+            const numA = getNum(a.title);
+            const numB = getNum(b.title);
+            
+            if (numA !== numB) return numA - numB;
+            return a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' });
+        });
+
         console.log(`✅ Found ${subjects.length} subjects`);
         res.json({ success: true, data: subjects });
     } catch (error) {
@@ -327,7 +346,7 @@ export const updateSubject = async (req, res) => {
     const filesToDelete = [];
     try {
         const { id } = req.params;
-        const { title, description, appendContent } = req.body;
+        const { title, description, appendContent, icon } = req.body;
         
         // Find existing subject
         const subject = await Subject.findById(id);
@@ -347,6 +366,7 @@ export const updateSubject = async (req, res) => {
         // Update basic fields
         if (title) subject.title = title;
         if (description !== undefined) subject.description = description;
+        if (icon) subject.icon = icon;
 
         // Process new content files if provided
         const contentFiles = req.files?.contentFiles || [];

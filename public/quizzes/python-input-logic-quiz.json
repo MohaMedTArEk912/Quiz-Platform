@@ -1,0 +1,738 @@
+{
+  "_id": "6963c836103ad8f0754c744b",
+  "id": "python-input-logic-quiz",
+  "__v": 0,
+  "category": "Python",
+  "coinsReward": 300,
+  "description": "Master Python input handling, type conversion, and conditional logic.",
+  "difficulty": "Medium",
+  "icon": "Python",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Part 1: Programmer vs. User",
+      "question": "Who creates the software program?",
+      "options": [
+        "The User",
+        "The Programmer",
+        "The Computer",
+        "The Internet"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The programmer writes the code, while the user operates the finished program.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cede"
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Part 1: Programmer vs. User",
+      "question": "Who interacts with a completed program like WhatsApp?",
+      "options": [
+        "The Developer",
+        "The Debugger",
+        "The User",
+        "The Server"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Once a program is created, users interact with it by sending messages, clicking buttons, etc.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cedf"
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Part 2: Basic Input",
+      "question": "Which Python function lets users type data into a program?",
+      "options": [
+        "print()",
+        "type()",
+        "input()",
+        "write()"
+      ],
+      "correctAnswer": 2,
+      "explanation": "input() pauses the program and waits for user keyboard input.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cee0"
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Part 2: Basic Input",
+      "question": "What is the text shown to users before they type called?",
+      "options": [
+        "The Variable",
+        "The Prompt",
+        "The Output",
+        "The Value"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The prompt is the message that tells users what to enter.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cee1"
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Part 2: Basic Input",
+      "question": "What does name = input('Enter name: ') store if user types 'Ali'?",
+      "options": [
+        "input",
+        "Enter name:",
+        "'Ali'",
+        "Ali (no quotes)"
+      ],
+      "correctAnswer": 2,
+      "explanation": "input() always returns a string, so 'Ali' is stored with quotes as text.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cee2"
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Part 3: Type Conversion",
+      "question": "In Python 3, what type does input() always return?",
+      "options": [
+        "Integer (int)",
+        "String (str)",
+        "Boolean (bool)",
+        "Float (float)"
+      ],
+      "correctAnswer": 1,
+      "explanation": "input() always returns string data type, even for numbers.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cee3"
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Part 2: Basic Input",
+      "question": "What prints after: age = input('Age: ') then print(age)?",
+      "options": [
+        "Age: 10",
+        "10",
+        "Age",
+        "Error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "print(age) displays whatever is stored in the age variable.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cee4"
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Part 4: Conditional Logic",
+      "question": "In an if statement, what operator checks exact equality?",
+      "options": [
+        "=",
+        "==",
+        "!=",
+        ">"
+      ],
+      "correctAnswer": 1,
+      "explanation": "== checks if two values are exactly equal, while = is for assignment.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cee5"
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Part 4: Conditional Logic",
+      "question": "If x = 3 and code checks:\nif x == 5 then\nelif x > 5 then else.\nWhat runs?",
+      "options": [
+        "if block",
+        "elif block",
+        "else block",
+        "Error"
+      ],
+      "correctAnswer": 2,
+      "explanation": "3 is not 5 and not >5, so the else block executes.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cee6"
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Part 1: Programmer vs. User",
+      "question": "What role does input() play in user interaction?",
+      "options": [
+        "Processes data",
+        "Displays results",
+        "Gets data from user",
+        "Stores files"
+      ],
+      "correctAnswer": 2,
+      "explanation": "input() is how programs receive data directly from users.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cee7"
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Part 2: Basic Input",
+      "question": "What symbol assigns input() result to a variable?",
+      "options": [
+        "==",
+        ":",
+        "=",
+        "->"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The = operator stores values in variables.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cee8"
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Part 4: Conditional Logic",
+      "question": "If score == 9: print('Stars'). What prints when score is 9?",
+      "options": [
+        "Nothing",
+        "Stars",
+        "Good Job",
+        "9"
+      ],
+      "correctAnswer": 1,
+      "explanation": "When the condition is true, the code inside executes.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cee9"
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Part 3: Type Conversion",
+      "question": "What happens with: age = input('Age: ') then next_year = age + 1?",
+      "options": [
+        "Adds 1 to age",
+        "Computer error",
+        "TypeError",
+        "Makes '101'"
+      ],
+      "correctAnswer": 2,
+      "explanation": "input() returns string. Can't add string '10' + integer 1 without conversion.",
+      "points": 20,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0ceea"
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Part 2: Basic Input",
+      "question": "Why store input() in variables?",
+      "options": [
+        "For color",
+        "To reuse data",
+        "To slow program",
+        "It's required"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Variables preserve user input for multiple uses in the program.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0ceeb"
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Part 4: Conditional Logic",
+      "question": "If money = 10 and: if money > 5: print('Buy') else: print('Save'). Output?",
+      "options": [
+        "Buy",
+        "Save",
+        "Error",
+        "5"
+      ],
+      "correctAnswer": 0,
+      "explanation": "10 > 5 is True, so 'Buy' prints.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0ceec"
+    },
+    {
+      "id": 16,
+      "type": "multiple-choice",
+      "part": "Part 2: Basic Input",
+      "question": "Which correctly asks for and saves a name?",
+      "options": [
+        "input('Name') = name",
+        "name = input 'Name'",
+        "name = input('Name: ')",
+        "print('Name') = input"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Variable first, then =, then input() with parentheses.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0ceed"
+    },
+    {
+      "id": 17,
+      "type": "multiple-choice",
+      "part": "Part 1: Programmer vs. User",
+      "question": "Who builds search engines like Google?",
+      "options": [
+        "Users",
+        "Programmers",
+        "Browsers",
+        "The search bar"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Programmers create software, users consume it.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0ceee"
+    },
+    {
+      "id": 18,
+      "type": "multiple-choice",
+      "part": "Part 3: Type Conversion",
+      "question": "What does input() store if user presses Enter without typing?",
+      "options": [
+        "0",
+        "None",
+        "Empty string ''",
+        "False"
+      ],
+      "correctAnswer": 2,
+      "explanation": "No input = empty string ''.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0ceef"
+    },
+    {
+      "id": 19,
+      "type": "multiple-choice",
+      "part": "Part 4: Conditional Logic",
+      "question": "If x = 6 and: if x == 5 then elif x > 5. What happens?",
+      "options": [
+        "if runs",
+        "elif runs",
+        "Error",
+        "Nothing"
+      ],
+      "correctAnswer": 1,
+      "explanation": "6 > 5 is True, so elif block executes.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cef0"
+    },
+    {
+      "id": 20,
+      "type": "multiple-choice",
+      "part": "Part 1: Programmer vs. User",
+      "question": "Can programmers predict exact user input?",
+      "options": [
+        "Always",
+        "No, input is unpredictable",
+        "Sometimes",
+        "Only numbers"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Programmers write code to handle any input, not predict it.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cef1"
+    },
+    {
+      "id": 21,
+      "type": "multiple-choice",
+      "part": "Part 3: Type Conversion",
+      "question": "What prints after: val = input('Num: ') (user types 5) then print(val * 3)?",
+      "options": [
+        "15",
+        "555",
+        "Error",
+        "3"
+      ],
+      "correctAnswer": 1,
+      "explanation": "val is string '5'. String multiplication repeats: '555'.",
+      "points": 20,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cef2"
+    },
+    {
+      "id": 22,
+      "type": "multiple-choice",
+      "part": "Part 2: Basic Input",
+      "question": "Can a variable be used as the input() prompt?",
+      "options": [
+        "No, only text",
+        "Yes, if it's a string",
+        "Yes but crashes",
+        "No, not allowed"
+      ],
+      "correctAnswer": 1,
+      "explanation": "input() accepts any string, including string variables.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cef3"
+    },
+    {
+      "id": 23,
+      "type": "multiple-choice",
+      "part": "Part 2: Basic Input",
+      "question": "When does program execution continue after input()?",
+      "options": [
+        "Immediately",
+        "After 5 seconds",
+        "After Enter key",
+        "Never"
+      ],
+      "correctAnswer": 2,
+      "explanation": "input() waits for user to press Enter before continuing.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cef4"
+    },
+    {
+      "id": 24,
+      "type": "multiple-choice",
+      "part": "Part 4: Conditional Logic",
+      "question": "If multiple if statements check score values, are all checked?",
+      "options": [
+        "No, stops at first",
+        "Yes, sequentially",
+        "Error",
+        "Only first two"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Separate if statements are all evaluated independently.",
+      "points": 15,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cef5"
+    },
+    {
+      "id": 25,
+      "type": "multiple-choice",
+      "part": "Part 2: Basic Input",
+      "question": "The message asking users for input is called what?",
+      "options": [
+        "Variable",
+        "Prompt",
+        "Output",
+        "Key"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A prompt is the text that requests information from the user.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cef6"
+    },
+    {
+      "id": 26,
+      "type": "multiple-choice",
+      "part": "Part 3: Type Conversion",
+      "question": "Why might string '10' be considered less than string '2'?",
+      "options": [
+        "It isn't",
+        "String compares first character: '1' < '2'",
+        "Error",
+        "Python bug"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Strings compare character by character. '1' < '2', so '10' < '2'.",
+      "points": 20,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cef7"
+    },
+    {
+      "id": 27,
+      "type": "multiple-choice",
+      "part": "Part 2: Basic Input",
+      "question": "How many arguments can input() accept?",
+      "options": [
+        "0 or 1",
+        "2",
+        "3",
+        "Unlimited"
+      ],
+      "correctAnswer": 0,
+      "explanation": "input() takes 0 or 1 argument: the prompt (optional).",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cef8"
+    },
+    {
+      "id": 28,
+      "type": "multiple-choice",
+      "part": "Part 4: Conditional Logic",
+      "question": "If x = 2, and: if x == 5, elif x > 5, else. Which executes?",
+      "options": [
+        "if block",
+        "elif block",
+        "else block",
+        "All"
+      ],
+      "correctAnswer": 2,
+      "explanation": "2 is not 5 and not >5, so else block runs.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cef9"
+    },
+    {
+      "id": 29,
+      "type": "multiple-choice",
+      "part": "Part 1: Programmer vs. User",
+      "question": "What's the main purpose of user input in programs?",
+      "options": [
+        "End program",
+        "Make dynamic",
+        "Show credits",
+        "Slow execution"
+      ],
+      "correctAnswer": 1,
+      "explanation": "User input makes programs interactive and dynamic.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cefa"
+    },
+    {
+      "id": 30,
+      "type": "multiple-choice",
+      "part": "Part 3: Type Conversion",
+      "question": "Which function converts string input to integer for math?",
+      "options": [
+        "str()",
+        "int()",
+        "float()",
+        "num()"
+      ],
+      "correctAnswer": 1,
+      "explanation": "int() converts string numbers to integers for calculations.",
+      "points": 10,
+      "isBlock": false,
+      "isCompiler": false,
+      "compilerConfig": {
+        "language": "javascript",
+        "allowedLanguages": [
+          "javascript"
+        ]
+      },
+      "_id": "6963c836f17e0e0c57e0cefb"
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 30,
+  "title": "Python: Input & Logic Masterclass",
+  "xpReward": 1000
+}
