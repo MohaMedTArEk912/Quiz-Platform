@@ -34,6 +34,7 @@ export interface Question {
     blockConfig?: BlockConfig;
     isCompiler?: boolean;
     compilerConfig?: CompilerConfig;
+    shuffleOptions?: boolean;
 }
 
 export interface BlockConfig {

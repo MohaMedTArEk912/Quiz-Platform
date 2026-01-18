@@ -26,7 +26,8 @@ const questionSchema = new mongoose.Schema({
     allowedLanguages: { type: [String], default: ['javascript'] },
     initialCode: { type: String },
     referenceCode: { type: String }
-  }
+  },
+  shuffleOptions: { type: Boolean, default: true }
 });
 
 const quizSchema = new mongoose.Schema({

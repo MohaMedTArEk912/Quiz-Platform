@@ -84,7 +84,11 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         const newOptionsOrder: Record<number, number[]> = {};
         quiz.questions.forEach((q, index) => {
             if (q.options && q.options.length > 0) {
-                newOptionsOrder[index] = generateShuffledIndices(q.options.length);
+                if (q.shuffleOptions === false) {
+                    newOptionsOrder[index] = Array.from({ length: q.options.length }, (_, i) => i);
+                } else {
+                    newOptionsOrder[index] = generateShuffledIndices(q.options.length);
+                }
             }
         });
         setOptionsOrder(newOptionsOrder);
@@ -149,7 +153,11 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         const newOptionsOrder: Record<number, number[]> = {};
         quiz.questions.forEach((q, index) => {
             if (q.options && q.options.length > 0) {
-                newOptionsOrder[index] = generateShuffledIndices(q.options.length);
+                if (q.shuffleOptions === false) {
+                    newOptionsOrder[index] = Array.from({ length: q.options.length }, (_, i) => i);
+                } else {
+                    newOptionsOrder[index] = generateShuffledIndices(q.options.length);
+                }
             }
         });
         setOptionsOrder(newOptionsOrder);

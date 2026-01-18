@@ -40,6 +40,27 @@ const sanitizeQuestions = (questions, quizId = 'unknown') => {
     if (!question.part) question.part = 'A';
     if (!question.points) question.points = 10;
 
+    // Auto-detect non-shuffleable patterns
+    if (question.options && Array.isArray(question.options) && question.shuffleOptions !== false) {
+      const nonShufflePatterns = [
+        /both.*(and|&)/i,
+        /all of the above/i,
+        /none of the above/i,
+        /neither.*nor/i,
+        /options?.*(and|&)/i,
+        /choices?.*(and|&)/i,
+        /^[a-z]\s*(and|&)\s*[a-z]$/i
+      ];
+
+      const hasNonShufflePattern = question.options.some(opt => 
+        typeof opt === 'string' && nonShufflePatterns.some(p => p.test(opt))
+      );
+
+      if (hasNonShufflePattern) {
+        question.shuffleOptions = false;
+      }
+    }
+
     return question;
   });
 };

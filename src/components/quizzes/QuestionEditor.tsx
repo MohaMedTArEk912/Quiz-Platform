@@ -98,6 +98,19 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
                 {/* Multiple Choice Editor */}
                 {(!question.isBlock && !question.isCompiler) && (
                     <>
+                        <div className="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800 mb-2">
+                            <input
+                                type="checkbox"
+                                id="shuffleOptions"
+                                checked={question.shuffleOptions !== false}
+                                onChange={e => onChange({ ...question, shuffleOptions: e.target.checked })}
+                                className="w-5 h-5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 cursor-pointer"
+                            />
+                            <label htmlFor="shuffleOptions" className="flex-1 cursor-pointer">
+                                <div className="text-sm font-bold text-indigo-900 dark:text-indigo-100">Shuffle Options</div>
+                                <div className="text-xs text-indigo-700 dark:text-indigo-300">Disable this if options contain "Both A and B", "All of the above", etc.</div>
+                            </label>
+                        </div>
                         <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Click on an option to mark it as correct</label>
                         <div className="grid grid-cols-2 gap-2">
                             {question.options?.map((opt, idx) => (
@@ -106,9 +119,27 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
                                         placeholder={`Option ${idx + 1}`}
                                         value={opt}
                                         onChange={e => {
+                                            const newVal = e.target.value;
                                             const newOptions = [...(question.options || [])];
-                                            newOptions[idx] = e.target.value;
-                                            onChange({ ...question, options: newOptions });
+                                            newOptions[idx] = newVal;
+
+                                            // Auto-detect non-shuffleable patterns
+                                            let shuffleOptions = question.shuffleOptions;
+                                            const nonShufflePatterns = [
+                                                /both.*(and|&)/i,
+                                                /all of the above/i,
+                                                /none of the above/i,
+                                                /neither.*nor/i,
+                                                /options?.*(and|&)/i,
+                                                /choices?.*(and|&)/i,
+                                                /^[a-z]\s*(and|&)\s*[a-z]$/i
+                                            ];
+
+                                            if (shuffleOptions !== false && nonShufflePatterns.some(p => p.test(newVal))) {
+                                                shuffleOptions = false;
+                                            }
+
+                                            onChange({ ...question, options: newOptions, shuffleOptions });
                                         }}
                                         onClick={() => onChange({ ...question, correctAnswer: idx })}
                                         className={`w-full bg-white dark:bg-black/40 border-2 ${question.correctAnswer === idx ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-200 dark:border-white/10'} rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none cursor-pointer transition-all`}
