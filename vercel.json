@@ -1,6 +1,7 @@
 {
   "version": 2,
   "framework": "vite",
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- . ':!server' ':!*.md'",
   "rewrites": [
     {
       "source": "/(.*)",
