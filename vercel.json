@@ -9,7 +9,7 @@
   ],
   "headers": [
     {
-      "source": "/assets/(.*)\\.js$",
+      "source": "/(.*)\\.js$",
       "headers": [
         {
           "key": "Content-Type",
@@ -18,11 +18,38 @@
       ]
     },
     {
-      "source": "/assets/(.*)\\.css$",
+      "source": "/(.*)\\.mjs$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.css$",
       "headers": [
         {
           "key": "Content-Type",
           "value": "text/css; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.json$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.wasm$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/wasm"
         }
       ]
     },
@@ -53,6 +80,7 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "VITE_API_URL": "https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api"
   }
 }
