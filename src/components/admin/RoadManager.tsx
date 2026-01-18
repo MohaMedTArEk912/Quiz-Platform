@@ -12,6 +12,7 @@ import type { UserData, Subject, Quiz } from '../../types';
 import StudyCardManagement from './StudyCardManagement';
 import RoadmapManagement from './RoadmapManagement';
 import RoadResources from './RoadResources';
+import QuizEditorModal from '../quizzes/QuizEditorModal';
 
 // Icon mapping for subject icons
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -52,6 +53,10 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [roadToDelete, setRoadToDelete] = useState<Subject | null>(null);
+
+    // Quiz Creation States
+    const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+    const [quizToEdit, setQuizToEdit] = useState<Quiz | null>(null);
 
     // Tab State for Detail View
     const [activeTab, setActiveTab] = useState<'overview' | 'resources' | 'quizzes' | 'roadmap' | 'study'>('overview');
@@ -112,6 +117,50 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
         } finally {
             setIsAssigning(null);
         }
+    };
+
+    const handleSaveQuiz = async (quizData: Quiz) => {
+        try {
+            setIsSubmitting(true);
+            const isUpdate = !!quizData.id;
+
+            if (isUpdate) {
+                await api.updateQuiz(quizData.id, quizData, currentUser.userId);
+                onNotification('success', 'Quiz updated successfully');
+            } else {
+                const res = await api.createQuiz(quizData, currentUser.userId);
+                if (res.id) {
+                    onNotification('success', 'Quiz created and assigned to this road');
+                }
+            }
+
+            setIsQuizModalOpen(false);
+            setQuizToEdit(null);
+            loadQuizzes();
+        } catch (e: any) {
+            console.error(e);
+            onNotification('error', e.message || 'Failed to save quiz');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleOpenCreateQuiz = () => {
+        if (!selectedRoad) return;
+        const newQuiz: Partial<Quiz> = {
+            title: '',
+            description: '',
+            questions: [],
+            timeLimit: 30,
+            passingScore: 70,
+            difficulty: 'Medium',
+            category: 'General',
+            subjectId: selectedRoad._id,
+            xpReward: 100,
+            coinsReward: 50
+        };
+        setQuizToEdit(newQuiz as Quiz);
+        setIsQuizModalOpen(true);
     };
 
     useEffect(() => {
@@ -429,12 +478,20 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                             <div className="h-full overflow-y-auto space-y-6">
                                 {/* Assigned Quizzes Section */}
                                 <div className="bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl p-6 rounded-3xl border border-white/20 dark:border-white/5">
-                                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-4 flex items-center gap-3">
-                                        <span className="p-2 bg-green-500/10 rounded-lg">
-                                            <Check className="w-5 h-5 text-green-500" />
-                                        </span>
-                                        Assigned to This Road ({quizzes.length})
-                                    </h3>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+                                            <span className="p-2 bg-green-500/10 rounded-lg">
+                                                <Check className="w-5 h-5 text-green-500" />
+                                            </span>
+                                            Assigned to This Road ({quizzes.length})
+                                        </h3>
+                                        <button
+                                            onClick={handleOpenCreateQuiz}
+                                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all"
+                                        >
+                                            <Plus className="w-4 h-4" /> Create New Quiz
+                                        </button>
+                                    </div>
                                     {quizzes.length === 0 ? (
                                         <div className="text-center py-8 text-gray-400">
                                             <Link2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
@@ -449,14 +506,26 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                                                         <h4 className="font-bold text-gray-900 dark:text-white truncate">{quiz.title}</h4>
                                                         <p className="text-xs text-gray-500 dark:text-gray-400">{quiz.questions?.length || 0} questions</p>
                                                     </div>
-                                                    <button
-                                                        onClick={() => handleAssignQuiz(quiz, false)}
-                                                        disabled={isAssigning === quiz.id}
-                                                        className="p-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-xl transition-colors disabled:opacity-50"
-                                                        title="Remove from this road"
-                                                    >
-                                                        {isAssigning === quiz.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlink className="w-4 h-4" />}
-                                                    </button>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                setQuizToEdit(quiz);
+                                                                setIsQuizModalOpen(true);
+                                                            }}
+                                                            className="p-2 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-xl transition-colors"
+                                                            title="Edit quiz"
+                                                        >
+                                                            <Edit className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleAssignQuiz(quiz, false)}
+                                                            disabled={isAssigning === quiz.id}
+                                                            className="p-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-xl transition-colors disabled:opacity-50"
+                                                            title="Remove from this road"
+                                                        >
+                                                            {isAssigning === quiz.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlink className="w-4 h-4" />}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -641,6 +710,18 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                     </div>
                 </div>
             )}
+            {/* Quiz Editor Modal */}
+            <QuizEditorModal
+                isOpen={isQuizModalOpen}
+                quiz={quizToEdit}
+                subjects={roads}
+                onClose={() => {
+                    setIsQuizModalOpen(false);
+                    setQuizToEdit(null);
+                }}
+                onSave={handleSaveQuiz}
+                onNotification={onNotification}
+            />
         </div>
     );
 };

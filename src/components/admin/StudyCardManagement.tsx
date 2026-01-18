@@ -300,7 +300,13 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
                     </div>
                     <input type="file" ref={cardUploadRef} onChange={handleEntityUpload} accept=".json" className="hidden" />
                     <button
-                        onClick={() => setEditingStudyCard({ title: '', content: '', category: activeStack || 'General', language: 'JavaScript' })}
+                        onClick={() => setEditingStudyCard({
+                            title: '',
+                            content: '',
+                            category: activeStack || 'General',
+                            language: 'JavaScript',
+                            subjectId: subjectId
+                        })}
                         className="flex-1 md:flex-none px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5"
                     >
                         <Plus className="w-5 h-5" /> Add Card

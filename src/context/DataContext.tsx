@@ -9,6 +9,9 @@ interface DataContextType {
     allAttempts: AttemptData[];
     allBadges: BadgeDefinition[];
     challenges: ChallengeData[];
+    subjects: any[];
+    skillTracks: any[];
+    studyCards: any[];
     loadingData: boolean;
     refreshData: () => Promise<void>;
     userWithRank: UserData | null;
@@ -32,6 +35,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [allAttempts, setAllAttempts] = useState<AttemptData[]>([]);
     const [allBadges, setAllBadges] = useState<BadgeDefinition[]>([]);
     const [challenges, setChallenges] = useState<ChallengeData[]>([]);
+    const [subjects, setSubjects] = useState<any[]>([]);
+    const [skillTracks, setSkillTracks] = useState<any[]>([]);
+    const [studyCards, setStudyCards] = useState<any[]>([]);
     const [loadingData, setLoadingData] = useState(false);
 
     // Load Quizzes (Public)
@@ -54,18 +60,43 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             if (isAdmin) {
                 // Admin fetches everything
-                const { users, attempts, badges } = await api.getData(currentUser.userId); // Pass ID even if admin? verifySession used token. 
-                // api.getData usually takes userId, but server checks role.
+                const { users, attempts, badges, subjects: adminSubjects } = await api.getData(currentUser.userId);
+
+                // Admins also need skill tracks and study cards
+                try {
+                    const [sTracks, sCards] = await Promise.all([
+                        api.getSkillTracks(),
+                        api.getStudyCards()
+                    ]);
+                    setSkillTracks(sTracks || []);
+                    setStudyCards(sCards || []);
+                } catch (e) {
+                    console.error('Failed to load admin extra data:', e);
+                }
+
                 setAllUsers(users || []);
                 setAllAttempts(attempts || []);
                 setAllBadges(badges || []);
-                setChallenges([]); // Admin might not see personal challenges here or doesn't need them
+                setSubjects(adminSubjects || []);
+                setChallenges([]);
             } else {
                 // Regular user fetches optimized set
                 const { attempts, badges, users, challenges: userChallenges } = await api.getUserData(currentUser.userId);
-                // Note: getUserData returns 'user' which is self (with rank maybe?), and 'users' which is leaderboard.
-                // We might want to update currentUser in AuthContext if it changed?
-                // For now, let's just store the list data.
+
+                // Also fetch subjects, skill tracks, and study cards for regular users
+                try {
+                    const [subjectsRes, tracksRes, cardsRes] = await Promise.all([
+                        api.getAllSubjects(currentUser.userId),
+                        api.getSkillTracks(),
+                        api.getStudyCards()
+                    ]);
+                    setSubjects(subjectsRes.data || []);
+                    setSkillTracks(tracksRes || []);
+                    setStudyCards(cardsRes || []);
+                } catch (e) {
+                    console.error('Failed to load user extra data:', e);
+                }
+
                 setAllUsers(users || []);
                 setAllAttempts(attempts || []);
                 setAllBadges(badges || []);
@@ -86,19 +117,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setAllUsers([]);
             setAllAttempts([]);
             setChallenges([]);
+            setSubjects([]);
         }
     }, [currentUser, isAdmin, refreshData]);
 
     const userWithRank = useMemo(() => {
         if (!currentUser) return null;
-        if (currentUser.rank) return currentUser; // If API returned it in currentUser object (it doesn't usually, unless specifically mapped)
+        if (currentUser.rank) return currentUser;
         if (allUsers.length === 0) return currentUser;
-
-        // Fallback rank calculation if not provided by backend on self object
-        // But api.getUserData returns user with rank! 
-        // However, AuthContext's currentUser might be from session storage (stale).
-        // Ideally we should update AuthContext's currentUser when we fetch fresh data.
-        // For now, let's calculate rank from leaderboard if possible.
 
         const sortedUsers = [...allUsers].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
         const rank = sortedUsers.findIndex((u: UserData) => u.userId === currentUser.userId) + 1;
@@ -112,6 +138,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             allAttempts,
             allBadges,
             challenges,
+            subjects,
+            skillTracks,
+            studyCards,
             loadingData,
             refreshData,
             userWithRank

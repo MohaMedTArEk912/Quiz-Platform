@@ -24,7 +24,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         description: '',
         icon: '📚',
         category: 'General',
-        modules: [] as any[]
+        modules: [] as any[],
+        subjectId: subjectId || ''
     });
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -116,7 +117,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                         description: m.description || '',
                         quizId: m.quizId || '',
                         badgeId: m.badgeId || ''
-                    })) : []
+                    })) : [],
+                    subjectId: subjectId || ''
                 });
                 setShowTrackForm(true);
                 onNotification('success', 'Roadmap loaded from JSON. Please review and save.');
@@ -198,7 +200,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                 description: '',
                                 icon: '📚',
                                 category: 'General',
-                                modules: []
+                                modules: [],
+                                subjectId: subjectId || ''
                             });
                             setShowTrackForm(true);
                         }}
@@ -248,7 +251,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                             description: track.description || '',
                                             icon: track.icon || '📚',
                                             category: track.category || 'General',
-                                            modules: track.modules
+                                            modules: track.modules,
+                                            subjectId: track.subjectId || subjectId || ''
                                         });
                                         setShowTrackForm(true);
                                     }}
@@ -295,249 +299,251 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
             </div>
 
             {/* Track Editor Modal */}
-            {showTrackForm && createPortal(
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative overflow-hidden scale-100 animate-in zoom-in-95 duration-200 custom-scrollbar">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500" />
+            {
+                showTrackForm && createPortal(
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                        <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative overflow-hidden scale-100 animate-in zoom-in-95 duration-200 custom-scrollbar">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500" />
 
-                        <div className="p-6 border-b border-gray-100 dark:border-white/5 flex justify-between items-center sticky top-0 bg-white/95 dark:bg-[#1e1e2d]/95 backdrop-blur-xl z-20">
-                            <h3 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3">
-                                <span className="p-2 bg-blue-500/10 rounded-lg"><Route className="w-6 h-6 text-blue-500" /></span>
-                                {trackForm.trackId ? 'Edit Roadmap' : 'New Roadmap'}
-                            </h3>
-                            <button
-                                onClick={() => setShowTrackForm(false)}
-                                className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl text-gray-500 dark:text-gray-400 transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="p-8 space-y-8">
-                            {/* Basic Info */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Track Title</label>
-                                    <input
-                                        type="text"
-                                        value={trackForm.title}
-                                        onChange={(e) => setTrackForm(prev => ({ ...prev, title: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-blue-500 rounded-xl text-gray-900 dark:text-white font-bold transition-all outline-none"
-                                        placeholder="e.g. Frontend Basics"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Icon</label>
-                                    <input
-                                        type="text"
-                                        value={trackForm.icon}
-                                        onChange={(e) => setTrackForm(prev => ({ ...prev, icon: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-blue-500 rounded-xl text-gray-900 dark:text-white font-bold transition-all outline-none"
-                                        placeholder="e.g. 📚"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</label>
-                                    <select
-                                        value={trackForm.category}
-                                        onChange={(e) => setTrackForm(prev => ({ ...prev, category: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-blue-500 rounded-xl text-gray-900 dark:text-white font-medium transition-all outline-none"
-                                    >
-                                        <option value="General">General</option>
-                                        <option value="Frontend">Frontend</option>
-                                        <option value="Backend">Backend</option>
-                                        <option value="DevOps">DevOps</option>
-                                        <option value="Design">Design</option>
-                                        <option value="Mobile">Mobile</option>
-                                        <option value="Data Science">Data Science</option>
-                                        <option value="Soft Skills">Soft Skills</option>
-                                    </select>
-                                </div>
-                                <div className="col-span-full space-y-2">
-                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</label>
-                                    <textarea
-                                        value={trackForm.description}
-                                        onChange={(e) => setTrackForm(prev => ({ ...prev, description: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-blue-500 rounded-xl text-gray-900 dark:text-white font-medium transition-all outline-none h-24 resize-none"
-                                        placeholder="Brief description of this learning path..."
-                                    />
-                                </div>
+                            <div className="p-6 border-b border-gray-100 dark:border-white/5 flex justify-between items-center sticky top-0 bg-white/95 dark:bg-[#1e1e2d]/95 backdrop-blur-xl z-20">
+                                <h3 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+                                    <span className="p-2 bg-blue-500/10 rounded-lg"><Route className="w-6 h-6 text-blue-500" /></span>
+                                    {trackForm.trackId ? 'Edit Roadmap' : 'New Roadmap'}
+                                </h3>
+                                <button
+                                    onClick={() => setShowTrackForm(false)}
+                                    className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl text-gray-500 dark:text-gray-400 transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
 
-                            {/* Modules */}
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-white/5 rounded-xl">
-                                    <h4 className="font-black text-gray-900 dark:text-white flex items-center gap-3 px-2">
-                                        Modules
-                                        <span className="text-xs bg-white dark:bg-white/10 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-300 font-bold border border-gray-200 dark:border-white/5">
-                                            {trackForm.modules.length}
-                                        </span>
-                                    </h4>
-                                    <button
-                                        onClick={() => setTrackForm(prev => ({
-                                            ...prev,
-                                            modules: [...prev.modules, { moduleId: `mod_${Date.now()}`, title: '', description: '' }]
-                                        }))}
-                                        className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"
-                                    >
-                                        <Plus className="w-4 h-4" /> Add Module
-                                    </button>
+                            <div className="p-8 space-y-8">
+                                {/* Basic Info */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Track Title</label>
+                                        <input
+                                            type="text"
+                                            value={trackForm.title}
+                                            onChange={(e) => setTrackForm(prev => ({ ...prev, title: e.target.value }))}
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-blue-500 rounded-xl text-gray-900 dark:text-white font-bold transition-all outline-none"
+                                            placeholder="e.g. Frontend Basics"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Icon</label>
+                                        <input
+                                            type="text"
+                                            value={trackForm.icon}
+                                            onChange={(e) => setTrackForm(prev => ({ ...prev, icon: e.target.value }))}
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-blue-500 rounded-xl text-gray-900 dark:text-white font-bold transition-all outline-none"
+                                            placeholder="e.g. 📚"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</label>
+                                        <select
+                                            value={trackForm.category}
+                                            onChange={(e) => setTrackForm(prev => ({ ...prev, category: e.target.value }))}
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-blue-500 rounded-xl text-gray-900 dark:text-white font-medium transition-all outline-none"
+                                        >
+                                            <option value="General">General</option>
+                                            <option value="Frontend">Frontend</option>
+                                            <option value="Backend">Backend</option>
+                                            <option value="DevOps">DevOps</option>
+                                            <option value="Design">Design</option>
+                                            <option value="Mobile">Mobile</option>
+                                            <option value="Data Science">Data Science</option>
+                                            <option value="Soft Skills">Soft Skills</option>
+                                        </select>
+                                    </div>
+                                    <div className="col-span-full space-y-2">
+                                        <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</label>
+                                        <textarea
+                                            value={trackForm.description}
+                                            onChange={(e) => setTrackForm(prev => ({ ...prev, description: e.target.value }))}
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-blue-500 rounded-xl text-gray-900 dark:text-white font-medium transition-all outline-none h-24 resize-none"
+                                            placeholder="Brief description of this learning path..."
+                                        />
+                                    </div>
                                 </div>
 
-                                <div className="space-y-4 relative">
-                                    <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-gray-200 dark:bg-gray-800 -z-10" />
-                                    {trackForm.modules.map((module, index) => (
-                                        <div key={index} className="bg-white dark:bg-black/20 p-5 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm hover:shadow-md transition-all group">
-                                            <div className="flex gap-4">
-                                                <div className="flex-none flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold text-sm shadow-md z-10">
-                                                    {index + 1}
-                                                </div>
-                                                <div className="flex-1 space-y-4">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                        <input
-                                                            type="text"
-                                                            value={module.title}
-                                                            onChange={(e) => {
-                                                                const newModules = [...trackForm.modules];
-                                                                newModules[index].title = e.target.value;
-                                                                setTrackForm(prev => ({ ...prev, modules: newModules }));
-                                                            }}
-                                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-transparent focus:border-blue-500 rounded-lg text-gray-900 dark:text-white text-sm font-bold placeholder-gray-400 outline-none transition-colors"
-                                                            placeholder="Module Title"
-                                                        />
-                                                        <input
-                                                            type="text"
-                                                            value={module.description}
-                                                            onChange={(e) => {
-                                                                const newModules = [...trackForm.modules];
-                                                                newModules[index].description = e.target.value;
-                                                                setTrackForm(prev => ({ ...prev, modules: newModules }));
-                                                            }}
-                                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-transparent focus:border-blue-500 rounded-lg text-gray-900 dark:text-white text-sm font-medium placeholder-gray-400 outline-none transition-colors"
-                                                            placeholder="Description (Optional)"
-                                                        />
-                                                    </div>
+                                {/* Modules */}
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-white/5 rounded-xl">
+                                        <h4 className="font-black text-gray-900 dark:text-white flex items-center gap-3 px-2">
+                                            Modules
+                                            <span className="text-xs bg-white dark:bg-white/10 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-300 font-bold border border-gray-200 dark:border-white/5">
+                                                {trackForm.modules.length}
+                                            </span>
+                                        </h4>
+                                        <button
+                                            onClick={() => setTrackForm(prev => ({
+                                                ...prev,
+                                                modules: [...prev.modules, { moduleId: `mod_${Date.now()}`, title: '', description: '' }]
+                                            }))}
+                                            className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"
+                                        >
+                                            <Plus className="w-4 h-4" /> Add Module
+                                        </button>
+                                    </div>
 
-                                                    <div className="flex flex-col md:flex-row gap-3">
-                                                        <div className="flex-1 flex items-center gap-2 bg-gray-50 dark:bg-white/5 p-2 rounded-lg">
-                                                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap px-1">Quiz:</label>
-                                                            <select
-                                                                value={module.quizId || ''}
+                                    <div className="space-y-4 relative">
+                                        <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-gray-200 dark:bg-gray-800 -z-10" />
+                                        {trackForm.modules.map((module, index) => (
+                                            <div key={index} className="bg-white dark:bg-black/20 p-5 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm hover:shadow-md transition-all group">
+                                                <div className="flex gap-4">
+                                                    <div className="flex-none flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold text-sm shadow-md z-10">
+                                                        {index + 1}
+                                                    </div>
+                                                    <div className="flex-1 space-y-4">
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                            <input
+                                                                type="text"
+                                                                value={module.title}
                                                                 onChange={(e) => {
                                                                     const newModules = [...trackForm.modules];
-                                                                    newModules[index].quizId = e.target.value;
+                                                                    newModules[index].title = e.target.value;
                                                                     setTrackForm(prev => ({ ...prev, modules: newModules }));
                                                                 }}
-                                                                className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-white outline-none cursor-pointer"
-                                                            >
-                                                                <option value="" className="dark:bg-gray-900">None</option>
-                                                                {quizzes.map(quiz => (
-                                                                    <option key={quiz.id} value={quiz.id} className="dark:bg-gray-900">
-                                                                        {quiz.title}
-                                                                    </option>
-                                                                ))}
-                                                            </select>
+                                                                className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-transparent focus:border-blue-500 rounded-lg text-gray-900 dark:text-white text-sm font-bold placeholder-gray-400 outline-none transition-colors"
+                                                                placeholder="Module Title"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={module.description}
+                                                                onChange={(e) => {
+                                                                    const newModules = [...trackForm.modules];
+                                                                    newModules[index].description = e.target.value;
+                                                                    setTrackForm(prev => ({ ...prev, modules: newModules }));
+                                                                }}
+                                                                className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-transparent focus:border-blue-500 rounded-lg text-gray-900 dark:text-white text-sm font-medium placeholder-gray-400 outline-none transition-colors"
+                                                                placeholder="Description (Optional)"
+                                                            />
                                                         </div>
-                                                        <div className="flex-1 flex items-center gap-2 bg-gray-50 dark:bg-white/5 p-2 rounded-lg">
-                                                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap px-1">Badge:</label>
-                                                            <select
-                                                                value={module.badgeId || ''}
-                                                                onChange={(e) => {
-                                                                    const newModules = [...trackForm.modules];
-                                                                    newModules[index].badgeId = e.target.value;
-                                                                    setTrackForm(prev => ({ ...prev, modules: newModules }));
-                                                                }}
-                                                                className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-white outline-none cursor-pointer"
-                                                            >
-                                                                <option value="" className="dark:bg-gray-900">None</option>
-                                                                {badges.map(badge => (
-                                                                    <option key={badge.badgeId} value={badge.badgeId} className="dark:bg-gray-900">
-                                                                        {badge.icon} {badge.name} ({badge.rarity})
-                                                                    </option>
-                                                                ))}
-                                                            </select>
+
+                                                        <div className="flex flex-col md:flex-row gap-3">
+                                                            <div className="flex-1 flex items-center gap-2 bg-gray-50 dark:bg-white/5 p-2 rounded-lg">
+                                                                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap px-1">Quiz:</label>
+                                                                <select
+                                                                    value={module.quizId || ''}
+                                                                    onChange={(e) => {
+                                                                        const newModules = [...trackForm.modules];
+                                                                        newModules[index].quizId = e.target.value;
+                                                                        setTrackForm(prev => ({ ...prev, modules: newModules }));
+                                                                    }}
+                                                                    className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-white outline-none cursor-pointer"
+                                                                >
+                                                                    <option value="" className="dark:bg-gray-900">None</option>
+                                                                    {quizzes.map(quiz => (
+                                                                        <option key={quiz.id} value={quiz.id} className="dark:bg-gray-900">
+                                                                            {quiz.title}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                            <div className="flex-1 flex items-center gap-2 bg-gray-50 dark:bg-white/5 p-2 rounded-lg">
+                                                                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap px-1">Badge:</label>
+                                                                <select
+                                                                    value={module.badgeId || ''}
+                                                                    onChange={(e) => {
+                                                                        const newModules = [...trackForm.modules];
+                                                                        newModules[index].badgeId = e.target.value;
+                                                                        setTrackForm(prev => ({ ...prev, modules: newModules }));
+                                                                    }}
+                                                                    className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-white outline-none cursor-pointer"
+                                                                >
+                                                                    <option value="" className="dark:bg-gray-900">None</option>
+                                                                    {badges.map(badge => (
+                                                                        <option key={badge.badgeId} value={badge.badgeId} className="dark:bg-gray-900">
+                                                                            {badge.icon} {badge.name} ({badge.rarity})
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
                                                         </div>
                                                     </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            const newModules = trackForm.modules.filter((_, i) => i !== index);
+                                                            setTrackForm(prev => ({ ...prev, modules: newModules }));
+                                                        }}
+                                                        className="self-start p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    onClick={() => {
-                                                        const newModules = trackForm.modules.filter((_, i) => i !== index);
-                                                        setTrackForm(prev => ({ ...prev, modules: newModules }));
-                                                    }}
-                                                    className="self-start p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="p-6 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3 sticky bottom-0 bg-white/95 dark:bg-[#1e1e2d]/95 backdrop-blur-xl z-20">
-                            <button
-                                onClick={() => setShowTrackForm(false)}
-                                className="px-6 py-3 rounded-xl font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        setLoading(true);
-                                        let savedTrack: SkillTrack;
-                                        if (trackForm.trackId) {
-                                            savedTrack = await api.updateSkillTrack(trackForm.trackId, {
-                                                trackId: trackForm.trackId,
-                                                title: trackForm.title,
-                                                description: trackForm.description,
-                                                icon: trackForm.icon,
-                                                category: trackForm.category,
-                                                modules: trackForm.modules,
-                                                subjectId: subjectId
-                                            }, adminId);
-                                        } else {
-                                            savedTrack = await api.createSkillTrack({
-                                                trackId: '',
-                                                title: trackForm.title,
-                                                description: trackForm.description,
-                                                icon: trackForm.icon,
-                                                category: trackForm.category,
-                                                modules: trackForm.modules,
-                                                subjectId: subjectId
-                                            }, adminId);
+                            <div className="p-6 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3 sticky bottom-0 bg-white/95 dark:bg-[#1e1e2d]/95 backdrop-blur-xl z-20">
+                                <button
+                                    onClick={() => setShowTrackForm(false)}
+                                    className="px-6 py-3 rounded-xl font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            setLoading(true);
+                                            let savedTrack: SkillTrack;
+                                            if (trackForm.trackId) {
+                                                savedTrack = await api.updateSkillTrack(trackForm.trackId, {
+                                                    trackId: trackForm.trackId,
+                                                    title: trackForm.title,
+                                                    description: trackForm.description,
+                                                    icon: trackForm.icon,
+                                                    category: trackForm.category,
+                                                    modules: trackForm.modules,
+                                                    subjectId: subjectId
+                                                }, adminId);
+                                            } else {
+                                                savedTrack = await api.createSkillTrack({
+                                                    trackId: '',
+                                                    title: trackForm.title,
+                                                    description: trackForm.description,
+                                                    icon: trackForm.icon,
+                                                    category: trackForm.category,
+                                                    modules: trackForm.modules,
+                                                    subjectId: subjectId
+                                                }, adminId);
+                                            }
+
+                                            const updatePromises = trackForm.modules
+                                                .filter(m => m.quizId)
+                                                .map(m => api.updateQuiz(m.quizId!, {
+                                                    linkedTrackId: savedTrack.trackId,
+                                                    linkedModuleId: m.moduleId
+                                                }, adminId));
+
+                                            await Promise.all(updatePromises);
+
+                                            onNotification('success', 'Roadmap saved successfully!');
+                                            setShowTrackForm(false);
+                                            loadData();
+                                        } catch (err: any) {
+                                            console.error(err);
+                                            onNotification('error', err.message || 'Failed to save roadmap');
+                                            setLoading(false);
                                         }
-
-                                        const updatePromises = trackForm.modules
-                                            .filter(m => m.quizId)
-                                            .map(m => api.updateQuiz(m.quizId!, {
-                                                linkedTrackId: savedTrack.trackId,
-                                                linkedModuleId: m.moduleId
-                                            }, adminId));
-
-                                        await Promise.all(updatePromises);
-
-                                        onNotification('success', 'Roadmap saved successfully!');
-                                        setShowTrackForm(false);
-                                        loadData();
-                                    } catch (err: any) {
-                                        console.error(err);
-                                        onNotification('error', err.message || 'Failed to save roadmap');
-                                        setLoading(false);
-                                    }
-                                }}
-                                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all"
-                            >
-                                <Save className="w-5 h-5" />
-                                Save Roadmap
-                            </button>
+                                    }}
+                                    className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all"
+                                >
+                                    <Save className="w-5 h-5" />
+                                    Save Roadmap
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                </div>,
-                document.body
-            )}
-        </div>
+                    </div>,
+                    document.body
+                )
+            }
+        </div >
     );
 };
 

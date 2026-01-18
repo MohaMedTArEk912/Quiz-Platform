@@ -519,7 +519,10 @@ export const api = {
         const response = await fetch(`${API_URL}/daily-challenge`, {
             headers: getHeaders(userId)
         });
-        if (!response.ok) throw new Error('Failed to load daily challenge');
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to load daily challenge');
+        }
         return response.json();
     },
 
@@ -538,7 +541,10 @@ export const api = {
             method: 'POST',
             headers: getHeaders(userId)
         });
-        if (!response.ok) throw new Error('Failed to complete daily challenge');
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to complete daily challenge');
+        }
         return response.json();
     },
 

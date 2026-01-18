@@ -98,8 +98,8 @@ router.put('/:id', verifyUser, verifyAdmin, upload.fields([
 // Generate Quiz from Subject (with 5-minute timeout)
 router.post('/generate-quiz', verifyUser, verifyAdmin, timeoutMiddleware(300000), generateQuizFromSubject);
 
-router.get('/', verifyUser, verifyAdmin, getSubjects);
-router.get('/:id', verifyUser, verifyAdmin, getSubjectDetails);
+router.get('/', verifyUser, getSubjects);
+router.get('/:id', verifyUser, getSubjectDetails);
 router.delete('/:id', verifyUser, verifyAdmin, deleteSubject);
 
 export default router;

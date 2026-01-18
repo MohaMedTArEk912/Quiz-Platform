@@ -8,7 +8,7 @@ import { useNotification } from '../context/NotificationContext';
 
 const DashboardPage: React.FC = () => {
     const { logout } = useAuth();
-    const { availableQuizzes, userWithRank, allAttempts } = useData();
+    const { availableQuizzes, userWithRank, allAttempts, subjects, skillTracks, studyCards } = useData();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const { showNotification } = useNotification();
@@ -20,6 +20,9 @@ const DashboardPage: React.FC = () => {
             <InstallPWA />
             <QuizList
                 quizzes={availableQuizzes}
+                subjects={subjects}
+                skillTracks={skillTracks}
+                studyCards={studyCards}
                 user={userWithRank || currentUser}
                 attempts={allAttempts.filter(a => a.userId === currentUser.userId)}
                 onSelectQuiz={(quiz) => {
