@@ -48,6 +48,17 @@ import aiStudioRoutes from './routes/aiStudio.js';
 // IMPORTANT: Vercel serverless functions are not compatible with long-lived
 // HTTP servers / Socket.IO the same way as a traditional Node process.
 // Initialize Socket.IO only for non-serverless environments.
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://thequizplatform.netlify.app",
+  "https://thequizplatform.vercel.app"
+];
+
+if (process.env.CLIENT_URL) {
+  allowedOrigins.push(process.env.CLIENT_URL);
+}
+
 const isServerless = !!process.env.VERCEL;
 
 const app = express();
@@ -65,7 +76,17 @@ if (!isServerless) {
   // Socket.io configuration optimized for Netlify
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || ["http://localhost:5173", "http://localhost:3000", "https://thequizplatform.netlify.app"],
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        const isAllowed = allowedOrigins.some(o => origin.startsWith(o)) || 
+                         origin.endsWith('.vercel.app') || 
+                         origin.endsWith('.netlify.app');
+        if (isAllowed) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       methods: ["GET", "POST"],
       credentials: true
     },
@@ -81,10 +102,24 @@ app.set('io', io);
 
 const PORT = process.env.PORT || 5000;
 
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || ["http://localhost:5173", "http://localhost:3000", "https://thequizplatform.netlify.app"],
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const isAllowed = allowedOrigins.some(o => origin.startsWith(o)) || 
+                     origin.endsWith('.vercel.app') || 
+                     origin.endsWith('.netlify.app');
+                     
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id'] // Keep x-user-id for now if legacy still sends it, but add Authorization
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id']
 }));
 app.use(express.json({ limit: '200mb' }));
 app.use(express.urlencoded({ limit: '200mb', extended: true }));

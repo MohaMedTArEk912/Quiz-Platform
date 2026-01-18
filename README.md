@@ -151,12 +151,32 @@ Quiz/
 - **Socket.io** - WebSocket server for VS mode
 - **Bcrypt & JWT** - Industrial-grade security
 
-## 🚀 Deployment
+## 🚀 Production Deployment
 
-The app is configured for deployment on platforms like Netlify or Vercel for the frontend, and a Node.js compatible host (Render, Railway, Heroku) for the backend.
+This project is optimized for a split-deployment: **Frontend on Vercel** and **Backend on Koyeb**.
 
-**Netlify Deployment Note:**
-Ensure you configure the `_redirects` or `netlify.toml` to handle SPA routing and proxy API requests to your backend URL if deployed separately.
+### 1. Backend (Koyeb)
+- **Deployment**: Connect your GitHub repository and point to the `server/index.js` as the entry point.
+- **Environment Variables**:
+  - `NODE_ENV`: `production`
+  - `MONGODB_URI`: Your MongoDB Atlas connection string.
+  - `JWT_SECRET`: A long, random string.
+  - `PORT`: `5000` (or as provided by Koyeb).
+  - `CLIENT_URL`: `https://your-app-name.vercel.app` (Your Vercel frontend URL).
+  - `GROQ_API_KEY`: Your Groq API key (for AI quiz generation).
+
+### 2. Frontend (Vercel)
+- **Deployment**: Select the root directory. Vercel will automatically detect Vite.
+- **Build Settings**:
+  - **Framework Preset**: `Vite`
+  - **Build Command**: `npm run build`
+  - **Output Directory**: `dist`
+- **Environment Variables**:
+  - `VITE_API_URL`: `https://your-koyeb-app.koyeb.app/api`
+  - `VITE_SOCKET_URL`: `https://your-koyeb-app.koyeb.app`
+  - `VITE_ENABLE_SOCKET`: `true`
+
+---
 
 ## 📄 License
 

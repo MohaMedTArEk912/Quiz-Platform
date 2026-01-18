@@ -28,14 +28,23 @@ const resolveSocketConfig = () => {
     const envPath = import.meta.env.VITE_SOCKET_PATH as string | undefined;
     const envEnabled = import.meta.env.VITE_ENABLE_SOCKET as string | undefined;
 
-    const enabled = envEnabled === 'true' || isLocal;
+    // Default to enabled in production/local unless explicitly disabled
+    const enabled = envEnabled !== 'false';
     if (!enabled) {
         return { enabled: false } as const;
     }
 
-    const url = envUrl ?? (isLocal ? 'http://localhost:5000' : window.location.origin);
-    const path = envPath ?? (isLocal ? '/socket.io/' : '/.netlify/functions/api/socket.io/');
-    const transports = isLocal ? ['websocket', 'polling'] : ['polling'];
+    // Default backend URL (Koyeb)
+    const defaultProdUrl = 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app';
+
+    // Use environment variable, then fallback to local (if local) or production default
+    const url = envUrl ?? (isLocal ? 'http://localhost:5000' : defaultProdUrl);
+
+    // Default path is /socket.io/ (standard for most Node deployments)
+    const path = envPath ?? '/socket.io/';
+
+    // Always prefer websocket for performance, fallback to polling
+    const transports = ['websocket', 'polling'];
 
     return { enabled: true, url, path, transports } as const;
 };

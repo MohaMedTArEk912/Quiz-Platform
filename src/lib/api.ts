@@ -42,13 +42,13 @@ const resolveApiUrl = () => {
         const normalized = stripTrailingSlash(envUrl);
         // Prevent shipping a localhost URL to production builds
         if (!isLocalhost && normalized.includes('localhost')) {
-            return '/api';
+            return 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api';
         }
         return normalized;
     }
 
     const localDefault = 'http://localhost:5000/api';
-    const hostedDefault = '/api'; // Netlify/Vercel rewrite target
+    const hostedDefault = 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api';
 
     return isLocalhost ? localDefault : hostedDefault;
 };
