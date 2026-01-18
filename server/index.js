@@ -325,7 +325,8 @@ app.use(express.static(distPath, {
 }));
 
 // 404 Handler for API routes
-app.use('/api/*', (req, res) => {
+// Note: Express 5 / path-to-regexp v8+ requires named wildcards: {*name}
+app.use('/api/{*path}', (req, res) => {
   res.status(404).json({
     success: false,
     message: 'API Route not found',
@@ -334,7 +335,8 @@ app.use('/api/*', (req, res) => {
 });
 
 // Single Page Application (SPA) routing - Must be AFTER API routes
-app.get('*', (req, res) => {
+// Note: Express 5 / path-to-regexp v8+ requires named wildcards: {*name}
+app.get('{*path}', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
