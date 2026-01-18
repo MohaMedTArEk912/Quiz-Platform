@@ -87,14 +87,10 @@ export const createSubject = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Description must be less than 1000 characters.' });
         }
         
-        // Check for content files (now supports multiple)
+        // Content files are now OPTIONAL - can be added later via update
         const contentFiles = req.files?.contentFiles || [];
-        if (contentFiles.length === 0) {
-            console.warn(`[Create Subject] 400 Error: No content files uploaded. Files keys: ${Object.keys(req.files || {})}`);
-            return res.status(400).json({ success: false, message: 'At least one content file is required.' });
-        }
-
-        // Validate file types
+        
+        // Validate file types if files were provided
         const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'text/plain'];
         
         for (const file of contentFiles) {
@@ -114,30 +110,30 @@ export const createSubject = async (req, res) => {
         }
 
         const sourceFiles = [];
-
-        console.log(`Processing ${contentFiles.length} content file(s) and ${oldExamFiles.length} exam file(s)...`);
-        
-        // Extract text from all content files
         let combinedContent = '';
-        for (let i = 0; i < contentFiles.length; i++) {
-            console.log(`Extracting content from file ${i + 1}/${contentFiles.length}: ${contentFiles[i].originalname}`);
-            const text = await extractTextFromFile(contentFiles[i]);
-            if (text && text.trim().length > 0) {
-                combinedContent += `\n\n--- Source: ${contentFiles[i].originalname} ---\n${text}`;
-                sourceFiles.push({
-                    name: contentFiles[i].originalname,
-                    type: 'content',
-                    uploadedAt: new Date()
-                });
-            }
-        }
-        
-        if (!combinedContent || combinedContent.trim().length === 0) {
-            return res.status(400).json({ success: false, message: 'Could not extract text from content files. Please ensure files contain readable text.' });
-        }
-
         let oldQuestions = [];
         let styleContext = '';
+
+        // Process content files if provided
+        if (contentFiles.length > 0) {
+            console.log(`Processing ${contentFiles.length} content file(s) and ${oldExamFiles.length} exam file(s)...`);
+            
+            // Extract text from all content files
+            for (let i = 0; i < contentFiles.length; i++) {
+                console.log(`Extracting content from file ${i + 1}/${contentFiles.length}: ${contentFiles[i].originalname}`);
+                const text = await extractTextFromFile(contentFiles[i]);
+                if (text && text.trim().length > 0) {
+                    combinedContent += `\n\n--- Source: ${contentFiles[i].originalname} ---\n${text}`;
+                    sourceFiles.push({
+                        name: contentFiles[i].originalname,
+                        type: 'content',
+                        uploadedAt: new Date()
+                    });
+                }
+            }
+        } else {
+            console.log(`[Create Subject] Creating subject "${title}" without content files - files can be added later.`);
+        }
 
         if (oldExamFiles.length > 0) {
             console.log(`Processing ${oldExamFiles.length} old exam file(s)...`);

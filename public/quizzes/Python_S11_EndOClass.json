@@ -1,0 +1,272 @@
+{
+  "_id": "session11-end-quiz",
+  "id": "session11-end-quiz",
+  "category": "Python",
+  "coinsReward": 75,
+  "description": "End of class quiz for Session 11: For Loops and range()",
+  "difficulty": "Beginner+",
+  "icon": "📝",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "For Loop Basics",
+      "question": "What keyword starts a for loop in Python?",
+      "options": [
+        "repeat",
+        "for",
+        "loop",
+        "each"
+      ],
+      "correctAnswer": 1,
+      "explanation": "for is used to iterate over a sequence (like a range or list).",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "For Loop Basics",
+      "question": "What is the main advantage of for loops over while loops for counting?",
+      "options": [
+        "They are faster",
+        "They handle the counter automatically",
+        "They can't create infinite loops",
+        "They use less memory"
+      ],
+      "correctAnswer": 1,
+      "explanation": "for loops with range() manage the iteration variable automatically.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "range() Function",
+      "question": "What does range(5) generate?",
+      "options": [
+        "Numbers 1 to 5",
+        "Numbers 0 to 5",
+        "Numbers 0 to 4",
+        "Numbers 1 to 4"
+      ],
+      "correctAnswer": 2,
+      "explanation": "range(stop) goes from 0 up to stop-1.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "range() Function",
+      "question": "How do you get numbers 1 to 5 inclusive with range?",
+      "options": [
+        "range(1, 5)",
+        "range(0, 5)",
+        "range(1, 6)",
+        "range(5)"
+      ],
+      "correctAnswer": 2,
+      "explanation": "range(start, stop) goes from start to stop-1. So 1 to 5 needs range(1, 6).",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "For Loop Syntax",
+      "question": "Which is correct syntax for a for loop?",
+      "options": [
+        "for i in range(3): print(i)",
+        "for i in range(3) { print(i) }",
+        "for (i in range(3)): print(i)",
+        "for i = range(3): print(i)"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Python uses 'for item in sequence:' with indented block.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "For Loop Syntax",
+      "question": "What does 'i' represent in: for i in range(3):",
+      "options": [
+        "A fixed number",
+        "The loop counter that changes each iteration",
+        "The range function",
+        "A boolean"
+      ],
+      "correctAnswer": 1,
+      "explanation": "i is the iteration variable—takes each value from the range.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Loop Comparison",
+      "question": "When should you use a for loop instead of while?",
+      "options": [
+        "When you don't know how many times to loop",
+        "When you have a clear sequence or fixed number of iterations",
+        "When you need an infinite loop",
+        "When condition is complex"
+      ],
+      "correctAnswer": 1,
+      "explanation": "for loops are ideal for iterating over known sequences or counts.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Loop Comparison",
+      "question": "Which loop is better for 'repeat until user enters quit'?",
+      "options": [
+        "for loop",
+        "while loop",
+        "Both work equally well",
+        "Neither"
+      ],
+      "correctAnswer": 1,
+      "explanation": "while loop fits unknown iterations based on condition.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Step in range",
+      "question": "What does range(0, 10, 2) generate?",
+      "options": [
+        "0, 2, 4, 6, 8",
+        "0, 2, 4, 6, 8, 10",
+        "2, 4, 6, 8, 10",
+        "0, 1, 2, 3, 4"
+      ],
+      "correctAnswer": 0,
+      "explanation": "range(start, stop, step) — step=2 means increment by 2, stop before 10.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Step in range",
+      "question": "How to count down from 5 to 1 with range?",
+      "options": [
+        "range(5, 0, -1)",
+        "range(5, 1, -1)",
+        "range(5, 0)",
+        "range(5, -1, -1)"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Start at 5, stop before 0, step -1 gives 5,4,3,2,1.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Loop Output",
+      "question": "What prints?\nfor x in range(2):\n    print(x)",
+      "options": [
+        "0 1",
+        "1 2",
+        "2",
+        "0 1 2"
+      ],
+      "correctAnswer": 0,
+      "explanation": "range(2) → 0, 1. Each printed on separate lines.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Loop Output",
+      "question": "What prints?\nfor i in range(1, 4):\n    print(i * 2)",
+      "options": [
+        "1 2 3",
+        "2 4 6",
+        "1 4 9",
+        "Error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "i = 1,2,3 → print 2,4,6.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Common Mistakes",
+      "question": "What's wrong? for i in range(3) print(i)",
+      "options": [
+        "Missing colon after range(3)",
+        "print should be uppercase",
+        "range should be 0 to 3",
+        "Nothing"
+      ],
+      "correctAnswer": 0,
+      "explanation": "for loops need a colon before the indented block.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Common Mistakes",
+      "question": "What happens if you write: for num in 5: print(num)",
+      "options": [
+        "Prints 5",
+        "Prints 0 1 2 3 4",
+        "TypeError: 'int' object is not iterable",
+        "Infinite loop"
+      ],
+      "correctAnswer": 2,
+      "explanation": "You can't iterate over a single integer. Need range(5) or a sequence.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Concept Summary",
+      "question": "What makes for loops 'Pythonic' for counting?",
+      "options": [
+        "They are longer",
+        "They are explicit and reduce manual counter errors",
+        "They only work with numbers",
+        "They are slower"
+      ],
+      "correctAnswer": 1,
+      "explanation": "for + range is clean, readable, and less error-prone than manual while counters.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 20,
+  "title": "Session 11: For Loops - End of Class Quiz",
+  "xpReward": 150
+}

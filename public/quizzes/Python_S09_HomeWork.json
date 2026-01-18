@@ -1,0 +1,357 @@
+{
+  "_id": "session9-homework-quiz",
+  "id": "session9-homework-quiz",
+  "category": "Python",
+  "coinsReward": 100,
+  "description": "Homework quiz for Session 9: Applying input conversion and validation",
+  "difficulty": "Intermediate",
+  "icon": "🏠",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Conversion Strategy",
+      "question": "You ask for a quantity of items. Should you use int() or float()?",
+      "options": [
+        "int()—you can't have half an item",
+        "float()—in case someone enters 2.5",
+        "Depends on context—whole items vs measurable quantity",
+        "Both A and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "For countable items, int(). For weight/length, float().",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Conversion Strategy",
+      "question": "A user types '3.0' for age. int('3.0') will:",
+      "options": [
+        "Work and give 3",
+        "Crash with ValueError",
+        "Give 3.0",
+        "Give 30"
+      ],
+      "correctAnswer": 1,
+      "explanation": "int() cannot convert strings with decimal points. Use float() first, then int() if needed.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Error Cases",
+      "question": "What happens with int('')?",
+      "options": [
+        "Returns 0",
+        "ValueError",
+        "Returns None",
+        "Returns ''"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Empty string cannot be converted to int → ValueError.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Error Cases",
+      "question": "How to handle when user might type nothing?",
+      "options": [
+        "Use default value",
+        "Check if string empty before converting",
+        "Use try-except",
+        "All of the above"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Multiple defensive strategies exist.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Mixed Input Program",
+      "question": "You're making a recipe app: asks for servings (int) and cooking time in minutes (float). Which is correct?",
+      "options": [
+        "servings = int(input('Servings:')); time = float(input('Time:'))",
+        "servings = float(input('Servings:')); time = int(input('Time:'))",
+        "Both as strings",
+        "Use no conversion"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Servings are whole, time can have decimals (e.g., 45.5 minutes).",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Mixed Input Program",
+      "question": "What's a risk if you forget conversion for servings?",
+      "options": [
+        "Can't multiply servings × ingredient amounts",
+        "Program crashes immediately",
+        "User can't type numbers",
+        "No risk"
+      ],
+      "correctAnswer": 0,
+      "explanation": "String '4' × 2 = '44' (repetition), not 8.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Validation Logic",
+      "question": "How can you check if input is a positive integer before converting?",
+      "options": [
+        "if input.isdigit() and int(input) > 0",
+        "Try converting and check > 0",
+        "Use while loop until valid",
+        "All are valid approaches"
+      ],
+      "correctAnswer": 3,
+      "explanation": "All are good patterns for validation.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Validation Logic",
+      "question": "Why not just try int() and catch error?",
+      "options": [
+        "It's slower",
+        "try-except is advanced; simple checks may be clearer",
+        "It always crashes",
+        "It's not Pythonic"
+      ],
+      "correctAnswer": 1,
+      "explanation": "For beginners, explicit checks (.isdigit()) can be easier to understand.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Real Tool Building",
+      "question": "You're building a trip cost calculator. Which inputs need conversion?",
+      "options": [
+        "Destination name",
+        "Number of travelers",
+        "Distance in km",
+        "Both B and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Numbers (travelers, distance) need conversion for math.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Real Tool Building",
+      "question": "For distance, should you use int() or float()?",
+      "options": [
+        "int()—distance is whole",
+        "float()—could be 12.7 km",
+        "str()—keep as text",
+        "bool()"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Distances often have fractions → float.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Code Prediction",
+      "question": "What prints?\n\nx = input('Num:')  # User types 5\ny = input('Num:')  # User types 2\nprint(x * y)",
+      "options": [
+        "10",
+        "52",
+        "Error",
+        "5 2"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Strings can't multiply strings → TypeError.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Code Prediction",
+      "question": "What prints?\n\na = int(input('A:'))  # 10\nb = float(input('B:'))  # 2.5\nprint(a + b)",
+      "options": [
+        "12.5",
+        "102.5",
+        "Error",
+        "10"
+      ],
+      "correctAnswer": 0,
+      "explanation": "int + float = float. 10 + 2.5 = 12.5.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Tricky Input",
+      "question": "User types '-5' for temperature. int('-5') works?",
+      "options": [
+        "Yes",
+        "No",
+        "Only if wrapped in abs()",
+        "Only with float()"
+      ],
+      "correctAnswer": 0,
+      "explanation": "int() handles negative numbers in strings.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Tricky Input",
+      "question": "Will '.isdigit()' return True for '-5'?",
+      "options": [
+        "Yes",
+        "No",
+        "Only after removing minus",
+        "Only for positive numbers"
+      ],
+      "correctAnswer": 1,
+      "explanation": ".isdigit() returns False if any non‑digit (like '-') is present.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Interactive Calculator",
+      "question": "You want a calculator asking: 'Enter first number:', 'Enter operator (+-*/):', 'Enter second number:'. Which needs conversion?",
+      "options": [
+        "Only the numbers",
+        "Only the operator",
+        "Both numbers and operator",
+        "None"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Numbers need int/float conversion; operator stays as string for comparison.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 16,
+      "type": "multiple-choice",
+      "part": "Interactive Calculator",
+      "question": "If user types '7.2' for first number, which conversion?",
+      "options": [
+        "int()",
+        "float()",
+        "str()",
+        "No conversion"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Decimal input → float() to preserve .2.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 17,
+      "type": "multiple-choice",
+      "part": "Design for Humans",
+      "question": "Why give clear prompts like 'Enter your age (whole number):'?",
+      "options": [
+        "To make code longer",
+        "To guide user toward valid input",
+        "Because input() requires it",
+        "No reason"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Good prompts reduce errors and improve user experience.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 18,
+      "type": "multiple-choice",
+      "part": "Design for Humans",
+      "question": "What if user types 'twelve' for age?",
+      "options": [
+        "int('twelve') will convert to 12",
+        "Program crashes",
+        "Use a dictionary to map words to numbers",
+        "Both B and C are possibilities"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Default: crash. Advanced: map words to numbers.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 19,
+      "type": "multiple-choice",
+      "part": "Future‑Proofing",
+      "question": "Why learn input validation early?",
+      "options": [
+        "Real programs must handle messy user input",
+        "It's only for experts",
+        "To avoid using input()",
+        "Python does it automatically"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Users make mistakes—robust programs anticipate and handle them.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 20,
+      "type": "multiple-choice",
+      "part": "Big Picture",
+      "question": "What's the main takeaway from input conversion practice?",
+      "options": [
+        "Always use int()",
+        "Match conversion to expected data type and usage",
+        "Avoid input() altogether",
+        "Let Python guess the type"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Choose int/float/string based on what you'll do with the data.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 30,
+  "title": "Session 9: Input Conversion & Validation - Homework Quiz",
+  "xpReward": 250
+}

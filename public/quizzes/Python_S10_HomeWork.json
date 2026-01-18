@@ -1,0 +1,357 @@
+{
+  "_id": "session10-homework-quiz",
+  "id": "session10-homework-quiz",
+  "category": "Python",
+  "coinsReward": 100,
+  "description": "Homework quiz for Session 10: Applying while loops and loop logic",
+  "difficulty": "Intermediate",
+  "icon": "🏠",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Loop Type Identification",
+      "question": "A microwave runs for a set number of seconds. Which loop type?",
+      "options": [
+        "Conditional Loop",
+        "Counting Loop",
+        "Infinite Loop",
+        "Nested Loop"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Fixed time → counting loop (repeat for n seconds).",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Loop Type Identification",
+      "question": "A security camera records 'while motion is detected'. Which loop?",
+      "options": [
+        "Counting Loop",
+        "Conditional Loop",
+        "Infinite Loop",
+        "For Loop"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Depends on condition (motion) → conditional loop.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "While Loop Construction",
+      "question": "You want to print numbers 1 to 5. Which is correct?",
+      "options": [
+        "i=1; while i<=5: print(i); i+=1",
+        "i=0; while i<5: print(i); i+=1",
+        "i=1; while i<5: print(i)",
+        "while i in [1,2,3,4,5]: print(i)"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Start at 1, include 5, increment each iteration.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "While Loop Construction",
+      "question": "What prints?\n\nx = 5\nwhile x > 0:\n    print(x)\n    x = x - 1",
+      "options": [
+        "5 4 3 2 1",
+        "1 2 3 4 5",
+        "5 4 3 2 1 0",
+        "Infinite loop"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Decreases from 5 to 1, stops when x becomes 0 (condition false).",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Condition Design",
+      "question": "You want a loop that runs while user_input != 'quit'. What's the condition?",
+      "options": [
+        "while user_input == 'quit'",
+        "while user_input != 'quit'",
+        "while True",
+        "while 'quit' in user_input"
+      ],
+      "correctAnswer": 1,
+      "explanation": "!= means 'not equal'. Loop continues while input is not 'quit'.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Condition Design",
+      "question": "A game loop runs while player_health > 0. When does it stop?",
+      "options": [
+        "When health is exactly 0",
+        "When health becomes 0 or negative",
+        "When health is positive",
+        "Never"
+      ],
+      "correctAnswer": 1,
+      "explanation": ">0 means loop runs only while health is greater than 0. At 0 or below, stops.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Infinite Loop Debugging",
+      "question": "Why is this an infinite loop?\n\ncount = 10\nwhile count > 0:\n    print(count)",
+      "options": [
+        "count never changes",
+        "count starts at 10",
+        "print() is inside",
+        "> should be >="
+      ],
+      "correctAnswer": 0,
+      "explanation": "Missing count = count - 1. Condition stays True forever.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Infinite Loop Debugging",
+      "question": "How to fix: while temperature < 100: print('Heating')",
+      "options": [
+        "Add temperature = temperature + 1 inside loop",
+        "Change < to >",
+        "Remove print",
+        "Add break statement"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Need to increase temperature so condition eventually becomes False.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Real Program Design",
+      "question": "You're making a countdown timer from 10 to 1. Which loop?",
+      "options": [
+        "i=10; while i>=1: print(i); i-=1",
+        "i=1; while i<=10: print(i); i+=1",
+        "while 10>0: print(10)",
+        "No loop needed"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Start at 10, decrement until 1, include 1.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Real Program Design",
+      "question": "A program asks 'Play again? (yes/no)' and repeats if yes. Which loop structure?",
+      "options": [
+        "counting loop",
+        "conditional loop with input inside",
+        "infinite loop with break condition",
+        "Both B and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "You can use while answer=='yes' or while True with break.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Nested Thinking",
+      "question": "What is a nested loop?",
+      "options": [
+        "A loop inside another loop",
+        "A loop with many conditions",
+        "A loop that never ends",
+        "A loop with a counter"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Nested loop = loop within loop. Inner loop runs completely for each iteration of outer loop.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Nested Thinking",
+      "question": "Outer loop runs 3 times, inner loop runs 2 times each. How many total inner iterations?",
+      "options": [
+        "5",
+        "6",
+        "3",
+        "2"
+      ],
+      "correctAnswer": 1,
+      "explanation": "3 × 2 = 6 total inner loop executions.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Loop Variable Scope",
+      "question": "Where should you define the counter variable for a while loop?",
+      "options": [
+        "Inside the loop",
+        "Outside the loop before it starts",
+        "In the condition",
+        "After the loop"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Initialize before loop so it's in scope for condition and update.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Loop Variable Scope",
+      "question": "What prints?\n\ni = 0\nwhile i < 3:\n    message = 'Hello'\n    print(message, i)\n    i += 1\nprint(message)",
+      "options": [
+        "Hello 0, Hello 1, Hello 2, then Error",
+        "Hello 0, Hello 1, Hello 2, then Hello",
+        "Hello three times",
+        "Error immediately"
+      ],
+      "correctAnswer": 1,
+      "explanation": "message is defined inside loop but still in scope after loop ends (Python function scope differs, but here it's fine).",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Complex Condition",
+      "question": "Loop runs while x > 0 and y < 10. What stops it?",
+      "options": [
+        "x becomes 0 or negative",
+        "y reaches 10 or more",
+        "Either condition becomes False",
+        "Both A and B, i.e., C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "AND requires both True. If either fails, loop stops.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 16,
+      "type": "multiple-choice",
+      "part": "Complex Condition",
+      "question": "You want loop while battery > 5 OR charger_connected == True. When does it stop?",
+      "options": [
+        "When battery <=5 AND charger_connected == False",
+        "When battery >5",
+        "When charger_connected == True",
+        "Never"
+      ],
+      "correctAnswer": 0,
+      "explanation": "OR needs at least one True. Stops when both are False.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 17,
+      "type": "multiple-choice",
+      "part": "Efficiency Consideration",
+      "question": "Why avoid unnecessary infinite loops?",
+      "options": [
+        "They waste CPU resources",
+        "They can freeze the program",
+        "They make debugging hard",
+        "All of the above"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Infinite loops should be intentional and controlled.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 18,
+      "type": "multiple-choice",
+      "part": "Efficiency Consideration",
+      "question": "What's better: a loop that checks condition at start or one that checks in middle?",
+      "options": [
+        "Always at start",
+        "Depends on problem—sometimes need to run once before checking",
+        "Never check condition",
+        "Check at end only"
+      ],
+      "correctAnswer": 1,
+      "explanation": "while checks at start. Sometimes you need 'do-while' behavior (run once, then check).",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 19,
+      "type": "multiple-choice",
+      "part": "Loop Visualization",
+      "question": "A loop draws a row of 5 stars. How to modify to draw 3 rows?",
+      "options": [
+        "Use one loop printing 15 stars",
+        "Use nested loops: outer for rows, inner for stars per row",
+        "Write three separate loops",
+        "Both B and C work"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Nested loops are cleaner, but separate loops also work.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 20,
+      "type": "multiple-choice",
+      "part": "Philosophy",
+      "question": "What's the key mindset shift when using loops?",
+      "options": [
+        "Think in repetition patterns, not single steps",
+        "Avoid variables",
+        "Use only infinite loops",
+        "Loops are only for experts"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Loops encourage thinking about processes that repeat.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 30,
+  "title": "Session 10: While Loops - Homework Quiz",
+  "xpReward": 250
+}

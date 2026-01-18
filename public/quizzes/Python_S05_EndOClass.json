@@ -1,0 +1,187 @@
+{
+  "_id": "session5-end-quiz",
+  "id": "session5-end-quiz",
+  "category": "Python",
+  "coinsReward": 50,
+  "description": "End of class quiz for Session 5: Logical Operators (AND, OR, NOT)",
+  "difficulty": "Beginner",
+  "icon": "📝",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "AND Operator",
+      "question": "What does the 'and' operator do?",
+      "options": [
+        "Returns True if at least one side is True",
+        "Returns True only if both sides are True",
+        "Reverses True to False",
+        "Adds two values together"
+      ],
+      "correctAnswer": 1,
+      "explanation": "AND requires both conditions to be True for the result to be True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "AND Operator",
+      "question": "What is True and False?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "None"
+      ],
+      "correctAnswer": 1,
+      "explanation": "AND needs both to be True. One is False, so result is False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "OR Operator",
+      "question": "What does the 'or' operator do?",
+      "options": [
+        "Returns True if both sides are True",
+        "Returns True if at least one side is True",
+        "Returns False always",
+        "Multiplies the values"
+      ],
+      "correctAnswer": 1,
+      "explanation": "OR returns True if either the left or the right (or both) is True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "OR Operator",
+      "question": "What is False or True?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "None"
+      ],
+      "correctAnswer": 0,
+      "explanation": "OR returns True if at least one is True. Here, right side is True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "NOT Operator",
+      "question": "What does 'not' do?",
+      "options": [
+        "Adds a condition",
+        "Reverses True to False and False to True",
+        "Combines two conditions",
+        "Checks equality"
+      ],
+      "correctAnswer": 1,
+      "explanation": "NOT flips a Boolean: not True → False, not False → True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "NOT Operator",
+      "question": "What is not False?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "0"
+      ],
+      "correctAnswer": 0,
+      "explanation": "NOT False becomes True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Real Example",
+      "question": "You can enter a club if you are over 18 AND have an ID. If age=20, has_id=True, can you enter?",
+      "options": [
+        "Yes",
+        "No",
+        "Maybe",
+        "Error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Both conditions are True (20>18 and has_id=True), so AND returns True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Real Example",
+      "question": "A light turns on if switch1 is ON OR switch2 is ON. Switch1=False, Switch2=True. Does the light turn on?",
+      "options": [
+        "Yes",
+        "No",
+        "Only if both are True",
+        "Never"
+      ],
+      "correctAnswer": 0,
+      "explanation": "OR needs at least one True. Switch2 is True, so light turns on.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Combining Operators",
+      "question": "What is (True and False) or True?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "None"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Inside ( ): True and False = False. Then False or True = True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Concept Summary",
+      "question": "Logical operators help programs:",
+      "options": [
+        "Run faster",
+        "Make decisions based on multiple conditions",
+        "Print more text",
+        "Delete variables"
+      ],
+      "correctAnswer": 1,
+      "explanation": "AND, OR, NOT allow combining conditions to decide what to do next.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 15,
+  "title": "Session 5: Logical Operators - End of Class Quiz",
+  "xpReward": 100
+}

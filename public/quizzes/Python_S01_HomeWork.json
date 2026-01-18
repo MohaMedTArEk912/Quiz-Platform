@@ -1,0 +1,187 @@
+{
+  "_id": "session1-homework-quiz",
+  "id": "session1-homework-quiz",
+  "category": "Python",
+  "coinsReward": 75,
+  "description": "Homework quiz for Session 1: Applying variables and output concepts",
+  "difficulty": "Beginner+",
+  "icon": "🏠",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Storage Thinking",
+      "question": "Imagine you're coding a weather app. Which variable name is best for storing today's temperature?",
+      "options": [
+        "x = 22",
+        "temp = 22",
+        "todayWeatherTemperatureInCelsius = 22",
+        "t = 22"
+      ],
+      "correctAnswer": 1,
+      "explanation": "'temp' is clear but short. Good variable names balance clarity and simplicity.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Storage Thinking",
+      "question": "You need to store whether a door is locked (True/False). Which is correct?",
+      "options": [
+        "door = \"locked\"",
+        "door_locked = True",
+        "locked = yes",
+        "door status = locked"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Boolean (True/False) is perfect for yes/no states. Variable name clearly describes what's stored.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Print Analysis",
+      "question": "What will this code display?\n\nitem = \"book\"\ncount = 3\nprint(\"I have\", count, item + \"s\")",
+      "options": [
+        "I have 3 books",
+        "I have count item+s",
+        "I have 3 book",
+        "Error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "print() can show multiple items separated by commas. Variables are replaced with their values.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Print Analysis",
+      "question": "What's the difference between print(score) and print(\"score\")?",
+      "options": [
+        "No difference",
+        "First shows the value in variable 'score', second shows the word 'score'",
+        "First shows 'score', second shows the value",
+        "Both cause errors"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Without quotes: Python looks for a variable. With quotes: it's just text to display.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Error Detection",
+      "question": "Why does this code fail?\n\nfirst name = \"Maya\"\nprint(first name)",
+      "options": [
+        "Maya should be in single quotes",
+        "Variable name has a space",
+        "print() is spelled wrong",
+        "It doesn't fail"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Variable names can't contain spaces. Use underscore: first_name.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Error Detection",
+      "question": "What's wrong here?\n\nage = \"12\"\nnext_age = age + 1\nprint(next_age)",
+      "options": [
+        "age should be without quotes",
+        "Can't add string '12' and number 1",
+        "Variable next_age not defined",
+        "print() missing parentheses"
+      ],
+      "correctAnswer": 1,
+      "explanation": "\"12\" is text. You can't do math with text unless you convert it: int(age) + 1.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Code Prediction",
+      "question": "What's the output?\n\na = 5\nb = a\na = 10\nprint(b)",
+      "options": [
+        "5",
+        "10",
+        "15",
+        "Error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "b gets a copy of a's value (5) at that moment. Changing a later doesn't affect b.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Code Prediction",
+      "question": "What does this print?\n\nword1 = \"sun\"\nword2 = \"flower\"\nprint(word1 + word2)",
+      "options": [
+        "sun flower",
+        "sunflower",
+        "word1word2",
+        "Error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "+ with strings joins them together without space. 'sun' + 'flower' = 'sunflower'.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Real-World Problem",
+      "question": "You're tracking scores in a two-player game. Player1 has 50 points, Player2 has 70. How do you store and show this?",
+      "options": [
+        "print(\"Player1: 50, Player2: 70\")",
+        "p1 = 50, p2 = 70, print(p1, p2)",
+        "p1 = 50; p2 = 70; print(\"Player1:\", p1, \"Player2:\", p2)",
+        "scores = \"50,70\", print(scores)"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Using variables allows scores to change. print() can mix text and variables for clear output.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Design Thinking",
+      "question": "You want to code a greeting that changes based on time of day. What's the best approach?",
+      "options": [
+        "Write separate print() for each possible greeting",
+        "Store greeting in a variable, update it, then print once",
+        "Don't use variables at all",
+        "Use as many variables as possible"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Store the greeting in a variable, change it as needed, then print. This is flexible and clean.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 20,
+  "title": "Session 1: Variables & Print - Homework Quiz",
+  "xpReward": 150
+}

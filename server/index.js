@@ -96,17 +96,26 @@ app.use(helmet());
 // Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 500 : 2000, // Stricter in production
-  message: 'Too many requests from this IP, please try again after 15 minutes',
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  max: process.env.NODE_ENV === 'production' ? 100 : 2000, // Strict in production (100 reqs / 15 min)
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again after 15 minutes'
+  },
+  standardHeaders: true, 
+  legacyHeaders: false,
 });
 app.use('/api', limiter);
 
-// Data Sanitization
-// app.use(mongoSanitize());
-// app.use(xss()); // Deprecated
+// Data Sanitization & Protection
+// Note: mongo-sanitize and xss-clean are often incompatible with Express 5
+// Using Zod for majority of input validation (see validationMiddleware.js)
 app.use(hpp());
+
+// Basic XSS Protection for all responses
+app.use((req, res, next) => {
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
+});
 
 // Health Check Route (Bypasses DB middleware)
 app.get('/api/health-check', (req, res) => {

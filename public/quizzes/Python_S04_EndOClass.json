@@ -1,0 +1,187 @@
+{
+  "_id": "session4-end-quiz",
+  "id": "session4-end-quiz",
+  "category": "Python",
+  "coinsReward": 50,
+  "description": "End of class quiz for Session 4: Applying comparison operators",
+  "difficulty": "Beginner",
+  "icon": "📝",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Comparison Review",
+      "question": "Which operator checks if a value is greater than another?",
+      "options": [
+        "<",
+        ">",
+        "==",
+        "!="
+      ],
+      "correctAnswer": 1,
+      "explanation": "> means 'greater than'. < means 'less than'.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Comparison Review",
+      "question": "What does the == operator do?",
+      "options": [
+        "Assigns a value",
+        "Checks if two values are equal",
+        "Checks if two values are different",
+        "Adds two values"
+      ],
+      "correctAnswer": 1,
+      "explanation": "== compares for equality. = is for assignment.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "String Comparison",
+      "question": "What is the result of 'cat' == 'cat'?",
+      "options": [
+        "True",
+        "False",
+        "'cat'",
+        "Error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Identical strings are equal, so == returns True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "String Comparison",
+      "question": "What is 'apple' < 'banana'?",
+      "options": [
+        "True",
+        "False",
+        "apple",
+        "banana"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Strings are compared alphabetically. 'apple' comes before 'banana', so it's considered 'less'.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Numeric Comparison",
+      "question": "What does 7 != 7 evaluate to?",
+      "options": [
+        "True",
+        "False",
+        "7",
+        "0"
+      ],
+      "correctAnswer": 1,
+      "explanation": "!= means 'not equal'. 7 is equal to 7, so it's False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Numeric Comparison",
+      "question": "What is 15 >= 10?",
+      "options": [
+        "True",
+        "False",
+        "15",
+        "10"
+      ],
+      "correctAnswer": 0,
+      "explanation": ">= means 'greater than or equal to'. 15 is greater than 10, so True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Real Example",
+      "question": "You want to check if a temperature is freezing (0°C or below). Which condition works?",
+      "options": [
+        "temp > 0",
+        "temp == 0",
+        "temp <= 0",
+        "temp >= 0"
+      ],
+      "correctAnswer": 2,
+      "explanation": "<= means 'less than or equal to'. Freezing is 0 or below.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Real Example",
+      "question": "You're checking if a password entered matches the stored password. Which operator?",
+      "options": [
+        "=",
+        "==",
+        "!=",
+        ">"
+      ],
+      "correctAnswer": 1,
+      "explanation": "== checks if they are the same. = would overwrite the stored password.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Boolean Result",
+      "question": "What type of value do comparison operators always return?",
+      "options": [
+        "Integer",
+        "String",
+        "Boolean",
+        "Float"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Comparisons yield True or False (Boolean).",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Concept Check",
+      "question": "Why is comparison useful in programming?",
+      "options": [
+        "To make code longer",
+        "To help programs make decisions",
+        "To print prettier output",
+        "To delete variables"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Comparisons let programs decide what to do next (if this, then that).",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 15,
+  "title": "Session 4: Comparison Operators - End of Class Quiz",
+  "xpReward": 100
+}

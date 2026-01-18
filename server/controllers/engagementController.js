@@ -281,7 +281,11 @@ const handleModuleCompletion = async (userId, trackId, moduleId) => {
 // --- Skill Tracks ---
 export const getSkillTracks = async (req, res) => {
   try {
-    const tracks = await SkillTrack.find({}).lean();
+    const query = {};
+    if (req.query.subjectId) {
+        query.subjectId = req.query.subjectId;
+    }
+    const tracks = await SkillTrack.find(query).lean();
     res.json(tracks);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching skill tracks', error: error.message });
@@ -358,6 +362,8 @@ export const updateSkillTrack = async (req, res) => {
 
     track.title = updates.title || track.title;
     track.description = updates.description || track.description;
+    track.category = updates.category || track.category;
+    if (updates.subjectId) track.subjectId = updates.subjectId;
     if (updates.modules) track.modules = updates.modules;
     
     await track.save();

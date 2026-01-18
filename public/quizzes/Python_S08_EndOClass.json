@@ -1,0 +1,272 @@
+{
+  "_id": "session8-end-quiz",
+  "id": "session8-end-quiz",
+  "category": "Python",
+  "coinsReward": 75,
+  "description": "End of class quiz for Session 8: User Input & Program Interaction",
+  "difficulty": "Beginner",
+  "icon": "📝",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Programmer vs User",
+      "question": "Who writes the Python code?",
+      "options": [
+        "The User",
+        "The Programmer",
+        "The Computer",
+        "The Internet"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The programmer creates the program. The user runs and interacts with it.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Programmer vs User",
+      "question": "Who clicks buttons, types in forms, and uses the finished app?",
+      "options": [
+        "Programmer",
+        "User",
+        "Compiler",
+        "Operating System"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The user is the person who interacts with the completed software.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Input Function",
+      "question": "Which Python function lets the user type something into the program?",
+      "options": [
+        "print()",
+        "input()",
+        "type()",
+        "read()"
+      ],
+      "correctAnswer": 1,
+      "explanation": "input() pauses the program and waits for the user to type, then returns what they typed.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Input Function",
+      "question": "What does input() always return?",
+      "options": [
+        "An integer",
+        "A string",
+        "A Boolean",
+        "A list"
+      ],
+      "correctAnswer": 1,
+      "explanation": "input() always returns a string, even if the user types numbers.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Input Function",
+      "question": "How do you show a message to the user before they type?",
+      "options": [
+        "print('Enter name:') then input()",
+        "input('Enter name:')",
+        "Both work",
+        "Neither"
+      ],
+      "correctAnswer": 2,
+      "explanation": "You can use input('prompt') or print then input(). Both are valid.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Storing Input",
+      "question": "How do you save what the user types?",
+      "options": [
+        "name = input('Name:')",
+        "input('Name:') = name",
+        "name == input('Name:')",
+        "save(input('Name:'))"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Use = to store the result of input() in a variable.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Prompt Concept",
+      "question": "What is the text inside input('Age: ') called?",
+      "options": [
+        "Variable",
+        "Prompt",
+        "Output",
+        "Command"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The prompt is the message that tells the user what to enter.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Program Flow",
+      "question": "When does the program continue after input()?",
+      "options": [
+        "Immediately",
+        "After 5 seconds",
+        "When user presses Enter",
+        "Never"
+      ],
+      "correctAnswer": 2,
+      "explanation": "input() waits for the user to press the Enter key before continuing.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Real Example",
+      "question": "You want to ask for the user's favorite color. Which is correct?",
+      "options": [
+        "color = input('Favorite color:')",
+        "input = color('Favorite color:')",
+        "'Favorite color:' = input(color)",
+        "print(color) input()"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Variable on left, input() with prompt on right of =.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Type Consideration",
+      "question": "User types '15' for age. What is stored?",
+      "options": [
+        "Integer 15",
+        "String '15'",
+        "Float 15.0",
+        "Boolean True"
+      ],
+      "correctAnswer": 1,
+      "explanation": "input() always returns a string, so '15' is stored as text.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Multiple Inputs",
+      "question": "How do you ask for both name and age?",
+      "options": [
+        "name = input('Name:'); age = input('Age:')",
+        "input('Name:'); input('Age:')",
+        "name, age = input('Name:'), input('Age:')",
+        "All of the above"
+      ],
+      "correctAnswer": 3,
+      "explanation": "All are valid ways to get multiple inputs (though storing in variables is useful).",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Why Use Input?",
+      "question": "Why would a programmer use input()?",
+      "options": [
+        "To make program longer",
+        "To let users customize or interact",
+        "To speed up the program",
+        "To avoid variables"
+      ],
+      "correctAnswer": 1,
+      "explanation": "input() makes programs interactive and personalized.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Empty Input",
+      "question": "What happens if user just presses Enter without typing?",
+      "options": [
+        "Program crashes",
+        "It stores 0",
+        "It stores an empty string ''",
+        "It asks again"
+      ],
+      "correctAnswer": 2,
+      "explanation": "input() returns an empty string '' when Enter is pressed with no text.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Interactive Program",
+      "question": "A calculator program asks for two numbers. Who provides them?",
+      "options": [
+        "Programmer (hardcoded)",
+        "User (during runtime)",
+        "The Python interpreter",
+        "Random number generator"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The user enters the numbers when the program runs.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Concept Summary",
+      "question": "What makes a program 'interactive'?",
+      "options": [
+        "It has colors",
+        "It asks for user input and responds",
+        "It runs without errors",
+        "It uses many variables"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Interactivity means the program communicates with the user during execution.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 20,
+  "title": "Session 8: User Input - End of Class Quiz",
+  "xpReward": 150
+}

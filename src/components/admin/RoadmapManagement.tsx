@@ -7,9 +7,10 @@ import { Route, Save, X, Plus, Edit, Download, Upload, MoreVertical } from 'luci
 interface RoadmapManagementProps {
     adminId: string;
     onNotification: (type: 'success' | 'error', message: string) => void;
+    subjectId?: string;
 }
 
-const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotification }) => {
+const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotification, subjectId }) => {
     const [tracks, setTracks] = useState<SkillTrack[]>([]);
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
     const [badges, setBadges] = useState<BadgeNode[]>([]);
@@ -31,6 +32,9 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
 
     useEffect(() => {
         loadData();
+    }, [subjectId]);
+
+    useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setShowMenu(false);
@@ -44,8 +48,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         try {
             setLoading(true);
             const [tracksData, quizzesData, badgesData] = await Promise.all([
-                api.getSkillTracks(),
-                api.getQuizzes(),
+                api.getSkillTracks(subjectId),
+                api.getQuizzes(subjectId),
                 api.getBadgeNodes()
             ]);
             setTracks(tracksData);
@@ -120,7 +124,6 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                 console.error('Failed to parse JSON:', error);
                 onNotification('error', 'Invalid JSON file');
             }
-            // Reset input
             if (fileInputRef.current) fileInputRef.current.value = '';
         };
         reader.readAsText(file);
@@ -129,8 +132,9 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
 
     if (loading) {
         return (
-            <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+            <div className="text-center py-12 flex flex-col items-center justify-center space-y-4">
+                <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+                <p className="text-gray-500 dark:text-gray-400 font-medium">Loading Roadmaps...</p>
             </div>
         );
     }
@@ -140,30 +144,37 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Skill Roadmaps</h2>
-                    <p className="text-gray-500 dark:text-gray-400">Manage learning paths and modules</p>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/10 rounded-xl">
+                            <Route className="w-8 h-8 text-blue-500" />
+                        </div>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400">
+                            Skill Roadmaps
+                        </span>
+                    </h2>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium ml-1">Manage learning paths and modules</p>
                 </div>
                 <div className="flex gap-3">
                     <div className="relative" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-300 rounded-xl font-bold transition-all border border-gray-200 dark:border-gray-700 shadow-sm"
+                            className="p-3 bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl hover:bg-white dark:hover:bg-white/10 text-gray-500 dark:text-gray-300 rounded-xl font-bold transition-all border border-white/20 dark:border-white/5 shadow-sm hover:shadow-md"
                         >
                             <MoreVertical className="w-5 h-5" />
                         </button>
 
                         {showMenu && (
-                            <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                            <div className="absolute right-0 top-full mt-2 w-56 bg-white/90 dark:bg-[#1e1e2d]/95 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                 <button
                                     onClick={handleDownloadSample}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-200 transition-colors font-medium text-sm"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200 transition-colors font-medium text-sm"
                                 >
                                     <Download className="w-4 h-4 text-purple-500" />
                                     Sample JSON
                                 </button>
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-200 transition-colors font-medium text-sm border-t border-gray-100 dark:border-gray-700"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200 transition-colors font-medium text-sm border-t border-gray-100 dark:border-white/5"
                                 >
                                     <Upload className="w-4 h-4 text-indigo-500" />
                                     Upload JSON
@@ -191,39 +202,41 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                             });
                             setShowTrackForm(true);
                         }}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl font-bold shadow-lg transition-all"
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all transform hover:-translate-y-0.5"
                     >
-                        <Route className="w-5 h-5" />
+                        <Plus className="w-5 h-5" />
                         New Roadmap
                     </button>
                 </div>
             </div>
 
             {/* Roadmaps Section */}
-            <div className="bg-white dark:bg-gray-800/50 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Route className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    Skill Roadmaps
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl rounded-3xl p-6 border border-white/20 dark:border-white/5 shadow-sm min-h-[400px]">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {tracks.map(track => (
                         <div
                             key={track.trackId}
-                            className="bg-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:border-blue-500/50 transition-all cursor-pointer shadow-sm dark:shadow-none"
+                            className={`group relative overflow-hidden bg-white/40 dark:bg-white/5 rounded-2xl p-6 border border-white/20 dark:border-white/5 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${selectedTrack === track.trackId ? 'ring-2 ring-blue-500/50 bg-white/80 dark:bg-white/10' : 'hover:border-blue-500/30'
+                                }`}
                             onClick={() => setSelectedTrack(selectedTrack === track.trackId ? null : track.trackId)}
                         >
-                            <div className="flex items-start justify-between mb-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="text-3xl">{track.icon || '📚'}</div>
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-500" />
+
+                            <div className="flex items-start justify-between mb-4 relative z-10">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-white dark:bg-white/5 rounded-xl flex items-center justify-center text-2xl shadow-sm border border-white/50 dark:border-white/10 group-hover:scale-110 transition-transform">
+                                        {track.icon || '📚'}
+                                    </div>
                                     <div>
-                                        <div className="flex items-center gap-2">
-                                            <h4 className="font-bold text-gray-900 dark:text-white">{track.title}</h4>
-                                            <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <h4 className="font-black text-lg text-gray-900 dark:text-white line-clamp-1">{track.title}</h4>
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-300">
                                                 {track.category || 'General'}
                                             </span>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">{track.modules.length} modules</p>
                                         </div>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">{track.modules.length} modules</p>
                                     </div>
                                 </div>
                                 <button
@@ -239,82 +252,96 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                         });
                                         setShowTrackForm(true);
                                     }}
-                                    className="p-2 bg-gray-200 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-600 rounded-lg text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-white transition-all"
+                                    className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
                                 >
                                     <Edit className="w-4 h-4" />
                                 </button>
                             </div>
 
+                            {track.description && (
+                                <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-4 relative z-10 h-10">
+                                    {track.description}
+                                </p>
+                            )}
+
                             {selectedTrack === track.trackId && (
-                                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                                <div className="mt-4 pt-4 border-t border-gray-200/50 dark:border-white/5 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
                                     {track.modules.map((module, idx) => (
-                                        <div key={module.moduleId} className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
-                                            <span className="text-blue-600 dark:text-blue-400">{idx + 1}.</span>
-                                            {module.title}
+                                        <div key={module.moduleId} className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors">
+                                            <span className="flex-none w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold">
+                                                {idx + 1}
+                                            </span>
+                                            <span className="font-medium truncate">{module.title}</span>
                                         </div>
                                     ))}
+                                    {track.modules.length === 0 && (
+                                        <p className="text-xs text-gray-400 text-center italic py-2">No modules yet</p>
+                                    )}
                                 </div>
                             )}
                         </div>
                     ))}
 
                     {tracks.length === 0 && (
-                        <div className="col-span-full text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-                            <Route className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
-                            <p className="text-gray-500 font-bold">No roadmaps created yet</p>
+                        <div className="col-span-full py-16 text-center border-2 border-dashed border-gray-200 dark:border-white/5 rounded-3xl bg-gray-50/50 dark:bg-white/5">
+                            <div className="w-20 h-20 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl grayscale opacity-50">
+                                <Route className="w-10 h-10 opacity-50" />
+                            </div>
+                            <p className="text-gray-500 font-bold text-lg">No roadmaps created yet.</p>
+                            <p className="text-gray-400 text-sm mt-1">Start by creating a new learning path above.</p>
                         </div>
                     )}
                 </div>
             </div>
 
-
-
             {/* Track Editor Modal */}
             {showTrackForm && createPortal(
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-900 z-10">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <Route className="w-6 h-6 text-blue-400" />
-                                {trackForm.trackId ? 'Edit Roadmap' : 'Create New Roadmap'}
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative overflow-hidden scale-100 animate-in zoom-in-95 duration-200 custom-scrollbar">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500" />
+
+                        <div className="p-6 border-b border-gray-100 dark:border-white/5 flex justify-between items-center sticky top-0 bg-white/95 dark:bg-[#1e1e2d]/95 backdrop-blur-xl z-20">
+                            <h3 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+                                <span className="p-2 bg-blue-500/10 rounded-lg"><Route className="w-6 h-6 text-blue-500" /></span>
+                                {trackForm.trackId ? 'Edit Roadmap' : 'New Roadmap'}
                             </h3>
                             <button
                                 onClick={() => setShowTrackForm(false)}
-                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl text-gray-500 dark:text-gray-400 transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-6">
+                        <div className="p-8 space-y-8">
                             {/* Basic Info */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Track Title</label>
+                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Track Title</label>
                                     <input
                                         type="text"
                                         value={trackForm.title}
                                         onChange={(e) => setTrackForm(prev => ({ ...prev, title: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-blue-500 rounded-xl text-gray-900 dark:text-white font-bold transition-all outline-none"
                                         placeholder="e.g. Frontend Basics"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Track Icon</label>
+                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Icon</label>
                                     <input
                                         type="text"
                                         value={trackForm.icon}
                                         onChange={(e) => setTrackForm(prev => ({ ...prev, icon: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-blue-500 rounded-xl text-gray-900 dark:text-white font-bold transition-all outline-none"
                                         placeholder="e.g. 📚"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Category</label>
+                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</label>
                                     <select
                                         value={trackForm.category}
                                         onChange={(e) => setTrackForm(prev => ({ ...prev, category: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-blue-500 rounded-xl text-gray-900 dark:text-white font-medium transition-all outline-none"
                                     >
                                         <option value="General">General</option>
                                         <option value="Frontend">Frontend</option>
@@ -327,11 +354,11 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                     </select>
                                 </div>
                                 <div className="col-span-full space-y-2">
-                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Description</label>
+                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</label>
                                     <textarea
                                         value={trackForm.description}
                                         onChange={(e) => setTrackForm(prev => ({ ...prev, description: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none h-24"
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-blue-500 rounded-xl text-gray-900 dark:text-white font-medium transition-all outline-none h-24 resize-none"
                                         placeholder="Brief description of this learning path..."
                                     />
                                 </div>
@@ -339,10 +366,10 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
 
                             {/* Modules */}
                             <div className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-white/5 rounded-xl">
+                                    <h4 className="font-black text-gray-900 dark:text-white flex items-center gap-3 px-2">
                                         Modules
-                                        <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400">
+                                        <span className="text-xs bg-white dark:bg-white/10 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-300 font-bold border border-gray-200 dark:border-white/5">
                                             {trackForm.modules.length}
                                         </span>
                                     </h4>
@@ -351,108 +378,114 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                             ...prev,
                                             modules: [...prev.modules, { moduleId: `mod_${Date.now()}`, title: '', description: '' }]
                                         }))}
-                                        className="text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
+                                        className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"
                                     >
                                         <Plus className="w-4 h-4" /> Add Module
                                     </button>
                                 </div>
 
-                                <div className="space-y-3">
+                                <div className="space-y-4 relative">
+                                    <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-gray-200 dark:bg-gray-800 -z-10" />
                                     {trackForm.modules.map((module, index) => (
-                                        <div key={index} className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex gap-4">
-                                            <div className="flex-none flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 font-bold text-sm">
-                                                {index + 1}
-                                            </div>
-                                            <div className="flex-1 space-y-3">
-                                                <input
-                                                    type="text"
-                                                    value={module.title}
-                                                    onChange={(e) => {
-                                                        const newModules = [...trackForm.modules];
-                                                        newModules[index].title = e.target.value;
+                                        <div key={index} className="bg-white dark:bg-black/20 p-5 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm hover:shadow-md transition-all group">
+                                            <div className="flex gap-4">
+                                                <div className="flex-none flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold text-sm shadow-md z-10">
+                                                    {index + 1}
+                                                </div>
+                                                <div className="flex-1 space-y-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <input
+                                                            type="text"
+                                                            value={module.title}
+                                                            onChange={(e) => {
+                                                                const newModules = [...trackForm.modules];
+                                                                newModules[index].title = e.target.value;
+                                                                setTrackForm(prev => ({ ...prev, modules: newModules }));
+                                                            }}
+                                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-transparent focus:border-blue-500 rounded-lg text-gray-900 dark:text-white text-sm font-bold placeholder-gray-400 outline-none transition-colors"
+                                                            placeholder="Module Title"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={module.description}
+                                                            onChange={(e) => {
+                                                                const newModules = [...trackForm.modules];
+                                                                newModules[index].description = e.target.value;
+                                                                setTrackForm(prev => ({ ...prev, modules: newModules }));
+                                                            }}
+                                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-transparent focus:border-blue-500 rounded-lg text-gray-900 dark:text-white text-sm font-medium placeholder-gray-400 outline-none transition-colors"
+                                                            placeholder="Description (Optional)"
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex flex-col md:flex-row gap-3">
+                                                        <div className="flex-1 flex items-center gap-2 bg-gray-50 dark:bg-white/5 p-2 rounded-lg">
+                                                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap px-1">Quiz:</label>
+                                                            <select
+                                                                value={module.quizId || ''}
+                                                                onChange={(e) => {
+                                                                    const newModules = [...trackForm.modules];
+                                                                    newModules[index].quizId = e.target.value;
+                                                                    setTrackForm(prev => ({ ...prev, modules: newModules }));
+                                                                }}
+                                                                className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-white outline-none cursor-pointer"
+                                                            >
+                                                                <option value="" className="dark:bg-gray-900">None</option>
+                                                                {quizzes.map(quiz => (
+                                                                    <option key={quiz.id} value={quiz.id} className="dark:bg-gray-900">
+                                                                        {quiz.title}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                        <div className="flex-1 flex items-center gap-2 bg-gray-50 dark:bg-white/5 p-2 rounded-lg">
+                                                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap px-1">Badge:</label>
+                                                            <select
+                                                                value={module.badgeId || ''}
+                                                                onChange={(e) => {
+                                                                    const newModules = [...trackForm.modules];
+                                                                    newModules[index].badgeId = e.target.value;
+                                                                    setTrackForm(prev => ({ ...prev, modules: newModules }));
+                                                                }}
+                                                                className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-white outline-none cursor-pointer"
+                                                            >
+                                                                <option value="" className="dark:bg-gray-900">None</option>
+                                                                {badges.map(badge => (
+                                                                    <option key={badge.badgeId} value={badge.badgeId} className="dark:bg-gray-900">
+                                                                        {badge.icon} {badge.name} ({badge.rarity})
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        const newModules = trackForm.modules.filter((_, i) => i !== index);
                                                         setTrackForm(prev => ({ ...prev, modules: newModules }));
                                                     }}
-                                                    className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:border-blue-500 focus:outline-none"
-                                                    placeholder="Module Title"
-                                                />
-                                                <input
-                                                    type="text"
-                                                    value={module.description}
-                                                    onChange={(e) => {
-                                                        const newModules = [...trackForm.modules];
-                                                        newModules[index].description = e.target.value;
-                                                        setTrackForm(prev => ({ ...prev, modules: newModules }));
-                                                    }}
-                                                    className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:border-blue-500 focus:outline-none"
-                                                    placeholder="Module Description (Optional)"
-                                                />
-                                                <div className="flex items-center gap-2">
-                                                    <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Required Quiz:</label>
-                                                    <select
-                                                        value={module.quizId || ''}
-                                                        onChange={(e) => {
-                                                            const newModules = [...trackForm.modules];
-                                                            newModules[index].quizId = e.target.value;
-                                                            setTrackForm(prev => ({ ...prev, modules: newModules }));
-                                                        }}
-                                                        className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:border-blue-500 focus:outline-none"
-                                                    >
-                                                        <option value="">No Quiz Required</option>
-                                                        {quizzes.map(quiz => (
-                                                            <option key={quiz.id} value={quiz.id}>
-                                                                {quiz.title}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Reward Badge:</label>
-                                                    <select
-                                                        value={module.badgeId || ''}
-                                                        onChange={(e) => {
-                                                            const newModules = [...trackForm.modules];
-                                                            newModules[index].badgeId = e.target.value;
-                                                            setTrackForm(prev => ({ ...prev, modules: newModules }));
-                                                        }}
-                                                        className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:border-purple-500 focus:outline-none"
-                                                    >
-                                                        <option value="">No Badge Reward</option>
-                                                        {badges.map(badge => (
-                                                            <option key={badge.badgeId} value={badge.badgeId}>
-                                                                {badge.icon} {badge.name} ({badge.rarity})
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
+                                                    className="self-start p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
                                             </div>
-                                            <button
-                                                onClick={() => {
-                                                    const newModules = trackForm.modules.filter((_, i) => i !== index);
-                                                    setTrackForm(prev => ({ ...prev, modules: newModules }));
-                                                }}
-                                                className="self-start p-2 text-gray-500 hover:text-red-400 transition-colors"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-gray-900 z-10">
+                        <div className="p-6 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3 sticky bottom-0 bg-white/95 dark:bg-[#1e1e2d]/95 backdrop-blur-xl z-20">
                             <button
                                 onClick={() => setShowTrackForm(false)}
-                                className="px-6 py-2 rounded-xl font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+                                className="px-6 py-3 rounded-xl font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={async () => {
                                     try {
-                                        setLoading(true); // Re-use loading state or add a saving state locally
-
-                                        // 1. Save/Update Track
+                                        setLoading(true);
                                         let savedTrack: SkillTrack;
                                         if (trackForm.trackId) {
                                             savedTrack = await api.updateSkillTrack(trackForm.trackId, {
@@ -461,21 +494,21 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                                 description: trackForm.description,
                                                 icon: trackForm.icon,
                                                 category: trackForm.category,
-                                                modules: trackForm.modules
+                                                modules: trackForm.modules,
+                                                subjectId: subjectId
                                             }, adminId);
                                         } else {
                                             savedTrack = await api.createSkillTrack({
-                                                trackId: '', // Server should gen ID or we use empty string if optional
+                                                trackId: '',
                                                 title: trackForm.title,
                                                 description: trackForm.description,
                                                 icon: trackForm.icon,
                                                 category: trackForm.category,
-                                                modules: trackForm.modules
+                                                modules: trackForm.modules,
+                                                subjectId: subjectId
                                             }, adminId);
                                         }
 
-                                        // 2. Link Quizzes
-                                        // For each module that has a quizId, update that Quiz to link back to this track/module
                                         const updatePromises = trackForm.modules
                                             .filter(m => m.quizId)
                                             .map(m => api.updateQuiz(m.quizId!, {
@@ -491,12 +524,12 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                     } catch (err: any) {
                                         console.error(err);
                                         onNotification('error', err.message || 'Failed to save roadmap');
-                                        setLoading(false); // Only stop loading on error, loadData will handle it on success
+                                        setLoading(false);
                                     }
                                 }}
-                                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl font-bold shadow-lg transition-all"
+                                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all"
                             >
-                                <Save className="w-4 h-4" />
+                                <Save className="w-5 h-5" />
                                 Save Roadmap
                             </button>
                         </div>

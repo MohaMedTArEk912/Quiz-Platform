@@ -1,0 +1,187 @@
+{
+  "_id": "session5-homework-quiz",
+  "id": "session5-homework-quiz",
+  "category": "Python",
+  "coinsReward": 75,
+  "description": "Homework quiz for Session 5: Applying logical operators in real scenarios",
+  "difficulty": "Beginner+",
+  "icon": "🏠",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Scenario Logic",
+      "question": "You can download a game if you are over 13 OR have parental permission. Age=10, permission=True. Can you download?",
+      "options": [
+        "Yes",
+        "No",
+        "Only if both are true",
+        "Never"
+      ],
+      "correctAnswer": 0,
+      "explanation": "OR means at least one condition must be True. Permission is True, so allowed.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Scenario Logic",
+      "question": "A door unlocks if you have a keycard AND know the PIN. You have the card but forgot the PIN. Does it open?",
+      "options": [
+        "Yes",
+        "No",
+        "Maybe",
+        "Only with a fingerprint"
+      ],
+      "correctAnswer": 1,
+      "explanation": "AND requires both. Missing PIN means one condition is False, so result is False.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "NOT in Practice",
+      "question": "You want to check if a user is NOT a guest. Which is correct?",
+      "options": [
+        "user == 'guest'",
+        "user != 'guest'",
+        "not user == 'guest'",
+        "Both B and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Both != and not == mean 'not equal'. They are interchangeable here.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "NOT in Practice",
+      "question": "What is not (5 > 3)?",
+      "options": [
+        "True",
+        "False",
+        "5",
+        "3"
+      ],
+      "correctAnswer": 1,
+      "explanation": "5 > 3 is True. not True is False.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Combining Conditions",
+      "question": "You qualify for a discount if you are a student OR age < 18. Age=20, student=False. Do you get a discount?",
+      "options": [
+        "Yes",
+        "No",
+        "Only if age=18",
+        "Maybe"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Both conditions are False (not a student, not under 18). OR needs at least one True.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Combining Conditions",
+      "question": "What is (age >= 13) and (age <= 19) checking for?",
+      "options": [
+        "If age is exactly 16",
+        "If age is a teenager (13-19 inclusive)",
+        "If age is under 13",
+        "If age is over 19"
+      ],
+      "correctAnswer": 1,
+      "explanation": ">=13 and <=19 defines the teenage range, including both 13 and 19.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Complex Logic",
+      "question": "What is the result of: not (True or False)?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "None"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Inside ( ): True or False = True. Then not True = False.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Complex Logic",
+      "question": "A smart bulb turns on if it's dark AND motion is detected, OR if override switch is ON. Dark=True, motion=False, override=True. Does it turn on?",
+      "options": [
+        "Yes",
+        "No",
+        "Only if dark and motion",
+        "Never"
+      ],
+      "correctAnswer": 0,
+      "explanation": "OR with override=True makes the whole condition True, regardless of dark and motion.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Truth Table Thinking",
+      "question": "Which combination makes (A and B) evaluate to True?",
+      "options": [
+        "A=True, B=False",
+        "A=False, B=True",
+        "A=True, B=True",
+        "A=False, B=False"
+      ],
+      "correctAnswer": 2,
+      "explanation": "AND is only True when both A and B are True.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Debugging Logic",
+      "question": "You wrote: if age > 12 and < 18: print('Teen')\nIt fails. Why?",
+      "options": [
+        "Missing parentheses",
+        "Cannot combine > and < in one statement like that",
+        "Should use 'or' instead of 'and'",
+        "print() is wrong"
+      ],
+      "correctAnswer": 1,
+      "explanation": "You must repeat the variable: age > 12 and age < 18.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 20,
+  "title": "Session 5: Logical Operators - Homework Quiz",
+  "xpReward": 150
+}

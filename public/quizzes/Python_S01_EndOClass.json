@@ -1,0 +1,187 @@
+{
+  "_id": "session1-end-quiz",
+  "id": "session1-end-quiz",
+  "category": "Python",
+  "coinsReward": 50,
+  "description": "End of class quiz for Session 1: Variables, Storage, and Output",
+  "difficulty": "Beginner",
+  "icon": "📝",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Variables as Containers",
+      "question": "If a variable is like a labeled box in a warehouse, what does the label represent?",
+      "options": [
+        "The box's color",
+        "The variable's name",
+        "What's inside the box",
+        "The warehouse location"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The variable name is the label—it tells you which box (variable) you're referring to, while the contents are the stored value.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Variables as Containers",
+      "question": "What happens in memory when you write: score = 100",
+      "options": [
+        "The computer displays 100 on screen",
+        "A space called 'score' is created and 100 is placed inside",
+        "The computer checks if score equals 100",
+        "The number 100 is deleted"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The = sign means 'store this value in this named location'. 'score' becomes a container holding 100.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Print Function",
+      "question": "What is the main job of print() in a program?",
+      "options": [
+        "To save data for later",
+        "To show information to the user",
+        "To create new variables",
+        "To do math calculations"
+      ],
+      "correctAnswer": 1,
+      "explanation": "print() is for output—it displays messages, numbers, or variable values so the user can see them.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Print Function",
+      "question": "What will appear on screen after this code runs?\n\nplayer = \"Alex\"\nprint(player)",
+      "options": [
+        "player",
+        "\"Alex\"",
+        "Alex",
+        "Nothing"
+      ],
+      "correctAnswer": 2,
+      "explanation": "print(player) shows the value stored in the variable 'player', which is the text Alex (without quotes).",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Text vs. Numbers",
+      "question": "Why does Python treat '25' differently from 25?",
+      "options": [
+        "It doesn't—they're the same",
+        "'25' is text you can't do math with, 25 is a number you can calculate",
+        "'25' is a number, 25 is text",
+        "One is bigger than the other"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Quotes mean 'text' (string). No quotes mean 'number' (integer). You can add 25 + 5, but not '25' + 5.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Text vs. Numbers",
+      "question": "Which line stores a piece of text?",
+      "options": [
+        "message = Hello",
+        "message = \"Hello\"",
+        "message = 100",
+        "message = Hello World"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Text must be inside quotes. Words without quotes will cause an error (Python thinks they're variable names).",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Syntax Basics",
+      "question": "Which line will cause a Python error?",
+      "options": [
+        "city = \"Tokyo\"",
+        "score = 42",
+        "player name = \"Sam\"",
+        "age = 10"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Variable names cannot contain spaces. Use underscore: player_name = \"Sam\".",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Concept Application",
+      "question": "You're making a game and need to store the player's high score. Which is correct?",
+      "options": [
+        "high score = 5000",
+        "highScore = \"5000\"",
+        "high_score = 5000",
+        "\"high_score\" = 5000"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Variable name with underscores, storing a number (no quotes) so you can update it with math later.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Concept Application",
+      "question": "What does this program do?\n\nfruit = \"apple\"\nprint(fruit)\nfruit = \"banana\"\nprint(fruit)",
+      "options": [
+        "Prints apple twice",
+        "Prints apple then banana",
+        "Prints banana twice",
+        "Causes an error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Variables can change. First print shows 'apple', then fruit gets a new value ('banana'), second print shows 'banana'.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Final Check",
+      "question": "Why do programmers use variables instead of typing values directly every time?",
+      "options": [
+        "To make code longer",
+        "To reuse and change data easily in one place",
+        "Because print() doesn't work without them",
+        "Variables make the program run slower"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Variables let you store data once, use it many times, and update it in one place—making programs flexible and easier to maintain.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 15,
+  "title": "Session 1: Variables & Print - End of Class Quiz",
+  "xpReward": 100
+}

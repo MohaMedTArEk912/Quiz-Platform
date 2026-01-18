@@ -46,88 +46,131 @@ const ReviewManagement: React.FC<ReviewManagementProps> = ({ currentUser, users,
 
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-in fade-in duration-500">
             {pendingReviews.length === 0 && !reviewingAttempt ? (
-                <div className="py-20 text-center border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-                    <Check className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-500 font-bold">All caught up! No pending reviews.</p>
+                <div className="py-20 text-center bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-white/5 shadow-sm">
+                    <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Check className="w-10 h-10 text-emerald-500" />
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest text-sm">All caught up! No pending reviews.</p>
                 </div>
             ) : reviewingAttempt ? (
                 <div className="space-y-6">
-                    <div className="flex justify-between items-center bg-white dark:bg-[#13141f] p-6 rounded-2xl border border-gray-200 dark:border-white/10 sticky top-0 z-10 shadow-xl backdrop-blur-xl">
-                        <div>
-                            <h3 className="text-xl font-black text-gray-900 dark:text-white">Grading: <span className="text-purple-600 dark:text-purple-400">{reviewingAttempt.userName}</span></h3>
-                            <p className="text-sm text-gray-500">Quiz: {getQuizForAttempt(reviewingAttempt)?.title}</p>
-                        </div>
-                        <div className="flex gap-4">
-                            <div className="text-right">
-                                <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">Adjustment</div>
-                                <div className={`text-xl font-black ${Object.values(reviewScores).reduce((a, b) => a + b, 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                    {Object.values(reviewScores).reduce((a, b) => a + b, 0) > 0 ? '+' : ''}{Object.values(reviewScores).reduce((a, b) => a + b, 0)}
+                    {/* Header Workspace */}
+                    <div className="flex flex-col sm:flex-row justify-between items-center bg-white/70 dark:bg-[#1e1e2d]/70 backdrop-blur-3xl p-5 sm:p-6 rounded-3xl border border-white/20 dark:border-white/5 sticky top-2 z-20 shadow-2xl">
+                        <div className="flex items-center gap-4 mb-4 sm:mb-0">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 p-0.5 shadow-xl">
+                                <div className="w-full h-full bg-white dark:bg-[#1e1e2d] rounded-[14px] flex items-center justify-center overflow-hidden">
+                                    {(() => {
+                                        const student = users?.find(u => u.userId === reviewingAttempt.userId);
+                                        return student?.avatar ? (
+                                            <Avatar config={student.avatar} size="md" className="w-full h-full" />
+                                        ) : (
+                                            <span className="font-black text-purple-600 text-lg">{reviewingAttempt.userName.charAt(0)}</span>
+                                        );
+                                    })()}
                                 </div>
                             </div>
-                            <button onClick={() => setReviewingAttempt(null)} className="px-4 py-2 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-xl text-gray-600 dark:text-gray-300 font-bold transition-colors">Cancel</button>
-                            <button onClick={handleReviewSubmit} className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-purple-500/25 transition-all">Submit Review</button>
+                            <div>
+                                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                                    Grading <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-500">{reviewingAttempt.userName}</span>
+                                </h3>
+                                <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Quiz: {getQuizForAttempt(reviewingAttempt)?.title}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 w-full sm:w-auto">
+                            <div className="px-5 py-2.5 rounded-2xl bg-gray-50 dark:bg-black/20 border border-white/10 text-center flex-1 sm:flex-none">
+                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-0.5">Adjustment</div>
+                                <div className={`text-lg font-black ${Object.values(reviewScores).reduce((a, b) => a + b, 0) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                    {Object.values(reviewScores).reduce((a, b) => a + b, 0) > 0 ? '+' : ''}{Object.values(reviewScores).reduce((a, b) => a + b, 0)} pts
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setReviewingAttempt(null)}
+                                className="p-3 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-2xl text-gray-600 dark:text-gray-400 font-black text-xs uppercase tracking-widest transition-all"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleReviewSubmit}
+                                className="flex-1 sm:flex-none px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.1em] shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all transform hover:-translate-y-0.5"
+                            >
+                                Submit Review
+                            </button>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4">
                         {getQuizForAttempt(reviewingAttempt)?.questions.map((q, idx) => {
                             if (q.type !== 'text') return null;
                             const ans = reviewingAttempt.answers[q.id];
 
                             return (
-                                <div key={q.id} className="bg-white dark:bg-black/20 p-6 rounded-3xl border border-gray-200 dark:border-white/5 space-y-4 shadow-sm">
+                                <div key={q.id} className="bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/20 dark:border-white/5 space-y-5 shadow-sm hover:shadow-xl transition-shadow group">
                                     <div className="flex justify-between items-start">
-                                        <div className="mb-2">
-                                            <span className="inline-block px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-bold uppercase tracking-wider mb-2">Question {idx + 1}</span>
-                                            <p className="text-gray-900 dark:text-white text-lg font-medium leading-relaxed">{q.question}</p>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-black uppercase tracking-widest border border-purple-500/20">
+                                                    Quest {idx + 1}
+                                                </span>
+                                                <span className="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">
+                                                    Open Text
+                                                </span>
+                                            </div>
+                                            <p className="text-gray-900 dark:text-white text-lg font-black leading-tight tracking-tight uppercase">{q.question}</p>
                                         </div>
-                                        <div className="text-xs font-bold text-gray-500 bg-gray-100 dark:bg-white/5 px-2 py-1 rounded">
-                                            {q.points || 1} pts
+                                        <div className="flex flex-col items-center p-2 rounded-2xl bg-gray-50 dark:bg-black/20 border border-white/5 min-w-[70px]">
+                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Points</span>
+                                            <span className="text-lg font-black text-indigo-500">{q.points || 1}</span>
                                         </div>
                                     </div>
 
-                                    {/* User Answer */}
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Student Answer</label>
-                                        <div className="bg-gray-50 dark:bg-[#0a0a0b] p-5 rounded-2xl text-gray-900 dark:text-gray-200 font-mono text-sm border border-gray-200 dark:border-white/10 shadow-inner">
+                                    {/* User Answer Container */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Student Response</label>
+                                        <div className="bg-gray-50/50 dark:bg-[#050505]/50 p-6 rounded-3xl text-gray-900 dark:text-gray-100 font-bold text-sm leading-relaxed border-2 border-indigo-500/5 shadow-inner group-hover:border-indigo-500/20 transition-all">
                                             {(() => {
                                                 if (typeof ans === 'object' && ans !== null) {
                                                     return (ans as any).selected || JSON.stringify(ans);
                                                 }
-                                                return ans || <span className="text-gray-600 italic">No Answer Provided</span>;
+                                                return ans || <span className="text-gray-400 italic">No answer provided by students.</span>;
                                             })()}
                                         </div>
                                     </div>
 
-                                    {/* Reference / Explanation */}
+                                    {/* Reference Panel */}
                                     {q.explanation && (
-                                        <div className="bg-blue-500/5 p-4 rounded-xl border border-blue-500/10">
-                                            <div className="flex gap-2 text-blue-300 mb-1 pointer-events-none">
-                                                <BookOpen className="w-4 h-4 mt-0.5" />
-                                                <span className="text-xs font-bold uppercase tracking-wider">Reference / Explanation</span>
+                                        <div className="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10 flex gap-3 items-start">
+                                            <div className="p-2 rounded-xl bg-emerald-500/10 mt-0.5">
+                                                <BookOpen className="w-4 h-4 text-emerald-500" />
                                             </div>
-                                            <p className="text-gray-400 text-sm">{q.explanation}</p>
+                                            <div>
+                                                <div className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1">Reference Guide</div>
+                                                <p className="text-gray-500 dark:text-gray-400 text-xs font-bold leading-relaxed">{q.explanation}</p>
+                                            </div>
                                         </div>
                                     )}
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-white/5">
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1 mb-1 block">Score Adj.</label>
-                                            <input
-                                                type="number"
-                                                placeholder="+/- Points"
-                                                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-purple-500/50 transition-colors"
-                                                onChange={e => setReviewScores({ ...reviewScores, [q.id]: parseInt(e.target.value) || 0 })}
-                                            />
+                                    {/* Grading Controls */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-4 border-t border-white/10">
+                                        <div className="sm:col-span-1">
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 mb-1.5 block">Score Adj.</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    placeholder="0"
+                                                    className="w-full bg-gray-50 dark:bg-black/40 border-2 border-transparent focus:border-indigo-500/50 rounded-2xl px-4 py-3 text-gray-900 dark:text-white font-black outline-none transition-all placeholder:text-gray-300"
+                                                    onChange={e => setReviewScores({ ...reviewScores, [q.id]: parseInt(e.target.value) || 0 })}
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="md:col-span-2">
-                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1 mb-1 block">Feedback</label>
+                                        <div className="sm:col-span-3">
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 mb-1.5 block">Written Feedback</label>
                                             <input
                                                 type="text"
-                                                placeholder="Great job, but consider..."
-                                                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-purple-500/50 transition-colors"
+                                                placeholder="e.g. Excellent detail in your explanation..."
+                                                className="w-full bg-gray-50 dark:bg-black/40 border-2 border-transparent focus:border-indigo-500/50 rounded-2xl px-5 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all placeholder:text-gray-400"
                                                 onChange={e => setReviewFeedback({ ...reviewFeedback, [q.id]: e.target.value })}
                                             />
                                         </div>
@@ -135,36 +178,42 @@ const ReviewManagement: React.FC<ReviewManagementProps> = ({ currentUser, users,
                                 </div>
                             )
                         })}
-                        {getQuizForAttempt(reviewingAttempt)?.questions.filter(q => q.type === 'text').length === 0 && (
-                            <div className="py-12 text-center border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-                                <p className="text-gray-500 font-bold">No text questions found to review manually.</p>
-                            </div>
-                        )}
                     </div>
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {pendingReviews.map(attempt => (
-                        <div key={attempt.attemptId} className="flex justify-between items-center bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/5 hover:border-purple-500/30 transition-all group shadow-sm">
-                            <div>
-                                <div className="flex items-center gap-3 mb-1">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 p-0.5 flex items-center justify-center shadow-md overflow-hidden">
-                                        <div className="w-full h-full bg-white dark:bg-[#13141f] rounded-full overflow-hidden flex items-center justify-center">
-                                            {(() => {
-                                                const student = users?.find(u => u.userId === attempt.userId);
-                                                return student?.avatar ? (
-                                                    <Avatar config={student.avatar} size="sm" className="w-full h-full" />
-                                                ) : (
-                                                    <span className="font-bold text-gray-700 dark:text-gray-200 text-xs">{attempt.userName.charAt(0)}</span>
-                                                );
-                                            })()}
-                                        </div>
+                        <div key={attempt.attemptId} className="bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl p-5 rounded-3xl border border-white/20 dark:border-white/5 hover:border-indigo-500/30 transition-all group shadow-sm flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 p-0.5 shadow-lg group-hover:scale-110 transition-transform">
+                                    <div className="w-full h-full bg-white dark:bg-[#1e1e2d] rounded-[14px] flex items-center justify-center overflow-hidden font-black text-indigo-600">
+                                        {(() => {
+                                            const student = users?.find(u => u.userId === attempt.userId);
+                                            return student?.avatar ? (
+                                                <Avatar config={student.avatar} size="sm" className="w-full h-full" />
+                                            ) : (
+                                                attempt.userName.charAt(0)
+                                            );
+                                        })()}
                                     </div>
-                                    <div className="text-gray-900 dark:text-white font-bold text-lg group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{attempt.userName}</div>
                                 </div>
-                                <div className="text-gray-500 text-sm ml-11">{attempt.quizTitle} • {new Date(attempt.completedAt).toLocaleDateString()}</div>
+                                <div>
+                                    <h4 className="font-black text-gray-900 dark:text-white uppercase tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                        {attempt.userName}
+                                    </h4>
+                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
+                                        <span className="text-indigo-500">{attempt.quizTitle}</span>
+                                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                                        <span>{new Date(attempt.completedAt).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <button onClick={() => setReviewingAttempt(attempt)} className="px-6 py-3 bg-purple-50 dark:bg-white/5 text-purple-600 dark:text-purple-400 rounded-xl font-bold hover:bg-purple-600 hover:text-white transition-all shadow-lg">Review</button>
+                            <button
+                                onClick={() => setReviewingAttempt(attempt)}
+                                className="px-5 py-2.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-[1.25rem] font-black text-xs uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all transform hover:-translate-x-1"
+                            >
+                                Review
+                            </button>
                         </div>
                     ))}
                 </div>

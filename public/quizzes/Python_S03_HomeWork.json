@@ -1,0 +1,187 @@
+{
+  "_id": "session3-homework-quiz",
+  "id": "session3-homework-quiz",
+  "category": "Python",
+  "coinsReward": 75,
+  "description": "Homework quiz for Session 3: Applying Boolean logic and comparisons",
+  "difficulty": "Beginner+",
+  "icon": "🏠",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Boolean Logic",
+      "question": "You're tracking if a door is open and if the lights are on. Which variable setup is best?",
+      "options": [
+        "door = 'yes', lights = 'yes'",
+        "door = 1, lights = 1",
+        "door_open = True, lights_on = True",
+        "status = 'open and on'"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Booleans (True/False) are designed for on/off, yes/no states and are self-explanatory.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Boolean Logic",
+      "question": "What will bool(0) return?",
+      "options": [
+        "True",
+        "False",
+        "0",
+        "Error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "In Python, 0 is considered False when converted to Boolean. Non-zero numbers are True.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Comparison Deep Dive",
+      "question": "What is the result of: 'apple' == 'Apple'?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "apple"
+      ],
+      "correctAnswer": 1,
+      "explanation": "String comparison is case-sensitive. 'apple' is not the same as 'Apple'.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Comparison Deep Dive",
+      "question": "What does 15 <= 15 evaluate to?",
+      "options": [
+        "True",
+        "False",
+        "15",
+        "0"
+      ],
+      "correctAnswer": 0,
+      "explanation": "<= means 'less than or equal to'. 15 is equal to 15, so it's True.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Arithmetic Context",
+      "question": "You have 10 cookies and give away 3. How do you calculate remaining cookies in Python?",
+      "options": [
+        "10 - 3",
+        "10 / 3",
+        "10 * 3",
+        "10 + 3"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Subtraction (-) is used to find the difference.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Arithmetic Context",
+      "question": "If each box holds 6 eggs, and you have 4 boxes, how do you calculate total eggs?",
+      "options": [
+        "6 + 4",
+        "6 * 4",
+        "6 / 4",
+        "6 - 4"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Multiplication (*) calculates total when you have groups of equal size.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Type Mixing",
+      "question": "Why does '5' * 3 work but '5' + 3 not work?",
+      "options": [
+        "* converts string to number automatically",
+        "* with string repeats it, + tries to add different types",
+        "3 is too small",
+        "It's a Python bug"
+      ],
+      "correctAnswer": 1,
+      "explanation": "String * number repeats the string. String + number fails because types don't match.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Real-World Condition",
+      "question": "You're checking if a user is old enough to access a 13+ site. Which condition is correct?",
+      "options": [
+        "age > 13",
+        "age >= 13",
+        "age == 13",
+        "age < 13"
+      ],
+      "correctAnswer": 1,
+      "explanation": ">= means 'greater than or equal to'. 13-year-olds are allowed.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Code Prediction",
+      "question": "What is the output?\n\nx = 8\ny = 3\nprint(x > y and x != y)",
+      "options": [
+        "True",
+        "False",
+        "8",
+        "Error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "x > y is True (8 > 3). x != y is True (8 ≠ 3). True and True = True.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Debugging Challenge",
+      "question": "You wrote: result = '10' / 2\nIt fails. How do you fix it?",
+      "options": [
+        "result = 10 / 2",
+        "result = int('10') / 2",
+        "result = '10' / '2'",
+        "Both A and B"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Either remove quotes to make it a number, or convert the string to int before dividing.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 20,
+  "title": "Session 3: Booleans & Comparisons - Homework Quiz",
+  "xpReward": 150
+}

@@ -1,0 +1,272 @@
+{
+  "_id": "session9-end-quiz",
+  "id": "session9-end-quiz",
+  "category": "Python",
+  "coinsReward": 75,
+  "description": "End of class quiz for Session 9: Advanced input handling and conversion",
+  "difficulty": "Beginner+",
+  "icon": "📝",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Type Conversion Review",
+      "question": "What does int('42') do?",
+      "options": [
+        "Turns 42 into a string",
+        "Converts the string '42' to the integer 42",
+        "Returns '42'",
+        "Causes an error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "int() converts a numeric string to an integer for math operations.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Type Conversion Review",
+      "question": "What is the difference between int('7') and float('7')?",
+      "options": [
+        "No difference",
+        "int gives 7, float gives 7.0",
+        "int gives '7', float gives 7",
+        "float causes error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "int() returns an integer, float() returns a floating-point number (with decimal).",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Input as String",
+      "question": "What is the data type of input('Enter a number: ') if user types 12?",
+      "options": [
+        "int",
+        "float",
+        "str",
+        "bool"
+      ],
+      "correctAnswer": 2,
+      "explanation": "input() always returns a string, regardless of what is typed.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Input as String",
+      "question": "How do you convert user input to an integer for addition?",
+      "options": [
+        "num = input('Number:') + 5",
+        "num = int(input('Number:')) + 5",
+        "num = str(input('Number:')) + 5",
+        "num = input('Number:') * 5"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Wrap input() with int() to convert the string to an integer before math.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Common Error",
+      "question": "What happens if you try int('hello')?",
+      "options": [
+        "Returns 0",
+        "Converts to 'h'",
+        "ValueError",
+        "Returns None"
+      ],
+      "correctAnswer": 2,
+      "explanation": "int() cannot convert non-numeric strings → ValueError.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Common Error",
+      "question": "How can you check if a string can be converted to int?",
+      "options": [
+        "Use .isdigit()",
+        "Try converting and catch error",
+        "Check if it's numeric",
+        "All of the above"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Multiple methods exist: .isdigit() for positive integers, try-except for safety, etc.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Float Conversion",
+      "question": "Why use float() instead of int() for some inputs?",
+      "options": [
+        "float() is faster",
+        "To allow decimal numbers",
+        "int() doesn't work with input()",
+        "float() prevents all errors"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Use float() when the input might contain a decimal point (e.g., 3.14, 7.5).",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Float Conversion",
+      "question": "What does float('4.2') return?",
+      "options": [
+        "4",
+        "4.2",
+        "'4.2'",
+        "Error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "float() converts numeric strings (including decimals) to floating-point numbers.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Multiple Inputs",
+      "question": "You want two numbers from user and add them. Which is correct?",
+      "options": [
+        "a = input('First:'); b = input('Second:'); print(a + b)",
+        "a = int(input('First:')); b = int(input('Second:')); print(a + b)",
+        "a, b = input('First:'), input('Second:'); print(a + b)",
+        "Both B and C work with conversion"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Without conversion, strings concatenate. With int(), they add numerically.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Multiple Inputs",
+      "question": "How do you ask for first name and last name separately?",
+      "options": [
+        "name = input('Full name:')",
+        "first = input('First:'); last = input('Last:')",
+        "input('First:'); input('Last:')",
+        "Both B and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "You can store in variables or just ask without storing. B is more useful.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Real‑World Example",
+      "question": "You're making a BMI calculator. Height might be 1.75 (meters). Which conversion?",
+      "options": [
+        "int()",
+        "float()",
+        "str()",
+        "No conversion"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Height often has decimals → use float().",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Real‑World Example",
+      "question": "A program asks for age. Which conversion is safest?",
+      "options": [
+        "int()",
+        "float()",
+        "str()",
+        "Depends—age is usually whole but could be float for babies"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Age is usually int, but for infants in months/weeks, float might be used.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Error Prevention",
+      "question": "What does .isdigit() do?",
+      "options": [
+        "Checks if a string contains only numeric characters",
+        "Converts to int",
+        "Rounds a float",
+        "Deletes a string"
+      ],
+      "correctAnswer": 0,
+      "explanation": ".isdigit() returns True if all characters are digits (0-9).",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Error Prevention",
+      "question": "If user might type '12.5', will .isdigit() return True?",
+      "options": [
+        "Yes",
+        "No",
+        "Only if it's '125'",
+        "Only at night"
+      ],
+      "correctAnswer": 1,
+      "explanation": ".isdigit() fails on decimal points—they are not digits.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Concept Summary",
+      "question": "Why is type conversion important with input()?",
+      "options": [
+        "It makes programs longer",
+        "It ensures data is in the right format for operations (math, comparison)",
+        "Python requires it for all inputs",
+        "It prevents printing"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Conversion lets you use input numerically or logically as intended.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 20,
+  "title": "Session 9: Input Conversion Practice - End of Class Quiz",
+  "xpReward": 150
+}

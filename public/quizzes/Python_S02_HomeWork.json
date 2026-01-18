@@ -1,0 +1,187 @@
+{
+  "_id": "session2-homework-quiz",
+  "id": "session2-homework-quiz",
+  "category": "Python",
+  "coinsReward": 75,
+  "description": "Homework quiz for Session 2: Applying naming rules and type concepts",
+  "difficulty": "Beginner+",
+  "icon": "🏠",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Naming Analysis",
+      "question": "You're creating a variable to track a player's high score. Which is the clearest and valid name?",
+      "options": [
+        "hs",
+        "playerHighScore",
+        "player_high_score",
+        "high-score"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Underscores are Pythonic, readable, and valid. Hyphens cause errors.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Naming Analysis",
+      "question": "Why is 'first_name' better than 'firstName' for Python beginners?",
+      "options": [
+        "It's shorter",
+        "It follows Python's convention (snake_case)",
+        "It uses capital letters",
+        "It's a reserved keyword"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Python style recommends snake_case (words_with_underscores) for variable names.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Type Detection",
+      "question": "What will type(True) return?",
+      "options": [
+        "bool",
+        "str",
+        "int",
+        "None"
+      ],
+      "correctAnswer": 0,
+      "explanation": "True and False are Boolean values, type 'bool'.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Type Detection",
+      "question": "You see: value = 3.14\nWhat is type(value)?",
+      "options": [
+        "int",
+        "float",
+        "str",
+        "decimal"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Numbers with decimal points are floats, even if they look like pi.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Syntax Error Hunt",
+      "question": "Which line will cause a SyntaxError?",
+      "options": [
+        "total_score = 100",
+        "1st_player = 'Ali'",
+        "_temp = 25",
+        "pi_value = 3.14"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Variable names cannot start with a number.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Syntax Error Hunt",
+      "question": "What's wrong here?\n\nif = 5\nprint(if)",
+      "options": [
+        "if should be in quotes",
+        "'if' is a keyword and cannot be a variable name",
+        "Missing parentheses",
+        "Nothing is wrong"
+      ],
+      "correctAnswer": 1,
+      "explanation": "'if' is a Python keyword (used for conditions). Keywords cannot be reused as variable names.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Real-World Type Choice",
+      "question": "You're storing a phone number like '0551234567'. Should it be a string or integer?",
+      "options": [
+        "Integer, because it's a number",
+        "String, because you won't do math with it and it may start with 0",
+        "Float, because it's long",
+        "Boolean, because it's either valid or not"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Phone numbers are identifiers, not quantities. Also, integers can't start with 0.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Real-World Type Choice",
+      "question": "You need to store whether a user is logged in. Which data type is best?",
+      "options": [
+        "int: 1 for yes, 0 for no",
+        "str: 'yes' or 'no'",
+        "bool: True or False",
+        "float: 1.0 or 0.0"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Boolean (bool) is designed for true/false, yes/no states. It's the most semantic choice.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Code Prediction",
+      "question": "What does this code output?\n\na = '10'\nb = '20'\nprint(a + b)",
+      "options": [
+        "30",
+        "1020",
+        "Error",
+        "10 20"
+      ],
+      "correctAnswer": 1,
+      "explanation": "+ with strings concatenates (joins) them. '10' + '20' = '1020'.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Debugging Challenge",
+      "question": "You wrote:\n\nage = '18'\nnext_age = age + 1\n\nIt fails. How do you fix it?",
+      "options": [
+        "Change '18' to 18",
+        "Use next_age = age + '1'",
+        "Use next_age = int(age) + 1",
+        "Both A and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Either store age as a number from the start, or convert the string to int before adding.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 20,
+  "title": "Session 2: Variable Names & Data Types - Homework Quiz",
+  "xpReward": 150
+}

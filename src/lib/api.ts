@@ -175,8 +175,11 @@ export const api = {
         return response.json();
     },
 
-    async getQuizzes() {
-        const response = await fetch(`${API_URL}/quizzes`);
+    async getQuizzes(subjectId?: string) {
+        const url = subjectId
+            ? `${API_URL}/quizzes?subjectId=${subjectId}`
+            : `${API_URL}/quizzes`;
+        const response = await fetch(url);
         if (!response.ok) {
             let errorMessage = 'Failed to load quizzes';
             try {
@@ -578,8 +581,11 @@ export const api = {
     },
 
     // Skill Tracks
-    async getSkillTracks(): Promise<SkillTrack[]> {
-        const response = await fetch(`${API_URL}/skill-tracks`);
+    async getSkillTracks(subjectId?: string): Promise<SkillTrack[]> {
+        const url = subjectId
+            ? `${API_URL}/skill-tracks?subjectId=${subjectId}`
+            : `${API_URL}/skill-tracks`;
+        const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to load skill tracks');
         return response.json();
     },
@@ -678,8 +684,11 @@ export const api = {
     },
 
     // Study Cards
-    async getStudyCards() {
-        const response = await fetch(`${API_URL}/study-cards`);
+    async getStudyCards(subjectId?: string) {
+        const url = subjectId
+            ? `${API_URL}/study-cards?subjectId=${subjectId}`
+            : `${API_URL}/study-cards`;
+        const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to load study cards');
         return response.json();
     },
@@ -1110,10 +1119,24 @@ export const api = {
 
     // Subjects
     async getAllSubjects(adminId: string) {
-        const response = await fetch(`${API_URL}/subjects`, {
-            headers: getHeaders(adminId)
-        });
-        if (!response.ok) throw new Error('Failed to fetch subjects');
+        const headers = getHeaders(adminId);
+        // Guard: Prevent calls if no auth token
+        if (!headers.Authorization || headers.Authorization === 'Bearer null') {
+            console.warn('[API] getAllSubjects called without valid auth token');
+            throw new Error('Please log in again to access this feature');
+        }
+
+        const response = await fetch(`${API_URL}/subjects`, { headers });
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('Session expired. Please log in again.');
+            }
+            if (response.status === 403) {
+                throw new Error('You do not have permission to view subjects.');
+            }
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `Failed to fetch subjects (${response.status})`);
+        }
         return response.json();
     },
 

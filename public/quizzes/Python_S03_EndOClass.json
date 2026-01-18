@@ -1,0 +1,187 @@
+{
+  "_id": "session3-end-quiz",
+  "id": "session3-end-quiz",
+  "category": "Python",
+  "coinsReward": 50,
+  "description": "End of class quiz for Session 3: Booleans, Comparisons, and Arithmetic",
+  "difficulty": "Beginner",
+  "icon": "📝",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Boolean Basics",
+      "question": "Which of these is a Boolean value in Python?",
+      "options": [
+        "\"True\"",
+        "true",
+        "True",
+        "YES"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Python Booleans are capitalized: True and False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Boolean Basics",
+      "question": "What does a Boolean variable store?",
+      "options": [
+        "Text information",
+        "A true/false, yes/no state",
+        "Decimal numbers",
+        "A list of items"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Booleans represent binary states: True/False, Yes/No, On/Off.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Comparison Operators",
+      "question": "Which operator checks if two values are equal?",
+      "options": [
+        "=",
+        "==",
+        "!=",
+        ">"
+      ],
+      "correctAnswer": 1,
+      "explanation": "== is for equality comparison. = is for assignment.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Comparison Operators",
+      "question": "What will 10 > 5 evaluate to?",
+      "options": [
+        "True",
+        "False",
+        "10",
+        "5"
+      ],
+      "correctAnswer": 0,
+      "explanation": "10 is greater than 5, so the comparison returns True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Comparison Operators",
+      "question": "Which operator means 'not equal to'?",
+      "options": [
+        "==",
+        "!=",
+        "<>",
+        "><"
+      ],
+      "correctAnswer": 1,
+      "explanation": "!= checks if two values are different.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Arithmetic Operators",
+      "question": "What is 7 * 3?",
+      "options": [
+        "10",
+        "21",
+        "73",
+        "4"
+      ],
+      "correctAnswer": 1,
+      "explanation": "* is multiplication. 7 times 3 equals 21.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Arithmetic Operators",
+      "question": "Which symbol is used for division?",
+      "options": [
+        "÷",
+        "/",
+        "\\",
+        ":"
+      ],
+      "correctAnswer": 1,
+      "explanation": "/ is the division operator in Python.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Type Interaction",
+      "question": "What happens if you try: 5 + '2'?",
+      "options": [
+        "It becomes 52",
+        "It becomes 7",
+        "TypeError",
+        "It converts '2' to 2"
+      ],
+      "correctAnswer": 2,
+      "explanation": "You can't add a number and a string. Python gives a TypeError.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Real Example",
+      "question": "You want to check if a player's score is exactly 100. Which condition is correct?",
+      "options": [
+        "score = 100",
+        "score == 100",
+        "score > 100",
+        "score != 100"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Use == to compare values. = would assign 100 to score.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Concept Summary",
+      "question": "What do comparison operators always return?",
+      "options": [
+        "Numbers",
+        "Strings",
+        "Boolean values (True/False)",
+        "Errors"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Comparisons like >, <, == evaluate to either True or False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 15,
+  "title": "Session 3: Booleans & Comparisons - End of Class Quiz",
+  "xpReward": 100
+}

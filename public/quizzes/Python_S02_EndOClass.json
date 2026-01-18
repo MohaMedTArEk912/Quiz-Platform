@@ -1,0 +1,187 @@
+{
+  "_id": "session2-end-quiz",
+  "id": "session2-end-quiz",
+  "category": "Python",
+  "coinsReward": 50,
+  "description": "End of class quiz for Session 2: Variable Naming Rules & Data Types",
+  "difficulty": "Beginner",
+  "icon": "📝",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Variable Naming Rules",
+      "question": "Which of these is allowed as a variable name in Python?",
+      "options": [
+        "2nd_place",
+        "player-score",
+        "_winner",
+        "total$"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Variable names can start with an underscore and contain letters, numbers, or underscores. No hyphens, dollar signs, or starting numbers.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Variable Naming Rules",
+      "question": "Why can't you use 'class' as a variable name?",
+      "options": [
+        "It's too short",
+        "It's a reserved Python keyword",
+        "It contains a number",
+        "It's in uppercase"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Python has reserved keywords like 'class', 'if', 'while' that have special meaning and can't be used as variable names.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Data Types: Strings",
+      "question": "Which line stores the word 'hello' as a string?",
+      "options": [
+        "word = hello",
+        "word = \"hello\"",
+        "word = 'hello'",
+        "Both B and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Strings can be inside double quotes or single quotes. Both are valid.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Data Types: Numbers",
+      "question": "How do you store the number 42 so Python knows it's a number, not text?",
+      "options": [
+        "num = \"42\"",
+        "num = forty-two",
+        "num = 42",
+        "num = '42'"
+      ],
+      "correctAnswer": 2,
+      "explanation": "No quotes means it's a number (integer). Quotes make it text (string).",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Data Types: Numbers",
+      "question": "What will type(7.5) return?",
+      "options": [
+        "int",
+        "str",
+        "float",
+        "bool"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Numbers with decimal points are 'float' type in Python.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Syntax Rules",
+      "question": "What does 'syntax' mean in programming?",
+      "options": [
+        "How fast the code runs",
+        "The colors used in the editor",
+        "The spelling and grammar rules of the language",
+        "The output of the program"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Syntax is like grammar—rules for how code must be written to be understood by Python.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Syntax Rules",
+      "question": "What will happen if you write: print('Hello World'",
+      "options": [
+        "It will print Hello World",
+        "SyntaxError: missing closing parenthesis",
+        "It will print nothing",
+        "It will delete the file"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Every opening parenthesis '(' must have a closing one ')'. Missing it breaks syntax rules.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "String vs Number",
+      "question": "What is the data type of '123'?",
+      "options": [
+        "Integer",
+        "String",
+        "Float",
+        "Boolean"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Anything inside quotes is a string, even if it looks like a number.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Application",
+      "question": "You want to store a person's age for calculations later. How should you store it?",
+      "options": [
+        "age = '25'",
+        "age = twenty-five",
+        "age = 25",
+        "age = \"25\""
+      ],
+      "correctAnswer": 2,
+      "explanation": "For calculations, store as a number (no quotes). Strings can't be used in math.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Concept Review",
+      "question": "What's the main reason Python has strict naming rules?",
+      "options": [
+        "To make coding harder",
+        "To avoid confusion between variables, keywords, and operations",
+        "To slow down programmers",
+        "To match English grammar"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Clear rules help Python understand whether you're naming a variable, using a keyword, or making an operation.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 15,
+  "title": "Session 2: Variable Names & Data Types - End of Class Quiz",
+  "xpReward": 100
+}

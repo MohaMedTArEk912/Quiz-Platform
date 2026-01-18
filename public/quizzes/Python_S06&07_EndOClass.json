@@ -1,0 +1,272 @@
+{
+  "_id": "session6-7-end-quiz",
+  "id": "session6-7-end-quiz",
+  "category": "Python",
+  "coinsReward": 75,
+  "description": "End of class quiz for Sessions 6 & 7: If, Elif, Else statements",
+  "difficulty": "Beginner+",
+  "icon": "📝",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "If Basics",
+      "question": "What keyword starts a conditional block in Python?",
+      "options": [
+        "when",
+        "if",
+        "check",
+        "condition"
+      ],
+      "correctAnswer": 1,
+      "explanation": "'if' is used to start a conditional statement that runs code only when a condition is True.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "If Basics",
+      "question": "How does Python know which code belongs inside an if block?",
+      "options": [
+        "Curly braces { }",
+        "Indentation (spaces/tabs)",
+        "Parentheses ( )",
+        "Commas ,"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Python uses indentation (usually 4 spaces) to define code blocks under if, elif, else.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "If Basics",
+      "question": "What happens if the condition in an if statement is False?",
+      "options": [
+        "The program crashes",
+        "The if block is skipped",
+        "Python asks the user again",
+        "It runs the else block automatically"
+      ],
+      "correctAnswer": 1,
+      "explanation": "If the condition is False, Python skips the indented code under if and moves on.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Else Statement",
+      "question": "What is the purpose of 'else'?",
+      "options": [
+        "To check another condition",
+        "To run code when the if condition is False",
+        "To repeat code",
+        "To stop the program"
+      ],
+      "correctAnswer": 1,
+      "explanation": "'else' catches all cases where the if (and any elif) conditions were False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Elif Statement",
+      "question": "What does 'elif' stand for?",
+      "options": [
+        "end if",
+        "else if",
+        "extra if",
+        "else life"
+      ],
+      "correctAnswer": 1,
+      "explanation": "'elif' is short for 'else if'—it checks another condition if the previous ones were False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Elif Statement",
+      "question": "When is an elif block executed?",
+      "options": [
+        "Always",
+        "When its condition is True and previous if/elif were False",
+        "When the if condition is True",
+        "Only if else is missing"
+      ],
+      "correctAnswer": 1,
+      "explanation": "elif runs only if its condition is True AND all previous if/elif conditions were False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Syntax",
+      "question": "Which is the correct syntax for an if statement?",
+      "options": [
+        "if x > 5 { print('Big') }",
+        "if x > 5: print('Big')",
+        "if (x > 5) then print('Big')",
+        "when x > 5: print('Big')"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Python uses colon after condition and indentation for the block. Option B is correct shorthand for one line.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Order Matters",
+      "question": "In if-elif-else, how many blocks can execute?",
+      "options": [
+        "All of them",
+        "Exactly one",
+        "At least two",
+        "None"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Only one block runs—the first True condition in if/elif chain, or else if all are False.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Real Example",
+      "question": "You check if temperature > 30: print('Hot'). Temperature is 25. What prints?",
+      "options": [
+        "Hot",
+        "Nothing",
+        "25",
+        "Cold"
+      ],
+      "correctAnswer": 1,
+      "explanation": "25 > 30 is False, so the if block is skipped. No output.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Real Example",
+      "question": "Code: if score >= 90: grade='A'\nelif score >= 80: grade='B'\nelse: grade='C'\nScore=85. What is grade?",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "Error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "85 >= 90 is False, 85 >= 80 is True, so elif runs and grade='B'.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Nested If",
+      "question": "What is a nested if?",
+      "options": [
+        "An if inside another if",
+        "An if with multiple elifs",
+        "An if without else",
+        "An if that repeats"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A nested if is an if statement inside another if/else block—checking conditions within conditions.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Logical Operators in If",
+      "question": "How do you check if age is between 13 and 19 inclusive in an if?",
+      "options": [
+        "if age >= 13 and age <= 19:",
+        "if 13 <= age <= 19:",
+        "if age in range(13, 20):",
+        "All of the above"
+      ],
+      "correctAnswer": 3,
+      "explanation": "All three are valid Python ways to check if age is 13-19.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Error Detection",
+      "question": "What's wrong? if x = 5: print('Five')",
+      "options": [
+        "Missing colon",
+        "Should use == instead of =",
+        "print() needs quotes",
+        "Nothing"
+      ],
+      "correctAnswer": 1,
+      "explanation": "= assigns, == compares. In conditions, you need comparison.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Multiple Conditions",
+      "question": "You want free shipping if order > 50 OR member=True. Which condition is correct?",
+      "options": [
+        "if order > 50 and member == True:",
+        "if order > 50 or member == True:",
+        "if order > 50:",
+        "if member == True:"
+      ],
+      "correctAnswer": 1,
+      "explanation": "OR means either condition being True qualifies for free shipping.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Final Concept",
+      "question": "Why use elif instead of multiple if statements?",
+      "options": [
+        "elif is shorter to type",
+        "elif ensures only one block runs for exclusive options",
+        "if statements are slower",
+        "elif doesn't need else"
+      ],
+      "correctAnswer": 1,
+      "explanation": "elif links conditions—once one is True, the rest are skipped. Separate ifs would all be checked.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 20,
+  "title": "Sessions 6 & 7: If, Elif, Else - End of Class Quiz",
+  "xpReward": 150
+}

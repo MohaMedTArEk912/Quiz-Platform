@@ -1,0 +1,187 @@
+{
+  "_id": "session4-homework-quiz",
+  "id": "session4-homework-quiz",
+  "category": "Python",
+  "coinsReward": 75,
+  "description": "Homework quiz for Session 4: Applying comparisons to real scenarios",
+  "difficulty": "Beginner+",
+  "icon": "🏠",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Scenario Thinking",
+      "question": "You're coding a game where the player wins if their score is over 1000. Which condition works?",
+      "options": [
+        "score == 1000",
+        "score > 1000",
+        "score < 1000",
+        "score >= 1000"
+      ],
+      "correctAnswer": 1,
+      "explanation": "> means greater than. Winning requires more than 1000, not equal to.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Scenario Thinking",
+      "question": "A ticket is valid if the person's age is at least 12. Which comparison is correct?",
+      "options": [
+        "age > 12",
+        "age >= 12",
+        "age == 12",
+        "age <= 12"
+      ],
+      "correctAnswer": 1,
+      "explanation": ">= means 'greater than or equal to'. 12-year-olds are allowed.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "String Logic",
+      "question": "What is the result of 'zebra' > 'apple'?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "zebra"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Alphabetically, 'zebra' comes after 'apple', so it's considered 'greater'.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "String Logic",
+      "question": "You check if two usernames are different. Which operator?",
+      "options": [
+        "==",
+        "!=",
+        ">",
+        "<="
+      ],
+      "correctAnswer": 1,
+      "explanation": "!= means 'not equal'. It returns True if they are different.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Numeric Boundaries",
+      "question": "You need to check if a number is between 1 and 10 inclusive. Which condition is correct?",
+      "options": [
+        "num > 1 and num < 10",
+        "num >= 1 and num <= 10",
+        "num == 1 or num == 10",
+        "num != 0"
+      ],
+      "correctAnswer": 1,
+      "explanation": ">= includes 1, <= includes 10. 'and' ensures both must be true.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Float Comparison",
+      "question": "What is 3.5 == 3.5?",
+      "options": [
+        "True",
+        "False",
+        "3.5",
+        "Error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Floats can be compared with == if they are exactly the same value.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Debugging Comparison",
+      "question": "You wrote: if score = 100: print('Perfect!')\nWhy doesn't it work?",
+      "options": [
+        "Missing parentheses",
+        "Should use == instead of =",
+        "print() is wrong",
+        "if should be uppercase"
+      ],
+      "correctAnswer": 1,
+      "explanation": "= assigns, == compares. Inside an if, you need a comparison.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Case-Sensitive Check",
+      "question": "You want to check if user entered 'YES' in any case (yes, Yes, YES). Which approach is best?",
+      "options": [
+        "answer == 'YES'",
+        "answer == 'yes'",
+        "answer.lower() == 'yes'",
+        "answer.upper() == 'YES'"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Convert to one case (upper or lower) before comparing to ignore case differences.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Prediction Challenge",
+      "question": "What does this print?\n\na = 20\nb = 20\nprint(a == b, a is b)",
+      "options": [
+        "True True",
+        "False False",
+        "True False",
+        "Error"
+      ],
+      "correctAnswer": 0,
+      "explanation": "== compares values (same). 'is' compares identity (same object in memory—for small integers, Python reuses them).",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Logical Combination",
+      "question": "You're checking if a person can ride a rollercoaster: must be at least 10 years old and at most 60. Which condition works?",
+      "options": [
+        "age > 10 and age < 60",
+        "age >= 10 and age <= 60",
+        "age == 10 or age == 60",
+        "age != 10 and age != 60"
+      ],
+      "correctAnswer": 1,
+      "explanation": ">= includes 10, <= includes 60. 'and' ensures both conditions are met.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 20,
+  "title": "Session 4: Comparison Operators - Homework Quiz",
+  "xpReward": 150
+}

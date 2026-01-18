@@ -1,0 +1,272 @@
+{
+  "_id": "session12-13-end-quiz",
+  "id": "session12-13-end-quiz",
+  "category": "Python",
+  "coinsReward": 75,
+  "description": "End of class quiz for Sessions 12 & 13: Functions and Arguments",
+  "difficulty": "Beginner+",
+  "icon": "📝",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Function Concept",
+      "question": "What is a function in programming?",
+      "options": [
+        "A variable that stores data",
+        "A reusable block of code with a specific purpose",
+        "A loop that repeats",
+        "A conditional statement"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Functions package code into named, reusable units that perform specific tasks.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Function Concept",
+      "question": "How is a function like a kitchen appliance?",
+      "options": [
+        "It needs electricity",
+        "It has a specific job and can be used many times",
+        "It's made of metal",
+        "It can break"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Just as a blender blends food every time you use it, a function performs its task whenever called.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Function Definition",
+      "question": "What keyword defines a function in Python?",
+      "options": [
+        "func",
+        "define",
+        "def",
+        "function"
+      ],
+      "correctAnswer": 2,
+      "explanation": "'def' (short for define) starts a function definition.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Function Definition",
+      "question": "What is the correct syntax to define a function called greet?",
+      "options": [
+        "function greet():",
+        "def greet():",
+        "greet = function():",
+        "greet():"
+      ],
+      "correctAnswer": 1,
+      "explanation": "def function_name(): with colon and indented body.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Calling Functions",
+      "question": "What does it mean to 'call' a function?",
+      "options": [
+        "Define it",
+        "Execute/run its code",
+        "Delete it",
+        "Rename it"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Calling means using the function's name with parentheses to run its code.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Calling Functions",
+      "question": "How do you call a function named calculate?",
+      "options": [
+        "def calculate()",
+        "calculate()",
+        "call calculate",
+        "calculate"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Function name followed by parentheses: calculate().",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Arguments vs Parameters",
+      "question": "What are parameters?",
+      "options": [
+        "Values passed to a function when calling it",
+        "Variables listed in the function definition",
+        "The function's return value",
+        "The function name"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Parameters are placeholders in the function definition. Arguments are actual values passed.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Arguments vs Parameters",
+      "question": "In def add(x, y):, what are x and y?",
+      "options": [
+        "Arguments",
+        "Parameters",
+        "Function calls",
+        "Return values"
+      ],
+      "correctAnswer": 1,
+      "explanation": "x and y are parameters—they receive values when the function is called.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Function with Arguments",
+      "question": "What does this function do?\ndef multiply(a, b):\n    print(a * b)",
+      "options": [
+        "Adds a and b",
+        "Multiplies a and b, then prints result",
+        "Stores a and b in variables",
+        "Defines a loop"
+      ],
+      "correctAnswer": 1,
+      "explanation": "It takes two parameters, multiplies them, and prints the product.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Function with Arguments",
+      "question": "How do you call multiply(3, 4)?",
+      "options": [
+        "def multiply(3, 4)",
+        "multiply(3, 4)",
+        "multiply 3, 4",
+        "call multiply(3, 4)"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Function name followed by arguments in parentheses.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Why Use Functions",
+      "question": "What's the main benefit of using functions?",
+      "options": [
+        "Make code longer",
+        "Avoid using variables",
+        "Reuse code without rewriting",
+        "Slow down execution"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Functions promote code reuse, organization, and easier maintenance.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Built-in Functions",
+      "question": "Which of these is a built-in Python function?",
+      "options": [
+        "print()",
+        "def()",
+        "loop()",
+        "condition()"
+      ],
+      "correctAnswer": 0,
+      "explanation": "print() is a built-in function. def is a keyword, not a function.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Argument Flexibility",
+      "question": "What makes functions with arguments more useful?",
+      "options": [
+        "They can work with different data each time",
+        "They must use the same values always",
+        "They run faster",
+        "They require less code"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Arguments let functions process different inputs, making them flexible.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Multiple Arguments",
+      "question": "How many arguments can a function have?",
+      "options": [
+        "Only one",
+        "Exactly two",
+        "Zero or more",
+        "Always three"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Functions can have any number of parameters: zero, one, or many.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Concept Summary",
+      "question": "What are the two main steps when working with functions?",
+      "options": [
+        "Write and delete",
+        "Define and call",
+        "Copy and paste",
+        "Name and print"
+      ],
+      "correctAnswer": 1,
+      "explanation": "First define the function, then call it wherever needed.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 20,
+  "title": "Sessions 12 & 13: Functions & Arguments - End of Class Quiz",
+  "xpReward": 150
+}

@@ -13,6 +13,7 @@ const skillTrackSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, default: '' },
   category: { type: String, default: 'General' },
+  subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }, // Link to parent Subject
   modules: [moduleSchema],
   createdAt: { type: Date, default: Date.now }
 });

@@ -1,0 +1,357 @@
+{
+  "_id": "session11-homework-quiz",
+  "id": "session11-homework-quiz",
+  "category": "Python",
+  "coinsReward": 100,
+  "description": "Homework quiz for Session 11: Applying for loops and range in real programs",
+  "difficulty": "Intermediate",
+  "icon": "🏠",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Loop Selection",
+      "question": "You need to process each student in a list of 30 students. Which loop?",
+      "options": [
+        "while loop with counter",
+        "for loop over range(30)",
+        "for loop directly over list (if list exists)",
+        "Both B and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "If you have a list, iterate directly. If just counting, use range.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Loop Selection",
+      "question": "A robot moves forward until it hits a wall (sensor detects). Which loop?",
+      "options": [
+        "for i in range(100):",
+        "while not wall_detected:",
+        "for step in range(sensor_value):",
+        "while True:"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Unknown iterations until condition changes → while.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Range Design",
+      "question": "You want even numbers from 2 to 10 inclusive. Which range?",
+      "options": [
+        "range(2, 11, 2)",
+        "range(2, 10, 2)",
+        "range(2, 12, 2)",
+        "range(0, 10, 2)"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Start 2, stop before 11, step 2 → 2,4,6,8,10.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Range Design",
+      "question": "How to generate: 10, 9, 8, 7, 6?",
+      "options": [
+        "range(10, 5, -1)",
+        "range(10, 6, -1)",
+        "range(10, 5)",
+        "range(6, 11)"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Start 10, stop before 5, step -1 → 10 down to 6.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Nested For Loops",
+      "question": "What prints?\nfor i in range(2):\n    for j in range(2):\n        print(i, j)",
+      "options": [
+        "0 0, 0 1, 1 0, 1 1",
+        "0 1, 1 0",
+        "0 0, 1 1",
+        "0,0,0,1,1,0,1,1"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Outer i=0: inner j=0,1; outer i=1: inner j=0,1.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Nested For Loops",
+      "question": "You want to make a 3x3 grid of dots. How many total dots printed?",
+      "options": [
+        "3",
+        "6",
+        "9",
+        "12"
+      ],
+      "correctAnswer": 2,
+      "explanation": "3 rows × 3 columns = 9 dots.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Loop Conversion",
+      "question": "Convert this while to for:\ni=0\nwhile i<5:\n    print(i)\n    i+=1",
+      "options": [
+        "for i in range(5): print(i)",
+        "for i in range(1,5): print(i)",
+        "for i in range(0,5): print(i)",
+        "Both A and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "range(5) and range(0,5) both produce 0,1,2,3,4.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Loop Conversion",
+      "question": "Convert this for to while:\nfor i in range(3, 8):\n    print(i)",
+      "options": [
+        "i=3; while i<8: print(i); i+=1",
+        "i=3; while i<=8: print(i); i+=1",
+        "i=0; while i<5: print(i+3); i+=1",
+        "Both A and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "A is direct conversion. C also works (different counter logic).",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Real Program Design",
+      "question": "You're printing a multiplication table for 5: 5x1=5, 5x2=10,...5x10=50. Which loop?",
+      "options": [
+        "for i in range(1,11): print(f'5x{i}={5*i}')",
+        "i=1; while i<=10: print(f'5x{i}={5*i}'); i+=1",
+        "Both work",
+        "Neither"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Both loops can generate the table. for is cleaner here.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Real Program Design",
+      "question": "You want to ask user for 5 test scores and average them. Best approach?",
+      "options": [
+        "Use while loop with counter",
+        "Use for loop with range(5)",
+        "Hardcode five input() lines",
+        "Both A and B"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Loop is better than hardcoding. Both while and for can count to 5.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Variable Usage",
+      "question": "What prints?\ntotal = 0\nfor k in range(1,4):\n    total = total + k\nprint(total)",
+      "options": [
+        "0",
+        "6",
+        "10",
+        "1 2 3"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Adds 1+2+3 = 6.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Variable Usage",
+      "question": "You want to count how many even numbers between 1 and 10. Which loop accumulates count?",
+      "options": [
+        "count=0; for n in range(2,11,2): count+=1",
+        "count=0; for n in range(1,11): if n%2==0: count+=1",
+        "Both work",
+        "Neither"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Both correctly count evens (2,4,6,8,10).",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Edge Cases",
+      "question": "What does range(5, 5) produce?",
+      "options": [
+        "5",
+        "0",
+        "Empty sequence",
+        "Error"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Start equals stop → no numbers generated.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Edge Cases",
+      "question": "What happens with range(0, 10, -1)?",
+      "options": [
+        "0 to 9 backwards",
+        "Empty sequence",
+        "Error",
+        "Infinite loop"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Negative step but start < stop → empty range.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Performance Thinking",
+      "question": "Is for i in range(1000000): slow?",
+      "options": [
+        "Yes, Python loops are always slow",
+        "No, range generates numbers efficiently",
+        "Only if you print each iteration",
+        "Both B and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "range is memory-efficient. Printing inside loop slows it down.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 16,
+      "type": "multiple-choice",
+      "part": "Performance Thinking",
+      "question": "Why might you avoid nesting loops too deeply?",
+      "options": [
+        "Harder to read",
+        "Can cause exponential time growth",
+        "Both",
+        "No reason—nesting is always fine"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Deep nesting increases complexity and runtime.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 17,
+      "type": "multiple-choice",
+      "part": "Creative Use",
+      "question": "How to print a triangle of stars:\n*\n**\n***",
+      "options": [
+        "Nested loops: outer for rows, inner for stars per row",
+        "Single loop with string multiplication",
+        "Both",
+        "Not possible with loops"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Both methods work: nested loops or 'print('*'*i)' in loop.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 18,
+      "type": "multiple-choice",
+      "part": "Creative Use",
+      "question": "You want to alternate 'hot' and 'cold' 5 times total. Which loop?",
+      "options": [
+        "for i in range(5): if i%2==0: print('hot') else: print('cold')",
+        "for word in ['hot','cold','hot','cold','hot']: print(word)",
+        "Both",
+        "Neither"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Both produce: hot, cold, hot, cold, hot.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 19,
+      "type": "multiple-choice",
+      "part": "Future Concepts",
+      "question": "What can you iterate over besides range()?",
+      "options": [
+        "Strings",
+        "Lists",
+        "Dictionaries",
+        "All of the above"
+      ],
+      "correctAnswer": 3,
+      "explanation": "for loops work with any iterable: strings, lists, tuples, dicts, etc.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 20,
+      "type": "multiple-choice",
+      "part": "Philosophy",
+      "question": "What's the Pythonic principle for loops?",
+      "options": [
+        "Use while for everything",
+        "Use for when you can, while when you must",
+        "Avoid loops entirely",
+        "Always use nested loops"
+      ],
+      "correctAnswer": 1,
+      "explanation": "for loops are cleaner for known iterations; while for conditional repetition.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 30,
+  "title": "Session 11: For Loops - Homework Quiz",
+  "xpReward": 250
+}

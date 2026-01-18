@@ -1,0 +1,272 @@
+{
+  "_id": "session10-end-quiz",
+  "id": "session10-end-quiz",
+  "category": "Python",
+  "coinsReward": 75,
+  "description": "End of class quiz for Session 10: Introduction to Loops",
+  "difficulty": "Beginner+",
+  "icon": "📝",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Loop Concept",
+      "question": "What is the main purpose of a loop in programming?",
+      "options": [
+        "To store data",
+        "To repeat code multiple times",
+        "To print output",
+        "To create variables"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Loops allow executing the same block of code repeatedly without rewriting it.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Loop Concept",
+      "question": "Which type of loop repeats a fixed number of times?",
+      "options": [
+        "Conditional Loop",
+        "Counting Loop",
+        "Infinite Loop",
+        "Random Loop"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Counting loops run a predetermined number of iterations (e.g., 10 times).",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Loop Concept",
+      "question": "A loop that runs until a certain condition becomes false is called:",
+      "options": [
+        "Counting Loop",
+        "Infinite Loop",
+        "Conditional Loop",
+        "Fixed Loop"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Conditional loops repeat while a condition is true (e.g., 'until music stops').",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "While Loop Basics",
+      "question": "Which keyword starts a while loop in Python?",
+      "options": [
+        "loop",
+        "repeat",
+        "while",
+        "for"
+      ],
+      "correctAnswer": 2,
+      "explanation": "while is used to create a loop that repeats as long as a condition is true.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "While Loop Basics",
+      "question": "What is the correct syntax for a while loop?",
+      "options": [
+        "while condition { code }",
+        "while condition: code",
+        "while (condition) { code }",
+        "while condition:\n    code"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Python uses colon after condition and indentation for the loop body.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "While Loop Basics",
+      "question": "What happens if the while condition is False from the start?",
+      "options": [
+        "Loop runs once",
+        "Loop runs forever",
+        "Loop body is skipped entirely",
+        "Error occurs"
+      ],
+      "correctAnswer": 2,
+      "explanation": "If condition is False initially, the loop body never executes.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Infinite Loop",
+      "question": "What creates an infinite loop?",
+      "options": [
+        "while True:",
+        "while 1 == 1:",
+        "while False:",
+        "Both A and B"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Conditions that never become False cause infinite repetition.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Infinite Loop",
+      "question": "How can you stop an infinite loop?",
+      "options": [
+        "Close the program",
+        "Press Ctrl+C in terminal",
+        "Restart computer",
+        "Both A and B"
+      ],
+      "correctAnswer": 3,
+      "explanation": "You can interrupt execution or close the program.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Counting Loop",
+      "question": "What is a common way to make a counting loop with while?",
+      "options": [
+        "Use a counter variable that increases each iteration",
+        "Use while True:",
+        "Use print() inside loop",
+        "Use if statement"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Initialize a counter, check counter < limit in condition, increment counter inside loop.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Counting Loop",
+      "question": "What prints?\n\ncount = 1\nwhile count <= 3:\n    print(count)\n    count = count + 1",
+      "options": [
+        "1 2 3",
+        "1 2 3 4",
+        "3 2 1",
+        "Infinite loop"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Loop runs for count=1,2,3. Each prints, then increments.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Real Example",
+      "question": "You want to print 'Hello' 5 times. Which loop structure?",
+      "options": [
+        "while i < 5: print('Hello')",
+        "i=0; while i<5: print('Hello'); i=i+1",
+        "while True: print('Hello')",
+        "Both A and B if A had counter increment"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Need counter initialization, condition, and increment for controlled repetition.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Real Example",
+      "question": "A program asks for password until correct. Which loop type?",
+      "options": [
+        "Counting Loop",
+        "Conditional Loop",
+        "Infinite Loop",
+        "No loop"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Repeat 'while password is incorrect' → conditional loop.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Loop Control",
+      "question": "What happens if you forget to update the counter in a counting loop?",
+      "options": [
+        "Loop runs correct times",
+        "Infinite loop",
+        "Loop runs once",
+        "Error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "If condition never becomes False, loop runs forever.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Loop Control",
+      "question": "What does 'iteration' mean in loops?",
+      "options": [
+        "The loop condition",
+        "One complete execution of the loop body",
+        "The loop variable name",
+        "The print statement"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Each time the loop body runs is one iteration.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Concept Summary",
+      "question": "Why are loops powerful in programming?",
+      "options": [
+        "They make code longer",
+        "They automate repetition, saving time and code",
+        "They only work with numbers",
+        "They prevent errors"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Loops handle repetitive tasks efficiently.",
+      "points": 1,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 20,
+  "title": "Session 10: Introduction to Loops - End of Class Quiz",
+  "xpReward": 150
+}

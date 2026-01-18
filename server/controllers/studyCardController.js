@@ -10,7 +10,11 @@ const generateUUID = () => {
 
 export const getAllCards = async (req, res) => {
     try {
-        const cards = await StudyCard.find();
+        const query = {};
+        if (req.query.subjectId) {
+            query.subjectId = req.query.subjectId;
+        }
+        const cards = await StudyCard.find(query);
         res.json(cards);
     } catch (error) {
         res.status(500).json({ message: error.message });

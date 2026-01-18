@@ -1,0 +1,357 @@
+{
+  "_id": "session6-7-homework-quiz",
+  "id": "session6-7-homework-quiz",
+  "category": "Python",
+  "coinsReward": 100,
+  "description": "Homework quiz for Sessions 6 & 7: Applying conditional logic in real programs",
+  "difficulty": "Intermediate",
+  "icon": "🏠",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Conditional Thinking",
+      "question": "You're coding a login system. If password matches, print 'Welcome'. If not, print 'Denied'. Which structure fits?",
+      "options": [
+        "if-elif",
+        "if-else",
+        "only if",
+        "multiple ifs"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Two mutually exclusive outcomes (match/not match) → if-else.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Conditional Thinking",
+      "question": "A traffic light system: 'green' → Go, 'yellow' → Slow, 'red' → Stop. Best structure?",
+      "options": [
+        "if-elif-else",
+        "Three separate ifs",
+        "if-else only",
+        "Nested ifs"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Three exclusive states → if-elif-else ensures only one message prints.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Code Prediction",
+      "question": "What prints?\n\nx = 10\nif x > 5:\n    print('A')\nif x > 8:\n    print('B')\nelse:\n    print('C')",
+      "options": [
+        "A B",
+        "A C",
+        "B C",
+        "C"
+      ],
+      "correctAnswer": 0,
+      "explanation": "First if True → A. Second if True → B. else belongs to second if, not first.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Code Prediction",
+      "question": "What prints?\n\nage = 15\nif age >= 18:\n    print('Adult')\nelif age >= 13:\n    print('Teen')\nelse:\n    print('Child')",
+      "options": [
+        "Adult",
+        "Teen",
+        "Child",
+        "Adult Teen"
+      ],
+      "correctAnswer": 1,
+      "explanation": "15 >= 18? No. 15 >= 13? Yes → 'Teen'. elif stops further checks.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Logical Conditions",
+      "question": "You qualify for a loan if age >= 21 AND income > 30000. Age=25, income=28000. Qualify?",
+      "options": [
+        "Yes",
+        "No",
+        "Maybe",
+        "Only with a co-signer"
+      ],
+      "correctAnswer": 1,
+      "explanation": "AND requires both. Income condition fails.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Logical Conditions",
+      "question": "A student passes if score >= 50 OR project_complete == True. Score=45, project_complete=True. Pass?",
+      "options": [
+        "Yes",
+        "No",
+        "Only if both are true",
+        "Retake needed"
+      ],
+      "correctAnswer": 0,
+      "explanation": "OR needs at least one True. Project complete is True, so pass.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Nested Logic",
+      "question": "What prints?\n\nnum = 7\nif num > 0:\n    if num % 2 == 0:\n        print('Even positive')\n    else:\n        print('Odd positive')\nelse:\n    print('Non-positive')",
+      "options": [
+        "Even positive",
+        "Odd positive",
+        "Non-positive",
+        "Nothing"
+      ],
+      "correctAnswer": 1,
+      "explanation": "num>0 True → inner if: 7%2=1 (not zero) → else prints 'Odd positive'.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Nested Logic",
+      "question": "A game character can jump if not tired AND (has_boost OR level > 5). Tired=False, has_boost=False, level=7. Can jump?",
+      "options": [
+        "Yes",
+        "No",
+        "Only if tired",
+        "Only with boost"
+      ],
+      "correctAnswer": 0,
+      "explanation": "not tired = True. (has_boost OR level>5) = (False OR True) = True. AND → True.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Elif Order",
+      "question": "What's wrong with this grade checker?\n\nif score >= 60: grade='D'\nelif score >= 70: grade='C'\nelif score >= 80: grade='B'\nelif score >= 90: grade='A'\nScore=95. What is grade?",
+      "options": [
+        "A",
+        "B",
+        "D",
+        "Error"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Order matters! 95 >= 60 is True first, so grade='D'. Should check highest first.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Elif Order",
+      "question": "How to fix the grade checker above?",
+      "options": [
+        "Swap order: check >=90 first, then >=80, etc.",
+        "Use multiple ifs",
+        "Remove elif",
+        "Add else at end"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Check highest thresholds first (>=90), then lower ones, so correct grade is assigned.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Edge Cases",
+      "question": "What prints?\n\ntemp = 0\nif temp > 0:\n    print('Above freezing')\nelif temp < 0:\n    print('Below freezing')\nelse:\n    print('Exactly freezing')",
+      "options": [
+        "Above freezing",
+        "Below freezing",
+        "Exactly freezing",
+        "Nothing"
+      ],
+      "correctAnswer": 2,
+      "explanation": "temp > 0? No. temp < 0? No. else runs → 'Exactly freezing'.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Edge Cases",
+      "question": "You check if a number is positive, negative, or zero. Which structure ensures all cases?",
+      "options": [
+        "if-elif-else",
+        "if only",
+        "if-else",
+        "Separate ifs"
+      ],
+      "correctAnswer": 0,
+      "explanation": "if-elif-else with conditions >0, <0, else (==0) covers all possibilities.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Debugging",
+      "question": "Why does this always print 'Cold' regardless of temp?\n\nif temp < 20:\n    print('Cold')\nprint('Cool')\nelif temp > 30:\n    print('Hot')",
+      "options": [
+        "Missing colon",
+        "Unindented print breaks elif",
+        "temp not defined",
+        "elif before else"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Unindented print('Cool') ends the if block, making elif unmatched (syntax error in real code).",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Debugging",
+      "question": "How to fix: if x = 10: print('Ten')",
+      "options": [
+        "if x == 10: print('Ten')",
+        "if x = 10 then print('Ten')",
+        "if 10 = x: print('Ten')",
+        "if x == '10': print('Ten')"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Use == for comparison, not =.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Real Program Design",
+      "question": "You're writing a weather app: <10°C → Cold, 10-25 → Mild, >25 → Hot. Best approach?",
+      "options": [
+        "if temp < 10: print('Cold')\nelif temp <= 25: print('Mild')\nelse: print('Hot')",
+        "if temp < 10: print('Cold')\nif temp <= 25: print('Mild')\nif temp > 25: print('Hot')",
+        "if temp > 25: print('Hot')\nelif temp >= 10: print('Mild')\nelse: print('Cold')",
+        "Both A and C work"
+      ],
+      "correctAnswer": 3,
+      "explanation": "A and C both correctly map ranges with if-elif-else (order adjusted).",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 16,
+      "type": "multiple-choice",
+      "part": "Real Program Design",
+      "question": "A ride requires height >= 120cm AND age >= 10. If one fails, print which requirement missing. Structure?",
+      "options": [
+        "if height>=120 and age>=10: print('Welcome')\nelif height<120: print('Too short')\nelse: print('Too young')",
+        "Nested ifs checking each condition separately",
+        "Two separate if-else statements",
+        "All of the above"
+      ],
+      "correctAnswer": 3,
+      "explanation": "All can work, but nested ifs or elif chain can give specific feedback.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 17,
+      "type": "multiple-choice",
+      "part": "Complex Condition",
+      "question": "What does this check?\n\nif not (x < 0 or x > 100):",
+      "options": [
+        "If x is negative or over 100",
+        "If x is between 0 and 100 inclusive",
+        "If x is exactly 50",
+        "If x is not a number"
+      ],
+      "correctAnswer": 1,
+      "explanation": "not (x<0 or x>100) means x is NOT outside 0-100, so inside 0-100 inclusive.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 18,
+      "type": "multiple-choice",
+      "part": "Complex Condition",
+      "question": "Free pizza if: (day == 'Friday' and hour > 18) OR (coupon == True). Day='Friday', hour=19, coupon=False. Pizza?",
+      "options": [
+        "Yes",
+        "No",
+        "Only with coupon",
+        "Only on Saturday"
+      ],
+      "correctAnswer": 0,
+      "explanation": "(Friday and hour>18) = (True and True) = True. OR with False → True.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 19,
+      "type": "multiple-choice",
+      "part": "Performance Thinking",
+      "question": "Why might you check the most likely condition first in if-elif chains?",
+      "options": [
+        "To make code look neat",
+        "To improve speed (short-circuit evaluation)",
+        "Because Python requires it",
+        "To avoid else"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Checking common cases first can make programs slightly faster by skipping unnecessary checks.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 20,
+      "type": "multiple-choice",
+      "part": "Philosophy",
+      "question": "What's the main benefit of using if-elif-else over many separate if statements?",
+      "options": [
+        "It's shorter",
+        "It clearly groups mutually exclusive choices",
+        "It runs faster always",
+        "It prevents syntax errors"
+      ],
+      "correctAnswer": 1,
+      "explanation": "if-elif-else shows that only one path should be taken, making logic clearer and preventing multiple matches.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 30,
+  "title": "Sessions 6 & 7: If, Elif, Else - Homework Quiz",
+  "xpReward": 250
+}

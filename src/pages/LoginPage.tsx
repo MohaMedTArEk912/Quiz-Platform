@@ -18,7 +18,7 @@ const LoginPage: React.FC = () => {
                     await googleLogin({ email, name, googleId: sub });
                     const session = sessionStorage.getItem('userSession');
                     const isAdmin = session ? JSON.parse(session).isAdmin : false;
-                    navigate(isAdmin ? '/admin' : '/');
+                    navigate(isAdmin ? '/admin' : '/', { replace: true });
                 } catch (error) {
                     console.error('Error processing stored Google auth:', error);
                 }
@@ -31,12 +31,12 @@ const LoginPage: React.FC = () => {
         await login(email, password);
         const session = sessionStorage.getItem('userSession');
         const isAdmin = session ? JSON.parse(session).isAdmin : false;
-        navigate(isAdmin ? '/admin' : '/');
+        navigate(isAdmin ? '/admin' : '/', { replace: true });
     };
 
     const handleGoogleSignIn = () => {
         const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-        
+
         if (!clientId) {
             alert('Google Sign-In is not configured. Please set VITE_GOOGLE_CLIENT_ID in your environment variables.');
             console.error('VITE_GOOGLE_CLIENT_ID is not set');
@@ -78,7 +78,7 @@ const LoginPage: React.FC = () => {
                     await googleLogin({ email, name, googleId: sub });
                     const session = sessionStorage.getItem('userSession');
                     const isAdmin = session ? JSON.parse(session).isAdmin : false;
-                    navigate(isAdmin ? '/admin' : '/');
+                    navigate(isAdmin ? '/admin' : '/', { replace: true });
                 } catch (error) {
                     console.error('Google login error:', error);
                     alert('Failed to sign in with Google. Please try again.');

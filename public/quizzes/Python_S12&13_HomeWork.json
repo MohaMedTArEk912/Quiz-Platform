@@ -1,0 +1,357 @@
+{
+  "_id": "session12-13-homework-quiz",
+  "id": "session12-13-homework-quiz",
+  "category": "Python",
+  "coinsReward": 100,
+  "description": "Homework quiz for Sessions 12 & 13: Applying functions with arguments",
+  "difficulty": "Intermediate",
+  "icon": "🏠",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Function Design",
+      "question": "You're writing a function to calculate area of a rectangle. What should the parameters be?",
+      "options": [
+        "length only",
+        "width only",
+        "length and width",
+        "area"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Area = length × width, so function needs both dimensions.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Function Design",
+      "question": "What's a better name: func1(x, y) or calculate_discount(price, percent)?",
+      "options": [
+        "func1 — it's shorter",
+        "calculate_discount — descriptive names make code readable",
+        "Both are fine",
+        "Neither"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Descriptive names communicate purpose and parameter roles.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Parameter vs Argument",
+      "question": "In call: calculate_tax(100, 0.15), what are 100 and 0.15?",
+      "options": [
+        "Parameters",
+        "Arguments",
+        "Variables",
+        "Functions"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Arguments are the actual values passed during the function call.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Parameter vs Argument",
+      "question": "Where are parameters 'born'?",
+      "options": [
+        "In the function call",
+        "In the function definition",
+        "In the print statement",
+        "In a loop"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Parameters are declared in the def line.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Function Reusability",
+      "question": "You have code that validates passwords in 3 places. What should you do?",
+      "options": [
+        "Copy-paste it each time",
+        "Create a validate_password() function and call it",
+        "Write it longer each time",
+        "Ignore validation"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Function centralizes logic—change once, affects all uses.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Function Reusability",
+      "question": "What if password rules change (e.g., require 12 chars instead of 8)?",
+      "options": [
+        "Update every place manually",
+        "Update the function once",
+        "Delete the function",
+        "Ask users to remember"
+      ],
+      "correctAnswer": 1,
+      "explanation": "One change inside the function updates all calls—maintenance benefit.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Built-in Analogy",
+      "question": "How is print() like a custom function you write?",
+      "options": [
+        "Both use def",
+        "Both take arguments and do something with them",
+        "Both must be imported",
+        "Both return values"
+      ],
+      "correctAnswer": 1,
+      "explanation": "print('hello') passes argument 'hello'. Your functions can also take arguments.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Built-in Analogy",
+      "question": "What argument does input('Enter:') take?",
+      "options": [
+        "A number",
+        "A prompt string",
+        "A boolean",
+        "No arguments"
+      ],
+      "correctAnswer": 1,
+      "explanation": "input() can take one optional string argument—the prompt.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Argument Order",
+      "question": "def greet(name, time): print(f'Good {time}, {name}!')\nWhat does greet('Evening', 'Ali') print?",
+      "options": [
+        "Good Ali, Evening!",
+        "Good Evening, Ali!",
+        "Error",
+        "Good name, time!"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Arguments match parameters by position: name='Evening', time='Ali' → swapped.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Argument Order",
+      "question": "How to fix to print 'Good Evening, Ali!'?",
+      "options": [
+        "greet('Ali', 'Evening')",
+        "greet(time='Evening', name='Ali')",
+        "Change function definition",
+        "Both A and B"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Either correct positional order or use keyword arguments.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Function Predictions",
+      "question": "What prints?\ndef shout(word):\n    print(word.upper())\nshout('hello')",
+      "options": [
+        "hello",
+        "HELLO",
+        "word",
+        "Error"
+      ],
+      "correctAnswer": 1,
+      "explanation": "word='hello', .upper() converts to 'HELLO'.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Function Predictions",
+      "question": "What prints?\ndef add(a, b):\n    result = a + b\n    print(result)\nadd(2, 3)\nprint(result)",
+      "options": [
+        "5 then 5",
+        "5 then Error",
+        "2 3",
+        "Nothing"
+      ],
+      "correctAnswer": 1,
+      "explanation": "result is local to function—can't access outside → NameError.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Real-World Function",
+      "question": "You need a function to apply sales tax. What parameters?",
+      "options": [
+        "price only",
+        "tax_rate only",
+        "price and tax_rate",
+        "no parameters"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Need both price to tax and the tax rate percentage.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Real-World Function",
+      "question": "For a donation website, a function process_donation(amount, donor_name, is_anonymous). How many arguments in process_donation(50, 'Sam', False)?",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Three arguments: 50, 'Sam', False.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Error Handling",
+      "question": "What's wrong? def multiply x, y: print(x*y)",
+      "options": [
+        "Missing parentheses around parameters",
+        "Missing colon",
+        "print should be return",
+        "Both A and B"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Should be def multiply(x, y):",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 16,
+      "type": "multiple-choice",
+      "part": "Error Handling",
+      "question": "Calling greet('Ali') for def greet(first, last): prints...",
+      "options": [
+        "Hello Ali",
+        "TypeError: missing required argument",
+        "Nothing",
+        "Ali only"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Function expects two arguments, only one provided → TypeError.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 17,
+      "type": "multiple-choice",
+      "part": "Advanced Thinking",
+      "question": "Why might you write a function with zero parameters?",
+      "options": [
+        "To do a fixed task that doesn't need input",
+        "Because all functions need parameters",
+        "To make code longer",
+        "It's not allowed"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Some functions perform the same action each time, like displaying a menu.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 18,
+      "type": "multiple-choice",
+      "part": "Advanced Thinking",
+      "question": "What's the difference between print() inside function vs outside?",
+      "options": [
+        "No difference",
+        "Inside function: reusable output logic",
+        "Outside: only runs once",
+        "Both B and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Function encapsulates the printing logic for reuse.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 19,
+      "type": "multiple-choice",
+      "part": "Code Organization",
+      "question": "How do functions help in large programs?",
+      "options": [
+        "Break code into manageable, named pieces",
+        "Make programs run slower",
+        "Force use of more variables",
+        "Require more typing"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Functions modularize code—easier to read, debug, and collaborate.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 20,
+      "type": "multiple-choice",
+      "part": "Philosophy",
+      "question": "What's the 'single responsibility' principle for functions?",
+      "options": [
+        "A function should do one thing well",
+        "A function should do everything",
+        "A function must have many parameters",
+        "A function should never be called"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Each function should have a clear, focused purpose.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 30,
+  "title": "Sessions 12 & 13: Functions & Arguments - Homework Quiz",
+  "xpReward": 250
+}

@@ -144,34 +144,39 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
     }
 
     return (
-        <div className="space-y-8">
-            {/* Header */}
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Achievement Badges</h2>
-                    <p className="text-gray-500 dark:text-gray-400">Create and manage badges, rewards, and unlock criteria</p>
+        <div className="space-y-4 animate-in fade-in duration-500">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row justify-between items-center bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-white/20 dark:border-white/5 shadow-sm gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-indigo-500/10 rounded-2xl">
+                        <Award className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Achievement Badges</h2>
+                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Create and manage user recognition</p>
+                    </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="relative" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-300 rounded-xl font-bold transition-all border border-gray-200 dark:border-gray-700 shadow-sm"
+                            className="p-3 bg-white/50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 text-gray-500 rounded-2xl transition-all border border-white/20 dark:border-white/5 shadow-sm"
                         >
                             <MoreVertical className="w-5 h-5" />
                         </button>
 
                         {showMenu && (
-                            <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-white/90 dark:bg-[#1e1e2d]/90 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200">
                                 <button
                                     onClick={handleDownloadSample}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-200 transition-colors font-medium text-sm"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-indigo-500/10 text-gray-700 dark:text-gray-200 transition-colors font-bold text-xs uppercase tracking-widest"
                                 >
                                     <Download className="w-4 h-4 text-purple-500" />
                                     Sample JSON
                                 </button>
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-200 transition-colors font-medium text-sm border-t border-gray-100 dark:border-gray-700"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-indigo-500/10 text-gray-700 dark:text-gray-200 transition-colors font-bold text-xs uppercase tracking-widest border-t border-white/10"
                                 >
                                     <Upload className="w-4 h-4 text-indigo-500" />
                                     Upload JSON
@@ -180,13 +185,8 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
                         )}
                     </div>
 
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileUpload}
-                        accept=".json"
-                        className="hidden"
-                    />
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".json" className="hidden" />
+
                     <button
                         onClick={() => {
                             setEditingBadge({
@@ -202,77 +202,78 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
                             });
                             setShowBadgeEditor(true);
                         }}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl font-bold shadow-lg transition-all"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all transform hover:-translate-y-0.5"
                     >
-                        <Plus className="w-5 h-5" />
-                        New Badge
+                        <Plus className="w-4 h-4" /> New Badge
                     </button>
                 </div>
             </div>
 
             {/* Badges Grid */}
-            <div className={`rounded-2xl p-6 ${badges.length > 0 ? 'bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 shadow-sm' : ''}`}>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {badges.map(badge => (
-                        <div
-                            key={badge.badgeId}
-                            className="bg-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all group shadow-sm dark:shadow-none"
-                        >
-                            <div className="flex items-start justify-between mb-3">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getRarityColor(badge.rarity)} flex items-center justify-center text-2xl shadow-lg`}>
-                                        {badge.icon}
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-gray-900 dark:text-white text-sm">{badge.name}</h4>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full bg-gradient-to-r ${getRarityColor(badge.rarity)} text-white font-semibold capitalize`}>
-                                            {badge.rarity}
-                                        </span>
-                                    </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {badges.map(badge => (
+                    <div
+                        key={badge.badgeId}
+                        className="bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl rounded-[2.5rem] p-5 border border-white/20 dark:border-white/5 hover:border-indigo-500/30 transition-all group shadow-sm hover:shadow-xl relative overflow-hidden"
+                    >
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full -mr-12 -mt-12 pointer-events-none" />
+
+                        <div className="flex items-start justify-between mb-4 relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${getRarityColor(badge.rarity)} flex items-center justify-center text-3xl shadow-xl transform group-hover:scale-110 transition-transform duration-300`}>
+                                    {badge.icon}
                                 </div>
-                                <div className="flex gap-1">
-                                    <button
-                                        onClick={() => {
-                                            setEditingBadge(badge);
-                                            setShowBadgeEditor(true);
-                                        }}
-                                        className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded transition-colors"
-                                    >
-                                        <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteBadge(badge.badgeId)}
-                                        className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                <div className="space-y-1">
+                                    <h4 className="font-black text-gray-900 dark:text-white uppercase tracking-tighter text-base leading-none">{badge.name}</h4>
+                                    <span className={`inline-block text-[10px] px-2 py-0.5 rounded-lg bg-white/20 text-white font-black uppercase tracking-widest backdrop-blur-md border border-white/10 shadow-sm`}>
+                                        {badge.rarity}
+                                    </span>
                                 </div>
                             </div>
-
-                            <p className="text-gray-500 dark:text-gray-400 text-xs line-clamp-2 mb-2">{badge.description}</p>
-
-                            <div className="flex gap-2">
-                                {badge.rewards.xp > 0 && (
-                                    <span className="bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded text-xs font-semibold">
-                                        +{badge.rewards.xp} XP
-                                    </span>
-                                )}
-                                {badge.rewards.coins > 0 && (
-                                    <span className="bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded text-xs font-semibold">
-                                        +{badge.rewards.coins} 🪙
-                                    </span>
-                                )}
+                            <div className="flex gap-1.5 translate-x-2 -translate-y-2">
+                                <button
+                                    onClick={() => { setEditingBadge(badge); setShowBadgeEditor(true); }}
+                                    className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all hover:scale-110"
+                                >
+                                    <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteBadge(badge.badgeId)}
+                                    className="p-2 text-red-400 hover:bg-red-500/10 rounded-xl transition-all hover:scale-110"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
-                    ))}
 
-                    {badges.length === 0 && (
-                        <div className="col-span-full text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-                            <Award className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
-                            <p className="text-gray-500 font-bold">No badges created yet</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs font-bold leading-relaxed mb-4 line-clamp-2 uppercase tracking-wide opacity-80">{badge.description}</p>
+
+                        <div className="flex flex-wrap gap-2 pt-4 border-t border-white/10">
+                            {badge.rewards.xp > 0 && (
+                                <div className="px-3 py-1.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-black uppercase tracking-widest border border-purple-500/10">
+                                    ⚡ {badge.rewards.xp} XP
+                                </div>
+                            )}
+                            {badge.rewards.coins > 0 && (
+                                <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-500 text-[10px] font-black uppercase tracking-widest border border-amber-500/10">
+                                    🪙 {badge.rewards.coins} Coins
+                                </div>
+                            )}
+                            {badge.trees && badge.trees.length > 0 && (
+                                <div className="px-3 py-1.5 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/10">
+                                    🌲 {badge.trees.length} Paths
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
+                    </div>
+                ))}
+
+                {badges.length === 0 && (
+                    <div className="col-span-full py-20 text-center bg-white/40 dark:bg-white/5 rounded-[2.5rem] border-2 border-dashed border-white/10">
+                        <Award className="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-4 animate-pulse" />
+                        <p className="text-gray-400 font-black uppercase tracking-widest text-sm">No badges created yet</p>
+                    </div>
+                )}
             </div>
 
             {/* Badge Editor Modal */}
@@ -286,6 +287,7 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
                     }}
                 />
             )}
+
             {confirmState.isOpen && (
                 <ConfirmDialog
                     title={confirmState.title}

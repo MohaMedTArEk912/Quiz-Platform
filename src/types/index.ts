@@ -227,6 +227,7 @@ export interface SkillTrack {
     title: string;
     description?: string;
     category?: string;
+    subjectId?: string;
     icon?: string;
     modules: SkillModule[];
 }
@@ -265,6 +266,7 @@ export interface StudyCard {
     content: string;
     category: string;
     language?: string;
+    subjectId?: string;
     tags?: string[];
     createdAt: string;
 }

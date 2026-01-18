@@ -22,9 +22,10 @@ interface QuizManagerProps {
     currentUser: UserData;
     onRefresh: () => void;
     onNotification: (type: 'success' | 'error' | 'warning', message: string) => void;
+    selectedSubjectId?: string;
 }
 
-const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefresh, onNotification }) => {
+const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefresh, onNotification, selectedSubjectId }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Data State
@@ -35,6 +36,14 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
     const [viewMode, setViewMode] = useState<'stacks' | 'list'>('stacks');
     const [selectedStackId, setSelectedStackId] = useState<string | null>(null);
     const [activeHeaderMenu, setActiveHeaderMenu] = useState(false);
+
+    // Handle initial subject selection
+    useEffect(() => {
+        if (selectedSubjectId) {
+            setSelectedStackId(selectedSubjectId);
+            setViewMode('list');
+        }
+    }, [selectedSubjectId]);
 
     // Modal States
     const [subjectToEdit, setSubjectToEdit] = useState<Subject | null>(null);
@@ -308,9 +317,9 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
     });
 
     return (
-        <div>
+        <div className="space-y-4">
             {/* Header */}
-            <div className="flex flex-wrap gap-4 justify-between mb-8 items-center">
+            <div className="flex flex-wrap gap-4 justify-between mb-4 items-center">
                 <div className="flex items-center gap-4">
                     {viewMode === 'list' && (
                         <button

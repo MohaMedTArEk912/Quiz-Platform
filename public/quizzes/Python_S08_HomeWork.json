@@ -1,0 +1,357 @@
+{
+  "_id": "session8-homework-quiz",
+  "id": "session8-homework-quiz",
+  "category": "Python",
+  "coinsReward": 100,
+  "description": "Homework quiz for Session 8: Applying input handling and type conversion",
+  "difficulty": "Intermediate",
+  "icon": "🏠",
+  "isTournamentOnly": false,
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple-choice",
+      "part": "Role Distinction",
+      "question": "You download a game and play it. You are the:",
+      "options": [
+        "Programmer",
+        "User",
+        "Tester",
+        "Designer"
+      ],
+      "correctAnswer": 1,
+      "explanation": "You're using the finished product → user.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "part": "Role Distinction",
+      "question": "Who decides what happens when you press 'Submit' in a web form?",
+      "options": [
+        "The user submitting the form",
+        "The programmer who wrote the backend",
+        "The browser",
+        "The internet"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The programmer wrote the code that runs when Submit is clicked.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "part": "Input Storage",
+      "question": "What's wrong?\n\ninput('Name:') = username",
+      "options": [
+        "Nothing",
+        "Variable must be on left of =",
+        "Missing print()",
+        "Should use =="
+      ],
+      "correctAnswer": 1,
+      "explanation": "Assignment: variable = value. Left side receives the value from right.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "part": "Input Storage",
+      "question": "You ask: age = input('Age: '). User types 20. What is type(age)?",
+      "options": [
+        "int",
+        "str",
+        "float",
+        "None"
+      ],
+      "correctAnswer": 1,
+      "explanation": "input() returns string, so age is '20', not 20.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "part": "Type Conversion",
+      "question": "You need to add 5 to the user's age. How?",
+      "options": [
+        "age = input('Age:') + 5",
+        "age = int(input('Age:')) + 5",
+        "age = input('Age:') + '5'",
+        "age = str(input('Age:')) + 5"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Convert string to int before math.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 6,
+      "type": "multiple-choice",
+      "part": "Type Conversion",
+      "question": "What does int('25') do?",
+      "options": [
+        "Changes 25 to string",
+        "Converts string '25' to integer 25",
+        "Rounds 25.5 down",
+        "Nothing"
+      ],
+      "correctAnswer": 1,
+      "explanation": "int() converts a string that looks like a number into an actual integer.",
+      "points": 2,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 7,
+      "type": "multiple-choice",
+      "part": "Error Handling",
+      "question": "User types 'hello' for age. int(age) will:",
+      "options": [
+        "Convert to 0",
+        "Crash with ValueError",
+        "Return 'hello'",
+        "Convert to 1"
+      ],
+      "correctAnswer": 1,
+      "explanation": "int() can't convert non-numeric strings → ValueError.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 8,
+      "type": "multiple-choice",
+      "part": "Error Handling",
+      "question": "How can you safely ask for a number and handle non-numbers?",
+      "options": [
+        "Use float() instead of int()",
+        "Check if input .isdigit() before converting",
+        "Use try-except (later topic)",
+        "All are strategies"
+      ],
+      "correctAnswer": 3,
+      "explanation": "All are valid approaches to prevent crashes from bad input.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 9,
+      "type": "multiple-choice",
+      "part": "Multiple Inputs Design",
+      "question": "You're making a sign-up form: name, email, age. Best approach?",
+      "options": [
+        "One input() for all three",
+        "Three separate input() calls with prompts",
+        "Ask only for name",
+        "Hardcode the values"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Separate inputs with clear prompts for each piece of data.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 10,
+      "type": "multiple-choice",
+      "part": "Multiple Inputs Design",
+      "question": "Why store inputs in variables?",
+      "options": [
+        "To use them later in calculations or conditions",
+        "To make code look longer",
+        "Because input() doesn't work without variables",
+        "To delete them later"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Variables let you reuse, modify, or evaluate the user's input.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 11,
+      "type": "multiple-choice",
+      "part": "Real Program Flow",
+      "question": "What prints?\n\nname = input('Name:')  # User types Ali\nprint('Hello', name)",
+      "options": [
+        "Hello name",
+        "Hello Ali",
+        "Name: Hello Ali",
+        "Ali Hello"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Variable name holds 'Ali', so print shows 'Hello Ali'.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 12,
+      "type": "multiple-choice",
+      "part": "Real Program Flow",
+      "question": "Code:\n\na = input('Num1:')  # User types 5\nb = input('Num2:')  # User types 3\nprint(a + b)\nWhat prints?",
+      "options": [
+        "8",
+        "53",
+        "Error",
+        "5+3"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Strings concatenate: '5' + '3' = '53'.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 13,
+      "type": "multiple-choice",
+      "part": "Conversion in Context",
+      "question": "You ask for temperature in Celsius to convert to Fahrenheit. Formula: F = C * 9/5 + 32. Which is correct?",
+      "options": [
+        "C = input('Celsius:'); F = C * 9/5 + 32",
+        "C = int(input('Celsius:')); F = C * 9/5 + 32",
+        "C = float(input('Celsius:')); F = C * 9/5 + 32",
+        "Both B and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "int() works for whole numbers, float() for decimals. Both allow multiplication.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 14,
+      "type": "multiple-choice",
+      "part": "Conversion in Context",
+      "question": "Why use float() instead of int() for temperature?",
+      "options": [
+        "float() is faster",
+        "Temperatures can be decimals (e.g., 36.6)",
+        "int() crashes always",
+        "float() rounds up"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Real-world temperatures often have decimal points.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 15,
+      "type": "multiple-choice",
+      "part": "Prompt Design",
+      "question": "Which prompt is clearest?",
+      "options": [
+        "input()",
+        "input('Enter value:')",
+        "input('Please enter your age in years:')",
+        "input('age')"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Clear, polite prompts help users know exactly what to enter.",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 16,
+      "type": "multiple-choice",
+      "part": "Prompt Design",
+      "question": "Why might you avoid a prompt like 'Input data here:'?",
+      "options": [
+        "Too vague—user doesn't know what data",
+        "Too long",
+        "Python doesn't allow colons",
+        "It's fine"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Good prompts specify what data is needed (age, name, score, etc.).",
+      "points": 3,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 17,
+      "type": "multiple-choice",
+      "part": "Interactive Story",
+      "question": "You're coding a choose‑your‑own‑adventure game. What's the key element?",
+      "options": [
+        "Many print() statements",
+        "input() to let user make choices",
+        "Complex math",
+        "No variables"
+      ],
+      "correctAnswer": 1,
+      "explanation": "input() allows the user to choose paths, making it interactive.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 18,
+      "type": "multiple-choice",
+      "part": "Interactive Story",
+      "question": "How would you ask: 'Go left or right?' and store choice?",
+      "options": [
+        "choice = print('Go left or right?')",
+        "print('Go left or right?'); choice = input()",
+        "choice = input('Go left or right?')",
+        "Both B and C"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Both B and C work—prompt inside input() or separate print then input.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 19,
+      "type": "multiple-choice",
+      "part": "Philosophy",
+      "question": "What's the biggest limitation of input() for numbers?",
+      "options": [
+        "It only works with integers",
+        "It returns strings, requiring conversion for math",
+        "It can't store values",
+        "It's too fast"
+      ],
+      "correctAnswer": 1,
+      "explanation": "You must remember to convert to int/float if you plan to calculate.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    },
+    {
+      "id": 20,
+      "type": "multiple-choice",
+      "part": "Future Thinking",
+      "question": "Why learn input() early in programming?",
+      "options": [
+        "To make programs static",
+        "To create interactive tools that respond to users",
+        "To avoid using print()",
+        "To make code harder"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Input is the gateway to interactive applications—games, calculators, forms, etc.",
+      "points": 4,
+      "isBlock": false,
+      "isCompiler": false
+    }
+  ],
+  "reviewMode": true,
+  "timeLimit": 30,
+  "title": "Session 8: User Input - Homework Quiz",
+  "xpReward": 250
+}
