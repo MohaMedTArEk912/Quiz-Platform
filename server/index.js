@@ -100,7 +100,7 @@ if (!isServerless) {
 // Attach IO to app for controllers (null on serverless)
 app.set('io', io);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8000;
 
 
 app.use(cors({
@@ -323,13 +323,13 @@ app.use((req, res) => {
 // Initialize DB
 // connectToDatabase(); // Removed to prevent cold-start crashes. Handled by middleware.
 
-if (process.env.NODE_ENV !== 'production') {
+if (!isServerless) {
   if (!httpServer) {
     console.warn('⚠️  httpServer not initialized; running serverless mode.');
   } else {
     httpServer.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+      console.log(`Server running on port ${PORT}`);
+    });
   }
 }
 
