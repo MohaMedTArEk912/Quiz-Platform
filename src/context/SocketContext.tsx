@@ -38,7 +38,12 @@ const resolveSocketConfig = () => {
     const defaultProdUrl = 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app';
 
     // Use environment variable, then fallback to local (if local) or production default
-    const url = envUrl ?? (isLocal ? 'http://localhost:5000' : defaultProdUrl);
+    let url = envUrl ?? (isLocal ? 'http://localhost:5000' : defaultProdUrl);
+
+    // If on Koyeb, use the same host for sockets
+    if (!isLocal && hostname.includes('koyeb.app')) {
+        url = window.location.origin;
+    }
 
     // Default path is /socket.io/ (standard for most Node deployments)
     const path = envPath ?? '/socket.io/';

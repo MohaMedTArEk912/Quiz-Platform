@@ -50,6 +50,11 @@ const resolveApiUrl = () => {
     const localDefault = 'http://localhost:5000/api';
     const hostedDefault = 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api';
 
+    // If on production but hostname matches the backend (Koyeb), use relative path
+    if (!isLocalhost && hostname.includes('koyeb.app')) {
+        return '/api';
+    }
+
     return isLocalhost ? localDefault : hostedDefault;
 };
 

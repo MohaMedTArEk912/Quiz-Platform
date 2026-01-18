@@ -23,9 +23,12 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 // import mongoSanitize from 'express-mongo-sanitize'; // Conflict with Express 5
 import hpp from 'hpp';
-// import xss from 'xss-clean'; // Deprecated and causes issues with Express 5
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Routes
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.join(__dirname, '..');
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import quizRoutes from './routes/quizzes.js';
@@ -311,13 +314,28 @@ app.use((error, req, res, next) => {
   });
 });
 
-// 404 Handler - Must be after all routes
-app.use((req, res) => {
+// Serve Static Files from the frontend build
+const distPath = path.join(projectRoot, 'dist');
+app.use(express.static(distPath, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    }
+  }
+}));
+
+// 404 Handler for API routes
+app.use('/api/*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found',
+    message: 'API Route not found',
     path: req.path
   });
+});
+
+// Single Page Application (SPA) routing - Must be AFTER API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 // Initialize DB
