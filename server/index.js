@@ -100,7 +100,7 @@ if (!isServerless) {
 // Attach IO to app for controllers (null on serverless)
 app.set('io', io);
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 5000;
 
 
 app.use(cors({

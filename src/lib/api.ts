@@ -47,7 +47,7 @@ const resolveApiUrl = () => {
         return normalized;
     }
 
-    const localDefault = 'http://localhost:8000/api';
+    const localDefault = 'http://localhost:5000/api';
     const hostedDefault = 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api';
 
     return isLocalhost ? localDefault : hostedDefault;
