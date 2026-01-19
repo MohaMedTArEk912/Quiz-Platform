@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useAiJobs } from '../../contexts/AiJobContext';
+import { useConfirm } from '../../hooks/useConfirm';
+import ConfirmDialog from '../ConfirmDialog';
 import type { Subject } from '../../types';
 
 interface RoadResourcesProps {
@@ -16,6 +18,7 @@ interface RoadResourcesProps {
 
 const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotification, onRefresh }) => {
     const { addJob } = useAiJobs();
+    const { confirm, confirmState, handleCancel } = useConfirm();
 
     // Generator State
     const [genSelectedMaterials, setGenSelectedMaterials] = useState<string[]>([]);
@@ -80,7 +83,14 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
     };
 
     const handleDeleteMaterial = async (materialId: string) => {
-        if (!confirm('Delete this resource?')) return;
+        const isConfirmed = await confirm({
+            title: 'Delete Resource?',
+            message: 'Are you sure you want to delete this resource? This action cannot be undone.',
+            confirmText: 'Delete',
+            type: 'danger'
+        });
+
+        if (!isConfirmed) return;
         try {
             await api.deleteMaterial(subject._id, materialId, adminId);
             onNotification('success', 'Resource deleted');
@@ -155,12 +165,12 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
     };
 
     return (
-        <div className="h-full flex flex-col lg:flex-row gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left: Resource List & Config */}
-            <div className="w-full lg:w-1/3 flex flex-col gap-6">
+            <div className="lg:col-span-1 space-y-6">
 
                 {/* 1. Resources List */}
-                <div className="bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-white/5 p-6 flex-1 flex flex-col min-h-[300px] shadow-sm">
+                <div className="bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-white/5 p-6 shadow-sm">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="font-black text-gray-900 dark:text-white flex items-center gap-2 text-lg">
                             <span className="p-2 bg-indigo-500/10 rounded-lg">
@@ -175,7 +185,7 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
                         </label>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto">
                         {subject.materials?.map(m => (
                             <div key={m._id}
                                 className={`group flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer ${genSelectedMaterials.includes(m._id)
@@ -290,7 +300,7 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
             </div>
 
             {/* Right: Preview & Results */}
-            <div className="flex-1 bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-white/5 p-8 flex flex-col overflow-hidden shadow-sm">
+            <div className="lg:col-span-2 bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-white/5 p-8 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
                         Preview
@@ -307,7 +317,7 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
                     )}
                 </div>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
+                <div className="space-y-4">
                     {genResult ? genResult.map((q, i) => (
                         <div key={i} className="p-6 rounded-2xl border border-white/40 dark:border-white/5 bg-white/50 dark:bg-black/20 hover:border-indigo-500/20 transition-colors">
                             <div className="flex gap-4">
@@ -405,6 +415,10 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
                     </div>
                 </div>
             )}
+            <ConfirmDialog
+                {...confirmState}
+                onCancel={handleCancel}
+            />
         </div>
     );
 };

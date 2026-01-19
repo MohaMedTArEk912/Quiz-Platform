@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { BadgeNode } from '../../types';
-import { X, Plus, Trash2, Save, Sparkles } from 'lucide-react';
+import { X, Plus, Trash2, Save, Sparkles, ChevronDown } from 'lucide-react';
 import { BADGE_CRITERIA_TYPES } from '../../constants/badgeDefaults';
 
 interface BadgeNodeEditorProps {
@@ -118,16 +118,20 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
 
                             <div>
                                 <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">Rarity</label>
-                                <select
-                                    value={formData.rarity}
-                                    onChange={(e) => setFormData({ ...formData, rarity: e.target.value as any })}
-                                    className="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none"
-                                >
-                                    <option value="common">Common</option>
-                                    <option value="rare">Rare</option>
-                                    <option value="epic">Epic</option>
-                                    <option value="legendary">Legendary</option>
-                                </select>
+                                <div className="relative">
+                                    <select
+                                        value={formData.rarity}
+                                        onChange={(e) => setFormData({ ...formData, rarity: e.target.value as any })}
+                                        className="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg pl-4 pr-10 py-2 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none appearance-none cursor-pointer"
+                                        style={{ colorScheme: 'dark' }}
+                                    >
+                                        <option value="common">Common</option>
+                                        <option value="rare">Rare</option>
+                                        <option value="epic">Epic</option>
+                                        <option value="legendary">Legendary</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                </div>
                             </div>
 
                             <div>
@@ -205,27 +209,35 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                             {/* Add New Criterion */}
                             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                                 <div className="grid grid-cols-3 gap-3 mb-3">
-                                    <select
-                                        value={newCriterion.type}
-                                        onChange={(e) => setNewCriterion({ ...newCriterion, type: e.target.value as any })}
-                                        className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-500"
-                                    >
-                                        {criteriaTypes.map(type => (
-                                            <option key={type.value} value={type.value}>{type.label}</option>
-                                        ))}
-                                    </select>
+                                    <div className="relative col-span-1">
+                                        <select
+                                            value={newCriterion.type}
+                                            onChange={(e) => setNewCriterion({ ...newCriterion, type: e.target.value as any })}
+                                            className="w-full bg-white dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg pl-3 pr-8 py-2 border border-gray-200 dark:border-gray-500 appearance-none cursor-pointer"
+                                            style={{ colorScheme: 'dark' }}
+                                        >
+                                            {criteriaTypes.map(type => (
+                                                <option key={type.value} value={type.value}>{type.label}</option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 pointer-events-none" />
+                                    </div>
 
-                                    <select
-                                        value={newCriterion.operator}
-                                        onChange={(e) => setNewCriterion({ ...newCriterion, operator: e.target.value as any })}
-                                        className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-500"
-                                    >
-                                        <option value=">=">&gt;=</option>
-                                        <option value=">">&gt;</option>
-                                        <option value="=">=</option>
-                                        <option value="<">&lt;</option>
-                                        <option value="<=">&lt;=</option>
-                                    </select>
+                                    <div className="relative">
+                                        <select
+                                            value={newCriterion.operator}
+                                            onChange={(e) => setNewCriterion({ ...newCriterion, operator: e.target.value as any })}
+                                            className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg pl-3 pr-8 py-2 border border-gray-200 dark:border-gray-500 appearance-none cursor-pointer"
+                                            style={{ colorScheme: 'dark' }}
+                                        >
+                                            <option value=">=">&gt;=</option>
+                                            <option value=">">&gt;</option>
+                                            <option value="=">=</option>
+                                            <option value="<">&lt;</option>
+                                            <option value="<=">&lt;=</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 pointer-events-none" />
+                                    </div>
 
                                     <input
                                         type="number"

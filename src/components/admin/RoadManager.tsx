@@ -260,7 +260,7 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
     };
 
     return (
-        <div className="h-full flex flex-col space-y-4">
+        <div className="space-y-4">
             {/* Header */}
             {view === 'list' ? (
                 <div className="bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl border border-white/20 dark:border-white/5 p-4 sm:p-5 rounded-3xl shadow-sm mb-2 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -381,7 +381,7 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
             )}
 
             {view === 'detail' && selectedRoad && (
-                <div className="flex flex-col h-full overflow-hidden">
+                <div className="space-y-4">
                     {/* Tabs */}
                     <div className="flex gap-2 mb-6 overflow-x-auto pb-2 p-1 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/5 w-max max-w-full">
                         {[
@@ -406,7 +406,7 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                     </div>
 
                     {/* Tab Content */}
-                    <div className="flex-1 overflow-hidden">
+                    <div>
                         {activeTab === 'overview' && (
                             <div className="bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-white/5 shadow-sm">
                                 <h3 className="text-2xl font-black mb-6 text-gray-900 dark:text-white flex items-center gap-3">
@@ -431,47 +431,36 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                         )}
 
                         {activeTab === 'resources' && (
-                            <div className="h-full overflow-hidden">
-                                <RoadResources
-                                    subject={selectedRoad}
-                                    adminId={currentUser.userId}
-                                    onNotification={onNotification}
-                                    onRefresh={() => {
-                                        loadRoads();
-                                        // Update selectedRoad as well to reflect any deep changes
-                                        // Ideally loadRoads could return data to update selectedRoad directly
-                                        // For now, we rely on the list refresh. 
-                                        // To truly update content, we actually need to re-fetch this specific road 
-                                        // or find it in the new roads list.
-                                        api.getAllSubjects(currentUser.userId).then(res => {
-                                            if (res.success && selectedRoad) {
-                                                const updated = res.data.find((r: Subject) => r._id === selectedRoad._id);
-                                                if (updated) setSelectedRoad(updated);
-                                            }
-                                        });
-                                    }}
-                                />
-                            </div>
+                            <RoadResources
+                                subject={selectedRoad}
+                                adminId={currentUser.userId}
+                                onNotification={onNotification}
+                                onRefresh={() => {
+                                    loadRoads();
+                                    api.getAllSubjects(currentUser.userId).then(res => {
+                                        if (res.success && selectedRoad) {
+                                            const updated = res.data.find((r: Subject) => r._id === selectedRoad._id);
+                                            if (updated) setSelectedRoad(updated);
+                                        }
+                                    });
+                                }}
+                            />
                         )}
 
                         {activeTab === 'study' && (
-                            <div className="h-full overflow-hidden">
-                                <StudyCardManagement
-                                    currentUser={currentUser}
-                                    onNotification={onNotification}
-                                    subjectId={selectedRoad._id}
-                                />
-                            </div>
+                            <StudyCardManagement
+                                currentUser={currentUser}
+                                onNotification={onNotification}
+                                subjectId={selectedRoad._id}
+                            />
                         )}
 
                         {activeTab === 'roadmap' && (
-                            <div className="h-full overflow-hidden">
-                                <RoadmapManagement
-                                    adminId={currentUser.userId}
-                                    onNotification={onNotification}
-                                    subjectId={selectedRoad._id}
-                                />
-                            </div>
+                            <RoadmapManagement
+                                adminId={currentUser.userId}
+                                onNotification={onNotification}
+                                subjectId={selectedRoad._id}
+                            />
                         )}
 
                         {activeTab === 'quizzes' && (

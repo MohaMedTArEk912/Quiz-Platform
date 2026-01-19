@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { BookOpen, Download, Upload, Plus, MoreVertical, Edit2, Trash2, Code, ArrowLeft } from 'lucide-react';
+import { BookOpen, Download, Upload, Plus, MoreVertical, Edit2, Trash2, Code, ArrowLeft, ChevronDown } from 'lucide-react';
 import type { StudyCard, UserData } from '../../types/index';
 import { api } from '../../lib/api';
 import { useConfirm } from '../../hooks/useConfirm';
@@ -245,28 +245,38 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
 
                     <div className="flex gap-2">
                         {/* Category Filter */}
-                        <select
-                            value={studyCategoryFilter}
-                            onChange={e => setStudyCategoryFilter(e.target.value)}
-                            className="bg-white/60 dark:bg-black/20 border border-white/20 dark:border-white/5 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-gray-200 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm backdrop-blur-sm cursor-pointer hover:bg-white/80 dark:hover:bg-white/5 transition-colors"
-                        >
-                            <option value="all">All Categories</option>
-                            {allCategories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                        </select>
+                        {/* Category Filter */}
+                        <div className="relative">
+                            <select
+                                value={studyCategoryFilter}
+                                onChange={e => setStudyCategoryFilter(e.target.value)}
+                                className="bg-white/60 dark:bg-black/20 border border-white/20 dark:border-white/5 rounded-xl pl-4 pr-10 py-2 text-sm text-gray-900 dark:text-gray-200 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm backdrop-blur-sm cursor-pointer hover:bg-white/80 dark:hover:bg-white/5 transition-colors appearance-none"
+                                style={{ colorScheme: 'dark' }}
+                            >
+                                <option value="all">All Categories</option>
+                                {allCategories.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                        </div>
 
                         {/* Language Filter */}
-                        <select
-                            value={studyLanguageFilter}
-                            onChange={e => setStudyLanguageFilter(e.target.value)}
-                            className="bg-white/60 dark:bg-black/20 border border-white/20 dark:border-white/5 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-gray-200 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm backdrop-blur-sm cursor-pointer hover:bg-white/80 dark:hover:bg-white/5 transition-colors"
-                        >
-                            <option value="all">All Languages</option>
-                            {Array.from(new Set(studyCards.map(c => c.language || '').filter(Boolean))).map(lang => (
-                                <option key={lang} value={lang}>{lang}</option>
-                            ))}
-                        </select>
+                        {/* Language Filter */}
+                        <div className="relative">
+                            <select
+                                value={studyLanguageFilter}
+                                onChange={e => setStudyLanguageFilter(e.target.value)}
+                                className="bg-white/60 dark:bg-black/20 border border-white/20 dark:border-white/5 rounded-xl pl-4 pr-10 py-2 text-sm text-gray-900 dark:text-gray-200 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm backdrop-blur-sm cursor-pointer hover:bg-white/80 dark:hover:bg-white/5 transition-colors appearance-none"
+                                style={{ colorScheme: 'dark' }}
+                            >
+                                <option value="all">All Languages</option>
+                                {Array.from(new Set(studyCards.map(c => c.language || '').filter(Boolean))).map(lang => (
+                                    <option key={lang} value={lang}>{lang}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                        </div>
                     </div>
                 </div>
 

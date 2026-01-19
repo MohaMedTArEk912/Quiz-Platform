@@ -9,6 +9,7 @@ interface ConfirmDialogProps {
     onConfirm: () => void;
     onCancel: () => void;
     type?: 'danger' | 'warning' | 'info';
+    isOpen?: boolean;
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
@@ -18,7 +19,8 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     cancelText = 'Cancel',
     onConfirm,
     onCancel,
-    type = 'warning'
+    type = 'warning',
+    isOpen = true
 }) => {
     const getTypeStyles = () => {
         switch (type) {
@@ -41,6 +43,8 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     };
 
     const styles = getTypeStyles();
+
+    if (isOpen === false) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in">

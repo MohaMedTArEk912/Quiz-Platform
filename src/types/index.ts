@@ -215,12 +215,58 @@ export interface ShopItem {
     payload?: Record<string, unknown>;
 }
 
+// --- Graph & Roadmap Types ---
+export type NodeType = "core" | "optional" | "achievement" | "milestone";
+export const NodeType = {
+    CORE: "core" as NodeType,
+    OPTIONAL: "optional" as NodeType,
+    ACHIEVEMENT: "achievement" as NodeType,
+    MILESTONE: "milestone" as NodeType
+};
+
+export type NodeState = "locked" | "available" | "in_progress" | "completed" | "hidden";
+export const NodeState = {
+    LOCKED: "locked" as NodeState,
+    AVAILABLE: "available" as NodeState,
+    IN_PROGRESS: "in_progress" as NodeState,
+    COMPLETED: "completed" as NodeState,
+    HIDDEN: "hidden" as NodeState
+};
+
+export type UnlockRule =
+    | { type: "ALL"; nodes: string[] }
+    | { type: "ANY"; nodes: string[] }
+    | { type: "XP"; value: number }
+    | { type: "BADGE"; value: string };
+
+export interface Resource {
+    id: string;
+    title: string;
+    url: string;
+    type: 'video' | 'article' | 'pdf';
+}
+
 export interface SkillModule {
     moduleId: string;
     title: string;
     description?: string;
+    level: number;
+    parentId?: string; // Legacy tree support
     quizId?: string;
     badgeId?: string;
+    videoUrl?: string;
+    resources?: Resource[];
+
+    // Graph Properties
+    type: NodeType | 'core' | 'optional' | 'achievement' | 'milestone'; // Backward compat
+    status?: NodeState | 'locked' | 'available' | 'in-progress' | 'completed'; // Backward compat
+    xpReward?: number;
+    icon?: string;
+    progress?: number;
+    coordinates?: { x: number; y: number };
+    prerequisites?: string[];
+    unlockRule?: UnlockRule;
+    connections?: string[]; // Legacy
 }
 
 export interface SkillTrack {

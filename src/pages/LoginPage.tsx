@@ -2,10 +2,13 @@ import React, { useEffect } from 'react';
 import LoginScreen from '../components/LoginScreen';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useConfirm } from '../hooks/useConfirm';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const LoginPage: React.FC = () => {
     const { login, googleLogin } = useAuth();
     const navigate = useNavigate();
+    const { confirm, confirmState, handleCancel } = useConfirm();
 
     // Check for Google auth data in session storage (in case popup closed)
     useEffect(() => {
@@ -38,7 +41,13 @@ const LoginPage: React.FC = () => {
         const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
         if (!clientId) {
-            alert('Google Sign-In is not configured. Please set VITE_GOOGLE_CLIENT_ID in your environment variables.');
+            confirm({
+                title: 'Configuration Error',
+                message: 'Google Sign-In is not configured. Please set VITE_GOOGLE_CLIENT_ID in your environment variables.',
+                confirmText: 'OK',
+                type: 'warning',
+                cancelText: 'Close'
+            });
             console.error('VITE_GOOGLE_CLIENT_ID is not set');
             return;
         }
@@ -61,7 +70,13 @@ const LoginPage: React.FC = () => {
         );
 
         if (!googleWindow) {
-            alert('Pop-up blocked! Please allow pop-ups for this site to use Google Sign-In.');
+            confirm({
+                title: 'Pop-up Blocked',
+                message: 'Pop-up blocked! Please allow pop-ups for this site to use Google Sign-In.',
+                confirmText: 'OK',
+                type: 'warning',
+                cancelText: 'Close'
+            });
             return;
         }
 
@@ -81,14 +96,26 @@ const LoginPage: React.FC = () => {
                     navigate(isAdmin ? '/admin' : '/', { replace: true });
                 } catch (error) {
                     console.error('Google login error:', error);
-                    alert('Failed to sign in with Google. Please try again.');
+                    confirm({
+                        title: 'Login Failed',
+                        message: 'Failed to sign in with Google. Please try again.',
+                        confirmText: 'OK',
+                        type: 'danger',
+                        cancelText: 'Close'
+                    });
                 } finally {
                     window.removeEventListener('message', handleMessage);
                     googleWindow?.close();
                 }
             } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
                 console.error('Google auth error:', event.data.error);
-                alert(`Google Sign-In failed: ${event.data.error}`);
+                confirm({
+                    title: 'Login Error',
+                    message: `Google Sign-In failed: ${event.data.error}`,
+                    confirmText: 'OK',
+                    type: 'danger',
+                    cancelText: 'Close'
+                });
                 window.removeEventListener('message', handleMessage);
                 googleWindow?.close();
             }
@@ -118,12 +145,20 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <LoginScreen
-            onLogin={handleLogin}
-            onSwitchToRegister={() => navigate('/register')}
-            onSwitchToForgotPassword={() => navigate('/forgot-password')}
-            onGoogleSignIn={handleGoogleSignIn}
-        />
+        <>
+            <LoginScreen
+                onLogin={handleLogin}
+                onSwitchToRegister={() => navigate('/register')}
+                onSwitchToForgotPassword={() => navigate('/forgot-password')}
+                onGoogleSignIn={handleGoogleSignIn}
+            />
+            <ConfirmDialog
+                {...confirmState}
+                onCancel={handleCancel}
+            // Hide cancel button if it's just an alert-style message
+            // The customization relies on confirmState defaults or specific calls
+            />
+        </>
     );
 };
 

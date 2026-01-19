@@ -26,7 +26,7 @@ import ReviewManagement from './admin/ReviewManagement.tsx';
 import DailyChallengeManagement from './admin/DailyChallengeManagement.tsx';
 import TournamentManagement from './admin/TournamentManagement.tsx';
 import BadgeManagement from './admin/BadgeManagement.tsx';
-import AttemptsLog from './admin/AttemptsLog.tsx';
+
 import RoadManager from './admin/RoadManager';
 import QuizManager from '../pages/QuizManager';
 import AdminSettings from './AdminSettings.tsx';
@@ -50,7 +50,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onLogout
 }) => {
     // --- State ---
-    const [selectedTab, setSelectedTab] = useState<'main' | 'users' | 'quizzes' | 'attempts' | 'road' | 'reviews' | 'daily' | 'tournaments' | 'badges'>('main');
+    const [selectedTab, setSelectedTab] = useState<'main' | 'users' | 'quizzes' | 'road' | 'reviews' | 'daily' | 'tournaments' | 'badges'>('main');
     const [pendingReviews, setPendingReviews] = useState<AttemptData[]>([]);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -121,6 +121,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             items: [
                 { id: 'users', label: 'Users', icon: Users },
                 { id: 'quizzes', label: 'Quizzes', icon: BookOpen },
+                { id: 'road', label: 'Roads', icon: Route },
                 { id: 'badges', label: 'Badges', icon: Award },
             ]
         },
@@ -130,13 +131,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 { id: 'daily', label: 'Daily Challenges', icon: Zap },
                 { id: 'tournaments', label: 'Tournaments', icon: Trophy },
                 { id: 'reviews', label: 'Reviews', icon: Check, badge: pendingReviews.length },
-            ]
-        },
-        {
-            title: 'Content',
-            items: [
-                { id: 'attempts', label: 'Attempts', icon: BarChart3 },
-                { id: 'road', label: 'Roads', icon: Route },
             ]
         }
     ];
@@ -178,7 +172,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 {selectedTab === 'daily' && 'Daily Challenges'}
                                 {selectedTab === 'tournaments' && 'Tournaments'}
                                 {selectedTab === 'reviews' && 'Reviews'}
-                                {selectedTab === 'attempts' && 'Attempts Log'}
+
                                 {selectedTab === 'road' && 'Roads'}
                             </div>
                         </div>
@@ -558,7 +552,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <div className="bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white">Recent Attempts</h3>
-                                        <button onClick={() => setSelectedTab('attempts')} className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">Open Log</button>
+                                        <span className="text-xs font-bold text-gray-400 dark:text-gray-500">Latest Activity</span>
                                     </div>
                                     {(() => {
                                         const items = [...attempts].sort((a, b) => {
@@ -658,9 +652,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 onNotification={handleNotification}
                             />
                         )}
-                        {selectedTab === 'attempts' && (
-                            <AttemptsLog attempts={attempts} />
-                        )}
+
                         {selectedTab === 'road' && (
                             <RoadManager
                                 currentUser={currentUser}

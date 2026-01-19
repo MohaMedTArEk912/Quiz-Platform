@@ -29,10 +29,11 @@ import {
     FileText,
     Brain,
     Code,
-    Terminal,
-    Sparkles
+    Terminal
 } from 'lucide-react';
 import Navbar from './Navbar.tsx';
+import RoadmapManagement from './admin/RoadmapManagement';
+import { useNotification } from '../context/NotificationContext';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
     'BookOpen': <BookOpen className="w-8 h-8" />,
@@ -71,10 +72,11 @@ interface QuizListProps {
     onLogout: () => void;
 }
 
-type SubjectTab = 'overview' | 'resources' | 'roadmap' | 'quizzes' | 'study-cards';
+type SubjectTab = 'overview' | 'roadmap' | 'quizzes' | 'study-cards';
 
-const QuizList: React.FC<QuizListProps> = ({ quizzes, subjects, user, attempts, skillTracks, studyCards, onSelectQuiz, onViewProfile, onViewLeaderboard, onLogout }) => {
+const QuizList: React.FC<QuizListProps> = ({ quizzes, subjects, user, attempts, studyCards, onSelectQuiz, onViewProfile, onViewLeaderboard, onLogout }) => {
     const navigate = useNavigate();
+    const { showNotification } = useNotification();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<SubjectTab>('quizzes');
@@ -309,7 +311,6 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, subjects, user, attempts, 
                         <div className="flex items-center gap-1 p-1 bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-2xl mb-12 overflow-x-auto no-scrollbar">
                             {[
                                 { id: 'overview', label: 'Overview', icon: <BookOpen className="w-4 h-4" /> },
-                                { id: 'resources', label: 'Resources & AI', icon: <Sparkles className="w-4 h-4" /> },
                                 { id: 'roadmap', label: 'Roadmap', icon: <Brain className="w-4 h-4" /> },
                                 { id: 'quizzes', label: 'Quizzes', icon: <Award className="w-4 h-4" /> },
                                 { id: 'study-cards', label: 'Study Cards', icon: <FileText className="w-4 h-4" /> },
@@ -318,8 +319,8 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, subjects, user, attempts, 
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as SubjectTab)}
                                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${activeTab === tab.id
-                                            ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 shadow-indigo-500/30'
-                                            : 'text-gray-500 hover:bg-white/50 dark:hover:bg-white/10'
+                                        ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 shadow-indigo-500/30'
+                                        : 'text-gray-500 hover:bg-white/50 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     {tab.icon}
@@ -375,69 +376,15 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, subjects, user, attempts, 
                                 </div>
                             )}
 
-                            {activeTab === 'resources' && (
-                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {activeSubject?.materials?.map((material: any) => (
-                                            <div key={material._id} className="bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-white/20 dark:border-white/5 hover:border-indigo-500/30 transition-all group">
-                                                <div className="w-12 h-12 bg-white dark:bg-white/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                                    <FileText className="w-6 h-6 text-indigo-500" />
-                                                </div>
-                                                <h4 className="text-lg font-black text-gray-900 dark:text-white mb-1">{material.title}</h4>
-                                                <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">{material.type}</p>
-                                                {material.summary && (
-                                                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium line-clamp-3 mb-6">{material.summary}</p>
-                                                )}
-                                                <div className="flex items-center gap-2 text-indigo-500 text-xs font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    View Resource <ChevronRight className="w-4 h-4" />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {(activeSubject?.materials?.length || 0) === 0 && (
-                                        <div className="py-20 text-center bg-white/40 dark:bg-white/5 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-white/10">
-                                            <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                                            <h3 className="text-xl font-black text-gray-400 uppercase">No resources yet</h3>
-                                            <p className="text-gray-500 font-medium tracking-tight">AI generated content and materials will appear here.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
 
                             {activeTab === 'roadmap' && (
-                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                        {skillTracks.filter(t => t.subjectId === selectedSubjectId).map((track) => (
-                                            <div key={track.trackId} className="bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/20 dark:border-white/5 hover:border-indigo-500/30 transition-all group relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-bl-full" />
-                                                <div className="flex items-start gap-6 relative">
-                                                    <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-3xl">
-                                                        {track.icon || '🚀'}
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{track.title}</h4>
-                                                        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-6 line-clamp-2">{track.description}</p>
-                                                        <div className="flex flex-wrap gap-4 items-center">
-                                                            <div className="flex items-center gap-2 px-3 py-1 bg-white/50 dark:bg-white/10 rounded-xl">
-                                                                <LayoutGrid className="w-4 h-4 text-indigo-500" />
-                                                                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{track.modules?.length || 0} Modules</span>
-                                                            </div>
-                                                            <button className="px-6 py-2 bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-transform">
-                                                                Continue Path
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {skillTracks.filter(t => t.subjectId === selectedSubjectId).length === 0 && (
-                                        <div className="py-20 text-center bg-white/40 dark:bg-white/5 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-white/10">
-                                            <Brain className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                                            <h3 className="text-xl font-black text-gray-400 uppercase">No Roadmaps Found</h3>
-                                            <p className="text-gray-500 font-medium">Structured learning paths are not yet available for this subject.</p>
-                                        </div>
-                                    )}
+                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <RoadmapManagement
+                                        adminId={user.userId || 'viewer'} // Viewer mode
+                                        subjectId={selectedSubjectId || undefined}
+                                        onNotification={showNotification}
+                                        readOnly={true}
+                                    />
                                 </div>
                             )}
 

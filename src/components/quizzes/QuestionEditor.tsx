@@ -1,5 +1,6 @@
 import React from 'react';
 import { DEFAULT_BLOCKLY_TOOLBOX, COMPILER_ALLOWED_LANGUAGES, COMPILER_INITIAL_CODE } from '../../constants/quizDefaults';
+import { ChevronDown } from 'lucide-react';
 import CompilerQuestion from '../question-types/CompilerQuestion';
 import type { Question } from '../../types';
 
@@ -16,46 +17,52 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
             <div className="flex gap-4">
                 <div className="flex-1 space-y-1">
                     <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Question Type</label>
-                    <select
-                        value={question.isBlock ? 'block' : question.isCompiler ? 'compiler' : 'multiple-choice'}
-                        onChange={e => {
-                            const type = e.target.value;
-                            if (type === 'block') {
-                                onChange({
-                                    ...question,
-                                    type: 'multiple-choice', // Legacy fallback
-                                    isBlock: true,
-                                    isCompiler: false,
-                                    blockConfig: { referenceXml: '', toolbox: DEFAULT_BLOCKLY_TOOLBOX, initialXml: '' }
-                                });
-                            } else if (type === 'compiler') {
-                                onChange({
-                                    ...question,
-                                    type: 'text', // Legacy fallback
-                                    isBlock: false,
-                                    isCompiler: true,
-                                    compilerConfig: {
-                                        language: 'javascript',
-                                        allowedLanguages: COMPILER_ALLOWED_LANGUAGES,
-                                        initialCode: COMPILER_INITIAL_CODE['javascript'],
-                                        referenceCode: '// Enter the correct code solution here...'
-                                    }
-                                });
-                            } else {
-                                onChange({
-                                    ...question,
-                                    type: 'multiple-choice',
-                                    isBlock: false,
-                                    isCompiler: false
-                                });
-                            }
-                        }}
-                        className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                    >
-                        <option value="multiple-choice">Multiple Choice</option>
-                        <option value="block">Block (Scratch-like)</option>
-                        <option value="compiler">Code Compiler</option>
-                    </select>
+                    <div className="relative">
+                        <select
+                            value={question.isBlock ? 'block' : question.isCompiler ? 'compiler' : 'multiple-choice'}
+                            onChange={e => {
+                                const type = e.target.value;
+                                if (type === 'block') {
+                                    onChange({
+                                        ...question,
+                                        type: 'multiple-choice', // Legacy fallback
+                                        isBlock: true,
+                                        isCompiler: false,
+                                        blockConfig: { referenceXml: '', toolbox: DEFAULT_BLOCKLY_TOOLBOX, initialXml: '' }
+                                    });
+                                } else if (type === 'compiler') {
+                                    onChange({
+                                        ...question,
+                                        type: 'text', // Legacy fallback
+                                        isBlock: false,
+                                        isCompiler: true,
+                                        compilerConfig: {
+                                            language: 'javascript',
+                                            allowedLanguages: COMPILER_ALLOWED_LANGUAGES,
+                                            initialCode: COMPILER_INITIAL_CODE['javascript'],
+                                            referenceCode: '// Enter the correct code solution here...'
+                                        }
+                                    });
+                                } else {
+                                    onChange({
+                                        ...question,
+                                        type: 'multiple-choice',
+                                        isBlock: false,
+                                        isCompiler: false
+                                    });
+                                }
+                            }}
+                            className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg pl-3 pr-10 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 appearance-none cursor-pointer"
+                            style={{ colorScheme: 'dark' }}
+                        >
+                            <option value="multiple-choice" className="text-black dark:text-white bg-white dark:bg-slate-800">Multiple Choice</option>
+                            <option value="block" className="text-black dark:text-white bg-white dark:bg-slate-800">Block (Scratch-like)</option>
+                            <option value="compiler" className="text-black dark:text-white bg-white dark:bg-slate-800">Code Compiler</option>
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                            <ChevronDown size={16} />
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -188,37 +195,43 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-xs font-bold text-gray-500 uppercase">Default Language</label>
-                                <select
-                                    value={question.compilerConfig?.language || 'javascript'}
-                                    onChange={e => {
-                                        const newLang = e.target.value;
-                                        const currentRef = question.compilerConfig?.referenceCode || '';
+                                <div className="relative">
+                                    <select
+                                        value={question.compilerConfig?.language || 'javascript'}
+                                        onChange={e => {
+                                            const newLang = e.target.value;
+                                            const currentRef = question.compilerConfig?.referenceCode || '';
 
-                                        // Check if current ref is just a default placeholder (handles // and # and leading regex)
-                                        const isPlaceholder = !currentRef || currentRef.trim() === '' ||
-                                            /^\s*(\/\/|#)\s*Enter the correct code solution/.test(currentRef);
+                                            // Check if current ref is just a default placeholder (handles // and # and leading regex)
+                                            const isPlaceholder = !currentRef || currentRef.trim() === '' ||
+                                                /^\s*(\/\/|#)\s*Enter the correct code solution/.test(currentRef);
 
-                                        const newCommentPrefix = newLang.includes('python') ? '#' : '//';
-                                        const newRef = isPlaceholder
-                                            ? `${newCommentPrefix} Enter the correct code solution here...`
-                                            : currentRef;
+                                            const newCommentPrefix = newLang.includes('python') ? '#' : '//';
+                                            const newRef = isPlaceholder
+                                                ? `${newCommentPrefix} Enter the correct code solution here...`
+                                                : currentRef;
 
-                                        onChange({
-                                            ...question,
-                                            compilerConfig: {
-                                                ...(question.compilerConfig || { allowedLanguages: ['javascript'] }),
-                                                language: newLang,
-                                                initialCode: COMPILER_INITIAL_CODE[newLang] || '',
-                                                referenceCode: newRef
-                                            }
-                                        });
-                                    }}
-                                    className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
-                                >
-                                    <option value="javascript">JavaScript</option>
-                                    <option value="python">Python</option>
-                                    <option value="typescript">TypeScript</option>
-                                </select>
+                                            onChange({
+                                                ...question,
+                                                compilerConfig: {
+                                                    ...(question.compilerConfig || { allowedLanguages: ['javascript'] }),
+                                                    language: newLang,
+                                                    initialCode: COMPILER_INITIAL_CODE[newLang] || '',
+                                                    referenceCode: newRef
+                                                }
+                                            });
+                                        }}
+                                        className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg pl-3 pr-10 py-2 text-gray-900 dark:text-white appearance-none cursor-pointer"
+                                        style={{ colorScheme: 'dark' }}
+                                    >
+                                        <option value="javascript" className="text-black dark:text-white bg-white dark:bg-slate-800">JavaScript</option>
+                                        <option value="python" className="text-black dark:text-white bg-white dark:bg-slate-800">Python</option>
+                                        <option value="typescript" className="text-black dark:text-white bg-white dark:bg-slate-800">TypeScript</option>
+                                    </select>
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                                        <ChevronDown size={16} />
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label className="text-xs font-bold text-gray-500 uppercase">Allowed Languages (comma sep)</label>
