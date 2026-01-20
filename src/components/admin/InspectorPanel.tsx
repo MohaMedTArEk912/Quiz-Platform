@@ -177,22 +177,37 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
                         <div>
                             <label className="block text-xs font-semibold text-gray-400 mb-2">Module Type</label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {Object.values(NodeType).map((type) => (
-                                    <button
-                                        key={type}
-                                        onClick={() => handleChange('type', type)}
-                                        className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${editedNode.type === type
-                                            ? type === 'core' ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400' :
-                                                type === 'optional' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' :
-                                                    type === 'achievement' ? 'bg-amber-500/20 border-amber-500 text-amber-400' :
-                                                        'bg-purple-500/20 border-purple-500 text-purple-400'
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    onClick={() => handleChange('type', NodeType.CORE)}
+                                    className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${
+                                        editedNode.type === NodeType.CORE
+                                            ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400'
                                             : 'bg-[#0a0a12] border-white/10 text-gray-500 hover:border-white/20'
-                                            }`}
-                                    >
-                                        {type}
-                                    </button>
-                                ))}
+                                    }`}
+                                >
+                                    CORE
+                                </button>
+                                <button
+                                    onClick={() => handleChange('type', NodeType.OPTIONAL)}
+                                    className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${
+                                        editedNode.type === NodeType.OPTIONAL
+                                            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
+                                            : 'bg-[#0a0a12] border-white/10 text-gray-500 hover:border-white/20'
+                                    }`}
+                                >
+                                    OPTIONAL
+                                </button>
+                                <button
+                                    onClick={() => handleChange('type', NodeType.ACHIEVEMENT)}
+                                    className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${
+                                        editedNode.type === NodeType.ACHIEVEMENT
+                                            ? 'bg-amber-500/20 border-amber-500 text-amber-400'
+                                            : 'bg-[#0a0a12] border-white/10 text-gray-500 hover:border-white/20'
+                                    }`}
+                                >
+                                    ACHIEVEMENT
+                                </button>
                             </div>
                         </div>
 
@@ -256,14 +271,53 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
                         <div>
                             <label className="block text-xs font-semibold text-gray-400 mb-2">Level (Hierarchy)</label>
-                            <input
-                                type="number"
-                                value={editedNode.level || 0}
-                                onChange={(e) => handleChange('level', parseInt(e.target.value))}
-                                className="w-full bg-[#0a0a12] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
-                                min={0}
-                            />
-                            <p className="text-[10px] text-gray-500 mt-1">Used for auto-layout ordering</p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => handleChange('level', Math.max(0, (editedNode.level || 0) - 1))}
+                                    className="px-3 py-2 bg-[#0a0a12] border border-white/10 rounded-xl text-white hover:bg-white/5 transition-all"
+                                >
+                                    −
+                                </button>
+                                <input
+                                    type="number"
+                                    value={editedNode.level || 0}
+                                    onChange={(e) => handleChange('level', parseInt(e.target.value) || 0)}
+                                    className="flex-1 bg-[#0a0a12] border border-white/10 rounded-xl px-4 py-3 text-white text-sm text-center focus:outline-none focus:border-indigo-500 transition-all"
+                                    min={0}
+                                />
+                                <button
+                                    onClick={() => handleChange('level', (editedNode.level || 0) + 1)}
+                                    className="px-3 py-2 bg-[#0a0a12] border border-white/10 rounded-xl text-white hover:bg-white/5 transition-all"
+                                >
+                                    +
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-gray-500 mt-1">Controls module position in roadmap</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-400 mb-3">Pixel-Perfect Position</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[10px] text-gray-500 uppercase mb-1 block">X Coordinate</label>
+                                    <input
+                                        type="number"
+                                        value={editedNode.coordinates?.x || 0}
+                                        onChange={(e) => handleChange('coordinates', { ...editedNode.coordinates, x: parseInt(e.target.value) || 0 })}
+                                        className="w-full bg-[#0a0a12] border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-gray-500 uppercase mb-1 block">Y Coordinate</label>
+                                    <input
+                                        type="number"
+                                        value={editedNode.coordinates?.y || 0}
+                                        onChange={(e) => handleChange('coordinates', { ...editedNode.coordinates, y: parseInt(e.target.value) || 0 })}
+                                        className="w-full bg-[#0a0a12] border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
+                                    />
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-gray-500 mt-1.5">Manual positioning in pixels</p>
                         </div>
 
                         <div>

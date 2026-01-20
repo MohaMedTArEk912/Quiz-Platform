@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import dagre from 'dagre';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { api } from '../../lib/api';
 import type { SkillModule, SkillTrack, Quiz, BadgeNode } from '../../types';
 import { NodeType, NodeState } from '../../types';
 import {
-    Save, Zap, Star, Lock, GitBranch, Loader2, FileJson,
-    Plus, LayoutGrid, Eye, Target, Check, Circle, Award, BrainCircuit
+    Save, Zap, Star, Loader2, FileJson,
+    Plus, Eye, Check, BrainCircuit
 } from 'lucide-react';
 import { InspectorPanel } from './InspectorPanel';
 import { RoadmapJsonImporter } from './RoadmapJsonImporter';
@@ -27,27 +28,11 @@ interface RoadmapManagementProps {
 }
 
 // --- Design System Tokens ---
-const GRID_SIZE = 40;
 const NODE_WIDTH = 280;
 const NODE_HEIGHT = 140;
 const LEVEL_SPACING = 180;
 const NODE_SPACING = 100;
 
-const COLORS = {
-    core: '#6366f1',
-    optional: '#10b981',
-    achievement: '#f59e0b',
-    milestone: '#8b5cf6',
-    locked: '#4b5563',
-    background: '#0B0E1A',
-    grid: 'rgba(255,255,255,0.03)',
-    connector: {
-        core: ['#6366f1', '#8b5cf6'],
-        optional: ['#10b981', '#059669'],
-        achievement: ['#f59e0b', '#d97706'],
-        locked: ['#4b5563', '#374151']
-    }
-};
 
 /**
  * Auto-layout using Dagre algorithm
@@ -120,65 +105,9 @@ const applyAutoLayout = (modules: SkillModule[]): SkillModule[] => {
 /**
  * Helper: Resolve Node Appearance
  */
-const resolveNodeAppearance = (type: string, status: string, isGenesis: boolean) => {
-    const isLocked = status === 'locked';
-    const isCompleted = status === 'completed';
 
-    const baseStyles = {
-        core: {
-            bg: 'bg-gradient-to-br from-[#1a1a2e] to-[#1e1b4b]',
-            border: 'border-indigo-500/40',
-            glow: 'shadow-[0_0_30px_-5px_rgba(99,102,241,0.3)]',
-            icon: <Zap className="w-4 h-4 text-indigo-400" />,
-            text: 'text-indigo-400',
-            accent: 'indigo',
-            headerBg: 'bg-indigo-500/10',
-            gradientId: 'coreGradient'
-        },
-        optional: {
-            bg: 'bg-gradient-to-br from-[#1a1a2e] to-[#0f2922]',
-            border: 'border-emerald-500/40',
-            glow: 'shadow-[0_0_25px_-5px_rgba(16,185,129,0.25)]',
-            icon: <GitBranch className="w-4 h-4 text-emerald-400" />,
-            text: 'text-emerald-400',
-            accent: 'emerald',
-            headerBg: 'bg-emerald-500/10',
-            gradientId: 'optionalGradient'
-        },
-        achievement: {
-            bg: 'bg-gradient-to-br from-[#1a1a2e] to-[#2a1a0a]',
-            border: 'border-amber-500/40',
-            glow: 'shadow-[0_0_35px_-5px_rgba(245,158,11,0.3)]',
-            icon: <Star className="w-4 h-4 text-amber-400" />,
-            text: 'text-amber-400',
-            accent: 'amber',
-            headerBg: 'bg-amber-500/10',
-            gradientId: 'achievementGradient'
-        },
-        milestone: {
-            bg: 'bg-gradient-to-br from-[#1a1a2e] to-[#2d1a4b]',
-            border: 'border-purple-500/40',
-            glow: 'shadow-[0_0_35px_-5px_rgba(139,92,246,0.3)]',
-            icon: <Target className="w-4 h-4 text-purple-400" />,
-            text: 'text-purple-400',
-            accent: 'purple',
-            headerBg: 'bg-purple-500/10',
-            gradientId: 'milestoneGradient'
-        }
-    };
 
-    const style = baseStyles[type as keyof typeof baseStyles] || baseStyles.core;
-
-    return {
-        ...style,
-        border: isLocked ? 'border-gray-700/50' : style.border,
-        glow: isLocked ? '' : (isCompleted ? style.glow + ' brightness-110' : style.glow),
-        opacity: isLocked ? 'opacity-60' : 'opacity-100',
-        width: isGenesis ? 300 : NODE_WIDTH
-    };
-};
-
-const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotification, subjectId, readOnly = false, userProgress, onSubModuleComplete }) => {
+const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotification, subjectId, readOnly = false, userProgress }) => {
     // Data state
     const [track, setTrack] = useState<SkillTrack | null>(null);
     const [modules, setModules] = useState<SkillModule[]>([]);
@@ -186,13 +115,11 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     // UI state
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [zoom, setZoom] = useState(1);
-    const [pan, setPan] = useState({ x: 0, y: 0 });
     const [viewMode, setViewMode] = useState<'admin' | 'user'>('admin');
+    const [draggedModuleId, setDraggedModuleId] = useState<string | null>(null);
+    const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
     // Interaction State
-    const [draggingId, setDraggingId] = useState<string | null>(null);
-    const [isPanning, setIsPanning] = useState(false);
 
     // Inspector State
     const [isInspectorOpen, setIsInspectorOpen] = useState(false);
@@ -204,8 +131,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     const [badges, setBadges] = useState<BadgeNode[]>([]);
 
     // Optimistic UI state for sub-module completion (local state for instant feedback)
-    const [localCompletedSubModules, setLocalCompletedSubModules] = useState<string[]>([]);
-    const [completingSubModuleId, setCompletingSubModuleId] = useState<string | null>(null);
+    const [, setLocalCompletedSubModules] = useState<string[]>([]);
 
     // Sync local state with props when userProgress changes
     React.useEffect(() => {
@@ -215,9 +141,6 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     }, [userProgress?.completedSubModules]);
 
     const { confirm, confirmState, handleCancel } = useConfirm();
-    const canvasRef = useRef<HTMLDivElement>(null);
-    const dragStartRef = useRef<{ x: number, y: number } | null>(null);
-    const wasDraggingRef = useRef(false);
 
     // --- Initialization ---
     useEffect(() => { loadData(); }, [subjectId]);
@@ -308,92 +231,341 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         return normalizedMods;
     };
 
-    // --- Auto Layout ---
-    const handleAutoLayout = useCallback(() => {
-        const layoutedModules = applyAutoLayout(modules);
-        setModules(layoutedModules);
-        onNotification('success', 'Auto-layout applied');
-    }, [modules, onNotification]);
-
-    // --- Drag & Drop Logic ---
-    const handleMouseDown = (e: React.MouseEvent, moduleId?: string) => {
-        if (readOnly || viewMode === 'user') {
-            if (!moduleId && (e.button === 0 || e.button === 1)) setIsPanning(true);
-            return;
+    const computeStatus = (module: SkillModule) => {
+        let status = module.status || 'locked';
+        if (readOnly && userProgress) {
+            if (userProgress.completedModules?.includes(module.moduleId)) {
+                status = 'completed';
+            } else if (userProgress.unlockedModules?.includes(module.moduleId)) {
+                status = 'available';
+            } else {
+                status = 'locked';
+            }
         }
-
-        if (moduleId) {
-            e.stopPropagation();
-            setDraggingId(moduleId);
-            setIsPanning(false);
-            dragStartRef.current = { x: e.clientX, y: e.clientY };
-            wasDraggingRef.current = false;
-        } else {
-            if (e.button === 0 || e.button === 1) setIsPanning(true);
-        }
+        return {
+            status,
+            isLocked: status === 'locked',
+            isCompleted: status === 'completed'
+        };
     };
 
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (draggingId) {
-            if (!dragStartRef.current) return;
-            const dist = Math.hypot(e.clientX - dragStartRef.current.x, e.clientY - dragStartRef.current.y);
-            if (dist > 5) wasDraggingRef.current = true;
+    const sketchLayout = useMemo(() => {
+        const ordered = [...modules].sort((a, b) => (a.level || 0) - (b.level || 0) || a.title.localeCompare(b.title));
+        const xPositions = [210, 550];
+        const ySpacing = 260;
 
-            const dx = e.movementX / zoom;
-            const dy = e.movementY / zoom;
+        return ordered.map((module, index) => {
+            const col = index % 2;
+            const row = Math.floor(index / 2);
+            return {
+                module,
+                x: xPositions[col],
+                y: row * ySpacing,
+                col,
+                row
+            };
+        });
+    }, [modules]);
 
-            setModules(prev => prev.map(m => {
-                if (m.moduleId === draggingId && m.coordinates) {
-                    return {
-                        ...m,
-                        coordinates: {
-                            x: m.coordinates.x + dx,
-                            y: m.coordinates.y + dy
-                        }
-                    };
-                }
-                return m;
-            }));
-        } else if (isPanning) {
-            setPan(prev => ({ x: prev.x + e.movementX, y: prev.y + e.movementY }));
+    const renderSketch = () => {
+        if (sketchLayout.length === 0) {
+            return (
+                <div className="flex flex-1 items-center justify-center text-gray-500 text-sm">No modules yet.</div>
+            );
         }
-    };
 
-    const handleMouseUp = () => {
-        if (draggingId) {
-            setModules(prev => prev.map(m => {
-                if (m.moduleId === draggingId && m.coordinates) {
-                    return {
-                        ...m,
-                        coordinates: {
-                            x: Math.round(m.coordinates.x / 20) * 20,
-                            y: Math.round(m.coordinates.y / 20) * 20
-                        }
-                    };
-                }
-                return m;
-            }));
+        // User view - Infinite Canvas with grab-to-pan
+        if (readOnly) {
+            const visibleModules = sketchLayout.filter(item => {
+                const { isLocked } = computeStatus(item.module);
+                return !(viewMode === 'user' && isLocked);
+            });
+
+            const boxWidth = NODE_WIDTH + 40;
+            const boxHeight = NODE_HEIGHT + 30;
+            const svgWidth = 920;
+            const svgHeight = Math.max(...visibleModules.map(n => n.y)) + boxHeight + 80;
+
+            const connectors = visibleModules.slice(0, -1).map((node, idx) => {
+                const next = visibleModules[idx + 1];
+                const startX = node.x + boxWidth / 2;
+                const startY = node.y + boxHeight;
+                const endX = next.x + boxWidth / 2;
+                const endY = next.y;
+
+                const midY = (startY + endY) / 2;
+                return { startX, startY, midY, endX, endY };
+            });
+
+            return (
+                <div className="relative flex-1 overflow-hidden bg-gradient-to-b from-slate-950 to-slate-900">
+                    <TransformWrapper
+                        initialScale={1}
+                        minScale={0.5}
+                        maxScale={2}
+                        centerOnInit={true}
+                        wheel={{ step: 0.1 }}
+                        panning={{ velocityDisabled: true }}
+                        doubleClick={{ disabled: true }}
+                    >
+                        <TransformComponent
+                            wrapperClass="!w-full !h-full"
+                            contentClass="cursor-grab active:cursor-grabbing"
+                        >
+                            <div className="roadmap-canvas" style={{ width: svgWidth, minHeight: svgHeight, margin: '40px auto', position: 'relative' }}>
+                                <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ pointerEvents: 'none' }}>
+                                    <defs>
+                                        <linearGradient id="userSketchCore" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" stopColor="#6366f1" />
+                                            <stop offset="100%" stopColor="#8b5cf6" />
+                                        </linearGradient>
+                                    </defs>
+                                    {connectors.map((c, idx) => (
+                                        <g key={`c-${idx}`}>
+                                            {/* Pipe/pipe shadow for depth */}
+                                            <path
+                                                d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
+                                                fill="none"
+                                                stroke="#1e293b"
+                                                strokeWidth={8}
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                opacity={0.6}
+                                            />
+                                            {/* Main pipe - bright and solid */}
+                                            <path
+                                                d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
+                                                fill="none"
+                                                stroke="url(#userSketchCore)"
+                                                strokeWidth={6}
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                opacity={0.8}
+                                            />
+                                            {/* Highlight for 3D effect */}
+                                            <path
+                                                d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
+                                                fill="none"
+                                                stroke="#a78bfa"
+                                                strokeWidth={2}
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                opacity={0.4}
+                                            />
+                                        </g>
+                                    ))}
+                                </svg>
+
+                                {visibleModules.map((item) => {
+                                    const { module } = item;
+                                    const { status, isCompleted } = computeStatus(module);
+                                    const moduleNumber = (module.level ?? 0) + 1;
+
+                                    const isOptional = module.type === 'optional';
+                                    const isAchievement = module.type === 'achievement';
+
+                                    const borderClass = isOptional ? 'border-emerald-500/40' : 
+                                        isAchievement ? 'border-amber-500/40' : 
+                                        'border-indigo-500/40';
+
+                                    const numberColorClass = isOptional ? 'text-emerald-400' :
+                                        isAchievement ? 'text-amber-400' :
+                                        'text-indigo-400';
+
+                                    return (
+                                        <div
+                                            key={module.moduleId}
+                                            className="absolute"
+                                            style={{ left: item.x, top: item.y, width: boxWidth, height: boxHeight, pointerEvents: 'auto' }}
+                                        >
+                                            <div 
+                                                className={`h-full w-full rounded-xl border bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col transition-all duration-300 ${borderClass} shadow-lg hover:shadow-xl cursor-pointer`}
+                                            >
+                                                <div className={`px-6 py-4 flex items-center justify-between border-b border-slate-700/50`}>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-2 h-2 rounded-full ${isOptional ? 'bg-emerald-500' : isAchievement ? 'bg-amber-500' : 'bg-indigo-500'}`} />
+                                                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{module.type || 'core'}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-xs font-semibold">
+                                                        {isCompleted && <Check className="w-4 h-4 text-emerald-500" />}
+                                                        <span className={numberColorClass}>#{moduleNumber}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex-1 px-6 py-4 flex flex-col gap-2.5">
+                                                    <h4 className="text-white font-semibold text-sm leading-tight line-clamp-2">{module.title}</h4>
+                                                    <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{module.description || 'Keep going to unlock the next milestone.'}</p>
+                                                </div>
+
+                                                <div className="px-6 py-3 border-t border-slate-700/50 flex items-center justify-between bg-slate-900/50">
+                                                    <span className="text-xs text-slate-500 uppercase tracking-wider font-medium">Level {moduleNumber}</span>
+                                                    <span className={`text-xs font-semibold uppercase tracking-wider ${isCompleted ? 'text-emerald-500' : 'text-slate-500'}`}>{status}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </TransformComponent>
+                    </TransformWrapper>
+                </div>
+            );
         }
-        setDraggingId(null);
-        setIsPanning(false);
+
+        // Admin view - Infinite Canvas with grab-to-pan and editing
+        const boxWidth = NODE_WIDTH + 40;
+        const boxHeight = NODE_HEIGHT + 30;
+        const svgWidth = 920;
+        const svgHeight = Math.max(...sketchLayout.map(n => n.y)) + boxHeight + 80;
+
+        const connectors = sketchLayout.slice(0, -1).map((node, idx) => {
+            const next = sketchLayout[idx + 1];
+            const startX = node.x + boxWidth / 2;
+            const startY = node.y + boxHeight;
+            const endX = next.x + boxWidth / 2;
+            const endY = next.y;
+
+            const midY = (startY + endY) / 2;
+            return { startX, startY, midY, endX, endY };
+        });
+
+        return (
+            <div className="relative flex-1 overflow-hidden bg-gradient-to-b from-slate-950 to-slate-900">
+                <TransformWrapper
+                    initialScale={1}
+                    minScale={0.5}
+                    maxScale={2}
+                    centerOnInit={true}
+                    wheel={{ step: 0.1 }}
+                    panning={{ velocityDisabled: true }}
+                    doubleClick={{ disabled: true }}
+                    disabled={viewMode === 'admin' && !readOnly && draggedModuleId !== null}
+                >
+                    <TransformComponent
+                        wrapperClass="!w-full !h-full"
+                        contentClass={viewMode === 'admin' && !readOnly ? "" : "cursor-grab active:cursor-grabbing"}
+                    >
+                        <div className="roadmap-canvas" style={{ width: svgWidth, minHeight: svgHeight, margin: '40px auto', position: 'relative' }}>
+                            <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ pointerEvents: 'none' }}>
+                            <defs>
+                                <linearGradient id="sketchCore" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor="#6366f1" />
+                                    <stop offset="100%" stopColor="#8b5cf6" />
+                                </linearGradient>
+                            </defs>
+                            {connectors.map((c, idx) => (
+                                <g key={`c-${idx}`}>
+                                    {/* Pipe/pipe shadow for depth */}
+                                    <path
+                                        d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
+                                        fill="none"
+                                        stroke="#1e293b"
+                                        strokeWidth={8}
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        opacity={0.6}
+                                    />
+                                    {/* Main pipe - bright and solid */}
+                                    <path
+                                        d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
+                                        fill="none"
+                                        stroke="url(#sketchCore)"
+                                        strokeWidth={6}
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        opacity={0.8}
+                                    />
+                                    {/* Highlight for 3D effect */}
+                                    <path
+                                        d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
+                                        fill="none"
+                                        stroke="#a78bfa"
+                                        strokeWidth={2}
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        opacity={0.4}
+                                    />
+                                </g>
+                            ))}
+                        </svg>
+
+                        {sketchLayout.map((item) => {
+                            const { module } = item;
+                            const { status, isCompleted } = computeStatus(module);
+                            const moduleNumber = (module.level ?? 0) + 1;
+
+                            // In user preview mode, skip locked modules
+                            if (viewMode === 'user' && computeStatus(module).isLocked && readOnly) {
+                                return null;
+                            }
+
+                            // Define color classes based on module type
+                            const isOptional = module.type === 'optional';
+                            const isAchievement = module.type === 'achievement';
+
+                            const borderClass = isOptional ? 'border-emerald-500/40' : 
+                                isAchievement ? 'border-amber-500/40' : 
+                                'border-indigo-500/40';
+
+                            const numberColorClass = isOptional ? 'text-emerald-400' :
+                                isAchievement ? 'text-amber-400' :
+                                'text-indigo-400';
+
+                            return (
+                                <div
+                                    key={module.moduleId}
+                                    className="absolute group"
+                                    style={{ left: item.x, top: item.y, width: boxWidth, height: boxHeight, pointerEvents: 'auto' }}
+                                    onMouseMove={handleMouseMove}
+                                    onMouseUp={handleMouseUp}
+                                    onMouseLeave={handleMouseUp}
+                                >
+                                    <div 
+                                        className={`h-full w-full rounded-xl border bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col transition-all duration-300 ${borderClass} shadow-lg hover:shadow-xl ${!readOnly && viewMode === 'admin' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${selectedNodeId === module.moduleId ? 'ring-2 ring-indigo-500' : ''} ${draggedModuleId === module.moduleId ? 'opacity-75' : ''}`}
+                                        onMouseDown={(e) => {
+                                            if (!readOnly && viewMode === 'admin') {
+                                                handleModuleMouseDown(module.moduleId, e);
+                                            }
+                                        }}
+                                        onClick={() => {
+                                            if (!readOnly && viewMode === 'admin' && !draggedModuleId) {
+                                                setSelectedNodeId(module.moduleId);
+                                                setIsInspectorOpen(true);
+                                            }
+                                        }}
+                                    >
+                                        <div className={`px-6 py-4 flex items-center justify-between border-b border-slate-700/50`}>
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-2 h-2 rounded-full ${isOptional ? 'bg-emerald-500' : isAchievement ? 'bg-amber-500' : 'bg-indigo-500'}`} />
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{module.type || 'core'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs font-semibold">
+                                                {isCompleted && <Check className="w-4 h-4 text-emerald-500" />}
+                                                <span className={numberColorClass}>#{moduleNumber}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex-1 px-6 py-4 flex flex-col gap-2.5">
+                                            <h4 className="text-white font-semibold text-sm leading-tight line-clamp-2">{module.title}</h4>
+                                            <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{module.description || 'Keep going to unlock the next milestone.'}</p>
+                                        </div>
+
+                                        <div className="px-6 py-3 border-t border-slate-700/50 flex items-center justify-between bg-slate-900/50">
+                                            <span className="text-xs text-slate-500 uppercase tracking-wider font-medium">Level {moduleNumber}</span>
+                                            <span className={`text-xs font-semibold uppercase tracking-wider ${isCompleted ? 'text-emerald-500' : 'text-slate-500'}`}>{status}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        </div>
+                    </TransformComponent>
+                </TransformWrapper>
+            </div>
+        );
     };
 
-    const handleNodeClick = (e: React.MouseEvent, moduleId: string) => {
-        e.stopPropagation();
-        if (wasDraggingRef.current) return;
-        setSelectedNodeId(moduleId);
-        setIsInspectorOpen(true);
-    };
 
-    const handleWheel = (e: React.WheelEvent) => {
-        if (e.ctrlKey) {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? 0.9 : 1.1;
-            setZoom(prev => Math.max(0.1, Math.min(3, prev * delta)));
-        } else {
-            setPan(prev => ({ x: prev.x - e.deltaX, y: prev.y - e.deltaY }));
-        }
-    };
 
     // --- Node CRUD Actions ---
     const handleUpdateNode = (updatedNode: SkillModule) => {
@@ -436,9 +608,6 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     };
 
     const handleCreateNode = (type: string) => {
-        const centerX = (-pan.x + (canvasRef.current?.clientWidth || 800) / 2) / zoom;
-        const centerY = (-pan.y + (canvasRef.current?.clientHeight || 600) / 2) / zoom;
-
         const newNode: SkillModule = {
             moduleId: `mod_${Date.now()}`,
             title: 'New Module',
@@ -447,7 +616,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
             type: type as any,
             status: NodeState.LOCKED,
             xpReward: 100,
-            coordinates: { x: centerX, y: centerY },
+            coordinates: { x: 100, y: 100 },
             prerequisites: [],
             subModules: []
         };
@@ -500,52 +669,52 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         setIsImportModalOpen(false);
     };
 
-    // --- Connector Path Generation ---
-    const getConnectorPath = useCallback((from: { x: number, y: number }, to: { x: number, y: number }) => {
-        const startX = from.x + NODE_WIDTH / 2;
-        const startY = from.y + NODE_HEIGHT;
-        const endX = to.x + NODE_WIDTH / 2;
-        const endY = to.y;
+    const handleRedesign = () => {
+        // Reorganize modules: sort by level, reassign levels sequentially
+        const sortedModules = [...modules].sort((a, b) => (a.level || 0) - (b.level || 0));
+        
+        // Reassign levels sequentially (0, 1, 2, 3...)
+        const redesignedModules = sortedModules.map((mod, index) => ({
+            ...mod,
+            level: index
+        }));
 
-        const midY = (startY + endY) / 2;
-        return `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`;
-    }, []);
+        setModules(redesignedModules);
+        onNotification('success', 'Roadmap redesigned and reorganized');
+    };
 
-    // --- Calculate Edges ---
-    // Create a hash of coordinates to detect position changes
-    const coordsHash = modules.map(m => `${m.moduleId}:${m.coordinates?.x || 0},${m.coordinates?.y || 0}`).join('|');
-
-    const edges = useMemo(() => {
-        const result: { from: SkillModule, to: SkillModule }[] = [];
-        modules.forEach(node => {
-            if (node.prerequisites && node.prerequisites.length > 0) {
-                node.prerequisites.forEach(preId => {
-                    const source = modules.find(m => m.moduleId === preId);
-                    if (source && source.coordinates && node.coordinates) {
-                        result.push({ from: source, to: node });
-                    }
-                });
-            }
+    const handleModuleMouseDown = (moduleId: string, e: React.MouseEvent) => {
+        if (readOnly || viewMode !== 'admin' || e.button !== 0) return; // Left click only
+        
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        setDraggedModuleId(moduleId);
+        setDragOffset({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
         });
-        console.log('Edges calculated:', result.length, 'edges'); // Debug log
-        return result;
-    }, [modules, coordsHash]);
+    };
 
-    // --- Level Groups for Section Labels ---
-    const levelGroups = useMemo(() => {
-        const groups: Record<number, { minY: number, title: string }> = {};
-        modules.forEach(m => {
-            const level = m.level || 0;
-            const y = m.coordinates?.y || 0;
-            if (!groups[level] || y < groups[level].minY) {
-                groups[level] = {
-                    minY: y,
-                    title: `Level ${level + 1}`
-                };
-            }
-        });
-        return groups;
-    }, [modules]);
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!draggedModuleId) return;
+
+        const container = (e.currentTarget as HTMLElement);
+        const containerRect = container.getBoundingClientRect();
+        const newX = e.clientX - containerRect.left - dragOffset.x;
+        const newY = e.clientY - containerRect.top - dragOffset.y;
+
+        // Update module coordinates
+        setModules(prev => prev.map(m =>
+            m.moduleId === draggedModuleId
+                ? { ...m, coordinates: { x: Math.max(0, newX), y: Math.max(0, newY) } }
+                : m
+        ));
+    };
+
+    const handleMouseUp = () => {
+        setDraggedModuleId(null);
+    };
+
+
 
     // --- Render ---
     if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-indigo-500" /></div>;
@@ -578,8 +747,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                         <div className="bg-[#1a1a2e]/90 backdrop-blur-xl rounded-2xl border border-white/10 p-3 shadow-2xl flex flex-col gap-3 w-16 items-center">
                             <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Tools</div>
 
-                            <button onClick={handleAutoLayout} title="Auto Layout" className="w-12 h-12 rounded-xl hover:bg-purple-500/20 text-purple-400 hover:text-purple-300 flex items-center justify-center transition-all bg-white/5 border border-white/5">
-                                <LayoutGrid size={20} />
+                            <button onClick={handleRedesign} title="Redesign Layout" className="w-12 h-12 rounded-xl hover:bg-pink-500/20 text-pink-400 hover:text-pink-300 flex items-center justify-center transition-all bg-white/5 border border-white/5">
+                                <BrainCircuit size={20} />
                             </button>
 
                             <button onClick={() => setViewMode(v => v === 'admin' ? 'user' : 'admin')} title="Toggle Preview" className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${viewMode === 'user' ? 'bg-cyan-500 text-white shadow-cyan-500/20 shadow-lg' : 'hover:bg-white/10 text-gray-400 hover:text-white'}`}>
@@ -607,359 +776,20 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                 </div>
             )}
 
-            {/* Coordinates Display */}
-            <div className="absolute bottom-4 left-4 z-50 text-[10px] font-mono text-gray-600 pointer-events-none bg-black/20 px-2 py-1 rounded">
-                PAN: {Math.round(-pan.x)}, {Math.round(-pan.y)} | ZOOM: {Math.round(zoom * 100)}%
-            </div>
-
-            {/* --- Canvas --- */}
-            <div
-                ref={canvasRef}
-                className="flex-1 cursor-grab active:cursor-grabbing relative overflow-hidden"
-                onMouseDown={(e) => handleMouseDown(e)}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                onWheel={handleWheel}
-            >
-                {/* Grid Pattern */}
-                {/* Modern Dot Grid */}
-                <div className="absolute inset-0 pointer-events-none"
-                    style={{
-                        backgroundImage: `radial-gradient(circle, rgba(99, 102, 241, 0.15) 1.5px, transparent 1.5px)`,
-                        backgroundSize: `${30 * zoom}px ${30 * zoom}px`,
-                        backgroundPosition: `${pan.x}px ${pan.y}px`,
-                        opacity: 0.8
-                    }}
-                />
-
-                {/* --- World Container --- */}
-                <div
-                    className="absolute top-0 left-0 w-full h-full origin-top-left pointer-events-none"
-                    style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
-                >
-                    {/* SVG Definitions for Gradients */}
-                    <svg className="absolute inset-0 w-0 h-0">
-                        <defs>
-                            <linearGradient id="coreGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#6366f1" />
-                                <stop offset="100%" stopColor="#8b5cf6" />
-                            </linearGradient>
-                            <linearGradient id="optionalGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#10b981" />
-                                <stop offset="100%" stopColor="#059669" />
-                            </linearGradient>
-                            <linearGradient id="achievementGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#f59e0b" />
-                                <stop offset="100%" stopColor="#d97706" />
-                            </linearGradient>
-                            <linearGradient id="lockedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#4b5563" />
-                                <stop offset="100%" stopColor="#374151" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-
-                    {/* Edges Layer - SOLID GRADIENT LINES */}
-                    <svg className="overflow-visible w-full h-full absolute inset-0 z-0">
-                        {edges.map((edge) => {
-                            if (!edge.from.coordinates || !edge.to.coordinates) return null;
-
-                            const isLocked = edge.to.status === 'locked';
-                            const isCompleted = edge.to.status === 'completed';
-                            const type = (edge.from.type || 'core') as string;
-
-                            const gradientId = isLocked ? 'lockedGradient' :
-                                type === 'optional' ? 'optionalGradient' :
-                                    type === 'achievement' ? 'achievementGradient' : 'coreGradient';
-
-                            // Create a unique key that includes coordinates to force re-render
-                            const edgeKey = `${edge.from.moduleId}-${edge.to.moduleId}-${edge.from.coordinates.x}-${edge.from.coordinates.y}-${edge.to.coordinates.x}-${edge.to.coordinates.y}`;
-
-                            return (
-                                <g key={edgeKey}>
-                                    {/* Glow effect for completed paths */}
-                                    {isCompleted && (
-                                        <path
-                                            d={getConnectorPath(edge.from.coordinates, edge.to.coordinates)}
-                                            fill="none"
-                                            stroke={`url(#${gradientId})`}
-                                            strokeWidth="8"
-                                            strokeLinecap="round"
-                                            opacity={0.3}
-                                            filter="blur(4px)"
-                                        />
-                                    )}
-                                    {/* Main connector line - SOLID, no dashes */}
-                                    <path
-                                        d={getConnectorPath(edge.from.coordinates, edge.to.coordinates)}
-                                        fill="none"
-                                        stroke={`url(#${gradientId})`}
-                                        strokeWidth="2.5"
-                                        strokeLinecap="round"
-                                        opacity={isLocked ? 0.4 : 0.85}
-                                        className="transition-all duration-500"
-                                    />
-                                    {/* Arrow indicator */}
-                                    <circle
-                                        cx={edge.to.coordinates.x + NODE_WIDTH / 2}
-                                        cy={edge.to.coordinates.y - 4}
-                                        r={4}
-                                        fill={isLocked ? '#4b5563' : `url(#${gradientId})`}
-                                        opacity={isLocked ? 0.4 : 1}
-                                    />
-                                </g>
-                            );
-                        })}
-                    </svg>
-
-                    {/* Level Section Labels - Styled Markers */}
-                    {Object.entries(levelGroups).map(([level, group]) => (
-                        <div
-                            key={`level-${level}`}
-                            className="absolute pointer-events-none flex items-center gap-3"
-                            style={{
-                                left: -140, // Positioned well to the left of the content
-                                top: group.minY + NODE_HEIGHT / 2 - 12,
-                                width: 120,
-                                justifyContent: 'flex-end'
-                            }}
-                        >
-                            <span className="text-[10px] font-black text-indigo-400/60 uppercase tracking-widest whitespace-nowrap">
-                                {group.title}
-                            </span>
-                            <div className="w-8 h-[1px] bg-indigo-500/30" />
-                        </div>
-                    ))}
-
-                    {/* Nodes Layer */}
-                    <div className="z-10 relative">
-                        {modules.map(module => {
-                            if (!module.coordinates) return null;
-                            const styles = resolveNodeAppearance(module.type || 'core', module.status || 'available', module.level === 0);
-
-                            // Determine effective status for User View
-                            let status = module.status || 'locked';
-                            if (readOnly && userProgress) {
-                                if (userProgress.completedModules?.includes(module.moduleId)) {
-                                    status = 'completed';
-                                } else if (userProgress.unlockedModules?.includes(module.moduleId)) {
-                                    // Special case: The first module (level 0) should always be available if unlocked
-                                    status = 'available';
-                                } else {
-                                    status = 'locked';
-                                }
-                            }
-
-                            const isLocked = status === 'locked';
-                            const isCompleted = status === 'completed';
-
-                            // Re-resolve appearance with dynamic status
-                            const dynamicStyles = resolveNodeAppearance(module.type || 'core', status, module.level === 0);
-
-                            // Use dynamicStyles for rendering instead of 'styles'
-                            // I will patch the usages of 'styles' to 'dynamicStyles' in the returned JSX below or just re-assign styles.
-                            // Since 'styles' is const, I'll use a new variable and update usages.
-                            const nodeStyles = dynamicStyles;
-
-                            // Parse Content
-                            const subModules = module.subModules || [];
-                            const linkedQuizIds = Array.from(new Set([
-                                ...(module.quizIds || []),
-                                ...(module.quizId ? [module.quizId] : [])
-                            ]));
-
-                            // Calculate Progress
-                            const completedSubs = subModules.filter(s => s.state === 'completed').length;
-                            const completedQuizzes = isCompleted ? linkedQuizIds.length : 0;
-
-                            const totalItems = subModules.length + linkedQuizIds.length;
-                            const completedItems = completedSubs + completedQuizzes;
-                            const progressPercent = totalItems > 0 ? (completedItems / totalItems) * 100 : (isCompleted ? 100 : 0);
-
-                            // XP
-                            const baseXP = module.xpReward ?? 100;
-                            const subModuleXP = subModules.reduce((sum, s) => sum + (s.xp || 0), 0);
-                            const totalXP = baseXP + subModuleXP;
-
-                            // User view: hide locked nodes more aggressively
-                            if (viewMode === 'user' && isLocked) {
-                                return (
-                                    <div
-                                        key={module.moduleId}
-                                        className="absolute pointer-events-auto opacity-30 blur-[1px]"
-                                        style={{
-                                            left: module.coordinates.x,
-                                            top: module.coordinates.y,
-                                            width: nodeStyles.width,
-                                        }}
-                                    >
-                                        <div className="rounded-2xl border border-gray-700/30 bg-gray-900/50 p-4">
-                                            <div className="flex items-center gap-2 text-gray-600">
-                                                <Lock className="w-4 h-4" />
-                                                <span className="text-sm">Locked</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            return (
-                                <div
-                                    key={module.moduleId}
-                                    className={`absolute group pointer-events-auto transition-all duration-200 ${nodeStyles.opacity}`}
-                                    style={{
-                                        left: module.coordinates.x,
-                                        top: module.coordinates.y,
-                                        width: nodeStyles.width,
-                                    }}
-                                    onMouseDown={(e) => handleMouseDown(e, module.moduleId)}
-                                    onClick={(e) => handleNodeClick(e, module.moduleId)}
-                                >
-                                    <div className={`
-                                        relative rounded-2xl border-[1.5px] backdrop-blur-xl transition-all duration-300 overflow-hidden
-                                        ${nodeStyles.bg} ${nodeStyles.border} ${nodeStyles.glow}
-                                        ${draggingId === module.moduleId ? 'scale-105 shadow-2xl z-50 cursor-grabbing ring-2 ring-white/20' : 'hover:scale-[1.02] hover:-translate-y-1 cursor-grab'}
-                                        ${selectedNodeId === module.moduleId ? 'ring-2 ring-white/40' : ''}
-                                    `}>
-                                        {/* Header Bar */}
-                                        <div className={`px-4 py-2.5 border-b border-white/5 ${nodeStyles.headerBg} flex items-center justify-between`}>
-                                            <div className="flex items-center gap-2">
-                                                {isLocked && <Lock className="w-3 h-3 text-gray-500" />}
-                                                {isCompleted && <Check className="w-3 h-3 text-green-400" />}
-                                                <span className={`text-[10px] font-black uppercase tracking-wider ${nodeStyles.text}`}>
-                                                    {module.type}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                {module.badgeId && (
-                                                    <div className="flex items-center gap-1 text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded" title="Rewards Badge">
-                                                        <Award size={10} />
-                                                        <span className="text-[9px] font-bold">BADGE</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
-                                                    <Zap className="w-3 h-3" />
-                                                    <span>{totalXP} XP</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Content */}
-                                        <div className="p-4">
-                                            <h4 className="font-bold text-sm text-white leading-tight mb-2">{module.title}</h4>
-
-                                            {/* Sub-modules list */}
-                                            {subModules.length > 0 && (
-                                                <div className="space-y-1.5 mb-2">
-                                                    {subModules.slice(0, 3).map(sub => {
-                                                        // Check if this submodule is completed based on LOCAL state (optimistic) or props
-                                                        const subModuleKey = `${module.moduleId}:${sub.id}`;
-                                                        const isSubCompleted = localCompletedSubModules.includes(subModuleKey);
-                                                        const isCurrentlyCompleting = completingSubModuleId === subModuleKey;
-                                                        // Determine state: local state overrides default
-                                                        const effectiveState = isSubCompleted ? 'completed' : (sub.state || 'available');
-
-                                                        const canClick = readOnly && onSubModuleComplete && effectiveState !== 'completed' && !isLocked && !isCurrentlyCompleting;
-
-                                                        return (
-                                                            <div
-                                                                key={sub.id}
-                                                                className={`flex items-center gap-2 ${canClick ? 'cursor-pointer hover:bg-white/10 rounded px-1 py-0.5 -mx-1 transition-colors' : ''} ${isCurrentlyCompleting ? 'opacity-50' : ''}`}
-                                                                onClick={async (e) => {
-                                                                    if (canClick && track) {
-                                                                        e.stopPropagation();
-                                                                        // Optimistic update: immediately mark as completed locally
-                                                                        setCompletingSubModuleId(subModuleKey);
-                                                                        setLocalCompletedSubModules(prev => [...prev, subModuleKey]);
-
-                                                                        try {
-                                                                            await onSubModuleComplete(track.trackId, module.moduleId, sub.id);
-                                                                        } catch (error) {
-                                                                            // Rollback on error
-                                                                            setLocalCompletedSubModules(prev => prev.filter(k => k !== subModuleKey));
-                                                                            console.error('Failed to complete sub-module:', error);
-                                                                        } finally {
-                                                                            setCompletingSubModuleId(null);
-                                                                        }
-                                                                    }
-                                                                }}
-                                                            >
-                                                                {isCurrentlyCompleting ? (
-                                                                    <div className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" />
-                                                                ) : effectiveState === 'completed' ? (
-                                                                    <Check className="w-3 h-3 text-green-400" />
-                                                                ) : effectiveState === 'available' ? (
-                                                                    <Circle className="w-3 h-3 text-blue-400" />
-                                                                ) : (
-                                                                    <Lock className="w-3 h-3 text-gray-600" />
-                                                                )}
-                                                                <span className={`text-xs ${effectiveState === 'completed' ? 'text-gray-400 line-through' :
-                                                                    effectiveState === 'available' ? 'text-gray-300' : 'text-gray-600'
-                                                                    }`}>
-                                                                    {sub.title}
-                                                                </span>
-                                                                {canClick && !isCurrentlyCompleting && (
-                                                                    <span className="ml-auto text-[10px] text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">Click</span>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-
-                                            {/* Linked Quizzes List */}
-                                            {linkedQuizIds.length > 0 && (
-                                                <div className="pt-2 border-t border-white/5 space-y-1.5">
-                                                    {linkedQuizIds.map(qId => {
-                                                        const quiz = quizzes.find(q => q.id === qId);
-                                                        return (
-                                                            <div key={qId} className="flex items-center gap-2 text-xs group">
-                                                                <BrainCircuit size={12} className={isCompleted ? 'text-green-400' : 'text-indigo-400'} />
-                                                                <span className={isCompleted ? 'text-green-300/80 line-through' : 'text-indigo-200'}>
-                                                                    {quiz?.title || `Quiz`}
-                                                                </span>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Footer */}
-                                        <div className="px-4 py-2 bg-black/20 border-t border-white/5 flex items-center justify-between">
-                                            <span className="text-[10px] text-indigo-300/80 font-semibold tracking-wide">
-                                                {totalItems > 0 ? `${completedItems}/${totalItems} complete` : 'No tasks'}
-                                            </span>
-                                            {/* Progress bar */}
-                                            {totalItems > 0 && (
-                                                <div className="w-16 h-1.5 bg-black/40 rounded-full overflow-hidden">
-                                                    <div
-                                                        className={`h-full transition-all duration-500 ${isCompleted ? 'bg-green-500' : 'bg-indigo-500'
-                                                            }`}
-                                                        style={{ width: `${progressPercent}%` }}
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Connection Ports (Admin only) */}
-                                        {viewMode === 'admin' && (
-                                            <>
-                                                <div className={`absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 ${styles.border} bg-[#0B0E1A]`} />
-                                                <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-3 h-3 rounded-full border-2 ${styles.border} bg-[#0B0E1A]`} />
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+            {/* View Mode Indicator */}
+            {viewMode === 'user' && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-cyan-500/20 backdrop-blur-md rounded-full px-4 py-1.5 border border-cyan-500/30">
+                    <span className="text-xs font-medium text-cyan-400">👤 User Preview Mode</span>
                 </div>
-            </div>
+            )}
+
+            {/* --- Sketch View --- */}
+            {
+                renderSketch()
+            }
 
             {/* Inspector Panel */}
-            {selectedNodeId && viewMode === 'admin' && !readOnly && (
+            {selectedNodeId && !readOnly && (
                 <InspectorPanel
                     node={modules.find(m => m.moduleId === selectedNodeId)!}
                     isOpen={isInspectorOpen}

@@ -25,7 +25,8 @@ const RoadmapEditorModal: React.FC<{
     const [tracks, setTracks] = useState<any[]>([]);
     const [selectedTrack, setSelectedTrack] = useState<string>('');
     const [progress, setProgress] = useState<{ completedModules: string[], unlockedModules: string[] }>({ completedModules: [], unlockedModules: [] });
-    const [loading, setLoading] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_loading, setLoading] = useState(false);
 
     React.useEffect(() => {
         api.getSkillTracks().then(setTracks).catch(console.error);
@@ -36,7 +37,7 @@ const RoadmapEditorModal: React.FC<{
         setLoading(true);
         api.getUserRoadmapProgress(user.userId, selectedTrack, currentUser.userId)
             .then(p => setProgress({ completedModules: p.completedModules || [], unlockedModules: p.unlockedModules || [] }))
-            .catch(e => onNotification('error', 'Failed to load progress'))
+            .catch((_e) => onNotification('error', 'Failed to load progress'))
             .finally(() => setLoading(false));
     }, [selectedTrack, user.userId]);
 
@@ -70,7 +71,6 @@ const RoadmapEditorModal: React.FC<{
                         // Create attempts for each quiz with 100% score
                         for (const quiz of quizzesToMarkFull) {
                             const quizId = quiz.id || quiz._id;
-                            const totalPoints = quiz.questions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
                             
                             const attempt = {
                                 attemptId: crypto.randomUUID(),
@@ -124,7 +124,7 @@ const RoadmapEditorModal: React.FC<{
             }
             
             // Update roadmap progress
-            const progressUpdate = await api.updateUserRoadmapProgress(user.userId, selectedTrack, progress, currentUser.userId);
+            await api.updateUserRoadmapProgress(user.userId, selectedTrack, progress, currentUser.userId);
             
             // Force a full data refresh to ensure the UI updates with latest skill track progress
             onNotification('success', 'Module marked complete! Quizzes completed, user stats updated, and next modules unlocked!');
@@ -273,8 +273,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
     React.useEffect(() => {
         const fetchShopItems = async () => {
             try {
-                const response = await api.getShopItems?.() || { items: [] };
-                const items = response.items || response || [];
+                const items = await api.getShopItems?.() || [];
                 setShopItems(Array.isArray(items) ? items : []);
             } catch (error) {
                 console.error('Failed to fetch shop items:', error);
@@ -341,8 +340,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
             } else if (giftType === 'shopitem') {
                 // Add to inventory
                 const inventory = Array.isArray(user.inventory) ? user.inventory : [];
-                if (!inventory.includes(selectedShopItem)) {
-                    inventory.push(selectedShopItem);
+                const itemExists = inventory.some((item: any) => 
+                    (typeof item === 'string' ? item : item.itemId) === selectedShopItem
+                );
+                if (!itemExists) {
+                    inventory.push({ itemId: selectedShopItem, quantity: 1 });
                     updates.inventory = inventory;
                 }
             }

@@ -171,8 +171,8 @@ const QuizTakingPage: React.FC = () => {
                                     currentUser.userId,
                                     trackForSubject.trackId,
                                     {
-                                        completedModules: Array.from(completedModules),
-                                        unlockedModules: Array.from(unlockedModules)
+                                        completedModules: Array.from(completedModules) as string[],
+                                        unlockedModules: Array.from(unlockedModules) as string[]
                                     },
                                     currentUser.userId
                                 );
