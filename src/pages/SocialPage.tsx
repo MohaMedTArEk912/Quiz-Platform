@@ -34,8 +34,39 @@ const SocialPage: React.FC = () => {
 
         if (challengeType === 'live') {
             if (socket && connected) {
-                socket.emit('challenge_user', { to: selectedFriendId, quizId, from: currentUser.userId });
-                showNotification('success', `Challenge sent to friend!`);
+                // Listen for the room creation confirmation to join immediately (optional, or just navigate)
+                // Actually, the server now emits 'challenge_created' to sender. 
+                // We should assume we go to the game page in "waiting" mode.
+
+                const handleChallengeCreated = ({ roomId }: { roomId: string }) => {
+                    socket.off('challenge_created', handleChallengeCreated);
+                    // Navigate to VS Page in waiting mode
+                    // We need to resolve opponent name/data for the VS page
+                    const opponent = allUsers.find(u => u.userId === selectedFriendId);
+
+                    navigate('/vs-game', {
+                        state: {
+                            quizId,
+                            opponent: {
+                                id: selectedFriendId,
+                                name: opponent?.name || 'Opponent',
+                                avatar: opponent?.avatar
+                            },
+                            roomId
+                        }
+                    });
+                };
+
+                socket.on('challenge_created', handleChallengeCreated);
+
+                socket.emit('invite_friend', {
+                    fromId: currentUser.userId,
+                    toId: selectedFriendId,
+                    fromName: currentUser.name,
+                    quizId
+                });
+
+                showNotification('success', `Challenge sent! Waiting for opponent...`);
             } else {
                 showNotification('error', 'Socket not connected. Cannot send challenge.');
             }
@@ -62,6 +93,36 @@ const SocialPage: React.FC = () => {
         setChallengeType(null);
     };
 
+    const [liveChallenges, setLiveChallenges] = React.useState<any[]>([]);
+
+    // Listen for live invites
+    React.useEffect(() => {
+        if (!socket) return;
+
+        const handleInvite = (data: { fromId: string, fromName: string, quizId: string, roomId: string }) => {
+            const newChallenge = {
+                token: data.roomId, // Use roomId as token for live games
+                fromId: data.fromId,
+                fromName: data.fromName, // Store sender name for UI
+                toId: currentUser.userId,
+                quizId: data.quizId,
+                status: 'pending',
+                type: 'live', // user-defined discriminator
+                timestamp: Date.now(),
+                roomId: data.roomId
+            };
+            setLiveChallenges(prev => [...prev, newChallenge]);
+            showNotification('success', `Live challenge received from ${data.fromName}!`);
+        };
+
+        socket.on('game_invite', handleInvite);
+        return () => {
+            socket.off('game_invite', handleInvite);
+        };
+    }, [socket, currentUser.userId, showNotification]);
+
+    const combinedChallenges = [...liveChallenges, ...challenges];
+
     return (
         <PageLayout title="Social">
             <div className="p-6">
@@ -70,9 +131,27 @@ const SocialPage: React.FC = () => {
                         currentUser={currentUser}
                         allUsers={allUsers}
                         onRefresh={refreshData}
-                        challenges={challenges}
+                        challenges={combinedChallenges}
                         onAsyncChallenge={(id) => initiateChallenge(id, 'async')}
-                        onStartChallenge={(c) => navigate(`/challenge/${c.token}`)}
+                        onStartChallenge={(c) => {
+                            if ((c as any).type === 'live') {
+                                // Join Live Game
+                                const opponent = allUsers.find(u => u.userId === c.fromId);
+                                navigate('/vs-game', {
+                                    state: {
+                                        quizId: c.quizId,
+                                        opponent: {
+                                            id: c.fromId,
+                                            name: opponent?.name || (c as any).fromName || 'Challenger',
+                                            avatar: opponent?.avatar
+                                        },
+                                        roomId: (c as any).roomId
+                                    }
+                                });
+                            } else {
+                                navigate(`/challenge/${c.token}`);
+                            }
+                        }}
                         onChallenge={(id) => initiateChallenge(id, 'live')}
                     />
                 </div>

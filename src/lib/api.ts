@@ -611,13 +611,36 @@ export const api = {
         return response.json();
     },
 
+    /**
+     * Complete a sub-module within a module.
+     * @param trackId - The skill track ID
+     * @param moduleId - The parent module ID
+     * @param subModuleId - The sub-module ID to mark complete
+     * @param userId - The user making the request
+     */
+    async completeSubModule(trackId: string, moduleId: string, subModuleId: string, userId: string) {
+        const response = await fetch(`${API_URL}/skill-tracks/${trackId}/modules/${moduleId}/submodules/complete`, {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ subModuleId })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to complete sub-module');
+        }
+        return response.json();
+    },
+
     async createSkillTrack(track: SkillTrack, adminId: string) {
         const response = await fetch(`${API_URL}/skill-tracks`, {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(track)
         });
-        if (!response.ok) throw new Error('Failed to create skill track');
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to create skill track');
+        }
         return response.json();
     },
 
@@ -627,7 +650,10 @@ export const api = {
             headers: getHeaders(adminId),
             body: JSON.stringify(track)
         });
-        if (!response.ok) throw new Error('Failed to update skill track');
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to update skill track');
+        }
         return response.json();
     },
 
@@ -1129,6 +1155,18 @@ export const api = {
     },
 
     // Subjects
+    async getSubjects() {
+        const response = await fetch(`${API_URL}/subjects`, {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `Failed to fetch subjects (${response.status})`);
+        }
+        const json = await response.json();
+        return json.data || [];
+    },
+
     async getAllSubjects(adminId: string) {
         const headers = getHeaders(adminId);
         // Guard: Prevent calls if no auth token
@@ -1148,7 +1186,8 @@ export const api = {
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.message || `Failed to fetch subjects (${response.status})`);
         }
-        return response.json();
+        const json = await response.json();
+        return json.data || [];
     },
 
     async createSubject(data: FormData, adminId: string) {
@@ -1212,6 +1251,25 @@ export const api = {
             const error = await response.json();
             throw new Error(error.message || 'Failed to generate quiz');
         }
+        return response.json();
+    },
+
+    // Admin Roadmap Management
+    async getUserRoadmapProgress(userId: string, trackId: string, adminId: string) {
+        const response = await fetch(`${API_URL}/users/${userId}/roadmap/${trackId}/progress`, {
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) throw new Error('Failed to load user progress');
+        return response.json();
+    },
+
+    async updateUserRoadmapProgress(userId: string, trackId: string, progress: { completedModules?: string[], unlockedModules?: string[] }, adminId: string) {
+        const response = await fetch(`${API_URL}/users/${userId}/roadmap/${trackId}/progress`, {
+            method: 'PUT',
+            headers: getHeaders(adminId),
+            body: JSON.stringify(progress)
+        });
+        if (!response.ok) throw new Error('Failed to update user progress');
         return response.json();
     },
 };

@@ -131,6 +131,60 @@ const QuizTakingPage: React.FC = () => {
             // Save to backend
             await api.updateUser(currentUser.userId, userUpdates);
 
+            // 4. Unlock next module in skill track if quiz passed
+            if (result.passed) {
+                try {
+                    // Find which subject and skill track this quiz belongs to
+                    const subject = quiz.subjectId;
+                    if (subject) {
+                        // Get all skill tracks to find the one for this subject
+                        const allTracks = await api.getSkillTracks();
+                        const trackForSubject = allTracks.find((t: any) => t.subjectId === subject);
+                        
+                        if (trackForSubject) {
+                            // Find which module contains this quiz
+                            const currentModuleIndex = trackForSubject.modules.findIndex((m: any) =>
+                                m.quizIds?.includes(resolvedQuizId)
+                            );
+                            
+                            if (currentModuleIndex >= 0) {
+                                // Mark current module as completed
+                                const currentModuleId = trackForSubject.modules[currentModuleIndex].moduleId;
+                                
+                                // Get current progress
+                                const currentProgress = await api.getUserRoadmapProgress(currentUser.userId, trackForSubject.trackId, currentUser.userId);
+                                
+                                const completedModules = new Set(currentProgress?.completedModules || []);
+                                const unlockedModules = new Set(currentProgress?.unlockedModules || []);
+                                
+                                // Add current module to completed
+                                completedModules.add(currentModuleId);
+                                
+                                // Unlock next module if it exists
+                                if (currentModuleIndex + 1 < trackForSubject.modules.length) {
+                                    const nextModuleId = trackForSubject.modules[currentModuleIndex + 1].moduleId;
+                                    unlockedModules.add(nextModuleId);
+                                }
+                                
+                                // Save updated progress
+                                await api.updateUserRoadmapProgress(
+                                    currentUser.userId,
+                                    trackForSubject.trackId,
+                                    {
+                                        completedModules: Array.from(completedModules),
+                                        unlockedModules: Array.from(unlockedModules)
+                                    },
+                                    currentUser.userId
+                                );
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Failed to unlock next module:', error);
+                    // Don't fail the quiz completion if this fails
+                }
+            }
+
             // Fetch fresh user data from backend to ensure we have the latest
             try {
                 const freshUserData = await api.verifySession(currentUser.userId);

@@ -17,6 +17,7 @@ router.delete('/daily-challenge/admin/:id', verifyUser, verifyAdmin, engagementC
 // Skill Tracks
 router.get('/skill-tracks', engagementController.getSkillTracks); // GET /api/skill-tracks
 router.post('/skill-tracks/:trackId/complete', verifyUser, engagementController.completeSkillModule); // POST /api/skill-tracks/:trackId/complete
+router.post('/skill-tracks/:trackId/modules/:moduleId/submodules/complete', verifyUser, engagementController.completeSubModuleHandler); // POST - Complete a sub-module
 router.post('/skill-tracks', verifyUser, verifyAdmin, engagementController.createSkillTrack);
 router.put('/skill-tracks/:trackId', verifyUser, verifyAdmin, engagementController.updateSkillTrack);
 router.delete('/skill-tracks/:trackId', verifyUser, verifyAdmin, engagementController.deleteSkillTrack);

@@ -13,6 +13,7 @@ interface DataContextType {
     skillTracks: any[];
     studyCards: any[];
     loadingData: boolean;
+    loadingQuizzes: boolean;
     refreshData: () => Promise<void>;
     userWithRank: UserData | null;
 }
@@ -39,15 +40,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [skillTracks, setSkillTracks] = useState<any[]>([]);
     const [studyCards, setStudyCards] = useState<any[]>([]);
     const [loadingData, setLoadingData] = useState(false);
+    const [loadingQuizzes, setLoadingQuizzes] = useState(true);
 
     // Load Quizzes (Public)
     useEffect(() => {
         const loadQuizzes = async () => {
+            setLoadingQuizzes(true);
             try {
                 const quizzes = await api.getQuizzes();
                 setAvailableQuizzes(quizzes);
             } catch (error) {
                 console.error('Failed to load quizzes:', error);
+            } finally {
+                setLoadingQuizzes(false);
             }
         };
         loadQuizzes();
@@ -83,16 +88,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 // Regular user fetches optimized set
                 const { attempts, badges, users, challenges: userChallenges } = await api.getUserData(currentUser.userId);
 
-                // Also fetch subjects, skill tracks, and study cards for regular users
+                // Also fetch skill tracks, study cards, and subjects for regular users
                 try {
-                    const [subjectsRes, tracksRes, cardsRes] = await Promise.all([
-                        api.getAllSubjects(currentUser.userId),
+                    const [tracksRes, cardsRes, subjectsRes] = await Promise.all([
                         api.getSkillTracks(),
-                        api.getStudyCards()
+                        api.getStudyCards(),
+                        api.getSubjects()
                     ]);
-                    setSubjects(subjectsRes.data || []);
                     setSkillTracks(tracksRes || []);
                     setStudyCards(cardsRes || []);
+                    setSubjects(subjectsRes || []);
                 } catch (e) {
                     console.error('Failed to load user extra data:', e);
                 }
@@ -142,6 +147,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             skillTracks,
             studyCards,
             loadingData,
+            loadingQuizzes,
             refreshData,
             userWithRank
         }}>

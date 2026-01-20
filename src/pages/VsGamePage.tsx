@@ -9,20 +9,48 @@ import { api } from '../lib/api';
 const VsGamePage: React.FC = () => {
     const { state } = useLocation(); // Expecting { quizId, opponent, roomId }
     const { currentUser, updateUser } = useAuth();
-    const { availableQuizzes, allUsers } = useData();
+    const { availableQuizzes, allUsers, loadingData, loadingQuizzes } = useData();
     const navigate = useNavigate();
 
+    console.log('VsGamePage Init:', { state, currentUser: !!currentUser, quizzes: availableQuizzes.length });
+
     if (!state || !state.quizId || !state.opponent || !state.roomId) {
+        console.warn('VsGamePage: Missing State', state);
         return <Navigate to="/" replace />;
     }
 
     const { quizId, opponent, roomId } = state;
     const quiz = availableQuizzes.find(q => q.id === quizId || q._id === quizId);
 
-    // Find full opponent details including avatar
-    const opponentUser = allUsers.find(u => u.userId === opponent.id) || { userId: opponent.id, name: opponent.name, email: '', totalScore: 0, totalTime: 0, totalAttempts: 0, xp: 0, level: 1, streak: 0, lastLoginDate: '', badges: [] };
+    console.log('VsGamePage Quiz Check:', { quizId, found: !!quiz, loadingData, loadingQuizzes });
 
-    if (!currentUser || !quiz) return <Navigate to="/" replace />;
+    // Find full opponent details including avatar
+    const opponentUser = allUsers.find(u => u.userId === opponent.id) || {
+        userId: opponent.id,
+        name: opponent.name,
+        email: '',
+        totalScore: 0,
+        totalTime: 0,
+        totalAttempts: 0,
+        xp: 0,
+        level: 1,
+        streak: 0,
+        lastLoginDate: '',
+        badges: []
+    };
+
+    if ((loadingData || loadingQuizzes) && !quiz) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+                <div className="animate-pulse">Loading Game Data...</div>
+            </div>
+        );
+    }
+
+    if (!currentUser || !quiz) {
+        console.error('VsGamePage: Missing user or quiz', { user: !!currentUser, quiz: !!quiz });
+        return <Navigate to="/" replace />;
+    }
 
     const handlePowerUpUsed = (type: string) => {
         if (!currentUser) return;

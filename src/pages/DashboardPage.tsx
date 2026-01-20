@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import QuizList from '../components/QuizList';
 import InstallPWA from '../components/InstallPWA';
 import { useAuth } from '../context/AuthContext';
@@ -7,11 +7,23 @@ import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../context/NotificationContext';
 
 const DashboardPage: React.FC = () => {
-    const { logout } = useAuth();
-    const { availableQuizzes, userWithRank, allAttempts, subjects, skillTracks, studyCards } = useData();
+    const { logout, refreshUser } = useAuth();
+    const { availableQuizzes, userWithRank, allAttempts, subjects, skillTracks, studyCards, refreshData } = useData();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const { showNotification } = useNotification();
+
+    // Refresh user data and all data when component mounts to get latest admin updates
+    useEffect(() => {
+        const loadLatestData = async () => {
+            try {
+                await Promise.all([refreshUser(), refreshData()]);
+            } catch (error) {
+                console.error('Failed to refresh data:', error);
+            }
+        };
+        loadLatestData();
+    }, []);
 
     if (!currentUser) return null;
 
@@ -25,6 +37,9 @@ const DashboardPage: React.FC = () => {
                 studyCards={studyCards}
                 user={userWithRank || currentUser}
                 attempts={allAttempts.filter(a => a.userId === currentUser.userId)}
+                onRefreshData={async () => {
+                    await Promise.all([refreshUser(), refreshData()]);
+                }}
                 onSelectQuiz={(quiz) => {
                     const quizId = quiz.id || quiz._id;
                     if (!quizId) {

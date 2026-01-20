@@ -6,6 +6,7 @@ import { Tournament } from '../models/Tournament.js';
 import { DailyChallenge } from '../models/DailyChallenge.js';
 import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
 import { checkAndUnlockBadges } from './badgeNodeController.js';
+import { completeSpecificModule } from '../services/progressService.js';
 
 // --- Daily Challenge ---
 export const getDailyChallenge = async (req, res) => {
@@ -204,39 +205,7 @@ export const completeDailyChallenge = async (req, res) => {
   }
 };
 
-// Helper to handle module completion logic
-const handleModuleCompletion = async (userId, trackId, moduleId) => {
-    let trackProgress = await SkillTrackProgress.findOne({ userId, trackId });
-    if (!trackProgress) {
-        trackProgress = new SkillTrackProgress({
-            userId,
-            trackId,
-            unlockedModules: ['mod_1'], 
-            completedModules: [],
-            lastAccessed: new Date()
-        });
-    }
-
-    let progressUpdated = false;
-    if (!trackProgress.completedModules.includes(moduleId)) {
-        trackProgress.completedModules.push(moduleId);
-        progressUpdated = true;
-        
-        // Unlock next module logic
-        const track = await SkillTrack.findOne({ trackId }).lean();
-        if (track) {
-            const currentModuleIndex = track.modules.findIndex(m => m.moduleId === moduleId);
-            if (currentModuleIndex !== -1 && currentModuleIndex < track.modules.length - 1) {
-                const nextModuleId = track.modules[currentModuleIndex + 1].moduleId;
-                if (!trackProgress.unlockedModules.includes(nextModuleId)) {
-                    trackProgress.unlockedModules.push(nextModuleId);
-                }
-            }
-        }
-        await trackProgress.save();
-    }
-    return progressUpdated;
-};
+// Helper removed: Replaced by progressService.completeSpecificModule
 
 
 // --- Skill Tracks ---
@@ -259,40 +228,58 @@ export const completeSkillModule = async (req, res) => {
     const { moduleId } = req.body;
     if (!moduleId) return res.status(400).json({ message: 'moduleId is required' });
 
-    // Use the unified logic (this updates SkillTrackProgress)
-    const progressUpdated = await handleModuleCompletion(req.user.userId, trackId, moduleId);
-
-    // Also update legacy user.skillTracks for backward compatibility if needed, 
-    // BUT we should probably move fully to SkillTrackProgress. 
-    // To be safe for now, let's keep the legacy update or ensure frontend reads from correct source.
-    // Based on previous code, it was updating req.user.skillTracks directly. 
-    // Ideally we should deprecate that if we are using SkillTrackProgress.
-    // tailored to the UserData type we saw earlier.
+    // Use the unified logic from service
+    // This updates both SkillTrackProgress and User models
+    const progressUpdated = await completeSpecificModule(req.user.userId, trackId, moduleId);
     
-    const user = req.user;
-    if (!user.skillTracks) user.skillTracks = [];
-    const trackIndex = user.skillTracks.findIndex((p) => p.trackId === trackId);
-    if (trackIndex === -1) {
-      user.skillTracks.push({ trackId, unlockedModules: [], completedModules: [moduleId] });
-    } else if (!user.skillTracks[trackIndex].completedModules.includes(moduleId)) {
-      user.skillTracks[trackIndex].completedModules.push(moduleId);
-    }
-    user.markModified('skillTracks');
-    await user.save();
-
-    // Check for badges
-    const newBadges = await checkAndUnlockBadges(user.userId, 'module_completion', {
+    // Legacy Code Removal: The service now handles User model sync.
+    // However, we need to check if we trigger badges here or if that should move to service too.
+    // The service handles data, badge logic is separate.
+    
+    // We can refetch user to get latest state for badge check if needed, 
+    // or trust the service did its job.
+    
+    // Check for badges (using existing logic)
+    const newBadges = await checkAndUnlockBadges(req.user.userId, 'module_completion', {
       moduleId,
       trackId
     });
 
     res.json({ 
-        // Return updated progress. For now just returning what we have.
         message: 'Module completed',
         newBadges: newBadges || []
     });
   } catch (error) {
     res.status(500).json({ message: 'Error updating track progress', error: error.message });
+  }
+};
+
+/**
+ * Complete a sub-module within a module.
+ * POST /api/skill-tracks/:trackId/modules/:moduleId/submodules/complete
+ */
+export const completeSubModuleHandler = async (req, res) => {
+  try {
+    const { trackId, moduleId } = req.params;
+    const { subModuleId } = req.body;
+
+    if (!subModuleId) {
+      return res.status(400).json({ message: 'subModuleId is required' });
+    }
+
+    // Import and use the service
+    const { completeSubModule } = await import('../services/progressService.js');
+    const progress = await completeSubModule(req.user.userId, trackId, moduleId, subModuleId);
+
+    res.json({
+      message: 'Sub-module completed',
+      completedSubModules: progress.completedSubModules,
+      completedModules: progress.completedModules,
+      unlockedModules: progress.unlockedModules
+    });
+  } catch (error) {
+    console.error('Error completing sub-module:', error);
+    res.status(500).json({ message: 'Error completing sub-module', error: error.message });
   }
 };
 
@@ -318,18 +305,43 @@ export const updateSkillTrack = async (req, res) => {
   try {
     const { trackId } = req.params;
     const updates = req.body;
-    const track = await SkillTrack.findOne({ trackId });
-    if (!track) return res.status(404).json({ message: 'Track not found' });
-
-    track.title = updates.title || track.title;
-    track.description = updates.description || track.description;
-    track.category = updates.category || track.category;
-    if (updates.subjectId) track.subjectId = updates.subjectId;
-    if (updates.modules) track.modules = updates.modules;
     
-    await track.save();
+    console.log('📝 Updating track:', trackId);
+    console.log('📦 Payload modules count:', updates.modules?.length || 0);
+    
+    const track = await SkillTrack.findOne({ trackId });
+    if (!track) {
+      console.log('❌ Track not found:', trackId);
+      return res.status(404).json({ message: 'Track not found' });
+    }
+
+    // Update all fields that can be changed
+    if (updates.title) track.title = updates.title;
+    if (updates.description !== undefined) track.description = updates.description;
+    if (updates.category) track.category = updates.category;
+    if (updates.icon) track.icon = updates.icon;
+    if (updates.subjectId) track.subjectId = updates.subjectId;
+    if (updates.modules) track.modules = updates.modules; // This includes subModules, coordinates, etc.
+    
+    // Mark modules as modified to ensure nested objects are saved
+    track.markModified('modules');
+    
+    try {
+      await track.save();
+      console.log('✅ Track saved successfully');
+    } catch (saveError) {
+      console.error('❌ Save validation error:', saveError.message);
+      if (saveError.errors) {
+        Object.keys(saveError.errors).forEach(key => {
+          console.error(`  - ${key}: ${saveError.errors[key].message} (value: ${saveError.errors[key].value})`);
+        });
+      }
+      throw saveError;
+    }
+    
     res.json(track);
   } catch (error) {
+    console.error('❌ Error updating track:', error.message);
     res.status(500).json({ message: 'Error updating track', error: error.message });
   }
 };

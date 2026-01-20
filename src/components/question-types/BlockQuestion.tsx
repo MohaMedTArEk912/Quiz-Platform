@@ -1,5 +1,4 @@
-import React, { useState, useRef } from 'react';
-import { BlocklyWorkspace } from 'react-blockly';
+import React, { useState, useRef, useEffect } from 'react';
 import * as Blockly from 'blockly';
 import { javascriptGenerator } from 'blockly/javascript';
 import { Play, RotateCcw, Cat, Loader2 } from 'lucide-react';
@@ -35,21 +34,94 @@ const BlockQuestion: React.FC<BlockQuestionProps> = ({ initialXml, toolbox, onCh
   const [sprite, setSprite] = useState<SpriteState>({ x: 0, y: 0, rotation: 90, bubbleText: null });
   const [backdrop, setBackdrop] = useState('default');
   const [isRunning, setIsRunning] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
+  const isUpdatingRef = useRef(false);
 
-  const handleXmlChange = (xml: string) => {
-    if (!readOnly) {
-      let code = '';
-      if (workspaceRef.current) {
+  // Initialize Blockly
+  useEffect(() => {
+    if (!editorRef.current || workspaceRef.current) return;
+
+    try {
+      const workspace = Blockly.inject(editorRef.current, {
+        toolbox: readOnly ? undefined : (toolbox || DEFAULT_BLOCKLY_TOOLBOX),
+        readOnly: readOnly,
+        grid: { spacing: 20, length: 3, colour: '#ccc', snap: true },
+        zoom: { controls: true, wheel: true, startScale: 0.8, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
+        move: { scrollbars: true, drag: true, wheel: true },
+        sounds: false,
+        scrollbars: true,
+      });
+
+      workspaceRef.current = workspace;
+
+      // Initial XML load
+      if (initialXml) {
         try {
-          code = javascriptGenerator.workspaceToCode(workspaceRef.current);
+          isUpdatingRef.current = true;
+          const dom = Blockly.utils.xml.textToDom(initialXml);
+          Blockly.Xml.domToWorkspace(dom, workspace);
+          isUpdatingRef.current = false;
         } catch (e) {
-          // console.error("Code generation error", e);
+          console.error("Error loading initial XML:", e);
         }
       }
-      onChange(xml, code);
+
+      // Add Change Listener
+      const listener = (event: Blockly.Events.Abstract) => {
+        if (event.type === Blockly.Events.UI || isUpdatingRef.current) return;
+
+        // Use a timeout to debounce/throttle updates slightly if needed, or just run
+        const performUpdate = () => {
+          if (!workspaceRef.current) return;
+          try {
+            const xmlDom = Blockly.Xml.workspaceToDom(workspaceRef.current);
+            const xmlText = Blockly.Xml.domToText(xmlDom);
+            const code = javascriptGenerator.workspaceToCode(workspaceRef.current);
+            onChange(xmlText, code);
+          } catch (e) {
+            console.error("Error generating update:", e);
+          }
+        };
+        performUpdate();
+      };
+
+      workspace.addChangeListener(listener);
+
+      // Resize handle
+      const resizeObserver = new ResizeObserver(() => {
+        Blockly.svgResize(workspace);
+      });
+      resizeObserver.observe(editorRef.current);
+
+      return () => {
+        resizeObserver.disconnect();
+        workspace.dispose();
+        workspaceRef.current = null;
+      };
+    } catch (e) {
+      console.error("Blockly Injection Error:", e);
     }
-  };
+  }, [readOnly, toolbox]); // Re-init if these change (simplified, ideally we update options)
+
+  // Update XML if prop changes externally (and it's not our own update)
+  useEffect(() => {
+    if (!workspaceRef.current || isUpdatingRef.current || !initialXml) return;
+
+    // Check if current XML matches to avoid reset
+    const currentXml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspaceRef.current));
+    if (currentXml === initialXml) return;
+
+    // Only load if strictly different and significant? 
+    // Usually we don't want to overwrite user work unless it's a reset.
+    // Assuming initialXml is truly "initial" or "controlled".
+    // For now, let's respect it if it differs significantly, but be careful.
+    // Actually, usually controlled components only update on change.
+
+    // Simplification: Do not hot-swap XML to avoid losing cursor state. 
+    // Only load on mount (covered above).
+  }, [initialXml]);
+
 
   const resetStage = () => {
     setSprite({ x: 0, y: 0, rotation: 90, bubbleText: null });
@@ -66,6 +138,8 @@ const BlockQuestion: React.FC<BlockQuestionProps> = ({ initialXml, toolbox, onCh
 
     let code = '';
     try {
+      // Ensure generators are registered
+      registerBlocklyBlocks();
       code = javascriptGenerator.workspaceToCode(workspaceRef.current);
     } catch (e) {
       console.error("Error generating code:", e);
@@ -177,20 +251,7 @@ const BlockQuestion: React.FC<BlockQuestionProps> = ({ initialXml, toolbox, onCh
 
       {/* Blockly Editor */}
       <div className="flex-1 h-full border-2 border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-800 relative group">
-        <BlocklyWorkspace
-          className="w-full h-full"
-          toolboxConfiguration={toolbox || DEFAULT_BLOCKLY_TOOLBOX}
-          initialXml={initialXml}
-          onXmlChange={handleXmlChange}
-          onWorkspaceChange={(workspace) => { workspaceRef.current = workspace; }}
-          workspaceConfiguration={{
-            readOnly: readOnly,
-            grid: { spacing: 20, length: 3, colour: '#ccc', snap: true },
-            zoom: { controls: true, wheel: true, startScale: 0.8, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
-            move: { scrollbars: true, drag: true, wheel: true },
-            sounds: false
-          }}
-        />
+        <div ref={editorRef} className="w-full h-full" />
         {readOnly && (
           <div className="absolute inset-0 bg-transparent z-10" />
         )}

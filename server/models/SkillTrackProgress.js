@@ -16,6 +16,9 @@ const skillTrackProgressSchema = new mongoose.Schema({
   unlockedModules: [{
     type: String
   }],
+  completedSubModules: [{
+    type: String // Stores "moduleId:subModuleId" format to track per-module submodule completion
+  }],
   lastAccessed: {
     type: Date,
     default: Date.now

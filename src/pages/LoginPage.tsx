@@ -125,21 +125,8 @@ const LoginPage: React.FC = () => {
 
         // Cleanup listener if window is closed manually
         // Use try-catch to handle Cross-Origin-Opener-Policy restrictions
-        const checkWindowClosed = setInterval(() => {
-            try {
-                if (googleWindow && googleWindow.closed) {
-                    clearInterval(checkWindowClosed);
-                    window.removeEventListener('message', handleMessage);
-                }
-            } catch (e) {
-                // Ignore COOP errors - we'll clean up when we receive a message or timeout
-                // This prevents console spam from Cross-Origin-Opener-Policy
-            }
-        }, 1000);
-
         // Fallback cleanup after 5 minutes
         setTimeout(() => {
-            clearInterval(checkWindowClosed);
             window.removeEventListener('message', handleMessage);
         }, 300000);
     };

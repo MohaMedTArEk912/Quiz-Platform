@@ -11,6 +11,7 @@ export interface Quiz {
     xpReward?: number;
     icon: string;
     subjectId?: string;
+    moduleId?: string;
     isTournamentOnly?: boolean;
     linkedTrackId?: string;
     linkedModuleId?: string;
@@ -216,12 +217,14 @@ export interface ShopItem {
 }
 
 // --- Graph & Roadmap Types ---
-export type NodeType = "core" | "optional" | "achievement" | "milestone";
+export type NodeType = "core" | "optional" | "achievement" | "milestone" | "project" | "quiz";
 export const NodeType = {
     CORE: "core" as NodeType,
     OPTIONAL: "optional" as NodeType,
     ACHIEVEMENT: "achievement" as NodeType,
-    MILESTONE: "milestone" as NodeType
+    MILESTONE: "milestone" as NodeType,
+    PROJECT: "project" as NodeType,
+    QUIZ: "quiz" as NodeType
 };
 
 export type NodeState = "locked" | "available" | "in_progress" | "completed" | "hidden";
@@ -246,13 +249,27 @@ export interface Resource {
     type: 'video' | 'article' | 'pdf';
 }
 
+/**
+ * Represents a lesson/topic within a SkillModule (chapter).
+ * Enables granular progress tracking within a node.
+ */
+export interface SubModule {
+    id: string;
+    title: string;
+    state: 'locked' | 'available' | 'completed';
+    xp: number;
+    quizId?: string;
+    videoUrl?: string;
+}
+
 export interface SkillModule {
     moduleId: string;
     title: string;
     description?: string;
     level: number;
     parentId?: string; // Legacy tree support
-    quizId?: string;
+    quizId?: string; // @deprecated
+    quizIds?: string[];
     badgeId?: string;
     videoUrl?: string;
     resources?: Resource[];
@@ -267,6 +284,9 @@ export interface SkillModule {
     prerequisites?: string[];
     unlockRule?: UnlockRule;
     connections?: string[]; // Legacy
+
+    // Sub-modules (lessons within this chapter)
+    subModules?: SubModule[];
 }
 
 export interface SkillTrack {

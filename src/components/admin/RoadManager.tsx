@@ -74,8 +74,9 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
     const loadRoads = async () => {
         setIsLoading(true);
         try {
-            const res = await api.getAllSubjects(currentUser.userId);
-            if (res.success) setRoads(res.data);
+            // API returns the array directly for getAllSubjects
+            const subjects = await api.getAllSubjects(currentUser.userId);
+            setRoads(subjects);
         } catch (e: any) {
             console.error(e);
             onNotification('error', e.message || 'Failed to load roads');
@@ -437,9 +438,9 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                                 onNotification={onNotification}
                                 onRefresh={() => {
                                     loadRoads();
-                                    api.getAllSubjects(currentUser.userId).then(res => {
-                                        if (res.success && selectedRoad) {
-                                            const updated = res.data.find((r: Subject) => r._id === selectedRoad._id);
+                                    api.getAllSubjects(currentUser.userId).then(subjects => {
+                                        if (selectedRoad) {
+                                            const updated = subjects.find((r: Subject) => r._id === selectedRoad._id);
                                             if (updated) setSelectedRoad(updated);
                                         }
                                     });

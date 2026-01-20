@@ -188,10 +188,10 @@ export default defineConfig({
       'react-router-dom',
       'axios',
       'lucide-react',
+      'blockly',
     ],
     exclude: [
       '@monaco-editor/react', // Lazy load
-      'blockly', // Lazy load
       'react-blockly', // Lazy load
     ],
   },

@@ -3,6 +3,8 @@ import { Attempt } from '../models/Attempt.js';
 import { Badge } from '../models/Badge.js';
 import { Challenge } from '../models/Challenge.js';
 import { ShopItem } from '../models/ShopItem.js';
+import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
+import { updateSkillTrackProgress } from '../services/progressService.js';
 
 export const updateUser = async (req, res) => {
   try {
@@ -114,8 +116,14 @@ export const getUserData = async (req, res) => {
     // Shop items
     const shopItems = await ShopItem.find({}).lean();
 
+    // Use skillTracks from user if available (they're synced with SkillTrackProgress)
+    // Otherwise fetch from SkillTrackProgress for backward compatibility
+    // Always fetch from SkillTrackProgress to ensure we have the latest data
+    // (User.skillTracks cache might be stale if attemptController didn't update it)
+    const skillTracks = await SkillTrackProgress.find({ userId: req.user.userId }).lean();
+
     res.json({
-      user: { ...user, rank },
+      user: { ...user, rank, skillTracks },
       attempts,
       badges,
       users: Array.from(mergedUsersMap.values()),
@@ -270,3 +278,39 @@ export const respondToFriendRequest = async (req, res) => {
       res.status(500).json({ message: 'Error responding to request', error: error.message });
     }
   };
+
+export const getUserRoadmapProgress = async (req, res) => {
+    try {
+        const { userId, trackId } = req.params;
+        const progress = await SkillTrackProgress.findOne({ userId, trackId });
+        res.json(progress || { completedModules: [], unlockedModules: [] });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching user progress', error: error.message });
+    }
+};
+
+export const updateUserRoadmapProgress = async (req, res) => {
+    try {
+        const { userId, trackId } = req.params;
+        const { completedModules, unlockedModules } = req.body;
+        
+        // Use central service to update and sync
+        // Note: We pass the arrays directly. If they are undefined in body, the service treats them as null (no change).
+        // But the admin UI likely sends the whole state.
+        
+        // Dynamic import if needed or top-level import. Since we are in ES modules, top-level is preferred but I will use the service imported.
+        // I need to add the import at the top of the file separately. 
+        // For this tool usage, I will just call the function assuming I added the import in a separate step or I'll implement logic here.
+        // Actually, let's use the tool to rewrite the file cleanly.
+        
+        // WAIT: I cannot add imports easily with this chunk tool without context. 
+        // I will implement the calls but I MUST add the import. 
+        // I'll assume I will add `import { updateSkillTrackProgress } from '../services/progressService.js';` at the top.
+        
+        const progress = await updateSkillTrackProgress(userId, trackId, completedModules, unlockedModules);
+        
+        res.json(progress);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating user progress', error: error.message });
+    }
+};

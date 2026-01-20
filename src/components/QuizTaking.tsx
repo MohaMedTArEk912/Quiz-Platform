@@ -20,6 +20,8 @@ interface QuizTakingProps {
     powerUps?: { type: string; quantity: number }[];
     onPowerUpUsed?: (type: string) => void;
     hidePowerUps?: boolean;
+    embedded?: boolean;
+    mustAnswerCorrectly?: boolean;
 }
 
 type SavedQuizState = {
@@ -31,7 +33,7 @@ type SavedQuizState = {
     questionOrder?: number[];
 };
 
-const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack, onProgress, powerUps, onPowerUpUsed, hidePowerUps }) => {
+const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack, onProgress, powerUps, onPowerUpUsed, hidePowerUps, embedded, mustAnswerCorrectly }) => {
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState<Record<number, string | number>>({});
     const [answerCodes, setAnswerCodes] = useState<Record<number, string>>({}); // Store generated code for block questions
@@ -50,6 +52,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
     const [debugHelperMessage, setDebugHelperMessage] = useState<string | null>(null);
     const [usedPowerUps, setUsedPowerUps] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [shakeError, setShakeError] = useState(false);
 
     // Review Mode States
     const [questionSubmitted, setQuestionSubmitted] = useState(false);
@@ -182,6 +185,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         setCodeSnippetMessage(null);
         setDebugHelperUsed(false);
         setDebugHelperMessage(null);
+        setShakeError(false);
         // Don't reset these in review mode - we want to preserve state
         if (!quiz.reviewMode) {
             setQuestionSubmitted(false);
@@ -199,9 +203,27 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
 
     const handleAnswer = (answer: string | number, code?: string) => {
         if (isSubmitting) return;
+
+        const currentQIndex = questionOrder[currentQuestion];
+        const q = quiz.questions[currentQIndex];
+
+        // --- STRICT MODE / RACE LOGIC ---
+        if (mustAnswerCorrectly) {
+            // Only strictly enforce for MC currently for speed. 
+            // Blocks/Compiler usually have their own "Check" button flows, but here we hook into raw answer.
+            if (!q.isBlock && !q.isCompiler && q.type !== 'text') {
+                if (answer !== q.correctAnswer) {
+                    setShakeError(true);
+                    setTimeout(() => setShakeError(false), 400);
+                    // Do NOT record answer, do not proceed.
+                    return;
+                }
+            }
+        }
+
         const newAnswers = {
             ...answers,
-            [questionOrder[currentQuestion]]: answer
+            [currentQIndex]: answer
         };
         setAnswers(newAnswers);
 
@@ -209,7 +231,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
         if (code !== undefined) {
             setAnswerCodes(prev => ({
                 ...prev,
-                [questionOrder[currentQuestion]]: code
+                [currentQIndex]: code
             }));
         }
 
@@ -224,6 +246,21 @@ const QuizTaking: React.FC<QuizTakingProps> = ({ quiz, user, onComplete, onBack,
                 }
             });
             onProgress(currentScore, Object.keys(newAnswers).length);
+        }
+
+        // Auto-advance if in correct-only mode and we passed the check
+        if (mustAnswerCorrectly && !q.isBlock && !q.isCompiler && q.type !== 'text') {
+            setTimeout(() => {
+                // Must check against MOST RECENT currentQuestion to avoid closure staleness issues if spam clicking?
+                // Actually `currentQuestion` changes, so this closure captures the CURRENT one.
+                // We want to advance FROM this one.
+                if (currentQuestion < quiz.questions.length - 1) {
+                    setCurrentQuestion(c => c + 1);
+                    resetQuestionState();
+                } else {
+                    handleQuizComplete();
+                }
+            }, 300);
         }
     };
 
@@ -747,18 +784,20 @@ def solution():
     if (!q) return null;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
-            <Navbar
-                user={user}
-                onBack={onBack}
-                showBack={true}
-                title={quiz.title}
-                onViewProfile={() => { }}
-                onViewLeaderboard={() => { }}
-                onLogout={() => { }}
-                showActions={false}
-            />
-            <div className="w-full px-4 md:px-8 py-6">
+        <div className={`transition-colors ${embedded ? 'h-full bg-transparent' : 'min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900'}`}>
+            {!embedded && (
+                <Navbar
+                    user={user}
+                    onBack={onBack}
+                    showBack={true}
+                    title={quiz.title}
+                    onViewProfile={() => { }}
+                    onViewLeaderboard={() => { }}
+                    onLogout={() => { }}
+                    showActions={false}
+                />
+            )}
+            <div className={`w-full ${embedded ? 'p-4' : 'px-4 md:px-8 py-6'}`}>
                 {/* Header */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 md:p-6 mb-4 md:mb-6 border border-gray-100 dark:border-gray-700">
                     <div className="flex justify-between items-center mb-4">
@@ -1234,7 +1273,17 @@ def solution():
                             )}
                         </div>
 
-                        <div className="space-y-4 mb-6">
+                        <style>{`
+                    @keyframes shake {
+                        0%, 100% { transform: translateX(0); }
+                        10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+                        20%, 40%, 60%, 80% { transform: translateX(4px); }
+                    }
+                    .animate-shake {
+                        animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+                    }
+                `}</style>
+                        <div className={`space-y-4 mb-6 ${shakeError ? 'animate-shake' : ''}`}>
                             {q.isBlock ? (
                                 <React.Suspense fallback={<div className="h-64 flex items-center justify-center"><Loader /></div>}>
                                     <BlockQuestion

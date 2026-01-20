@@ -61,7 +61,8 @@ const userSchema = new mongoose.Schema({
   skillTracks: [{
     trackId: String,
     unlockedModules: [String],
-    completedModules: [String]
+    completedModules: [String],
+    completedSubModules: [String] // Format: "moduleId:subModuleId"
   }],
   clanId: { type: String } // Simplified link to clan
 });

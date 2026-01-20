@@ -1,6 +1,9 @@
 import { Attempt } from '../models/Attempt.js';
 import { User } from '../models/User.js';
 import { Quiz } from '../models/Quiz.js';
+import { SkillTrack } from '../models/SkillTrack.js';
+import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
+import { updateSkillTrackProgress } from '../services/progressService.js';
 
 import { checkAndUnlockBadges } from './badgeNodeController.js';
 
@@ -77,6 +80,11 @@ export const saveAttempt = async (req, res) => {
 
         // Check for new badges
         newBadges = await checkAndUnlockBadges(userId, attemptData);
+
+        // Update Roadmap Progress (Unlock modules)
+        if (attemptData.passed) {
+            await updateRoadmapProgress(userId, attemptData.quizId);
+        }
     }
 
     res.status(201).json({ ...newAttempt.toObject(), newBadges });
@@ -126,5 +134,81 @@ export const submitReview = async (req, res) => {
         res.json(attempt);
     } catch (error) {
         res.status(500).json({ message: 'Error submitting review', error: error.message });
+    }
+};
+
+// Helper: Update Roadmap Progress based on quiz completion
+const updateRoadmapProgress = async (userId, quizId) => {
+    try {
+        // Find tracks containing this quiz
+        const tracks = await SkillTrack.find({
+            $or: [
+                { "modules.quizIds": quizId },
+                { "modules.quizId": quizId }
+            ]
+        });
+
+        for (const track of tracks) {
+            let progress = await SkillTrackProgress.findOne({ userId, trackId: track.trackId });
+            
+            // Should potentially initialize progress if they haven't started track?
+            if (!progress) {
+                 // Initialize with 'unlockedModules' containing the root nodes (no prereqs)
+                 const rootNodes = track.modules.filter(m => !m.prerequisites || m.prerequisites.length === 0).map(m => m.moduleId);
+                 progress = new SkillTrackProgress({ 
+                     userId, 
+                     trackId: track.trackId, 
+                     completedModules: [], 
+                     unlockedModules: rootNodes 
+                 });
+            }
+
+            let progressChanged = false;
+
+            // Find relevant modules linked to this quiz
+            const relevantModules = track.modules.filter(m => 
+                (m.quizIds && m.quizIds.includes(quizId)) || m.quizId === quizId
+            );
+
+            for (const mod of relevantModules) {
+                // If already completed, skip
+                if (progress.completedModules.includes(mod.moduleId)) continue;
+
+                // Check dependencies (quizzes)
+                const allQuizIds = new Set(mod.quizIds || []);
+                if (mod.quizId) allQuizIds.add(mod.quizId);
+                const uniqueQuizIds = Array.from(allQuizIds);
+
+                if (uniqueQuizIds.length === 0) continue;
+
+                // Count how many of these quizzes are passed
+                // We can query distinct quizIds from passed attempts for this user
+                const passedAttempts = await Attempt.find({
+                    userId,
+                    quizId: { $in: uniqueQuizIds },
+                    passed: true
+                }).select('quizId').lean();
+                
+                const passedQuizIds = new Set(passedAttempts.map(a => a.quizId));
+
+                // If all passed -> Mark Module Complete
+                if (uniqueQuizIds.every(id => passedQuizIds.has(id))) {
+                    console.log(`🎓 Module Completed via Quiz: ${mod.title} (${mod.moduleId})`);
+                    progress.completedModules.push(mod.moduleId);
+                    progressChanged = true;
+                }
+            }
+            
+            // Note: The service handles unlocking next modules if we pass only completedModules?
+            // The service has auto-unlock logic inside it. 
+            // So we can just pass the updated completedModules array and let the service handle unlocks and persistence.
+
+            if (progressChanged) {
+                // Use service to save and sync to User
+                await updateSkillTrackProgress(userId, track.trackId, progress.completedModules, progress.unlockedModules);
+            }
+        }
+    } catch (error) {
+        console.error('Error updating roadmap progress:', error);
     }
 };

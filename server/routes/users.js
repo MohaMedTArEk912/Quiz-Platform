@@ -22,4 +22,8 @@ router.get('/users/search', verifyUser, userController.searchUsers);
 router.post('/friends/request', verifyUser, userController.sendFriendRequest);
 router.post('/friends/respond', verifyUser, userController.respondToFriendRequest);
 
+// Roadmap Progress Management (Admin)
+router.get('/users/:userId/roadmap/:trackId/progress', verifyAdmin, userController.getUserRoadmapProgress);
+router.put('/users/:userId/roadmap/:trackId/progress', verifyAdmin, userController.updateUserRoadmapProgress);
+
 export default router;

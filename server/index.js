@@ -215,16 +215,62 @@ app.use('/api/badge-trees', badgeTreesRoutes);
 
 
 // Socket.io event handlers (disabled on Vercel serverless)
+// In-memory game state
+const gameRooms = new Map();
+
 if (io) io.on('connection', (socket) => {
   if (process.env.NODE_ENV !== 'production') {
     console.log('✅ Client connected:', socket.id);
   }
   
   socket.on('join_user', (userId) => {
+    socket.userId = userId; // Store userId on socket
     socket.join(userId);
     if (process.env.NODE_ENV !== 'production') {
       console.log(`👤 User ${userId} joined their room`);
     }
+  });
+
+  socket.on('join_game_room', (roomId) => {
+    socket.join(roomId);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🚪 Socket ${socket.id} (User: ${socket.userId}) joined game room ${roomId}`);
+    }
+
+    // Initialize or update room state
+    if (!gameRooms.has(roomId)) {
+      gameRooms.set(roomId, { players: {} });
+    }
+    
+    // Register player in room if userId is known
+    if (socket.userId) {
+        const room = gameRooms.get(roomId);
+        if (!room.players[socket.userId]) {
+            room.players[socket.userId] = { finished: false, score: 0, timeTaken: 0 };
+        }
+    }
+
+    // Check room size to auto-start
+    const roomSize = io.sockets.adapter.rooms.get(roomId)?.size || 0;
+    if (roomSize === 2) {
+      io.to(roomId).emit('match_ready');
+    }
+  });
+
+  socket.on('challenge_user', ({ to, quizId, from }) => {
+     // Alias to invite_friend architecture or direct handling
+     // We need detailed info. Best to stick to invite_friend, but let's handle this payload too just in case.
+     // In a real app, we'd fetch names. For now, assuming client sends 'invite_friend' usually.
+     // If client sends 'challenge_user', we will forward it as 'game_invite' if we can,
+     // or better, rely on the client fixing the emit name.
+     // IMPLEMENTATION DECISION: I will fix the Client to use 'invite_friend' to match existing server logic.
+     // BUT, I will add this handler to ensure backward compatibility or catch the lingering event.
+     io.to(to).emit('game_invite', {
+        fromId: from,
+        fromName: 'Friend', // Fallback as we don't have name easily here without DB lookup
+        quizId,
+        roomId: `room_${from}_${to}_${Date.now()}`
+     });
   });
 
   socket.on('invite_friend', ({ fromId, toId, fromName, quizId }) => {
@@ -235,15 +281,11 @@ if (io) io.on('connection', (socket) => {
       quizId,
       roomId
     });
+    // Also let the sender know the Room ID to join!
+    socket.emit('challenge_created', { roomId });
+    
     if (process.env.NODE_ENV !== 'production') {
       console.log(`🎮 Game invite sent from ${fromName} to ${toId}`);
-    }
-  });
-
-  socket.on('join_game_room', (roomId) => {
-    socket.join(roomId);
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`🚪 Socket ${socket.id} joined game room ${roomId}`);
     }
   });
 
@@ -254,8 +296,57 @@ if (io) io.on('connection', (socket) => {
       currentQuestion,
       percentage
     });
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`📊 Progress update in room ${roomId}: ${percentage}%`);
+    
+    // Update server state if possible
+    if (gameRooms.has(roomId)) {
+        const room = gameRooms.get(roomId);
+        if (room.players[userId]) {
+            room.players[userId].score = score;
+        } else {
+            // Lazy init if missed join
+            room.players[userId] = { finished: false, score, timeTaken: 0 };
+        }
+    }
+  });
+
+  socket.on('quiz_completed', ({ roomId, userId, score, timeTaken }) => {
+    if (!gameRooms.has(roomId)) return;
+    
+    const room = gameRooms.get(roomId);
+    if (!room.players[userId]) {
+         room.players[userId] = { finished: true, score, timeTaken };
+    } else {
+         room.players[userId].finished = true;
+         room.players[userId].score = score;
+         room.players[userId].timeTaken = timeTaken;
+    }
+    
+    // Check if expected number of players finished (assuming 2 for VS)
+    const playerIds = Object.keys(room.players);
+    const allFinished = playerIds.length >= 2 && playerIds.every(id => room.players[id].finished);
+    
+    if (allFinished) {
+        // Calculate Winner
+        const players = Object.entries(room.players).map(([id, stats]) => ({ id, ...stats }));
+        
+        // Sort by Score (Desc), then Time (Asc)
+        players.sort((a, b) => b.score - a.score || a.timeTaken - b.timeTaken);
+        
+        const winner = players[0];
+        const runnerUp = players[1];
+        
+        const isDraw = winner.score === runnerUp.score && winner.timeTaken === runnerUp.timeTaken;
+        
+        io.to(roomId).emit('game_over', {
+            winnerId: isDraw ? null : winner.id,
+            isDraw,
+            results: room.players
+        });
+        
+        // Cleanup room after delay
+        setTimeout(() => {
+            gameRooms.delete(roomId);
+        }, 3600000); // 1 hour cleanup just in case
     }
   });
   
@@ -263,6 +354,8 @@ if (io) io.on('connection', (socket) => {
     if (process.env.NODE_ENV !== 'production') {
       console.log('❌ Client disconnected:', socket.id, 'Reason:', reason);
     }
+    // Potential: Check if user was in active game and forfeit? 
+    // Keeping it simple for now.
   });
 });
 
