@@ -1,6 +1,8 @@
 import { User } from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { getEnrichedUser } from '../services/userService.js';
+
 
 // Helper: Generate JWT
 const generateToken = (userId, role) => {
@@ -64,7 +66,10 @@ export const register = async (req, res) => {
     
     // Generate Token
     const token = generateToken(newUser.userId, newUser.role || 'user');
-    const { password: _pw, ...safeUser } = newUser.toObject();
+    
+    // Fetch enriched user for response
+    const enrichedUser = await getEnrichedUser(newUser.userId);
+    const { password: _pw, ...safeUser } = enrichedUser || newUser.toObject();
 
     res.status(201).json({ user: safeUser, token });
   } catch (error) {
@@ -111,7 +116,9 @@ export const login = async (req, res) => {
     // Generate Token
     const token = generateToken(user.userId, user.role || 'user');
 
-    const { password: _pw, ...safeUser } = user.toObject();
+    // Fetch enriched user for response
+    const enrichedUser = await getEnrichedUser(user.userId);
+    const { password: _pw, ...safeUser } = enrichedUser || user.toObject();
 
     res.json({ user: safeUser, token });
   } catch (error) {
@@ -156,7 +163,10 @@ export const googleAuth = async (req, res) => {
     
     // Generate Token for Google User
     const token = generateToken(user.userId, user.role || 'user');
-    const { password: _pw, ...safeUser } = user.toObject();
+    
+    // Fetch enriched user for response
+    const enrichedUser = await getEnrichedUser(user.userId);
+    const { password: _pw, ...safeUser } = enrichedUser || user.toObject();
     
     res.json({ user: safeUser, token });
   } catch (error) {
@@ -195,7 +205,9 @@ export const verifySession = async (req, res) => {
 
     if (!user) return res.status(404).json({ valid: false });
 
-    const { password: _pw, ...safeUser } = user.toObject();
+    // Fetch enriched user for response
+    const enrichedUser = await getEnrichedUser(user.userId);
+    const { password: _pw, ...safeUser } = enrichedUser || user.toObject();
 
     res.json({
       valid: true,

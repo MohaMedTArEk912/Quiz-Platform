@@ -5,6 +5,7 @@ import { Challenge } from '../models/Challenge.js';
 import { ShopItem } from '../models/ShopItem.js';
 import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
 import { updateSkillTrackProgress } from '../services/progressService.js';
+import { getEnrichedUser } from '../services/userService.js';
 
 export const updateUser = async (req, res) => {
   try {
@@ -59,13 +60,13 @@ export const deleteUser = async (req, res) => {
 
 export const getUserData = async (req, res) => {
   try {
-    const user = await User.findOne({ userId: req.user.userId })
-      .select('userId name email role totalScore totalAttempts totalTime xp level streak lastLoginDate badges friends friendRequests avatar clanId clanInvites')
-      .lean();
+    const enrichedUser = await getEnrichedUser(req.user.userId);
 
-    if (!user) {
+    if (!enrichedUser) {
       return res.status(404).json({ message: 'User not found' });
     }
+
+    const { password: _pw, ...user } = enrichedUser;
 
     const attempts = await Attempt.find({ userId: req.user.userId })
       .sort({ completedAt: -1 })
@@ -103,7 +104,8 @@ export const getUserData = async (req, res) => {
     });
 
     // Calculate rank with an indexed count (totalScore index added in model)
-    const rank = await User.countDocuments({ totalScore: { $gt: user.totalScore || 0 } }) + 1;
+    // Rank is now included in enrichedUser
+    // const rank = await User.countDocuments({ totalScore: { $gt: user.totalScore || 0 } }) + 1;
 
     // Challenges
     const challenges = await Challenge.find({
@@ -116,14 +118,11 @@ export const getUserData = async (req, res) => {
     // Shop items
     const shopItems = await ShopItem.find({}).lean();
 
-    // Use skillTracks from user if available (they're synced with SkillTrackProgress)
-    // Otherwise fetch from SkillTrackProgress for backward compatibility
-    // Always fetch from SkillTrackProgress to ensure we have the latest data
-    // (User.skillTracks cache might be stale if attemptController didn't update it)
-    const skillTracks = await SkillTrackProgress.find({ userId: req.user.userId }).lean();
+    // Use skillTracks from enriched user
+    // const skillTracks = await SkillTrackProgress.find({ userId: req.user.userId }).lean();
 
     res.json({
-      user: { ...user, rank, skillTracks },
+      user, // Contains rank and skillTracks
       attempts,
       badges,
       users: Array.from(mergedUsersMap.values()),

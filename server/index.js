@@ -129,15 +129,18 @@ app.use(express.urlencoded({ limit: '200mb', extended: true }));
 
 
 // Security Middleware
-app.use(helmet());
+
+app.use(helmet({
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" } 
+}));
 
 // Rate Limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 100 : 2000, // Strict in production (100 reqs / 15 min)
+  windowMs: 3 * 60 * 1000, // 3 minutes
+  max: process.env.NODE_ENV === 'production' ? 500 : 3000, // Increased limits: 500 reqs / 3 min in prod
   message: {
     success: false,
-    message: 'Too many requests from this IP, please try again after 15 minutes'
+    message: 'Too many requests from this IP, please try again after 3 minutes'
   },
   standardHeaders: true, 
   legacyHeaders: false,
