@@ -61,7 +61,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
     // Delayed Validation / Retry Mode State
     const [retryMode, setRetryMode] = useState(false);
-    const [wrongQuestionIndices, setWrongQuestionIndices] = useState<number[]>([]);    const [correctAnswersCount, setCorrectAnswersCount] = useState(0); // Track actual correct count for progress
+    const [wrongQuestionIndices, setWrongQuestionIndices] = useState<number[]>([]); const [correctAnswersCount, setCorrectAnswersCount] = useState(0); // Track actual correct count for progress
     // Review Mode / Immediate Feedback States
     const [questionSubmitted, setQuestionSubmitted] = useState(false);
     const [isCurrentAnswerCorrect, setIsCurrentAnswerCorrect] = useState(false);
@@ -212,10 +212,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         setAnswers(newAnswers);
 
         // Immediate Feedback Logic (Normal Mode)
-        // We show feedback if it's explicitly enabled (reviewMode) OR if it's a standard quiz (not delayed/challenge)
-        // Adjusting default: if not delayed, we assume we want feedback unless specifically disabled?
-        // User asked to "return the review".
-        if (!delayedValidation) {
+        // Only show immediate feedback if reviewMode is NOT explicitly disabled
+        if (!delayedValidation && quiz.reviewMode !== false) {
             const isCorrect = q.type === 'text' ? false : answer === q.correctAnswer;
             setIsCurrentAnswerCorrect(isCorrect);
             setQuestionSubmitted(true);
@@ -321,7 +319,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 // Calculate new progress: total questions - wrong answers
                 const newCorrectCount = quiz.questions.length - wrongs.length;
                 setCorrectAnswersCount(newCorrectCount);
-                
+
                 // Notify progress rollback
                 if (onProgress) {
                     let currentScore = 0;
@@ -433,13 +431,13 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
 
     // Calculate progress percentage
-    const progressPercentage = retryMode 
+    const progressPercentage = retryMode
         ? ((currentQuestion + 1) / wrongQuestionIndices.length) * 100
         : ((currentQuestion + 1) / quiz.questions.length) * 100;
 
     // Power-up helpers
     const getPowerUpIcon = (type: string) => {
-        switch(type) {
+        switch (type) {
             case 'hint': return <Lightbulb className="w-4 h-4" />;
             case 'time': return <Clock className="w-4 h-4" />;
             case 'skip': return <Target className="w-4 h-4" />;
@@ -449,7 +447,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     };
 
     const getPowerUpColor = (type: string) => {
-        switch(type) {
+        switch (type) {
             case 'hint': return 'from-yellow-500 to-orange-500';
             case 'time': return 'from-blue-500 to-cyan-500';
             case 'skip': return 'from-purple-500 to-pink-500';
@@ -506,11 +504,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             )}
 
                             {/* Timer */}
-                            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono text-lg font-black shadow-lg ${
-                                !countUpTimer && timeLeft < 30 
-                                    ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white animate-pulse shadow-red-500/50' 
+                            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono text-lg font-black shadow-lg ${!countUpTimer && timeLeft < 30
+                                    ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white animate-pulse shadow-red-500/50'
                                     : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700'
-                            }`}>
+                                }`}>
                                 <Clock className={`w-5 h-5 ${!countUpTimer && timeLeft < 30 ? 'animate-spin' : ''}`} />
                                 {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                             </div>
@@ -558,12 +555,11 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
                         {/* Progress Bar Track */}
                         <div className="relative h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div 
-                                className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out ${
-                                    retryMode 
-                                        ? 'bg-gradient-to-r from-orange-500 to-red-500' 
+                            <div
+                                className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out ${retryMode
+                                        ? 'bg-gradient-to-r from-orange-500 to-red-500'
                                         : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'
-                                }`}
+                                    }`}
                                 style={{ width: `${progressPercentage}%` }}
                             >
                                 <div className="absolute inset-0 bg-white/20 animate-pulse" />
@@ -586,8 +582,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
                                 <TrendingUp className="w-3 h-3" />
                                 <span className="font-semibold">
-                                    {retryMode 
-                                        ? `${wrongQuestionIndices.length - currentQuestion} to go` 
+                                    {retryMode
+                                        ? `${wrongQuestionIndices.length - currentQuestion} to go`
                                         : `${quiz.questions.length - currentQuestion - 1} remaining`}
                                 </span>
                             </div>
@@ -672,9 +668,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                                 </div>
 
                                                 {/* Option Text */}
-                                                <span className={`relative z-10 font-bold text-base flex-1 ${
-                                                    isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
-                                                }`}>
+                                                <span className={`relative z-10 font-bold text-base flex-1 ${isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+                                                    }`}>
                                                     {option}
                                                 </span>
 
@@ -743,13 +738,12 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             {(retryMode ? wrongQuestionIndices : Array.from({ length: Math.min(quiz.questions.length, 10) }, (_, i) => i)).slice(0, 10).map((_, idx) => (
                                 <div
                                     key={idx}
-                                    className={`w-2 h-2 rounded-full transition-all ${
-                                        idx === currentQuestion
+                                    className={`w-2 h-2 rounded-full transition-all ${idx === currentQuestion
                                             ? 'bg-indigo-600 dark:bg-indigo-400 w-8'
                                             : idx < currentQuestion
-                                            ? 'bg-green-500 dark:bg-green-400'
-                                            : 'bg-slate-300 dark:bg-slate-600'
-                                    }`}
+                                                ? 'bg-green-500 dark:bg-green-400'
+                                                : 'bg-slate-300 dark:bg-slate-600'
+                                        }`}
                                 />
                             ))}
                         </div>
