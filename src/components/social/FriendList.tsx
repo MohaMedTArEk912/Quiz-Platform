@@ -22,9 +22,20 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    const friendsList = currentUser.friends
-        ? allUsers.filter(u => currentUser.friends!.includes(u.userId))
-        : [];
+    // Build a comprehensive friend ID set from:
+    // 1. The explicit friends array
+    // 2. Accepted incoming friend requests (from field)
+    // 3. Accepted outgoing friend requests (to field)
+    // This handles data inconsistency where friends array might not be properly synced
+    const friendIds = new Set<string>([
+        ...(currentUser.friends || []),
+        ...((currentUser.friendRequests || [])
+            .filter(r => r.status === 'accepted')
+            .map(r => r.from === currentUser.userId ? r.to : r.from)
+            .filter((id): id is string => Boolean(id)))
+    ]);
+
+    const friendsList = allUsers.filter(u => friendIds.has(u.userId));
 
     const requestList = currentUser.friendRequests
         ? currentUser.friendRequests.filter(r => r.status === 'pending').map(req => {

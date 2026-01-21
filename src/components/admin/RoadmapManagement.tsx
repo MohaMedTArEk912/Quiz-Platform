@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import dagre from 'dagre';
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { api } from '../../lib/api';
 import type { SkillModule, SkillTrack, Quiz, BadgeNode } from '../../types';
 import { NodeType, NodeState } from '../../types';
@@ -328,22 +327,10 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
             });
 
             return (
-                <div className="relative flex-1 overflow-hidden bg-gradient-to-b from-slate-950 to-slate-900">
-                    <TransformWrapper
-                        initialScale={1}
-                        minScale={0.5}
-                        maxScale={2}
-                        centerOnInit={true}
-                        wheel={{ step: 0.1 }}
-                        panning={{ velocityDisabled: true }}
-                        doubleClick={{ disabled: true }}
-                    >
-                        <TransformComponent
-                            wrapperClass="!w-full !h-full"
-                            contentClass="cursor-grab active:cursor-grabbing"
-                        >
-                            <div className="roadmap-canvas" style={{ width: svgWidth, minHeight: svgHeight, margin: '40px auto', position: 'relative' }}>
-                                <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ pointerEvents: 'none' }}>
+                <div className="relative flex-1 overflow-auto">
+                    <div className="w-full min-h-full py-8 px-4" style={{ minHeight: svgHeight }}>
+                        <div className="relative mx-auto" style={{ width: svgWidth, minHeight: svgHeight }}>
+                            <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ pointerEvents: 'none' }}>
                                     <defs>
                                         <linearGradient id="userSketchCore" x1="0%" y1="0%" x2="0%" y2="100%">
                                             <stop offset="0%" stopColor="#6366f1" />
@@ -472,9 +459,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                         </div>
                                     );
                                 })}
-                            </div>
-                        </TransformComponent>
-                    </TransformWrapper>
+                        </div>
+                    </div>
                 </div>
             );
         }
@@ -497,29 +483,16 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         });
 
         return (
-            <div className="relative flex-1 overflow-hidden bg-gradient-to-b from-slate-950 to-slate-900">
-                <TransformWrapper
-                    initialScale={1}
-                    minScale={0.5}
-                    maxScale={2}
-                    centerOnInit={true}
-                    wheel={{ step: 0.1 }}
-                    panning={{ velocityDisabled: true }}
-                    doubleClick={{ disabled: true }}
-                    disabled={viewMode === 'admin' && !readOnly && draggedModuleId !== null}
-                >
-                    <TransformComponent
-                        wrapperClass="!w-full !h-full"
-                        contentClass={viewMode === 'admin' && !readOnly ? "" : "cursor-grab active:cursor-grabbing"}
+            <div className="relative flex-1 overflow-auto">
+                <div className="w-full min-h-full py-8 px-4" style={{ minHeight: svgHeight }}>
+                    <div
+                        className="relative mx-auto"
+                        style={{ width: svgWidth, minHeight: svgHeight }}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
                     >
-                        <div
-                            className="roadmap-canvas"
-                            style={{ width: svgWidth, minHeight: svgHeight, margin: '40px auto', position: 'relative' }}
-                            onMouseMove={handleMouseMove}
-                            onMouseUp={handleMouseUp}
-                            onMouseLeave={handleMouseUp}
-                        >
-                            <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ pointerEvents: 'none' }}>
+                        <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ pointerEvents: 'none' }}>
                                 <defs>
                                     <linearGradient id="sketchCore" x1="0%" y1="0%" x2="0%" y2="100%">
                                         <stop offset="0%" stopColor="#6366f1" />
@@ -628,9 +601,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                     </div>
                                 );
                             })}
-                        </div>
-                    </TransformComponent>
-                </TransformWrapper>
+                    </div>
+                </div>
             </div>
         );
     };

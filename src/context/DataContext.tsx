@@ -48,9 +48,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLoadingQuizzes(true);
             try {
                 const quizzes = await api.getQuizzes();
+                console.log('[DataContext] Loaded quizzes:', quizzes.length, quizzes);
                 setAvailableQuizzes(quizzes);
             } catch (error) {
-                console.error('Failed to load quizzes:', error);
+                console.error('[DataContext] Failed to load quizzes:', error);
             } finally {
                 setLoadingQuizzes(false);
             }

@@ -62,6 +62,13 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
         viewMode
     });
 
+    // Debug logging
+    console.log('[QuizManager] Received quizzes:', quizzes.length, quizzes);
+    console.log('[QuizManager] Local quizzes:', localQuizzes.length, localQuizzes);
+    console.log('[QuizManager] First quiz sample:', localQuizzes[0]);
+    console.log('[QuizManager] Filtered quizzes:', filteredQuizzes.length, filteredQuizzes);
+    console.log('[QuizManager] Quizzes by subject:', quizzesBySubject);
+
     // Effects
     useEffect(() => {
         setLocalQuizzes(quizzes);
@@ -73,10 +80,18 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
 
     const loadSubjects = async () => {
         try {
-            const res = await api.getAllSubjects(currentUser.userId);
-            if (res.success) setSubjects(res.data);
+            // api.getAllSubjects already extracts and returns the data array directly
+            const subjects = await api.getAllSubjects(currentUser.userId);
+            if (Array.isArray(subjects)) {
+                setSubjects(subjects);
+            } else {
+                console.warn('[QuizManager] Unexpected subjects response format:', subjects);
+                setSubjects([]);
+            }
         } catch (error) {
-            console.error('Failed to load subjects', error);
+            console.error('[QuizManager] Failed to load subjects:', error);
+            // Don't leave subjects as undefined - set to empty array
+            setSubjects([]);
         }
     };
 
