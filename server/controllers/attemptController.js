@@ -137,7 +137,15 @@ export const submitReview = async (req, res) => {
     }
 };
 
-// Helper: Update Roadmap Progress based on quiz completion
+/**
+ * Update Roadmap Progress based on quiz completion.
+ * A module is marked complete only when:
+ * 1. ALL linked quizzes are passed by the user
+ * 2. ALL sub-modules are completed (if the module has any)
+ * 
+ * @param {string} userId - The user's ID
+ * @param {string} quizId - The quiz ID that was just completed
+ */
 const updateRoadmapProgress = async (userId, quizId) => {
     try {
         // Find tracks containing this quiz
@@ -151,7 +159,7 @@ const updateRoadmapProgress = async (userId, quizId) => {
         for (const track of tracks) {
             let progress = await SkillTrackProgress.findOne({ userId, trackId: track.trackId });
             
-            // Should potentially initialize progress if they haven't started track?
+            // Initialize progress if user hasn't started the track
             if (!progress) {
                  // Initialize with 'unlockedModules' containing the root nodes (no prereqs)
                  const rootNodes = track.modules.filter(m => !m.prerequisites || m.prerequisites.length === 0).map(m => m.moduleId);
@@ -159,7 +167,8 @@ const updateRoadmapProgress = async (userId, quizId) => {
                      userId, 
                      trackId: track.trackId, 
                      completedModules: [], 
-                     unlockedModules: rootNodes 
+                     unlockedModules: rootNodes,
+                     completedSubModules: []
                  });
             }
 
@@ -174,37 +183,54 @@ const updateRoadmapProgress = async (userId, quizId) => {
                 // If already completed, skip
                 if (progress.completedModules.includes(mod.moduleId)) continue;
 
-                // Check dependencies (quizzes)
+                // === CHECK 1: Quiz Completion ===
                 const allQuizIds = new Set(mod.quizIds || []);
                 if (mod.quizId) allQuizIds.add(mod.quizId);
                 const uniqueQuizIds = Array.from(allQuizIds);
 
-                if (uniqueQuizIds.length === 0) continue;
+                let allQuizzesPassed = true;
+                if (uniqueQuizIds.length > 0) {
+                    // Count how many of these quizzes are passed
+                    const passedAttempts = await Attempt.find({
+                        userId,
+                        quizId: { $in: uniqueQuizIds },
+                        passed: true
+                    }).select('quizId').lean();
+                    
+                    const passedQuizIds = new Set(passedAttempts.map(a => a.quizId));
+                    allQuizzesPassed = uniqueQuizIds.every(id => passedQuizIds.has(id));
+                }
 
-                // Count how many of these quizzes are passed
-                // We can query distinct quizIds from passed attempts for this user
-                const passedAttempts = await Attempt.find({
-                    userId,
-                    quizId: { $in: uniqueQuizIds },
-                    passed: true
-                }).select('quizId').lean();
-                
-                const passedQuizIds = new Set(passedAttempts.map(a => a.quizId));
+                // === CHECK 2: Sub-Module Completion ===
+                let allSubModulesCompleted = true;
+                if (mod.subModules && mod.subModules.length > 0) {
+                    const completedSubModules = progress.completedSubModules || [];
+                    allSubModulesCompleted = mod.subModules.every(subMod => 
+                        completedSubModules.includes(`${mod.moduleId}:${subMod.id}`)
+                    );
+                }
 
-                // If all passed -> Mark Module Complete
-                if (uniqueQuizIds.every(id => passedQuizIds.has(id))) {
-                    console.log(`🎓 Module Completed via Quiz: ${mod.title} (${mod.moduleId})`);
+                // === Mark Complete Only If Both Conditions Met ===
+                if (allQuizzesPassed && allSubModulesCompleted) {
+                    console.log(`🎓 Module Completed: ${mod.title} (${mod.moduleId})`);
+                    console.log(`   - All quizzes passed: ${uniqueQuizIds.length}`);
+                    console.log(`   - All sub-modules done: ${mod.subModules?.length || 0}`);
+                    
                     progress.completedModules.push(mod.moduleId);
                     progressChanged = true;
+                } else {
+                    // Log what's still pending
+                    if (!allQuizzesPassed) {
+                        console.log(`⏳ Module ${mod.moduleId}: Waiting for quiz completion`);
+                    }
+                    if (!allSubModulesCompleted) {
+                        console.log(`⏳ Module ${mod.moduleId}: Waiting for sub-module completion`);
+                    }
                 }
             }
             
-            // Note: The service handles unlocking next modules if we pass only completedModules?
-            // The service has auto-unlock logic inside it. 
-            // So we can just pass the updated completedModules array and let the service handle unlocks and persistence.
-
+            // The service handles unlocking next modules and syncing to User model
             if (progressChanged) {
-                // Use service to save and sync to User
                 await updateSkillTrackProgress(userId, track.trackId, progress.completedModules, progress.unlockedModules);
             }
         }

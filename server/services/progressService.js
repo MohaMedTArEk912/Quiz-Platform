@@ -1,6 +1,7 @@
 import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
 import { User } from '../models/User.js';
 import { SkillTrack } from '../models/SkillTrack.js';
+import { Attempt } from '../models/Attempt.js';
 
 /**
  * Centrally manages skill track progress updates.
@@ -148,20 +149,42 @@ export const completeSubModule = async (userId, trackId, moduleId, subModuleId) 
             progress.completedSubModules.push(subModuleKey);
         }
 
-        // 4. Check if ALL submodules for this module are now complete
+        // 4. Check if module can be completed (ALL sub-modules + ALL quizzes)
         const track = await SkillTrack.findOne({ trackId }).lean();
         if (track) {
             const targetModule = track.modules?.find(m => m.moduleId === moduleId);
-            if (targetModule && targetModule.subModules && targetModule.subModules.length > 0) {
-                const allSubModuleIds = targetModule.subModules.map(s => s.id);
-                const completedForThisModule = progress.completedSubModules
-                    .filter(key => key.startsWith(`${moduleId}:`))
-                    .map(key => key.split(':')[1]);
+            if (targetModule && !progress.completedModules.includes(moduleId)) {
+                // Check 1: Sub-Module Completion
+                let allSubsComplete = true;
+                if (targetModule.subModules && targetModule.subModules.length > 0) {
+                    const allSubModuleIds = targetModule.subModules.map(s => s.id);
+                    const completedForThisModule = progress.completedSubModules
+                        .filter(key => key.startsWith(`${moduleId}:`))
+                        .map(key => key.split(':')[1]);
+                    allSubsComplete = allSubModuleIds.every(id => completedForThisModule.includes(id));
+                }
 
-                const allSubsComplete = allSubModuleIds.every(id => completedForThisModule.includes(id));
+                // Check 2: Quiz Completion
+                let allQuizzesPassed = true;
+                const allQuizIds = new Set(targetModule.quizIds || []);
+                if (targetModule.quizId) allQuizIds.add(targetModule.quizId);
+                const uniqueQuizIds = Array.from(allQuizIds);
 
-                if (allSubsComplete && !progress.completedModules.includes(moduleId)) {
-                    console.log(`🎉 All sub-modules complete for ${moduleId}, auto-completing module.`);
+                if (uniqueQuizIds.length > 0) {
+                    const passedAttempts = await Attempt.find({
+                        userId,
+                        quizId: { $in: uniqueQuizIds },
+                        passed: true
+                    }).select('quizId').lean();
+                    const passedQuizIds = new Set(passedAttempts.map(a => a.quizId));
+                    allQuizzesPassed = uniqueQuizIds.every(id => passedQuizIds.has(id));
+                }
+
+                // Mark complete only if BOTH conditions met
+                if (allSubsComplete && allQuizzesPassed) {
+                    console.log(`🎉 Module Complete: ${targetModule.title} (${moduleId})`);
+                    console.log(`   - Sub-modules: ${targetModule.subModules?.length || 0} done`);
+                    console.log(`   - Quizzes: ${uniqueQuizIds.length} passed`);
                     progress.completedModules.push(moduleId);
 
                     // Trigger unlock of next module
@@ -170,7 +193,15 @@ export const completeSubModule = async (userId, trackId, moduleId, subModuleId) 
                         const nextModule = track.modules[moduleIndex + 1];
                         if (!progress.unlockedModules.includes(nextModule.moduleId)) {
                             progress.unlockedModules.push(nextModule.moduleId);
+                            console.log(`   - Unlocked next: ${nextModule.title}`);
                         }
+                    }
+                } else {
+                    if (!allSubsComplete) {
+                        console.log(`⏳ Module ${moduleId}: Sub-modules still pending`);
+                    }
+                    if (!allQuizzesPassed) {
+                        console.log(`⏳ Module ${moduleId}: Quizzes still pending`);
                     }
                 }
             }

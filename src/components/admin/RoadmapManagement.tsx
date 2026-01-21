@@ -6,7 +6,7 @@ import type { SkillModule, SkillTrack, Quiz, BadgeNode } from '../../types';
 import { NodeType, NodeState } from '../../types';
 import {
     Save, Zap, Star, Loader2, FileJson,
-    Plus, Eye, Check, BrainCircuit
+    Plus, Eye, Check, BrainCircuit, Lock as LockIcon
 } from 'lucide-react';
 import { InspectorPanel } from './InspectorPanel';
 import { RoadmapJsonImporter } from './RoadmapJsonImporter';
@@ -107,7 +107,7 @@ const applyAutoLayout = (modules: SkillModule[]): SkillModule[] => {
  */
 
 
-const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotification, subjectId, readOnly = false, userProgress }) => {
+const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotification, subjectId, readOnly = false, userProgress, onSubModuleComplete }) => {
     // Data state
     const [track, setTrack] = useState<SkillTrack | null>(null);
     const [modules, setModules] = useState<SkillModule[]>([]);
@@ -125,13 +125,16 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     const [isInspectorOpen, setIsInspectorOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+    const [isModuleDetailsOpen, setIsModuleDetailsOpen] = useState(false);
+    const [selectedModuleForDetails, setSelectedModuleForDetails] = useState<SkillModule | null>(null);
 
     // Resources for dropdowns
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
     const [badges, setBadges] = useState<BadgeNode[]>([]);
 
     // Optimistic UI state for sub-module completion (local state for instant feedback)
-    const [, setLocalCompletedSubModules] = useState<string[]>([]);
+    const [localCompletedSubModules, setLocalCompletedSubModules] = useState<string[]>([]);
+    const [savingSubModuleId, setSavingSubModuleId] = useState<string | null>(null);
 
     // Sync local state with props when userProgress changes
     React.useEffect(() => {
@@ -164,20 +167,40 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                 const migratedModules = migrateTreeToGraph(existingTrack.modules);
                 setModules(migratedModules);
             } else {
-                // Genesis Node
+                // Genesis Node - Sample module with sub-modules
                 const root: SkillModule = {
                     moduleId: `mod_${Date.now()}`,
-                    title: 'Introduction',
-                    description: 'Start your learning journey here.',
+                    title: 'Introduction to Fundamentals',
+                    description: 'Master the core concepts and foundational skills needed to excel in this learning track.',
                     level: 0,
                     type: NodeType.CORE,
                     status: NodeState.AVAILABLE,
                     xpReward: 100,
                     coordinates: { x: 100, y: 100 },
+                    quizIds: [],
+                    prerequisites: [],
                     subModules: [
-                        { id: 'sub_1', title: 'Getting Started', state: 'available', xp: 25 },
-                        { id: 'sub_2', title: 'Setup & Tools', state: 'locked', xp: 25 },
-                        { id: 'sub_3', title: 'First Steps', state: 'locked', xp: 50 }
+                        {
+                            id: 'sub_1',
+                            title: 'Getting Started',
+                            state: 'available',
+                            xp: 25,
+                            videoUrl: undefined
+                        },
+                        {
+                            id: 'sub_2',
+                            title: 'Setup & Environment Configuration',
+                            state: 'locked',
+                            xp: 25,
+                            videoUrl: undefined
+                        },
+                        {
+                            id: 'sub_3',
+                            title: 'First Hands-On Project',
+                            state: 'locked',
+                            xp: 50,
+                            videoUrl: undefined
+                        }
                     ]
                 };
                 setModules([root]);
@@ -199,6 +222,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
             ...m,
             xpReward: m.xpReward || 100,
             subModules: m.subModules || [],
+            quizIds: m.quizIds || [],
+            prerequisites: m.prerequisites || [],
             status: m.status || NodeState.LOCKED,
             type: m.type || NodeType.CORE,
             // Ensure coordinates object exists
@@ -257,10 +282,15 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         return ordered.map((module, index) => {
             const col = index % 2;
             const row = Math.floor(index / 2);
+
+            // Use module's stored coordinates if available, otherwise use calculated position
+            const x = module.coordinates?.x ?? xPositions[col];
+            const y = module.coordinates?.y ?? (row * ySpacing);
+
             return {
                 module,
-                x: xPositions[col],
-                y: row * ySpacing,
+                x,
+                y,
                 col,
                 row
             };
@@ -358,19 +388,33 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
 
                                 {visibleModules.map((item) => {
                                     const { module } = item;
-                                    const { status, isCompleted } = computeStatus(module);
+                                    const { status, isCompleted, isLocked } = computeStatus(module);
                                     const moduleNumber = (module.level ?? 0) + 1;
 
                                     const isOptional = module.type === 'optional';
                                     const isAchievement = module.type === 'achievement';
 
-                                    const borderClass = isOptional ? 'border-emerald-500/40' : 
-                                        isAchievement ? 'border-amber-500/40' : 
-                                        'border-indigo-500/40';
+                                    const borderClass = isLocked
+                                        ? 'border-slate-600/40'
+                                        : isOptional ? 'border-emerald-500/40'
+                                            : isAchievement ? 'border-amber-500/40'
+                                                : 'border-indigo-500/40';
 
-                                    const numberColorClass = isOptional ? 'text-emerald-400' :
-                                        isAchievement ? 'text-amber-400' :
-                                        'text-indigo-400';
+                                    const numberColorClass = isLocked
+                                        ? 'text-slate-500'
+                                        : isOptional ? 'text-emerald-400'
+                                            : isAchievement ? 'text-amber-400'
+                                                : 'text-indigo-400';
+
+                                    // Handle click - only allow for unlocked modules
+                                    const handleModuleClick = () => {
+                                        if (isLocked) {
+                                            onNotification('error', '🔒 Complete previous modules to unlock this one');
+                                            return;
+                                        }
+                                        setSelectedModuleForDetails(module);
+                                        setIsModuleDetailsOpen(true);
+                                    };
 
                                     return (
                                         <div
@@ -378,28 +422,51 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                             className="absolute"
                                             style={{ left: item.x, top: item.y, width: boxWidth, height: boxHeight, pointerEvents: 'auto' }}
                                         >
-                                            <div 
-                                                className={`h-full w-full rounded-xl border bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col transition-all duration-300 ${borderClass} shadow-lg hover:shadow-xl cursor-pointer`}
+                                            <div
+                                                className={`h-full w-full rounded-xl border bg-gradient-to-br ${isLocked
+                                                    ? 'from-slate-950 to-slate-900 opacity-60 cursor-not-allowed'
+                                                    : 'from-slate-900 to-slate-800 cursor-pointer hover:shadow-xl'
+                                                    } flex flex-col transition-all duration-300 ${borderClass} shadow-lg`}
+                                                onClick={handleModuleClick}
+                                                role="button"
+                                                aria-disabled={isLocked}
+                                                tabIndex={isLocked ? -1 : 0}
                                             >
                                                 <div className={`px-6 py-4 flex items-center justify-between border-b border-slate-700/50`}>
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`w-2 h-2 rounded-full ${isOptional ? 'bg-emerald-500' : isAchievement ? 'bg-amber-500' : 'bg-indigo-500'}`} />
-                                                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{module.type || 'core'}</span>
+                                                        <div className={`w-2 h-2 rounded-full ${isLocked ? 'bg-slate-600'
+                                                            : isOptional ? 'bg-emerald-500'
+                                                                : isAchievement ? 'bg-amber-500'
+                                                                    : 'bg-indigo-500'
+                                                            }`} />
+                                                        <span className={`text-xs font-semibold uppercase tracking-wider ${isLocked ? 'text-slate-600' : 'text-slate-400'}`}>
+                                                            {module.type || 'core'}
+                                                        </span>
                                                     </div>
                                                     <div className="flex items-center gap-2 text-xs font-semibold">
+                                                        {isLocked && <LockIcon className="w-4 h-4 text-slate-500" />}
                                                         {isCompleted && <Check className="w-4 h-4 text-emerald-500" />}
                                                         <span className={numberColorClass}>#{moduleNumber}</span>
                                                     </div>
                                                 </div>
 
                                                 <div className="flex-1 px-6 py-4 flex flex-col gap-2.5">
-                                                    <h4 className="text-white font-semibold text-sm leading-tight line-clamp-2">{module.title}</h4>
-                                                    <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{module.description || 'Keep going to unlock the next milestone.'}</p>
+                                                    <h4 className={`font-semibold text-sm leading-tight line-clamp-2 ${isLocked ? 'text-slate-500' : 'text-white'}`}>
+                                                        {module.title}
+                                                    </h4>
+                                                    <p className={`text-xs leading-relaxed line-clamp-2 ${isLocked ? 'text-slate-600' : 'text-slate-400'}`}>
+                                                        {isLocked ? 'Complete previous modules to unlock' : (module.description || 'Keep going to unlock the next milestone.')}
+                                                    </p>
                                                 </div>
 
                                                 <div className="px-6 py-3 border-t border-slate-700/50 flex items-center justify-between bg-slate-900/50">
                                                     <span className="text-xs text-slate-500 uppercase tracking-wider font-medium">Level {moduleNumber}</span>
-                                                    <span className={`text-xs font-semibold uppercase tracking-wider ${isCompleted ? 'text-emerald-500' : 'text-slate-500'}`}>{status}</span>
+                                                    <span className={`text-xs font-semibold uppercase tracking-wider ${isLocked ? 'text-slate-600'
+                                                        : isCompleted ? 'text-emerald-500'
+                                                            : 'text-indigo-400'
+                                                        }`}>
+                                                        {isLocked ? '🔒 Locked' : status}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
@@ -445,119 +512,122 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                         wrapperClass="!w-full !h-full"
                         contentClass={viewMode === 'admin' && !readOnly ? "" : "cursor-grab active:cursor-grabbing"}
                     >
-                        <div className="roadmap-canvas" style={{ width: svgWidth, minHeight: svgHeight, margin: '40px auto', position: 'relative' }}>
+                        <div
+                            className="roadmap-canvas"
+                            style={{ width: svgWidth, minHeight: svgHeight, margin: '40px auto', position: 'relative' }}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
+                        >
                             <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ pointerEvents: 'none' }}>
-                            <defs>
-                                <linearGradient id="sketchCore" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor="#6366f1" />
-                                    <stop offset="100%" stopColor="#8b5cf6" />
-                                </linearGradient>
-                            </defs>
-                            {connectors.map((c, idx) => (
-                                <g key={`c-${idx}`}>
-                                    {/* Pipe/pipe shadow for depth */}
-                                    <path
-                                        d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
-                                        fill="none"
-                                        stroke="#1e293b"
-                                        strokeWidth={8}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        opacity={0.6}
-                                    />
-                                    {/* Main pipe - bright and solid */}
-                                    <path
-                                        d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
-                                        fill="none"
-                                        stroke="url(#sketchCore)"
-                                        strokeWidth={6}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        opacity={0.8}
-                                    />
-                                    {/* Highlight for 3D effect */}
-                                    <path
-                                        d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
-                                        fill="none"
-                                        stroke="#a78bfa"
-                                        strokeWidth={2}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        opacity={0.4}
-                                    />
-                                </g>
-                            ))}
-                        </svg>
+                                <defs>
+                                    <linearGradient id="sketchCore" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stopColor="#6366f1" />
+                                        <stop offset="100%" stopColor="#8b5cf6" />
+                                    </linearGradient>
+                                </defs>
+                                {connectors.map((c, idx) => (
+                                    <g key={`c-${idx}`}>
+                                        {/* Pipe/pipe shadow for depth */}
+                                        <path
+                                            d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
+                                            fill="none"
+                                            stroke="#1e293b"
+                                            strokeWidth={8}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            opacity={0.6}
+                                        />
+                                        {/* Main pipe - bright and solid */}
+                                        <path
+                                            d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
+                                            fill="none"
+                                            stroke="url(#sketchCore)"
+                                            strokeWidth={6}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            opacity={0.8}
+                                        />
+                                        {/* Highlight for 3D effect */}
+                                        <path
+                                            d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
+                                            fill="none"
+                                            stroke="#a78bfa"
+                                            strokeWidth={2}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            opacity={0.4}
+                                        />
+                                    </g>
+                                ))}
+                            </svg>
 
-                        {sketchLayout.map((item) => {
-                            const { module } = item;
-                            const { status, isCompleted } = computeStatus(module);
-                            const moduleNumber = (module.level ?? 0) + 1;
+                            {sketchLayout.map((item) => {
+                                const { module } = item;
+                                const { status, isCompleted } = computeStatus(module);
+                                const moduleNumber = (module.level ?? 0) + 1;
 
-                            // In user preview mode, skip locked modules
-                            if (viewMode === 'user' && computeStatus(module).isLocked && readOnly) {
-                                return null;
-                            }
+                                // In user preview mode, skip locked modules
+                                if (viewMode === 'user' && computeStatus(module).isLocked && readOnly) {
+                                    return null;
+                                }
 
-                            // Define color classes based on module type
-                            const isOptional = module.type === 'optional';
-                            const isAchievement = module.type === 'achievement';
+                                // Define color classes based on module type
+                                const isOptional = module.type === 'optional';
+                                const isAchievement = module.type === 'achievement';
 
-                            const borderClass = isOptional ? 'border-emerald-500/40' : 
-                                isAchievement ? 'border-amber-500/40' : 
-                                'border-indigo-500/40';
+                                const borderClass = isOptional ? 'border-emerald-500/40' :
+                                    isAchievement ? 'border-amber-500/40' :
+                                        'border-indigo-500/40';
 
-                            const numberColorClass = isOptional ? 'text-emerald-400' :
-                                isAchievement ? 'text-amber-400' :
-                                'text-indigo-400';
+                                const numberColorClass = isOptional ? 'text-emerald-400' :
+                                    isAchievement ? 'text-amber-400' :
+                                        'text-indigo-400';
 
-                            return (
-                                <div
-                                    key={module.moduleId}
-                                    className="absolute group"
-                                    style={{ left: item.x, top: item.y, width: boxWidth, height: boxHeight, pointerEvents: 'auto' }}
-                                    onMouseMove={handleMouseMove}
-                                    onMouseUp={handleMouseUp}
-                                    onMouseLeave={handleMouseUp}
-                                >
-                                    <div 
-                                        className={`h-full w-full rounded-xl border bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col transition-all duration-300 ${borderClass} shadow-lg hover:shadow-xl ${!readOnly && viewMode === 'admin' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${selectedNodeId === module.moduleId ? 'ring-2 ring-indigo-500' : ''} ${draggedModuleId === module.moduleId ? 'opacity-75' : ''}`}
-                                        onMouseDown={(e) => {
-                                            if (!readOnly && viewMode === 'admin') {
-                                                handleModuleMouseDown(module.moduleId, e);
-                                            }
-                                        }}
-                                        onClick={() => {
-                                            if (!readOnly && viewMode === 'admin' && !draggedModuleId) {
-                                                setSelectedNodeId(module.moduleId);
-                                                setIsInspectorOpen(true);
-                                            }
-                                        }}
+                                return (
+                                    <div
+                                        key={module.moduleId}
+                                        className="absolute group"
+                                        style={{ left: item.x, top: item.y, width: boxWidth, height: boxHeight, pointerEvents: 'auto' }}
                                     >
-                                        <div className={`px-6 py-4 flex items-center justify-between border-b border-slate-700/50`}>
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-2 h-2 rounded-full ${isOptional ? 'bg-emerald-500' : isAchievement ? 'bg-amber-500' : 'bg-indigo-500'}`} />
-                                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{module.type || 'core'}</span>
+                                        <div
+                                            className={`h-full w-full rounded-xl border bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col transition-all duration-300 ${borderClass} shadow-lg hover:shadow-xl ${!readOnly && viewMode === 'admin' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${selectedNodeId === module.moduleId ? 'ring-2 ring-indigo-500' : ''} ${draggedModuleId === module.moduleId ? 'opacity-75' : ''}`}
+                                            onMouseDown={(e) => {
+                                                if (!readOnly && viewMode === 'admin') {
+                                                    handleModuleMouseDown(module.moduleId, e);
+                                                }
+                                            }}
+                                            onClick={() => {
+                                                if (!readOnly && viewMode === 'admin' && !draggedModuleId) {
+                                                    setSelectedNodeId(module.moduleId);
+                                                    setIsInspectorOpen(true);
+                                                }
+                                            }}
+                                        >
+                                            <div className={`px-6 py-4 flex items-center justify-between border-b border-slate-700/50`}>
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-2 h-2 rounded-full ${isOptional ? 'bg-emerald-500' : isAchievement ? 'bg-amber-500' : 'bg-indigo-500'}`} />
+                                                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{module.type || 'core'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs font-semibold">
+                                                    {isCompleted && <Check className="w-4 h-4 text-emerald-500" />}
+                                                    <span className={numberColorClass}>#{moduleNumber}</span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2 text-xs font-semibold">
-                                                {isCompleted && <Check className="w-4 h-4 text-emerald-500" />}
-                                                <span className={numberColorClass}>#{moduleNumber}</span>
+
+                                            <div className="flex-1 px-6 py-4 flex flex-col gap-2.5">
+                                                <h4 className="text-white font-semibold text-sm leading-tight line-clamp-2">{module.title}</h4>
+                                                <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{module.description || 'Keep going to unlock the next milestone.'}</p>
                                             </div>
-                                        </div>
 
-                                        <div className="flex-1 px-6 py-4 flex flex-col gap-2.5">
-                                            <h4 className="text-white font-semibold text-sm leading-tight line-clamp-2">{module.title}</h4>
-                                            <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{module.description || 'Keep going to unlock the next milestone.'}</p>
-                                        </div>
-
-                                        <div className="px-6 py-3 border-t border-slate-700/50 flex items-center justify-between bg-slate-900/50">
-                                            <span className="text-xs text-slate-500 uppercase tracking-wider font-medium">Level {moduleNumber}</span>
-                                            <span className={`text-xs font-semibold uppercase tracking-wider ${isCompleted ? 'text-emerald-500' : 'text-slate-500'}`}>{status}</span>
+                                            <div className="px-6 py-3 border-t border-slate-700/50 flex items-center justify-between bg-slate-900/50">
+                                                <span className="text-xs text-slate-500 uppercase tracking-wider font-medium">Level {moduleNumber}</span>
+                                                <span className={`text-xs font-semibold uppercase tracking-wider ${isCompleted ? 'text-emerald-500' : 'text-slate-500'}`}>{status}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
                         </div>
                     </TransformComponent>
                 </TransformWrapper>
@@ -670,14 +740,26 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     };
 
     const handleRedesign = () => {
-        // Reorganize modules: sort by level, reassign levels sequentially
+        // Reorganize modules: sort by level, reassign levels sequentially with 2-column layout
         const sortedModules = [...modules].sort((a, b) => (a.level || 0) - (b.level || 0));
-        
-        // Reassign levels sequentially (0, 1, 2, 3...)
-        const redesignedModules = sortedModules.map((mod, index) => ({
-            ...mod,
-            level: index
-        }));
+
+        // Apply 2-column auto layout
+        const xPositions = [210, 550];
+        const ySpacing = 260;
+
+        const redesignedModules = sortedModules.map((mod, index) => {
+            const col = index % 2;
+            const row = Math.floor(index / 2);
+
+            return {
+                ...mod,
+                level: index,
+                coordinates: {
+                    x: xPositions[col],
+                    y: row * ySpacing
+                }
+            };
+        });
 
         setModules(redesignedModules);
         onNotification('success', 'Roadmap redesigned and reorganized');
@@ -685,27 +767,33 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
 
     const handleModuleMouseDown = (moduleId: string, e: React.MouseEvent) => {
         if (readOnly || viewMode !== 'admin' || e.button !== 0) return; // Left click only
-        
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+
+        e.stopPropagation(); // Prevent canvas panning when dragging module
+
+        const module = modules.find(m => m.moduleId === moduleId);
+        if (!module) return;
+
+        // Store the starting position and mouse position
         setDraggedModuleId(moduleId);
         setDragOffset({
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
+            x: e.clientX - (module.coordinates?.x || 0),
+            y: e.clientY - (module.coordinates?.y || 0)
         });
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!draggedModuleId) return;
 
-        const container = (e.currentTarget as HTMLElement);
-        const containerRect = container.getBoundingClientRect();
-        const newX = e.clientX - containerRect.left - dragOffset.x;
-        const newY = e.clientY - containerRect.top - dragOffset.y;
+        e.stopPropagation();
+
+        // Calculate new position based on mouse movement
+        const newX = e.clientX - dragOffset.x;
+        const newY = e.clientY - dragOffset.y;
 
         // Update module coordinates
         setModules(prev => prev.map(m =>
             m.moduleId === draggedModuleId
-                ? { ...m, coordinates: { x: Math.max(0, newX), y: Math.max(0, newY) } }
+                ? { ...m, coordinates: { x: Math.max(0, Math.round(newX)), y: Math.max(0, Math.round(newY)) } }
                 : m
         ));
     };
@@ -714,6 +802,44 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         setDraggedModuleId(null);
     };
 
+    /**
+     * Handle toggling a sub-module's completion status.
+     * Uses optimistic UI for instant feedback while saving in background.
+     * @param subModuleId - The ID of the sub-module to toggle
+     */
+    const handleToggleSubModule = async (subModuleId: string) => {
+        if (!onSubModuleComplete || !track || !selectedModuleForDetails) {
+            onNotification('error', 'Progress updates not available in this mode');
+            return;
+        }
+
+        // Create the key in the format used by backend: "moduleId:subModuleId"
+        const subModuleKey = `${selectedModuleForDetails.moduleId}:${subModuleId}`;
+        const isAlreadyCompleted = localCompletedSubModules.includes(subModuleKey);
+
+        // Don't allow uncompleting for now (one-way toggle)
+        if (isAlreadyCompleted) {
+            return;
+        }
+
+        // Set loading state for this specific sub-module
+        setSavingSubModuleId(subModuleId);
+
+        // Optimistic update: immediately add to local state
+        setLocalCompletedSubModules(prev => [...prev, subModuleKey]);
+
+        try {
+            await onSubModuleComplete(track.trackId, selectedModuleForDetails.moduleId, subModuleId);
+            onNotification('success', 'Progress saved! 🎉');
+        } catch (error) {
+            console.error('Failed to update sub-module progress:', error);
+            // Rollback optimistic update on failure
+            setLocalCompletedSubModules(prev => prev.filter(key => key !== subModuleKey));
+            onNotification('error', 'Failed to save progress');
+        } finally {
+            setSavingSubModuleId(null);
+        }
+    };
 
 
     // --- Render ---
@@ -808,6 +934,179 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                 {...confirmState}
                 onCancel={handleCancel}
             />
+
+            {/* Module Details Dialog */}
+            {isModuleDetailsOpen && selectedModuleForDetails && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsModuleDetailsOpen(false)}>
+                    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl border border-slate-700 max-w-2xl w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-3 h-3 rounded-full ${selectedModuleForDetails.type === 'optional' ? 'bg-emerald-500' :
+                                    selectedModuleForDetails.type === 'achievement' ? 'bg-amber-500' :
+                                        'bg-indigo-500'
+                                    }`} />
+                                <h3 className="text-xl font-bold text-white">{selectedModuleForDetails.title}</h3>
+                            </div>
+                            <button
+                                onClick={() => setIsModuleDetailsOpen(false)}
+                                className="text-slate-400 hover:text-white transition-colors p-1"
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="px-6 py-4 overflow-y-auto max-h-[calc(80vh-140px)]">
+                            {/* Description */}
+                            <div className="mb-6">
+                                <p className="text-slate-300 leading-relaxed">{selectedModuleForDetails.description || 'No description available.'}</p>
+                            </div>
+
+                            {/* Info Cards */}
+                            <div className="grid grid-cols-3 gap-3 mb-6">
+                                <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
+                                    <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Level</div>
+                                    <div className="text-lg font-bold text-white">{(selectedModuleForDetails.level ?? 0) + 1}</div>
+                                </div>
+                                <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
+                                    <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Type</div>
+                                    <div className="text-lg font-bold text-white capitalize">{selectedModuleForDetails.type || 'core'}</div>
+                                </div>
+                                <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
+                                    <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">XP Reward</div>
+                                    <div className="text-lg font-bold text-amber-400">{selectedModuleForDetails.xpReward || 0}</div>
+                                </div>
+                            </div>
+
+                            {/* Quizzes Section */}
+                            {selectedModuleForDetails.quizIds && selectedModuleForDetails.quizIds.length > 0 && (
+                                <div className="mb-6">
+                                    <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        Quizzes to Complete
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {selectedModuleForDetails.quizIds.map((quizId) => {
+                                            const quiz = quizzes.find(q => q._id === quizId);
+                                            // Check if quiz is completed (you may need to adjust this logic based on your data structure)
+                                            const isQuizCompleted = userProgress?.completedModules?.includes(quizId) || false;
+                                            
+                                            return (
+                                                <div key={quizId} className={`bg-slate-800/50 rounded-lg p-3 border transition-all ${
+                                                    isQuizCompleted ? 'border-emerald-500/40 bg-emerald-900/10' : 'border-slate-700/50'
+                                                }`}>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-2 h-2 rounded-full ${isQuizCompleted ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                                                        <div className="flex-1">
+                                                            <div className={`text-sm font-medium ${isQuizCompleted ? 'text-emerald-400 line-through' : 'text-white'}`}>
+                                                                {quiz?.title || quizId}
+                                                            </div>
+                                                            {quiz?.description && (
+                                                                <div className="text-xs text-slate-400 mt-0.5">{quiz.description}</div>
+                                                            )}
+                                                        </div>
+                                                        <div className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${
+                                                            isQuizCompleted 
+                                                                ? 'bg-emerald-500/20 text-emerald-400' 
+                                                                : 'bg-amber-500/20 text-amber-400'
+                                                        }`}>
+                                                            {isQuizCompleted ? '✓ Done' : '⚠ Not Done'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Sub-Modules Section */}
+                            {selectedModuleForDetails.subModules && selectedModuleForDetails.subModules.length > 0 && (
+                                <div>
+                                    <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                        </svg>
+                                        Sub-Modules
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {selectedModuleForDetails.subModules.map((subModule) => {
+                                            // Use the correct key format: "moduleId:subModuleId"
+                                            const subModuleKey = `${selectedModuleForDetails.moduleId}:${subModule.id}`;
+                                            const isCompleted = localCompletedSubModules.includes(subModuleKey);
+                                            const isSaving = savingSubModuleId === subModule.id;
+
+                                            return (
+                                                <div
+                                                    key={subModule.id}
+                                                    className={`bg-slate-800/50 rounded-lg p-3 border transition-all ${isCompleted ? 'border-emerald-500/40 bg-emerald-900/10' : 'border-slate-700/50'
+                                                        } ${isSaving ? 'opacity-70' : ''}`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <button
+                                                            onClick={() => handleToggleSubModule(subModule.id)}
+                                                            disabled={isSaving || isCompleted}
+                                                            aria-label={isCompleted ? `${subModule.title} completed` : `Mark ${subModule.title} as complete`}
+                                                            className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isCompleted
+                                                                ? 'bg-emerald-500 border-emerald-500 cursor-default'
+                                                                : isSaving
+                                                                    ? 'border-amber-400 animate-pulse cursor-wait'
+                                                                    : 'border-slate-600 hover:border-emerald-500 hover:bg-emerald-500/10 cursor-pointer'
+                                                                }`}
+                                                        >
+                                                            {isSaving ? (
+                                                                <Loader2 className="w-3 h-3 text-amber-400 animate-spin" />
+                                                            ) : isCompleted ? (
+                                                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                            ) : null}
+                                                        </button>
+                                                        <div className="flex-1">
+                                                            <div className={`text-sm font-medium ${isCompleted ? 'text-emerald-400 line-through' : 'text-white'}`}>
+                                                                {subModule.title}
+                                                            </div>
+                                                        </div>
+                                                        <div className={`text-xs font-semibold ${isCompleted ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                                            {isCompleted ? '✓' : '+'}{subModule.xp} XP
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Empty State */}
+                            {(!selectedModuleForDetails.quizIds || selectedModuleForDetails.quizIds.length === 0) &&
+                                (!selectedModuleForDetails.subModules || selectedModuleForDetails.subModules.length === 0) && (
+                                    <div className="text-center py-8 text-slate-400">
+                                        <svg className="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
+                                        <p>No quizzes or sub-modules yet</p>
+                                    </div>
+                                )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-4 border-t border-slate-700 flex justify-end">
+                            <button
+                                onClick={() => setIsModuleDetailsOpen(false)}
+                                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-medium transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* JSON Importer */}
             <RoadmapJsonImporter
