@@ -33,7 +33,7 @@ import {
     Lock
 } from 'lucide-react';
 import Navbar from './Navbar.tsx';
-import RoadmapManagement from './admin/RoadmapManagement';
+import UserRoadmapView from './UserRoadmapView';
 import { useNotification } from '../context/NotificationContext';
 import { api } from '../lib/api';
 
@@ -61,7 +61,7 @@ const SubjectIcon: React.FC<{ icon: string }> = ({ icon }) => {
     return <>{icon || '📚'}</>;
 };
 
-interface QuizListProps {
+interface UserRoadsProps {
     quizzes: Quiz[];
     subjects: Subject[];
     user: UserData;
@@ -89,7 +89,7 @@ interface Milestone {
     index: number;
 }
 
-const QuizList: React.FC<QuizListProps> = ({ quizzes, subjects, user, attempts, skillTracks, studyCards, onSelectQuiz, onViewProfile, onViewLeaderboard, onLogout, onRefreshData }) => {
+const UserRoads: React.FC<UserRoadsProps> = ({ quizzes, subjects, user, attempts, skillTracks, studyCards, onSelectQuiz, onViewProfile, onViewLeaderboard, onLogout, onRefreshData }) => {
     const navigate = useNavigate();
     const { showNotification } = useNotification();
     const [searchTerm, setSearchTerm] = useState('');
@@ -615,30 +615,24 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, subjects, user, attempts, 
 
                             {activeTab === 'roadmap' && (
                                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <RoadmapManagement
-                                        adminId={user.userId || 'viewer'}
-                                        subjectId={selectedSubjectId || undefined}
-                                        onNotification={showNotification}
-                                        readOnly={true}
+                                    <UserRoadmapView
+                                        modules={activeTrackDefinition?.modules || []}
+                                        quizzes={quizzes}
+                                        attempts={attempts}
+                                        onStartQuiz={onSelectQuiz}
                                         userProgress={(() => {
-                                            // Find the skillTrack definition for this subject
                                             const def = skillTracks.find((t: any) => t.subjectId === selectedSubjectId || t.trackId === selectedSubjectId);
-                                            // Find user progress for this track ID if definition exists
                                             return def ? user.skillTracks?.find((p: any) => p.trackId === def.trackId) : undefined;
                                         })()}
-                                        onSubModuleComplete={async (trackId, moduleId, subModuleId) => {
+                                        onSubModuleComplete={async (moduleId: string, subModuleId: string) => {
+                                            if (!activeTrackDefinition?.trackId) return;
                                             try {
-                                                await api.completeSubModule(trackId, moduleId, subModuleId, user.userId);
+                                                await api.completeSubModule(activeTrackDefinition.trackId, moduleId, subModuleId, user.userId);
                                                 showNotification('success', 'Sub-module completed! 🎉');
-                                                // Background refresh - don't await to keep UI snappy
-                                                // The optimistic UI already shows the completion
-                                                if (onRefreshData) {
-                                                    onRefreshData().catch(console.error); // Fire and forget
-                                                }
+                                                if (onRefreshData) onRefreshData().catch(console.error);
                                             } catch (error) {
                                                 console.error('Failed to complete sub-module:', error);
                                                 showNotification('error', 'Failed to save progress');
-                                                throw error; // Re-throw so RoadmapManagement can rollback
                                             }
                                         }}
                                     />
@@ -780,4 +774,4 @@ const QuizList: React.FC<QuizListProps> = ({ quizzes, subjects, user, attempts, 
     );
 };
 
-export default QuizList;
+export default UserRoads;

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import QuizList from '../components/QuizList';
+import UserRoads from '../components/UserRoads';
 import InstallPWA from '../components/InstallPWA';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -30,7 +30,7 @@ const DashboardPage: React.FC = () => {
     return (
         <>
             <InstallPWA />
-            <QuizList
+            <UserRoads
                 quizzes={availableQuizzes}
                 subjects={subjects}
                 skillTracks={skillTracks}

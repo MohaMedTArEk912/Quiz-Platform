@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Quiz, UserData, QuizResult } from '../../types';
 import { useSocket } from '../../context/SocketContext';
 import QuizTaking from '../QuizTaking';
-import { Trophy, Activity, Sword, Flag, Timer, Swords } from 'lucide-react';
+import { Trophy, Activity, Sword, Flag, Timer, Swords, Zap, TrendingUp } from 'lucide-react';
 import Avatar from '../Avatar';
 import type { AvatarConfig } from '../../types';
 
@@ -42,9 +42,15 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
         currentQuestion: 0,
         percentage: 0
     });
+    const [myState, setMyState] = useState({
+        score: 0,
+        currentQuestion: 0
+    });
     const [myProgress, setMyProgress] = useState(0);
     const [gameLogs, setGameLogs] = useState<string[]>([]);
     const logsEndRef = useRef<HTMLDivElement>(null);
+    const [isAhead, setIsAhead] = useState<boolean | null>(null);
+    const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
 
     // Auto-scroll logs
     useEffect(() => {
@@ -55,6 +61,25 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
         setGameLogs(prev => [...prev.slice(-4), message]); // Keep last 5
     };
 
+    // Monitor connection status
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleConnect = () => setConnectionStatus('connected');
+        const handleDisconnect = () => setConnectionStatus('disconnected');
+        const handleReconnecting = () => setConnectionStatus('reconnecting');
+
+        socket.on('connect', handleConnect);
+        socket.on('disconnect', handleDisconnect);
+        socket.on('reconnecting', handleReconnecting);
+
+        return () => {
+            socket.off('connect', handleConnect);
+            socket.off('disconnect', handleDisconnect);
+            socket.off('reconnecting', handleReconnecting);
+        };
+    }, [socket]);
+
     // Listen for updates and match ready
     useEffect(() => {
         if (!socket) return;
@@ -63,14 +88,31 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
         const handleProgress = (data: OpponentProgress) => {
             if (data.userId === opponent.id) {
                 const prevQ = opponentState.currentQuestion;
+                const prevScore = opponentState.score;
+
                 setOpponentState({
                     score: data.score,
                     currentQuestion: data.currentQuestion,
                     percentage: data.percentage
                 });
 
+                // Add log for question progress
                 if (data.currentQuestion > prevQ) {
-                    addLog(`${opponent.name} answered Question ${data.currentQuestion}!`);
+                    addLog(`🎯 ${opponent.name} answered Question ${data.currentQuestion}`);
+
+                    // Visual feedback on score change
+                    if (data.score > prevScore) {
+                        addLog(`✨ ${opponent.name} scored ${data.score - prevScore} points!`);
+                    }
+                }
+
+                // Determine who's ahead
+                if (myState.currentQuestion > data.currentQuestion) {
+                    setIsAhead(true);
+                } else if (myState.currentQuestion < data.currentQuestion) {
+                    setIsAhead(false);
+                } else {
+                    setIsAhead(myState.score >= data.score);
                 }
             }
         };
@@ -78,11 +120,19 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
         const handleMatchReady = () => {
             if (gameState === 'waiting') {
                 setGameState('countdown');
+                addLog('Match starting...');
             }
         };
 
         const handleGameOver = (data: { winnerId: string | null, isDraw: boolean, results: any }) => {
             setGameResult(data);
+            if (data.isDraw) {
+                addLog('🤝 Match ended in a draw!');
+            } else if (data.winnerId === currentUser.userId) {
+                addLog('🏆 You won!');
+            } else {
+                addLog(`💪 ${opponent.name} won!`);
+            }
         };
 
         socket.on('opponent_progress', handleProgress);
@@ -94,7 +144,7 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
             socket.off('match_ready', handleMatchReady);
             socket.off('game_over', handleGameOver);
         };
-    }, [socket, opponent.id, roomId, opponent.name, gameState, opponentState.currentQuestion]);
+    }, [socket, opponent.id, roomId, opponent.name, gameState, opponentState.currentQuestion, opponentState.score, myState.currentQuestion, myState.score, currentUser.userId]);
 
     // Countdown Logic
     useEffect(() => {
@@ -111,6 +161,7 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
 
     const handleAnswerUpdate = (score: number, currentQuestionIndex: number) => {
         setMyProgress(currentQuestionIndex);
+        setMyState({ score, currentQuestion: currentQuestionIndex });
         if (socket) {
             socket.emit('update_progress', {
                 roomId,
@@ -241,6 +292,7 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
                     mustAnswerCorrectly={false}
                     countUpTimer={true}
                     delayedValidation={true}
+                    onProgress={handleAnswerUpdate}
                     onComplete={(res) => {
                         localResultRef.current = res;
                         setGameState('finished');
@@ -261,125 +313,182 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
                         }
                     }}
                     onBack={onBack}
-                    onProgress={(score, index) => handleAnswerUpdate(score, index)}
                 />
             </div>
 
-            {/* RIGHT SIDE: OPPONENT & LIVE STATUS */}
-            <div className="flex-1 h-1/2 md:h-full bg-slate-900 text-white p-6 flex flex-col relative overflow-hidden">
+            {/* RIGHT SIDE: COMPACT OPPONENT & LIVE STATUS */}
+            <div className="w-full md:w-80 lg:w-96 h-1/2 md:h-full bg-slate-900 text-white p-4 flex flex-col relative overflow-hidden">
                 {/* Background Decor */}
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-900 to-slate-900 pointer-events-none"></div>
 
-                {/* Header */}
-                <div className="z-10 flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
-                            <Sword className="w-5 h-5 text-red-500" />
+                {/* Compact Header */}
+                <div className="z-10 flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-red-500/10 rounded-lg border border-red-500/20">
+                            <Sword className="w-4 h-4 text-red-500" />
                         </div>
-                        <h2 className="text-xl font-bold tracking-tight">Live Challenge</h2>
+                        <h2 className="text-sm font-bold tracking-tight">Live Challenge</h2>
                     </div>
-                    <div className="px-3 py-1 bg-green-500/10 text-green-400 text-xs font-bold rounded-full border border-green-500/20 animate-pulse flex items-center gap-2">
-                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                        LIVE
+                    <div className={`px-2 py-1 text-[10px] font-bold rounded-full flex items-center gap-1.5 ${connectionStatus === 'connected'
+                        ? 'bg-green-500/10 text-green-400 border border-green-500/20 animate-pulse'
+                        : connectionStatus === 'reconnecting'
+                            ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                        }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${connectionStatus === 'connected' ? 'bg-green-500' : connectionStatus === 'reconnecting' ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}></span>
+                        {connectionStatus === 'connected' ? 'LIVE' : connectionStatus === 'reconnecting' ? 'RECONNECTING' : 'OFFLINE'}
                     </div>
                 </div>
 
-                {/* Opponent Profile */}
-                <div className="z-10 flex flex-col items-center justify-center mb-10">
-                    <div className="relative mb-4">
-                        <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-orange-500 to-pink-500">
-                            <div className="w-full h-full rounded-full overflow-hidden bg-slate-800 border-4 border-slate-900">
+                {/* Compact Opponent Profile */}
+                <div className="z-10 flex items-center gap-3 mb-4 bg-slate-800/40 rounded-xl p-3 border border-slate-700/50">
+                    <div className="relative">
+                        <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-orange-500 to-pink-500">
+                            <div className="w-full h-full rounded-full overflow-hidden bg-slate-800 border-2 border-slate-900">
                                 {opponent.avatar ? (
-                                    <Avatar config={opponent.avatar} size="lg" className="w-full h-full" />
+                                    <Avatar config={opponent.avatar} size="md" className="w-full h-full" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-3xl font-bold">
+                                    <div className="w-full h-full flex items-center justify-center text-xl font-bold">
                                         {opponent.name.charAt(0)}
                                     </div>
                                 )}
                             </div>
                         </div>
-                        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-slate-800 px-3 py-1 rounded-full border border-slate-700 text-xs font-bold whitespace-nowrap shadow-lg">
-                            {opponent.name}
-                        </div>
                     </div>
-
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
-                        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 flex flex-col items-center">
-                            <span className="text-slate-400 text-xs uppercase tracking-wider mb-1">Score</span>
-                            <div className="flex items-center gap-2 text-2xl font-black text-yellow-400">
-                                <Trophy className="w-5 h-5" />
-                                {opponentState.score}
-                            </div>
-                        </div>
-                        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 flex flex-col items-center">
-                            <span className="text-slate-400 text-xs uppercase tracking-wider mb-1">Progress</span>
-                            <div className="flex items-center gap-2 text-2xl font-black text-blue-400">
-                                <Activity className="w-5 h-5" />
-                                {Math.round((opponentState.currentQuestion / totalQuestions) * 100)}%
-                            </div>
-                        </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="font-bold text-sm truncate">{opponent.name}</div>
+                        <div className="text-xs text-slate-400">Question {opponentState.currentQuestion}/{totalQuestions}</div>
                     </div>
                 </div>
 
-                {/* RACE TRACK VISUALIZATION */}
-                <div className="z-10 flex-1 flex flex-col justify-center max-w-lg mx-auto w-full mb-8">
-                    <div className="flex justify-between text-xs text-slate-400 mb-2 uppercase tracking-wider font-bold">
+                {/* Live Score Comparison */}
+                <div className="z-10 mb-4">
+                    <div className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/50">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs text-slate-400 font-semibold">YOUR SCORE</span>
+                            <span className="text-xs text-slate-400 font-semibold">OPPONENT</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Trophy className="w-4 h-4 text-indigo-400" />
+                                <span className="text-2xl font-black text-indigo-400">{myState.score}</span>
+                                {isAhead === true && <TrendingUp className="w-4 h-4 text-green-400 animate-pulse" />}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {isAhead === false && <TrendingUp className="w-4 h-4 text-red-400 animate-pulse" />}
+                                <span className="text-2xl font-black text-red-400">{opponentState.score}</span>
+                                <Trophy className="w-4 h-4 text-red-400" />
+                            </div>
+                        </div>
+                        {isAhead !== null && (
+                            <div className={`mt-2 text-center text-xs font-bold ${isAhead ? 'text-green-400' : 'text-orange-400'}`}>
+                                {isAhead ? '🔥 You\'re ahead!' : '⚡ Opponent is ahead!'}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Enhanced Progress Bar */}
+                <div className="z-10 mb-4">
+                    <div className="flex justify-between text-[10px] text-slate-400 mb-1.5 uppercase tracking-wider font-bold px-1">
                         <span>Start</span>
-                        <span>Checkered Flag</span>
+                        <span>🏁 Finish (100% Correct)</span>
                     </div>
-                    <div className="h-3 bg-slate-800 rounded-full w-full relative">
-                        {/* Finish Line */}
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2">
-                            <Flag className="w-5 h-5 text-slate-600" />
-                        </div>
+                    <div className="relative">
+                        {/* Track Background */}
+                        <div className="h-8 bg-slate-800/50 rounded-xl w-full relative border border-slate-700/50 overflow-hidden">
+                            {/* Progress fills with glow */}
+                            <div
+                                className="absolute top-0 left-0 h-full bg-gradient-to-r from-red-500/30 to-red-500/20 transition-all duration-700 ease-out"
+                                style={{ width: `${getProgressPercent(opponentState.currentQuestion)}%` }}
+                            />
+                            <div
+                                className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500/40 to-indigo-500/30 transition-all duration-300 ease-out"
+                                style={{ width: `${getProgressPercent(myProgress)}%` }}
+                            />
 
-                        {/* Opponent Marker */}
-                        <div
-                            className="absolute top-1/2 -translate-y-1/2 transition-all duration-700 ease-out z-20"
-                            style={{ left: `${getProgressPercent(opponentState.currentQuestion)}%` }}
-                        >
-                            <div className="relative -top-6 -translate-x-1/2 flex flex-col items-center">
-                                <span className="text-[10px] text-red-400 font-bold mb-1 opacity-80">THEM</span>
-                                <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-slate-900 shadow-xl shadow-red-500/50"></div>
+                            {/* Opponent Marker */}
+                            <div
+                                className="absolute top-1/2 -translate-y-1/2 transition-all duration-700 ease-out z-20"
+                                style={{ left: `${Math.min(95, getProgressPercent(opponentState.currentQuestion))}%` }}
+                            >
+                                <div className="relative -translate-x-1/2 flex items-center">
+                                    <div className="relative">
+                                        <div className="w-6 h-6 rounded-full bg-red-500 border-2 border-slate-900 shadow-lg shadow-red-500/50 flex items-center justify-center">
+                                            <span className="text-[8px] font-bold">T</span>
+                                        </div>
+                                        <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-red-400 whitespace-nowrap">
+                                            {opponentState.currentQuestion}/{totalQuestions}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* My Marker */}
+                            <div
+                                className="absolute top-1/2 -translate-y-1/2 transition-all duration-300 ease-out z-30"
+                                style={{ left: `${Math.min(95, getProgressPercent(myProgress))}%` }}
+                            >
+                                <div className="relative -translate-x-1/2 flex items-center">
+                                    <div className="relative">
+                                        <div className="w-6 h-6 rounded-full bg-indigo-500 border-2 border-slate-900 shadow-lg shadow-indigo-500/50 flex items-center justify-center">
+                                            <span className="text-[8px] font-bold">Y</span>
+                                        </div>
+                                        <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-indigo-400 whitespace-nowrap">
+                                            {myProgress}/{totalQuestions}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Finish Flag */}
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                <Flag className="w-4 h-4 text-slate-600" />
                             </div>
                         </div>
-
-                        {/* Track Fill for Opponent */}
-                        <div
-                            className="absolute top-0 left-0 h-full bg-red-500/20 rounded-full transition-all duration-700 z-0"
-                            style={{ width: `${getProgressPercent(opponentState.currentQuestion)}%` }}
-                        />
-
-                        {/* My Marker */}
-                        <div
-                            className="absolute top-1/2 -translate-y-1/2 transition-all duration-300 ease-out z-30"
-                            style={{ left: `${getProgressPercent(myProgress)}%` }}
-                        >
-                            <div className="relative 6 -translate-x-1/2 flex flex-col items-center mt-8">
-                                <div className="w-4 h-4 rounded-full bg-indigo-500 border-2 border-slate-900 shadow-xl shadow-indigo-500/50 mb-1"></div>
-                                <span className="text-[10px] text-indigo-400 font-bold opacity-80">YOU</span>
-                            </div>
+                        <div className="text-[9px] text-slate-500 text-center mt-1 italic">
+                            First to answer all questions 100% correctly wins!
                         </div>
-
-                        {/* Track Fill for Me */}
-                        <div
-                            className="absolute top-0 left-0 h-full bg-indigo-500/40 rounded-full transition-all duration-300 z-10"
-                            style={{ width: `${getProgressPercent(myProgress)}%` }}
-                        />
                     </div>
                 </div>
 
-                {/* Game Logs (Feed) */}
-                <div className="z-10 h-32 bg-slate-800/30 rounded-xl border border-slate-700 p-3 overflow-hidden flex flex-col justify-end">
-                    <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar">
+                {/* Progress Stats */}
+                <div className="z-10 grid grid-cols-2 gap-2 mb-4">
+                    <div className="bg-slate-800/30 rounded-lg p-2 border border-slate-700/30">
+                        <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Your Correct</div>
+                        <div className="flex items-center gap-1.5">
+                            <Activity className="w-3 h-3 text-indigo-400" />
+                            <span className="text-lg font-black text-indigo-400">
+                                {myProgress}/{totalQuestions}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="bg-slate-800/30 rounded-lg p-2 border border-slate-700/30">
+                        <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Their Correct</div>
+                        <div className="flex items-center gap-1.5">
+                            <Activity className="w-3 h-3 text-red-400" />
+                            <span className="text-lg font-black text-red-400">
+                                {opponentState.currentQuestion}/{totalQuestions}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Compact Game Activity Feed */}
+                <div className="z-10 flex-1 bg-slate-800/30 rounded-xl border border-slate-700/50 p-2.5 overflow-hidden flex flex-col">
+                    <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-2 flex items-center gap-1.5">
+                        <Zap className="w-3 h-3" />
+                        Live Activity
+                    </div>
+                    <div className="flex-1 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
                         {gameLogs.length === 0 ? (
-                            <div className="text-slate-500 text-xs text-center py-2 italic">Match started... Good luck!</div>
+                            <div className="text-slate-500 text-[10px] text-center py-2 italic">Waiting for activity...</div>
                         ) : (
                             gameLogs.map((log, i) => (
-                                <div key={i} className="text-xs text-slate-300 flex items-center gap-2 animate-in slide-in-from-left duration-300">
-                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full min-w-[6px]"></div>
-                                    {log}
+                                <div key={i} className="text-[10px] text-slate-300 flex items-start gap-1.5 animate-in slide-in-from-left duration-300 bg-slate-800/40 rounded px-2 py-1">
+                                    <div className="w-1 h-1 bg-indigo-500 rounded-full min-w-[4px] mt-1"></div>
+                                    <span className="flex-1">{log}</span>
                                 </div>
                             ))
                         )}
