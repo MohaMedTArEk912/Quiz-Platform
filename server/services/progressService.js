@@ -240,3 +240,84 @@ export const completeSubModule = async (userId, trackId, moduleId, subModuleId) 
         throw error;
     }
 };
+
+/**
+ * Synchronizes roadmap progress by re-evaluating all modules against existing attempts and sub-modules.
+ * Useful for healing self-inconsistent states.
+ * 
+ * @param {string} userId 
+ * @param {string} trackId 
+ */
+export const syncRoadmapProgress = async (userId, trackId) => {
+    try {
+        const track = await SkillTrack.findOne({ trackId }).lean();
+        if (!track) return null;
+
+        let progress = await SkillTrackProgress.findOne({ userId, trackId });
+        
+        // Lazy init
+        if (!progress) {
+             const rootNodes = track.modules.filter(m => !m.prerequisites || m.prerequisites.length === 0).map(m => m.moduleId);
+             progress = new SkillTrackProgress({ 
+                 userId, 
+                 trackId: track.trackId, 
+                 completedModules: [], 
+                 unlockedModules: rootNodes,
+                 completedSubModules: []
+             });
+        }
+
+        let progressChanged = false;
+
+        // Optimization: Fetch ALL passed attempts for this user once
+        // We could filter by all quiz IDs in the track, but fetching all passed attempts for user is usually okay unless HUGE history.
+        // Let's filter by track quizzes to be safe.
+        const allTrackQuizIds = new Set();
+        track.modules.forEach(m => {
+            if (m.quizId) allTrackQuizIds.add(m.quizId);
+            if (m.quizIds) m.quizIds.forEach(q => allTrackQuizIds.add(q));
+        });
+        
+        const passedAttempts = await Attempt.find({
+            userId,
+            quizId: { $in: Array.from(allTrackQuizIds) },
+            passed: true
+        }).select('quizId').lean();
+        const passedQuizIds = new Set(passedAttempts.map(a => a.quizId));
+
+        // Iterate modules to check completion
+        for (const mod of track.modules) {
+             // If already marked, we don't need to unmark (unless we want to enforce strictness? No, let's just heal forward)
+             if (progress.completedModules.includes(mod.moduleId)) continue;
+
+             // Check Quizzes
+             const modQuizIds = new Set(mod.quizIds || []);
+             if (mod.quizId) modQuizIds.add(mod.quizId);
+             const uniqueModQuizIds = Array.from(modQuizIds);
+
+             const quizzesPassed = uniqueModQuizIds.every(qId => passedQuizIds.has(qId));
+             
+             // Check Submodules
+             let subsPassed = true;
+             if (mod.subModules && mod.subModules.length > 0) {
+                 subsPassed = mod.subModules.every(sub => progress.completedSubModules.includes(`${mod.moduleId}:${sub.id}`));
+             }
+
+             if (quizzesPassed && subsPassed) {
+                 progress.completedModules.push(mod.moduleId);
+                 progressChanged = true;
+             }
+        }
+
+        if (progressChanged) {
+            // This internally handles the sequential unlocking and saving
+            return await updateSkillTrackProgress(userId, trackId, progress.completedModules, progress.unlockedModules);
+        }
+
+        return progress;
+
+    } catch (error) {
+        console.error('Error syncing roadmap progress:', error);
+        throw error;
+    }
+};

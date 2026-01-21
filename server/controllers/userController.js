@@ -4,9 +4,8 @@ import { Badge } from '../models/Badge.js';
 import { Challenge } from '../models/Challenge.js';
 import { ShopItem } from '../models/ShopItem.js';
 import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
-import { updateSkillTrackProgress } from '../services/progressService.js';
+import { updateSkillTrackProgress, syncRoadmapProgress } from '../services/progressService.js';
 import { getEnrichedUser } from '../services/userService.js';
-
 export const updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -281,7 +280,7 @@ export const respondToFriendRequest = async (req, res) => {
 export const getUserRoadmapProgress = async (req, res) => {
     try {
         const { userId, trackId } = req.params;
-        const progress = await SkillTrackProgress.findOne({ userId, trackId });
+        const progress = await syncRoadmapProgress(userId, trackId);
         res.json(progress || { completedModules: [], unlockedModules: [] });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching user progress', error: error.message });

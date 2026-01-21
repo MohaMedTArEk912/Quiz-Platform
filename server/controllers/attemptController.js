@@ -159,9 +159,8 @@ const updateRoadmapProgress = async (userId, quizId) => {
         for (const track of tracks) {
             let progress = await SkillTrackProgress.findOne({ userId, trackId: track.trackId });
             
-            // Initialize progress if user hasn't started the track
+            // Initialize progress if user hasn't started the track (lazy init)
             if (!progress) {
-                 // Initialize with 'unlockedModules' containing the root nodes (no prereqs)
                  const rootNodes = track.modules.filter(m => !m.prerequisites || m.prerequisites.length === 0).map(m => m.moduleId);
                  progress = new SkillTrackProgress({ 
                      userId, 
@@ -174,7 +173,9 @@ const updateRoadmapProgress = async (userId, quizId) => {
 
             let progressChanged = false;
 
-            // Find relevant modules linked to this quiz
+            // Find ALL modules in this track, because completing a quiz might affect a previous module if logic was skipped
+            // But efficiently, we only care about modules that include this quiz or are currently 'in progress'
+            // For robustness, let's check ALL modules that contain this quiz ID
             const relevantModules = track.modules.filter(m => 
                 (m.quizIds && m.quizIds.includes(quizId)) || m.quizId === quizId
             );
@@ -202,35 +203,33 @@ const updateRoadmapProgress = async (userId, quizId) => {
                 }
 
                 // === CHECK 2: Sub-Module Completion ===
+                // Important: If a module has NO sub-modules, this is trivially true.
                 let allSubModulesCompleted = true;
                 if (mod.subModules && mod.subModules.length > 0) {
                     const completedSubModules = progress.completedSubModules || [];
-                    allSubModulesCompleted = mod.subModules.every(subMod => 
-                        completedSubModules.includes(`${mod.moduleId}:${subMod.id}`)
-                    );
+                    // Check if *every* sub-module's ID exists in the completed list key format
+                    allSubModulesCompleted = mod.subModules.every(subMod => {
+                         // The key stored is likely "moduleId:subId"
+                         return completedSubModules.includes(`${mod.moduleId}:${subMod.id}`);
+                    });
                 }
 
                 // === Mark Complete Only If Both Conditions Met ===
                 if (allQuizzesPassed && allSubModulesCompleted) {
                     console.log(`🎓 Module Completed: ${mod.title} (${mod.moduleId})`);
-                    console.log(`   - All quizzes passed: ${uniqueQuizIds.length}`);
-                    console.log(`   - All sub-modules done: ${mod.subModules?.length || 0}`);
                     
                     progress.completedModules.push(mod.moduleId);
                     progressChanged = true;
-                } else {
-                    // Log what's still pending
-                    if (!allQuizzesPassed) {
-                        console.log(`⏳ Module ${mod.moduleId}: Waiting for quiz completion`);
-                    }
-                    if (!allSubModulesCompleted) {
-                        console.log(`⏳ Module ${mod.moduleId}: Waiting for sub-module completion`);
-                    }
                 }
             }
             
             // The service handles unlocking next modules and syncing to User model
             if (progressChanged) {
+                // Pass the UPDATED list of completed modules. The service will calculate unlocks based on this.
+                // We pass 'null' for unlockedModules so the service recalculates/appends correctly or we pass the current one?
+                // The service logic for `updateSkillTrackProgress` (checked in Step 51) appends unlocks if new modules are completed.
+                // It's safer to pass the CURRENT unlockedModules (or null if we trust it to pull existing)
+                // Actually, let's let the service do its job. We pass the new completed list.
                 await updateSkillTrackProgress(userId, track.trackId, progress.completedModules, progress.unlockedModules);
             }
         }
