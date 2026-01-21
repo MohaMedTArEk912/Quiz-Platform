@@ -51,7 +51,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     const startTimeRef = useRef(Date.now());
 
     // PowerUp States
-    const [usedPowerUps] = useState<string[]>([]);
+
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [shakeError, setShakeError] = useState(false);
@@ -196,7 +196,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
         // Strict Mode Check (Immediate Failure)
         if (mustAnswerCorrectly && !delayedValidation) {
-            if (!q.isBlock && !q.isCompiler && q.type !== 'text') {
+            if (!q.isCompiler && q.type !== 'text') {
                 if (answer !== q.correctAnswer) {
                     setShakeError(true);
                     setTimeout(() => setShakeError(false), 400);
@@ -248,7 +248,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         // I will let the UI buttons handle navigation.
 
         // HOWEVER, if it's strict mode (Start -> Finish race), users usually want auto-advance on correct.
-        if (mustAnswerCorrectly && !delayedValidation && !q.isBlock && !q.isCompiler && q.type !== 'text') {
+        if (mustAnswerCorrectly && !delayedValidation && !q.isCompiler && q.type !== 'text') {
             setTimeout(() => {
                 nextQuestion();
             }, 300);
@@ -300,7 +300,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 let isCorrect = false;
                 if (q.type === 'text') {
                     isCorrect = false; // Manual review
-                } else if (q.isBlock || q.isCompiler) {
+                } else if (q.isCompiler) {
                     // Simplistic check for now, real check is complex
                     // Assume if they provided code/answer it's proper? No, strict check needed.
                     // For VS mode, usually MCQs.
@@ -361,10 +361,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             answers: detailedAnswers,
             passed: percentage >= quiz.passingScore,
             reviewStatus: 'completed',
-            powerUpsUsed: usedPowerUps
+            powerUpsUsed: []
         });
 
-    }, [answers, delayedValidation, isSubmitting, onComplete, questionOrder, quiz.questions, timeLeft, countUpTimer, usedPowerUps]);
+    }, [answers, delayedValidation, isSubmitting, onComplete, questionOrder, quiz.questions, timeLeft, countUpTimer]);
 
 
     // Helper for checking correctness (used in grading and retry logic)

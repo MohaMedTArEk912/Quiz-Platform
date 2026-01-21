@@ -1,5 +1,5 @@
 import React from 'react';
-import { DEFAULT_BLOCKLY_TOOLBOX, COMPILER_ALLOWED_LANGUAGES, COMPILER_INITIAL_CODE } from '../../constants/quizDefaults';
+import { COMPILER_ALLOWED_LANGUAGES, COMPILER_INITIAL_CODE } from '../../constants/quizDefaults';
 import { ChevronDown } from 'lucide-react';
 import CompilerQuestion from '../question-types/CompilerQuestion';
 import type { Question } from '../../types';
@@ -19,22 +19,13 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
                     <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Question Type</label>
                     <div className="relative">
                         <select
-                            value={question.isBlock ? 'block' : question.isCompiler ? 'compiler' : 'multiple-choice'}
+                            value={question.isCompiler ? 'compiler' : 'multiple-choice'}
                             onChange={e => {
                                 const type = e.target.value;
-                                if (type === 'block') {
-                                    onChange({
-                                        ...question,
-                                        type: 'multiple-choice', // Legacy fallback
-                                        isBlock: true,
-                                        isCompiler: false,
-                                        blockConfig: { referenceXml: '', toolbox: DEFAULT_BLOCKLY_TOOLBOX, initialXml: '' }
-                                    });
-                                } else if (type === 'compiler') {
+                                if (type === 'compiler') {
                                     onChange({
                                         ...question,
                                         type: 'text', // Legacy fallback
-                                        isBlock: false,
                                         isCompiler: true,
                                         compilerConfig: {
                                             language: 'javascript',
@@ -47,7 +38,6 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
                                     onChange({
                                         ...question,
                                         type: 'multiple-choice',
-                                        isBlock: false,
                                         isCompiler: false
                                     });
                                 }
@@ -56,7 +46,6 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
                             style={{ colorScheme: 'dark' }}
                         >
                             <option value="multiple-choice" className="text-black dark:text-white bg-white dark:bg-slate-800">Multiple Choice</option>
-                            <option value="block" className="text-black dark:text-white bg-white dark:bg-slate-800">Block (Scratch-like)</option>
                             <option value="compiler" className="text-black dark:text-white bg-white dark:bg-slate-800">Code Compiler</option>
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
@@ -103,7 +92,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
 
             <div className="grid grid-cols-1 gap-2">
                 {/* Multiple Choice Editor */}
-                {(!question.isBlock && !question.isCompiler) && (
+                {(!question.isCompiler) && (
                     <>
                         <div className="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800 mb-2">
                             <input
@@ -162,32 +151,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
                     </>
                 )}
 
-                {/* Block Editor Fields */}
-                {question.isBlock && (
-                    <div className="space-y-2 p-3 bg-gray-100 dark:bg-black/20 rounded-lg">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Block Reference XML (Answer)</label>
-                        <textarea
-                            value={question.blockConfig?.referenceXml || ''}
-                            onChange={e => onChange({ ...question, blockConfig: { ...question.blockConfig, referenceXml: e.target.value } })}
-                            placeholder="<xml>...</xml>"
-                            className="w-full h-24 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
-                        />
-                        <label className="text-xs font-bold text-gray-500 uppercase">Initial Workspace XML (Optional)</label>
-                        <textarea
-                            value={question.blockConfig?.initialXml || ''}
-                            onChange={e => onChange({ ...question, blockConfig: { ...question.blockConfig, initialXml: e.target.value } })}
-                            placeholder="<xml>...</xml>"
-                            className="w-full h-24 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
-                        />
-                        <label className="text-xs font-bold text-gray-500 uppercase">Toolbox XML (Optional - customization)</label>
-                        <textarea
-                            value={question.blockConfig?.toolbox || ''}
-                            onChange={e => onChange({ ...question, blockConfig: { ...question.blockConfig, toolbox: e.target.value } })}
-                            placeholder="<xml>...</xml> (Leave empty for default toolbox)"
-                            className="w-full h-24 font-mono text-xs bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
-                        />
-                    </div>
-                )}
+
 
                 {/* Compiler Editor Fields */}
                 {question.isCompiler && (

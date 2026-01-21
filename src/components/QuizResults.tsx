@@ -7,7 +7,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import confetti from 'canvas-confetti';
 
-const BlockQuestion = React.lazy(() => import('./question-types/BlockQuestion.tsx'));
+
 const CompilerQuestion = React.lazy(() => import('./question-types/CompilerQuestion.tsx'));
 
 interface QuizResultsProps {
@@ -347,20 +347,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                                 }`}>
                                                 <span className="text-xs font-bold uppercase tracking-wider opacity-70 w-24 shrink-0">Your Answer</span>
                                                 <span className="font-medium w-full">
-                                                    {q.isBlock ? (
-                                                        <div className="h-64 mt-2 border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden">
-                                                            <React.Suspense fallback={<div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>}>
-                                                                <BlockQuestion
-                                                                    initialXml={String(userVal)}
-                                                                    toolbox={q.blockConfig?.toolbox}
-                                                                    readOnly={true}
-                                                                    hideStage={true}
-                                                                    className='h-full'
-                                                                    onChange={() => { }}
-                                                                />
-                                                            </React.Suspense>
-                                                        </div>
-                                                    ) : q.isCompiler ? (
+                                                    {q.isCompiler ? (
                                                         <div className="h-64 mt-2 border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden">
                                                             <React.Suspense fallback={<div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>}>
                                                                 <CompilerQuestion
@@ -381,23 +368,10 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                                 </span>
                                             </div>
 
-                                            {!isCorrect && (q.correctAnswer !== undefined || q.blockConfig?.referenceXml || q.compilerConfig?.referenceCode) && (
+                                            {!isCorrect && (q.correctAnswer !== undefined || q.compilerConfig?.referenceCode) && (
                                                 <div className="flex flex-col gap-2 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                                                     <span className="text-xs font-bold uppercase tracking-wider opacity-70">Correct Answer</span>
-                                                    {q.isBlock && q.blockConfig?.referenceXml ? (
-                                                        <div className="h-64 mt-2 border border-emerald-500/20 rounded-xl overflow-hidden">
-                                                            <React.Suspense fallback={<div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>}>
-                                                                <BlockQuestion
-                                                                    initialXml={q.blockConfig.referenceXml}
-                                                                    toolbox={q.blockConfig?.toolbox}
-                                                                    readOnly={true}
-                                                                    hideStage={true}
-                                                                    className='h-full'
-                                                                    onChange={() => { }}
-                                                                />
-                                                            </React.Suspense>
-                                                        </div>
-                                                    ) : q.isCompiler ? (
+                                                    {q.isCompiler ? (
                                                         q.compilerConfig?.referenceCode ? (
                                                             <div className="h-64 mt-2 border border-emerald-500/20 rounded-xl overflow-hidden">
                                                                 <React.Suspense fallback={<div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>}>

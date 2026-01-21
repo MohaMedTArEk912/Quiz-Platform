@@ -31,17 +31,9 @@ export interface Question {
     imageUrl?: string;
     codeSnippet?: string;
     audioUrl?: string;
-    isBlock?: boolean;
-    blockConfig?: BlockConfig;
     isCompiler?: boolean;
     compilerConfig?: CompilerConfig;
     shuffleOptions?: boolean;
-}
-
-export interface BlockConfig {
-    toolbox?: string;
-    initialXml?: string;
-    referenceXml?: string;
 }
 
 export interface CompilerConfig {

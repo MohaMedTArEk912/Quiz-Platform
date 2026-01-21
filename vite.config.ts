@@ -152,7 +152,6 @@ export default defineConfig({
 
           // Heavy editors (lazy loaded but separated when loaded)
           'monaco-editor': ['@monaco-editor/react'],
-          'blockly': ['blockly', 'react-blockly'],
 
           // Socket and real-time
           'socket': ['socket.io-client'],
@@ -188,11 +187,9 @@ export default defineConfig({
       'react-router-dom',
       'axios',
       'lucide-react',
-      'blockly',
     ],
     exclude: [
       '@monaco-editor/react', // Lazy load
-      'react-blockly', // Lazy load
     ],
   },
 
