@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 interface ConfirmOptions {
     title: string;
@@ -21,16 +21,21 @@ export const useConfirm = () => {
         confirmText: 'Confirm',
         cancelText: 'Cancel',
         type: 'warning',
-        onConfirm: () => {}
+        onConfirm: () => { }
     });
+
+    // Store resolve function to call on cancel
+    const resolveRef = useRef<((value: boolean) => void) | null>(null);
 
     const confirm = useCallback((options: ConfirmOptions): Promise<boolean> => {
         return new Promise((resolve) => {
+            resolveRef.current = resolve;
             setConfirmState({
                 isOpen: true,
                 ...options,
                 onConfirm: () => {
                     setConfirmState(prev => ({ ...prev, isOpen: false }));
+                    resolveRef.current = null;
                     resolve(true);
                 }
             });
@@ -39,6 +44,11 @@ export const useConfirm = () => {
 
     const handleCancel = useCallback(() => {
         setConfirmState(prev => ({ ...prev, isOpen: false }));
+        // Resolve with false when cancelled
+        if (resolveRef.current) {
+            resolveRef.current(false);
+            resolveRef.current = null;
+        }
     }, []);
 
     return {

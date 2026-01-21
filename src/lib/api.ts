@@ -541,6 +541,34 @@ export const api = {
         return response.json();
     },
 
+    async createClanAnnouncement(clanId: string, content: string, userId: string): Promise<any> {
+        const response = await fetch(`${API_URL}/clans/${clanId}/announcements`, {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ content })
+        });
+        if (!response.ok) throw new Error('Failed to create announcement');
+        return response.json();
+    },
+
+    async deleteClanAnnouncement(clanId: string, announcementId: string, userId: string): Promise<any> {
+        const response = await fetch(`${API_URL}/clans/${clanId}/announcements/${announcementId}`, {
+            method: 'DELETE',
+            headers: getHeaders(userId)
+        });
+        if (!response.ok) throw new Error('Failed to delete announcement');
+        return response.json();
+    },
+
+    async pinClanAnnouncement(clanId: string, announcementId: string, userId: string): Promise<any> {
+        const response = await fetch(`${API_URL}/clans/${clanId}/announcements/${announcementId}/pin`, {
+            method: 'PUT',
+            headers: getHeaders(userId)
+        });
+        if (!response.ok) throw new Error('Failed to pin announcement');
+        return response.json();
+    },
+
     async completeDailyChallenge(userId: string) {
         const response = await fetch(`${API_URL}/daily-challenge/complete`, {
             method: 'POST',

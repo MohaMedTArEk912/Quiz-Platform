@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../lib/api';
-import type { Clan, UserData } from '../../types';
-import { Users, Shield, Trophy, Search, LogOut, Star, UserPlus, Edit2, Check, X, MoreVertical, Trash2, ArrowUpCircle, ArrowDownCircle, Bell } from 'lucide-react';
+import type { Clan, UserData, ClanChatMessage } from '../../types';
+import { Users, Shield, Trophy, Search, LogOut, Star, UserPlus, Edit2, Check, X, MoreVertical, Trash2, ArrowUpCircle, ArrowDownCircle, Bell, Pin, Megaphone, MessageCircle, Send, Pencil } from 'lucide-react';
 import Avatar from '../Avatar';
 import { useNotification } from '../../context/NotificationContext';
 import { useConfirm } from '../../hooks/useConfirm';
 import ConfirmDialog from '../ConfirmDialog';
+import { useSocket } from '../../context/SocketContext';
 
 interface ClanHubProps {
     user: UserData;
@@ -15,6 +16,7 @@ interface ClanHubProps {
 export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
     const { showNotification } = useNotification();
     const { confirm, confirmState, handleCancel } = useConfirm();
+    const { socket } = useSocket();
     const [clan, setClan] = useState<Clan | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -31,6 +33,111 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
     const [editForm, setEditForm] = useState({ name: '', description: '', isPublic: true });
     const [inviteQuery, setInviteQuery] = useState('');
     const [inviteResults, setInviteResults] = useState<UserData[]>([]);
+
+    // Chat State
+    const [chatMessages, setChatMessages] = useState<ClanChatMessage[]>([]);
+    const [chatInput, setChatInput] = useState('');
+    const [showChat, setShowChat] = useState(false);
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const [editContent, setEditContent] = useState('');
+    const [messageMenuId, setMessageMenuId] = useState<string | null>(null);
+    const chatEndRef = useRef<HTMLDivElement>(null);
+
+    // Load chat messages when clan is loaded
+    useEffect(() => {
+        if (clan?.chatMessages) {
+            setChatMessages(clan.chatMessages);
+        }
+    }, [clan?.chatMessages]);
+
+    // Socket connection for chat
+    useEffect(() => {
+        if (!socket || !clan?.clanId) return;
+
+        socket.emit('join_clan_chat', clan.clanId);
+
+        const handleNewMessage = (message: ClanChatMessage) => {
+            setChatMessages(prev => [...prev, message]);
+        };
+
+        const handleMessageEdited = ({ messageId, newContent }: { messageId: string, newContent: string }) => {
+            setChatMessages(prev => prev.map(msg =>
+                msg.id === messageId ? { ...msg, content: newContent } : msg
+            ));
+        };
+
+        const handleMessageDeleted = ({ messageId }: { messageId: string }) => {
+            setChatMessages(prev => prev.filter(msg => msg.id !== messageId));
+        };
+
+        const handleChatError = ({ message }: { message: string }) => {
+            showNotification('error', message);
+        };
+
+        socket.on('new_clan_message', handleNewMessage);
+        socket.on('clan_message_edited', handleMessageEdited);
+        socket.on('clan_message_deleted', handleMessageDeleted);
+        socket.on('chat_error', handleChatError);
+
+        return () => {
+            socket.off('new_clan_message', handleNewMessage);
+            socket.off('clan_message_edited', handleMessageEdited);
+            socket.off('clan_message_deleted', handleMessageDeleted);
+            socket.off('chat_error', handleChatError);
+            socket.emit('leave_clan_chat', clan.clanId);
+        };
+    }, [socket, clan?.clanId]);
+
+    const handleEditMessage = (messageId: string, content: string) => {
+        if (!socket || !clan) return;
+        socket.emit('edit_clan_message', {
+            clanId: clan.clanId,
+            messageId,
+            newContent: content,
+            userId: user.userId
+        });
+        setEditingMessageId(null);
+        setEditContent('');
+        setMessageMenuId(null);
+    };
+
+    const handleDeleteMessage = async (messageId: string) => {
+        if (!socket || !clan) return;
+
+        const confirmed = await confirm({
+            title: 'Delete Message',
+            message: 'Are you sure you want to delete this message?',
+            confirmText: 'Delete',
+            type: 'danger'
+        });
+
+        if (!confirmed) return;
+
+        socket.emit('delete_clan_message', {
+            clanId: clan.clanId,
+            messageId,
+            userId: user.userId
+        });
+        setMessageMenuId(null);
+    };
+
+    // Auto-scroll to bottom of chat
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chatMessages]);
+
+    const sendChatMessage = () => {
+        if (!chatInput.trim() || !socket || !clan) return;
+
+        socket.emit('send_clan_message', {
+            clanId: clan.clanId,
+            senderId: user.userId,
+            senderName: user.name,
+            content: chatInput.trim()
+        });
+
+        setChatInput('');
+    };
 
     useEffect(() => {
         if (user.clanId) {
@@ -227,6 +334,90 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
 
                     {/* Content */}
                     <div className="p-6">
+                        {/* Announcements Section */}
+                        <div className="mb-8">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                    <Megaphone className="w-6 h-6 text-orange-500" />
+                                    Announcements
+                                </h2>
+                                {(isLeader || clan.members.find(m => m.userId === user.userId)?.role === 'elder') && (
+                                    <button
+                                        onClick={async () => {
+                                            const content = prompt("Enter announcement type:");
+                                            if (content) {
+                                                try {
+                                                    await api.createClanAnnouncement(clan.clanId, content, user.userId);
+                                                    loadClan(clan.clanId);
+                                                    showNotification('success', 'Announcement posted');
+                                                } catch (e: any) { showNotification('error', e.message); }
+                                            }
+                                        }}
+                                        className="text-sm font-bold text-violet-600 hover:text-violet-700"
+                                    >
+                                        + Post New
+                                    </button>
+                                )}
+                            </div>
+
+                            {clan.announcements && clan.announcements.length > 0 ? (
+                                <div className="grid gap-3">
+                                    {clan.announcements.map((ann) => (
+                                        <div key={ann.id} className={`p-4 rounded-xl border ${ann.isPinned ? 'bg-orange-50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700'} relative group`}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    {ann.isPinned && <Pin className="w-4 h-4 text-orange-500 fill-orange-500" />}
+                                                    <span className="font-bold text-gray-900 dark:text-white text-sm">{ann.authorName}</span>
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400">• {new Date(ann.createdAt).toLocaleDateString()}</span>
+                                                </div>
+                                                {(isLeader || clan.members.find(m => m.userId === user.userId)?.role === 'elder') && (
+                                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={async () => {
+                                                                try {
+                                                                    await api.pinClanAnnouncement(clan.clanId, ann.id, user.userId);
+                                                                    loadClan(clan.clanId);
+                                                                } catch (e: any) { showNotification('error', e.message); }
+                                                            }}
+                                                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400"
+                                                            title={ann.isPinned ? "Unpin" : "Pin"}
+                                                        >
+                                                            <Pin className={`w-3 h-3 ${ann.isPinned ? 'text-orange-500' : ''}`} />
+                                                        </button>
+                                                        <button
+                                                            onClick={async () => {
+                                                                const confirmed = await confirm({
+                                                                    title: 'Delete Announcement',
+                                                                    message: 'Are you sure you want to delete this announcement?',
+                                                                    confirmText: 'Delete',
+                                                                    type: 'danger'
+                                                                });
+                                                                if (!confirmed) return;
+                                                                try {
+                                                                    await api.deleteClanAnnouncement(clan.clanId, ann.id, user.userId);
+                                                                    loadClan(clan.clanId);
+                                                                } catch (e: any) { showNotification('error', e.message); }
+                                                            }}
+                                                            className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-red-500"
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap">{ann.content}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
+                                    <Megaphone className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm">No announcements yet.</p>
+                                </div>
+                            )}
+                        </div>
+
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                 <Users className="w-6 h-6 text-violet-500" />
@@ -305,7 +496,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                     <MoreVertical className="w-5 h-5" />
                                                 </button>
                                                 {activeMenu === member.userId && (
-                                                    <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                                                    <div className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
                                                         {isLeader && member.role !== 'leader' && (
                                                             <>
                                                                 {member.role === 'member' ? (
@@ -333,75 +524,251 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                     </div>
                 </div>
 
-                {/* Edit Modal */}
-                {showEdit && (
-                    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
-                            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Edit Clan</h2>
-                            <form onSubmit={handleUpdateClan} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-500 mb-1">Name</label>
-                                    <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10" />
+                {/* Floating Chat Button */}
+                <button
+                    onClick={() => setShowChat(true)}
+                    className="fixed bottom-6 right-6 p-4 bg-violet-600 text-white rounded-full shadow-2xl hover:bg-violet-700 transition-all hover:scale-110 z-50 flex items-center justify-center group"
+                >
+                    <MessageCircle className="w-8 h-8" />
+                    {chatMessages.length > 0 && (
+                        <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white dark:border-gray-900">
+                            {chatMessages.length > 99 ? '99+' : chatMessages.length}
+                        </span>
+                    )}
+                    <span className="absolute right-full mr-3 bg-gray-900 text-white px-3 py-1 rounded-lg text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        Open Clan Chat
+                    </span>
+                </button>
+
+                {/* Chat Overlay */}
+                {showChat && (
+                    <div className="fixed inset-0 z-[60] flex justify-end items-stretch pointer-events-none">
+                        <div
+                            className="absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto transition-opacity"
+                            onClick={() => setShowChat(false)}
+                        />
+                        <div className="relative w-full max-w-md bg-white dark:bg-gray-800 shadow-2xl pointer-events-auto flex flex-col h-full animate-in slide-in-from-right duration-300">
+                            {/* Header */}
+                            <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between shrink-0">
+                                <h2 className="text-xl font-bold flex items-center gap-2">
+                                    <MessageCircle className="w-6 h-6" />
+                                    Clan Chat
+                                </h2>
+                                <button
+                                    onClick={() => setShowChat(false)}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            {/* Messages */}
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50">
+                                {chatMessages.length === 0 ? (
+                                    <div className="text-center py-20 text-gray-400">
+                                        <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                        <p className="text-lg font-medium">No messages yet</p>
+                                        <p className="text-sm">Be the first to say hello!</p>
+                                    </div>
+                                ) : (
+                                    chatMessages.map((msg) => (
+                                        <div
+                                            key={msg.id}
+                                            className={`flex ${msg.senderId === user.userId ? 'justify-end' : 'justify-start'} group/message`}
+                                        >
+                                            <div
+                                                className={`max-w-[85%] rounded-2xl p-3 relative ${msg.senderId === user.userId
+                                                    ? 'bg-violet-500 text-white rounded-br-none'
+                                                    : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-none shadow-sm'
+                                                    }`}
+                                            >
+                                                {msg.senderId !== user.userId && (
+                                                    <p className="text-xs font-bold mb-1 opacity-70 flex items-center gap-2">
+                                                        {msg.senderName}
+                                                        {(isLeader || clan.members.find(m => m.userId === msg.senderId)?.role === 'leader') && (
+                                                            <span className="bg-yellow-400/20 text-yellow-200 px-1 rounded text-[10px]">LEADER</span>
+                                                        )}
+                                                    </p>
+                                                )}
+
+                                                {/* Edit Mode */}
+                                                {editingMessageId === msg.id ? (
+                                                    <div className="min-w-[200px]">
+                                                        <textarea
+                                                            value={editContent}
+                                                            onChange={(e) => setEditContent(e.target.value)}
+                                                            className="w-full bg-black/10 dark:bg-black/20 rounded p-2 text-sm focus:outline-none mb-2"
+                                                            rows={2}
+                                                        />
+                                                        <div className="flex justify-end gap-2">
+                                                            <button
+                                                                onClick={() => setEditingMessageId(null)}
+                                                                className="px-2 py-1 text-xs opacity-70 hover:opacity-100"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleEditMessage(msg.id, editContent)}
+                                                                className="px-2 py-1 bg-white/20 rounded text-xs hover:bg-white/30 font-bold"
+                                                            >
+                                                                Save
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm break-words whitespace-pre-wrap">{msg.content}</p>
+                                                )}
+
+                                                <p className="text-[10px] opacity-50 mt-1 flex items-center justify-end gap-1">
+                                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+
+                                                {/* Message Actions */}
+                                                {(msg.senderId === user.userId || isLeader) && !editingMessageId && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setMessageMenuId(messageMenuId === msg.id ? null : msg.id);
+                                                        }}
+                                                        className={`absolute -top-2 ${msg.senderId === user.userId ? '-left-2' : '-right-2'} p-1 rounded-full bg-white dark:bg-gray-800 shadow-md opacity-0 group-hover/message:opacity-100 transition-opacity`}
+                                                    >
+                                                        <MoreVertical className="w-3 h-3 text-gray-500" />
+                                                    </button>
+                                                )}
+
+                                                {/* Dropdown Menu */}
+                                                {messageMenuId === msg.id && (
+                                                    <div className={`absolute top-0 ${msg.senderId === user.userId ? 'right-full mr-2' : 'left-full ml-2'} bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-10 w-32 overflow-hidden animate-in fade-in zoom-in-95`}>
+                                                        {msg.senderId === user.userId && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    setEditingMessageId(msg.id);
+                                                                    setEditContent(msg.content);
+                                                                    setMessageMenuId(null);
+                                                                }}
+                                                                className="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-300"
+                                                            >
+                                                                <Pencil className="w-3 h-3" /> Edit
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => handleDeleteMessage(msg.id)}
+                                                            className="w-full text-left px-3 py-2 text-xs hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 text-red-600"
+                                                        >
+                                                            <Trash2 className="w-3 h-3" /> Delete
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                                <div ref={chatEndRef} />
+                            </div>
+
+                            {/* Input Area */}
+                            <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={chatInput}
+                                        onChange={(e) => setChatInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                sendChatMessage();
+                                            }
+                                        }}
+                                        placeholder="Type a message..."
+                                        className="flex-1 p-3 rounded-xl bg-gray-100 dark:bg-gray-900 border-0 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                        maxLength={500}
+                                    />
+                                    <button
+                                        onClick={sendChatMessage}
+                                        disabled={!chatInput.trim()}
+                                        className="p-3 bg-violet-600 text-white rounded-xl hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-violet-500/30"
+                                    >
+                                        <Send className="w-5 h-5" />
+                                    </button>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-500 mb-1">Description</label>
-                                    <textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} className="w-full p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-500 mb-1">Privacy</label>
-                                    <select value={editForm.isPublic ? 'public' : 'private'} onChange={e => setEditForm({ ...editForm, isPublic: e.target.value === 'public' })} className="w-full p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10">
-                                        <option value="public">Public</option>
-                                        <option value="private">Private (Invite Only)</option>
-                                    </select>
-                                </div>
-                                <div className="flex gap-4 pt-4">
-                                    <button type="button" onClick={() => setShowEdit(false)} className="flex-1 py-3 bg-gray-200 dark:bg-white/10 rounded-xl font-bold">Cancel</button>
-                                    <button type="submit" className="flex-1 py-3 bg-violet-600 text-white rounded-xl font-bold">Save</button>
-                                </div>
-                            </form>
+                            </div>
                         </div>
                     </div>
                 )}
 
-                {/* Invite Modal */}
-                {showInvite && (
-                    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl h-[80vh] flex flex-col">
-                            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Invite Members</h2>
-                            <div className="flex gap-2 mb-4">
-                                <input
-                                    placeholder="Search username..."
-                                    className="flex-1 p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10"
-                                    value={inviteQuery}
-                                    onChange={e => setInviteQuery(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && handleInviteSearch()}
-                                />
-                                <button onClick={handleInviteSearch} className="px-4 bg-violet-600 text-white rounded-xl font-bold">Search</button>
-                            </div>
-                            <div className="flex-1 overflow-y-auto space-y-2">
-                                {inviteResults.map(u => (
-                                    <div key={u.userId} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-black/20 rounded-xl">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                                                {u.avatar ? (
-                                                    <Avatar config={u.avatar} size="sm" className="w-full h-full" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center font-bold text-xs text-gray-500">
-                                                        {u.name.substring(0, 1)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <span className="font-bold text-gray-900 dark:text-white">{u.name}</span>
-                                        </div>
-                                        <button onClick={() => sendInvite(u.userId)} className="px-3 py-1 bg-violet-600 text-white rounded-lg text-sm font-bold">Invite</button>
+                {/* Edit Modal */}
+                {
+                    showEdit && (
+                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+                                <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Edit Clan</h2>
+                                <form onSubmit={handleUpdateClan} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-500 mb-1">Name</label>
+                                        <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10" />
                                     </div>
-                                ))}
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-500 mb-1">Description</label>
+                                        <textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} className="w-full p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-500 mb-1">Privacy</label>
+                                        <select value={editForm.isPublic ? 'public' : 'private'} onChange={e => setEditForm({ ...editForm, isPublic: e.target.value === 'public' })} className="w-full p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10">
+                                            <option value="public">Public</option>
+                                            <option value="private">Private (Invite Only)</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex gap-4 pt-4">
+                                        <button type="button" onClick={() => setShowEdit(false)} className="flex-1 py-3 bg-gray-200 dark:bg-white/10 rounded-xl font-bold">Cancel</button>
+                                        <button type="submit" className="flex-1 py-3 bg-violet-600 text-white rounded-xl font-bold">Save</button>
+                                    </div>
+                                </form>
                             </div>
-                            <button onClick={() => setShowInvite(false)} className="mt-4 w-full py-3 bg-gray-200 dark:bg-white/10 rounded-xl font-bold">Close</button>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )
+                }
+
+                {/* Invite Modal */}
+                {
+                    showInvite && (
+                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl h-[80vh] flex flex-col">
+                                <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Invite Members</h2>
+                                <div className="flex gap-2 mb-4">
+                                    <input
+                                        placeholder="Search username..."
+                                        className="flex-1 p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10"
+                                        value={inviteQuery}
+                                        onChange={e => setInviteQuery(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && handleInviteSearch()}
+                                    />
+                                    <button onClick={handleInviteSearch} className="px-4 bg-violet-600 text-white rounded-xl font-bold">Search</button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-2">
+                                    {inviteResults.map(u => (
+                                        <div key={u.userId} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-black/20 rounded-xl">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                                                    {u.avatar ? (
+                                                        <Avatar config={u.avatar} size="sm" className="w-full h-full" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center font-bold text-xs text-gray-500">
+                                                            {u.name.substring(0, 1)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <span className="font-bold text-gray-900 dark:text-white">{u.name}</span>
+                                            </div>
+                                            <button onClick={() => sendInvite(u.userId)} className="px-3 py-1 bg-violet-600 text-white rounded-lg text-sm font-bold">Invite</button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button onClick={() => setShowInvite(false)} className="mt-4 w-full py-3 bg-gray-200 dark:bg-white/10 rounded-xl font-bold">Close</button>
+                            </div>
+                        </div>
+                    )
+                }
+            </div >
         );
     }
 

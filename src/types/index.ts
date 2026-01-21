@@ -414,6 +414,8 @@ export interface Clan {
         userId: string;
         createdAt: string;
     }[];
+    announcements?: ClanAnnouncement[];
+    chatMessages?: ClanChatMessage[];
     createdAt: string;
 }
 
@@ -440,4 +442,21 @@ export interface Subject {
     materials: Material[];
     createdAt: string;
     oldQuestions?: any[];
+}
+
+export interface ClanAnnouncement {
+    id: string;
+    authorId: string;
+    authorName: string;
+    content: string;
+    isPinned: boolean;
+    createdAt: string;
+}
+
+export interface ClanChatMessage {
+    id: string;
+    senderId: string;
+    senderName: string;
+    content: string;
+    createdAt: string;
 }

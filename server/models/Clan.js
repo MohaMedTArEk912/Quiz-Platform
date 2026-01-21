@@ -25,6 +25,24 @@ const clanSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
   }],
 
+  announcements: [{
+    id: { type: String, required: true },
+    authorId: { type: String, required: true },
+    authorName: { type: String, required: true },
+    content: { type: String, required: true, maxlength: 500 },
+    isPinned: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now }
+  }],
+
+  // Chat messages (limited to last 100)
+  chatMessages: [{
+    id: { type: String, required: true },
+    senderId: { type: String, required: true },
+    senderName: { type: String, required: true },
+    content: { type: String, required: true, maxlength: 500 },
+    createdAt: { type: Date, default: Date.now }
+  }],
+
   settings: {
     minLevel: { type: Number, default: 1 },
     autoAccept: { type: Boolean, default: true }

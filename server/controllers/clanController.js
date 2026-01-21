@@ -24,7 +24,8 @@ export const createClan = async (req, res) => {
       description,
       leaderId: userId,
       isPublic: isPublic !== undefined ? isPublic : true,
-      members: [{ userId, role: 'leader', contribution: 0 }]
+      members: [{ userId, role: 'leader', contribution: 0 }],
+      announcements: []
     });
 
     await newClan.save();
@@ -405,3 +406,103 @@ export const updateMemberRole = async (req, res) => {
     }
 };
 
+export const createClanAnnouncement = async (req, res) => {
+    try {
+        const { clanId } = req.params;
+        const { content } = req.body;
+        const userId = req.user.userId;
+
+        const clan = await Clan.findOne({ clanId });
+        if (!clan) return res.status(404).json({ message: 'Clan not found' });
+
+        const member = clan.members.find(m => m.userId === userId);
+        if (!member || (member.role !== 'leader' && member.role !== 'elder')) {
+             return res.status(403).json({ message: 'Only leaders and elders can post announcements' });
+        }
+
+        const user = await User.findOne({ userId });
+
+        const newAnnouncement = {
+            id: crypto.randomUUID(),
+            authorId: userId,
+            authorName: user.name || 'Unknown',
+            content,
+            isPinned: false,
+            createdAt: new Date()
+        };
+
+        if (!clan.announcements) clan.announcements = [];
+        clan.announcements.unshift(newAnnouncement);
+        
+        // Limit to 50 announcements to prevent bloat
+        if (clan.announcements.length > 50) {
+            clan.announcements = clan.announcements.slice(0, 50);
+        }
+
+        await clan.save();
+        res.status(201).json(newAnnouncement);
+    } catch (error) {
+        res.status(500).json({ message: 'Error creating announcement', error: error.message });
+    }
+};
+
+export const deleteClanAnnouncement = async (req, res) => {
+    try {
+        const { clanId, announcementId } = req.params;
+        const userId = req.user.userId;
+
+        const clan = await Clan.findOne({ clanId });
+        if (!clan) return res.status(404).json({ message: 'Clan not found' });
+
+        const member = clan.members.find(m => m.userId === userId);
+        if (!member || (member.role !== 'leader' && member.role !== 'elder')) {
+             return res.status(403).json({ message: 'No permission' });
+        }
+
+        if (!clan.announcements) return res.status(404).json({ message: 'Announcement not found' });
+
+        const index = clan.announcements.findIndex(a => a.id === announcementId);
+        if (index === -1) return res.status(404).json({ message: 'Announcement not found' });
+
+        clan.announcements.splice(index, 1);
+        await clan.save();
+        res.json({ message: 'Announcement deleted' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting announcement', error: error.message });
+    }
+};
+
+export const pinClanAnnouncement = async (req, res) => {
+    try {
+        const { clanId, announcementId } = req.params;
+        const userId = req.user.userId;
+
+        const clan = await Clan.findOne({ clanId });
+        if (!clan) return res.status(404).json({ message: 'Clan not found' });
+
+        const member = clan.members.find(m => m.userId === userId);
+        if (!member || (member.role !== 'leader' && member.role !== 'elder')) {
+             return res.status(403).json({ message: 'No permission' });
+        }
+
+        if (!clan.announcements) return res.status(404).json({ message: 'Announcement not found' });
+
+        const announcement = clan.announcements.find(a => a.id === announcementId);
+        if (!announcement) return res.status(404).json({ message: 'Announcement not found' });
+
+        announcement.isPinned = !announcement.isPinned;
+        
+        // Sort: Pinned first, then by date
+        clan.announcements.sort((a, b) => {
+            if (a.isPinned === b.isPinned) {
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            }
+            return a.isPinned ? -1 : 1;
+        });
+
+        await clan.save();
+        res.json(announcement);
+    } catch (error) {
+        res.status(500).json({ message: 'Error toggling pin', error: error.message });
+    }
+};

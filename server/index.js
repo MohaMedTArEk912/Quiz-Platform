@@ -353,6 +353,117 @@ if (io) io.on('connection', (socket) => {
     }
   });
   
+  // ========== CLAN CHAT EVENTS ==========
+  socket.on('join_clan_chat', (clanId) => {
+    socket.join(`clan_${clanId}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`💬 User ${socket.userId} joined clan chat: ${clanId}`);
+    }
+  });
+
+  socket.on('send_clan_message', async ({ clanId, senderId, senderName, content }) => {
+    if (!clanId || !senderId || !content?.trim()) return;
+    
+    const message = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      senderId,
+      senderName,
+      content: content.trim().substring(0, 500), // Enforce max length
+      createdAt: new Date()
+    };
+
+    try {
+      // Import Clan model dynamically to avoid circular deps
+      const { Clan } = await import('./models/Clan.js');
+      
+      // Add message and keep only last 100
+      await Clan.updateOne(
+        { clanId },
+        {
+          $push: {
+            chatMessages: {
+              $each: [message],
+              $slice: -100 // Keep last 100 messages
+            }
+          }
+        }
+      );
+
+      // Broadcast to all clan members
+      io.to(`clan_${clanId}`).emit('new_clan_message', message);
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`💬 Chat message in clan ${clanId} from ${senderName}`);
+      }
+    } catch (error) {
+      console.error('❌ Failed to save clan message:', error.message);
+      socket.emit('chat_error', { message: 'Failed to send message' });
+    }
+  });
+
+  socket.on('edit_clan_message', async ({ clanId, messageId, newContent, userId }) => {
+    if (!clanId || !messageId || !newContent?.trim() || !userId) return;
+
+    try {
+      const { Clan } = await import('./models/Clan.js');
+      const clan = await Clan.findOne({ clanId });
+      if (!clan) return socket.emit('chat_error', { message: 'Clan not found' });
+
+      const message = clan.chatMessages.find(m => m.id === messageId);
+      if (!message) return socket.emit('chat_error', { message: 'Message not found' });
+
+      // Only sender can edit
+      if (message.senderId !== userId) {
+        return socket.emit('chat_error', { message: 'Cannot edit this message' });
+      }
+
+      message.content = newContent.trim().substring(0, 500);
+      await clan.save();
+
+      io.to(`clan_${clanId}`).emit('clan_message_edited', { messageId, newContent: message.content });
+    } catch (error) {
+      console.error('❌ Failed to edit clan message:', error.message);
+      socket.emit('chat_error', { message: 'Failed to edit message' });
+    }
+  });
+
+  socket.on('delete_clan_message', async ({ clanId, messageId, userId }) => {
+    if (!clanId || !messageId || !userId) return;
+
+    try {
+      const { Clan } = await import('./models/Clan.js');
+      const clan = await Clan.findOne({ clanId });
+      if (!clan) return socket.emit('chat_error', { message: 'Clan not found' });
+
+      const message = clan.chatMessages.find(m => m.id === messageId);
+      if (!message) return socket.emit('chat_error', { message: 'Message not found' });
+
+      // Sender can delete own, Leader can delete any
+      const isLeader = clan.leaderId === userId;
+      const isSender = message.senderId === userId;
+      
+      if (!isLeader && !isSender) {
+        return socket.emit('chat_error', { message: 'Cannot delete this message' });
+      }
+
+      clan.chatMessages = clan.chatMessages.filter(m => m.id !== messageId);
+      await clan.save();
+
+      io.to(`clan_${clanId}`).emit('clan_message_deleted', { messageId });
+    } catch (error) {
+      console.error('❌ Failed to delete clan message:', error.message);
+      socket.emit('chat_error', { message: 'Failed to delete message' });
+    }
+  });
+
+  socket.on('leave_clan_chat', (clanId) => {
+    socket.leave(`clan_${clanId}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`💬 User ${socket.userId} left clan chat: ${clanId}`);
+    }
+  });
+  // ========== END CLAN CHAT ==========
+  
   socket.on('disconnect', (reason) => {
     if (process.env.NODE_ENV !== 'production') {
       console.log('❌ Client disconnected:', socket.id, 'Reason:', reason);

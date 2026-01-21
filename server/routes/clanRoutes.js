@@ -1,6 +1,6 @@
 import express from 'express';
 import { verifyUser } from '../middleware/authMiddleware.js';
-import { createClan, getClan, searchClans, joinClan, leaveClan, getClanLeaderboard, updateClan, inviteToClan, respondToClanInvite, handleJoinRequest, kickMember, updateMemberRole } from '../controllers/clanController.js';
+import { createClan, getClan, searchClans, joinClan, leaveClan, getClanLeaderboard, updateClan, inviteToClan, respondToClanInvite, handleJoinRequest, kickMember, updateMemberRole, createClanAnnouncement, deleteClanAnnouncement, pinClanAnnouncement } from '../controllers/clanController.js';
 
 const router = express.Router();
 
@@ -16,6 +16,9 @@ router.post('/respond-invite', verifyUser, respondToClanInvite);
 router.post('/join-request', verifyUser, handleJoinRequest);
 router.post('/kick', verifyUser, kickMember);
 router.put('/role', verifyUser, updateMemberRole);
+router.post('/:clanId/announcements', verifyUser, createClanAnnouncement);
+router.delete('/:clanId/announcements/:announcementId', verifyUser, deleteClanAnnouncement);
+router.put('/:clanId/announcements/:announcementId/pin', verifyUser, pinClanAnnouncement);
 
 export default router;
 
