@@ -44,7 +44,7 @@ const SocialPage: React.FC = () => {
                     // We need to resolve opponent name/data for the VS page
                     const opponent = allUsers.find(u => u.userId === selectedFriendId);
 
-                    navigate('/vs-game', {
+                    navigate('/game/vs', {
                         state: {
                             quizId,
                             opponent: {
@@ -137,7 +137,7 @@ const SocialPage: React.FC = () => {
                             if ((c as any).type === 'live') {
                                 // Join Live Game
                                 const opponent = allUsers.find(u => u.userId === c.fromId);
-                                navigate('/vs-game', {
+                                navigate('/game/vs', {
                                     state: {
                                         quizId: c.quizId,
                                         opponent: {

@@ -238,7 +238,9 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
                     powerUps={powerUps || currentUser.powerUps}
                     onPowerUpUsed={onPowerUpUsed}
                     embedded={true}
-                    mustAnswerCorrectly={true}
+                    mustAnswerCorrectly={false}
+                    countUpTimer={true}
+                    delayedValidation={true}
                     onComplete={(res) => {
                         localResultRef.current = res;
                         setGameState('finished');
@@ -334,7 +336,7 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
 
                         {/* Opponent Marker */}
                         <div
-                            className="absolute top-1/2 -translate-y-1/2 transition-all duration-700 ease-out z-10"
+                            className="absolute top-1/2 -translate-y-1/2 transition-all duration-700 ease-out z-20"
                             style={{ left: `${getProgressPercent(opponentState.currentQuestion)}%` }}
                         >
                             <div className="relative -top-6 -translate-x-1/2 flex flex-col items-center">
@@ -343,9 +345,15 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
                             </div>
                         </div>
 
+                        {/* Track Fill for Opponent */}
+                        <div
+                            className="absolute top-0 left-0 h-full bg-red-500/20 rounded-full transition-all duration-700 z-0"
+                            style={{ width: `${getProgressPercent(opponentState.currentQuestion)}%` }}
+                        />
+
                         {/* My Marker */}
                         <div
-                            className="absolute top-1/2 -translate-y-1/2 transition-all duration-300 ease-out z-20"
+                            className="absolute top-1/2 -translate-y-1/2 transition-all duration-300 ease-out z-30"
                             style={{ left: `${getProgressPercent(myProgress)}%` }}
                         >
                             <div className="relative 6 -translate-x-1/2 flex flex-col items-center mt-8">
@@ -354,10 +362,10 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
                             </div>
                         </div>
 
-                        {/* Track Fill for Opponent */}
+                        {/* Track Fill for Me */}
                         <div
-                            className="absolute top-0 left-0 h-full bg-red-500/20 rounded-full transition-all duration-700"
-                            style={{ width: `${getProgressPercent(opponentState.currentQuestion)}%` }}
+                            className="absolute top-0 left-0 h-full bg-indigo-500/40 rounded-full transition-all duration-300 z-10"
+                            style={{ width: `${getProgressPercent(myProgress)}%` }}
                         />
                     </div>
                 </div>

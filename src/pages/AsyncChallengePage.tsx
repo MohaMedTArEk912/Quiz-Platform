@@ -9,7 +9,7 @@ import type { ChallengeData, QuizResult } from '../types';
 const AsyncChallengePage: React.FC = () => {
     const { token } = useParams<{ token: string }>();
     const { currentUser, updateUser } = useAuth();
-    const { availableQuizzes, refreshData } = useData();
+    const { availableQuizzes, refreshData, loadingQuizzes } = useData();
     const navigate = useNavigate();
     const [challengeData, setChallengeData] = useState<ChallengeData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -97,12 +97,34 @@ const AsyncChallengePage: React.FC = () => {
         }
     };
 
-    if (loading) return <div>Loading Challenge...</div>;
-    if (error) return <div>Error: {error}</div>;
+    if (loading || loadingQuizzes) return (
+        <div className="flex items-center justify-center min-h-screen">
+            <div className="text-xl">Loading Challenge...</div>
+        </div>
+    );
+
+    if (error) return (
+        <div className="flex items-center justify-center min-h-screen">
+            <div className="text-red-500 text-xl">Error: {error}</div>
+        </div>
+    );
+
     if (!challengeData) return null;
 
     const quiz = availableQuizzes.find(q => q.id === challengeData.quizId || q._id === challengeData.quizId);
-    if (!quiz) return <div>Quiz data not available.</div>;
+
+    if (!quiz) return (
+        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+            <div className="text-xl text-yellow-400">Quiz data not available.</div>
+            <p className="text-gray-400">The quiz for this challenge might have been deleted or is not accessible.</p>
+            <button
+                onClick={() => navigate('/')}
+                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 transition"
+            >
+                Return to Home
+            </button>
+        </div>
+    );
 
     return (
         <QuizTaking

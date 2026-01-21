@@ -20,6 +20,7 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Partial<UserData>[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     // Build a comprehensive friend ID set from:
@@ -58,6 +59,9 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
     };
 
     const sendRequest = async (targetId: string) => {
+        if (processingIds.has(targetId)) return;
+
+        setProcessingIds(prev => new Set(prev).add(targetId));
         try {
             await api.sendFriendRequest(targetId);
             setMessage({ type: 'success', text: 'Friend request sent!' });
@@ -66,6 +70,12 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
         } catch (error) {
             setMessage({ type: 'error', text: (error as Error).message });
             setTimeout(() => setMessage(null), 3000);
+        } finally {
+            setProcessingIds(prev => {
+                const next = new Set(prev);
+                next.delete(targetId);
+                return next;
+            });
         }
     };
 
@@ -271,9 +281,17 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                             ) : (
                                                 <button
                                                     onClick={() => sendRequest(user.userId!)}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 text-purple-400 rounded-xl hover:bg-purple-600/30 border border-purple-500/30 font-bold text-sm transition-all"
+                                                    disabled={processingIds.has(user.userId!)}
+                                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${processingIds.has(user.userId!)
+                                                        ? 'bg-gray-100 text-gray-400 cursor-wait'
+                                                        : 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 border border-purple-500/30'
+                                                        }`}
                                                 >
-                                                    <UserPlus className="w-4 h-4" />
+                                                    {processingIds.has(user.userId!) ? (
+                                                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                    ) : (
+                                                        <UserPlus className="w-4 h-4" />
+                                                    )}
                                                     ADD
                                                 </button>
                                             )}
