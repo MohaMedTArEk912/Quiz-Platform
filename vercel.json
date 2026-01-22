@@ -13,7 +13,15 @@
       }
     },
     {
-      "src": "/(pwa-.*\\.png|favicon\\.ico|apple-touch-icon\\.png|mask-icon\\.svg|manifest\\.webmanifest|sw\\.js|workbox-.*\\.js)",
+      "src": "/(sw\\.js|workbox-.*\\.js|manifest\\.webmanifest)",
+      "dest": "/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Service-Worker-Allowed": "/"
+      }
+    },
+    {
+      "src": "/(pwa-.*\\.png|favicon\\.ico|apple-touch-icon\\.png|mask-icon\\.svg)",
       "dest": "/$1",
       "headers": {
         "Cache-Control": "public, max-age=86400"
@@ -72,7 +80,8 @@
         "X-Frame-Options": "DENY",
         "X-XSS-Protection": "1; mode=block",
         "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
-        "Referrer-Policy": "strict-origin-when-cross-origin"
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Cache-Control": "public, max-age=0, must-revalidate"
       }
     }
   ],

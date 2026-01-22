@@ -53,6 +53,7 @@
     "react-zoom-pan-pinch": "^3.7.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
+    "tailwindcss-animate": "^1.0.7",
     "vite-plugin-pwa": "^1.2.0",
     "workbox-window": "^7.4.0",
     "xss-clean": "^0.1.4",

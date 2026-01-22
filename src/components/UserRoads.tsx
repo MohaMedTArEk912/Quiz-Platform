@@ -462,7 +462,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes, subjects, user, attempts
                         {/* Tab Content */}
                         <div className="min-h-[400px]">
                             {activeTab === 'overview' && (
-                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 grid grid-cols-1 xl:grid-cols-3 gap-8">
+                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
                                     <div className="xl:col-span-2 space-y-6">
                                         <div className="bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/20 dark:border-white/5">
                                             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
@@ -513,7 +513,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes, subjects, user, attempts
                                                 <div className="space-y-4">
                                                     {moduleMilestones.slice(0, 6).map((milestone) => (
                                                         <div key={milestone.index} className="flex items-center gap-4">
-                                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black uppercase ${milestone.status === 'done'
+                                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black uppercase shrink-0 ${milestone.status === 'done'
                                                                 ? 'bg-emerald-500/10 text-emerald-500'
                                                                 : milestone.status === 'current'
                                                                     ? 'bg-indigo-500/10 text-indigo-500'
@@ -521,10 +521,10 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes, subjects, user, attempts
                                                                 }`}>
                                                                 {milestone.status === 'done' ? <CheckCircle className="w-5 h-5" /> : milestone.index + 1}
                                                             </div>
-                                                            <div className="flex-1">
-                                                                <div className="flex items-center justify-between">
-                                                                    <p className="text-sm font-black text-gray-900 dark:text-white">{milestone.title}</p>
-                                                                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{milestone.status === 'done' ? 'Done' : milestone.status === 'current' ? 'In Progress' : 'Locked'}</span>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <p className="text-sm font-black text-gray-900 dark:text-white truncate">{milestone.title}</p>
+                                                                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 shrink-0">{milestone.status === 'done' ? 'Done' : milestone.status === 'current' ? 'In Progress' : 'Locked'}</span>
                                                                 </div>
                                                                 <div className="w-full h-1.5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden mt-2">
                                                                     <div className={`h-full ${milestone.status === 'done'
