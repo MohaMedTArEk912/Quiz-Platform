@@ -307,7 +307,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes, subjects, user, attempts
                                     </p>
                                 </div>
                             </div>
-                            <div className="px-4 py-2 bg-white text-indigo-600 rounded-xl font-bold text-sm">View</div>
+                            <div className="px-4 py-2 bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white rounded-xl font-bold text-sm">View</div>
                         </div>
                     </div>
                 )}
@@ -553,7 +553,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes, subjects, user, attempts
                                             <div className="flex flex-col gap-3">
                                                 <button
                                                     onClick={() => nextQuiz && !isQuizLocked(nextQuiz) ? onSelectQuiz(nextQuiz) : setActiveTab('quizzes')}
-                                                    className="w-full py-4 bg-white text-indigo-700 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-transform"
+                                                    className="w-full py-4 bg-white dark:bg-indigo-600 text-indigo-700 dark:text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-transform"
                                                     disabled={!nextQuiz}
                                                 >
                                                     {nextQuiz && !isQuizLocked(nextQuiz) ? 'Start Next Quiz' : 'View Quizzes'}

@@ -411,46 +411,46 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                         >
                                             <div
                                                 className={`h-full w-full rounded-xl border bg-gradient-to-br ${isLocked
-                                                    ? 'from-slate-950 to-slate-900 opacity-60 cursor-not-allowed'
-                                                    : 'from-slate-900 to-slate-800 cursor-pointer hover:shadow-xl'
+                                                    ? 'from-gray-200 to-gray-300 dark:from-slate-950 dark:to-slate-900 opacity-60 cursor-not-allowed'
+                                                    : 'from-white to-gray-50 dark:from-slate-900 dark:to-slate-800 cursor-pointer hover:shadow-xl'
                                                     } flex flex-col transition-all duration-300 ${borderClass} shadow-lg`}
                                                 onClick={handleModuleClick}
                                                 role="button"
                                                 aria-disabled={isLocked}
                                                 tabIndex={isLocked ? -1 : 0}
                                             >
-                                                <div className={`px-6 py-4 flex items-center justify-between border-b border-slate-700/50`}>
+                                                <div className={`px-6 py-4 flex items-center justify-between border-b border-gray-200 dark:border-slate-700/50`}>
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`w-2 h-2 rounded-full ${isLocked ? 'bg-slate-600'
+                                                        <div className={`w-2 h-2 rounded-full ${isLocked ? 'bg-gray-400 dark:bg-slate-600'
                                                             : isOptional ? 'bg-emerald-500'
                                                                 : isAchievement ? 'bg-amber-500'
                                                                     : 'bg-indigo-500'
                                                             }`} />
-                                                        <span className={`text-xs font-semibold uppercase tracking-wider ${isLocked ? 'text-slate-600' : 'text-slate-400'}`}>
+                                                        <span className={`text-xs font-semibold uppercase tracking-wider ${isLocked ? 'text-gray-400 dark:text-slate-600' : 'text-gray-500 dark:text-slate-400'}`}>
                                                             {module.type || 'core'}
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center gap-2 text-xs font-semibold">
-                                                        {isLocked && <LockIcon className="w-4 h-4 text-slate-500" />}
+                                                        {isLocked && <LockIcon className="w-4 h-4 text-gray-400 dark:text-slate-500" />}
                                                         {isCompleted && <Check className="w-4 h-4 text-emerald-500" />}
                                                         <span className={numberColorClass}>#{moduleNumber}</span>
                                                     </div>
                                                 </div>
 
                                                 <div className="flex-1 px-6 py-4 flex flex-col gap-2.5">
-                                                    <h4 className={`font-semibold text-sm leading-tight line-clamp-2 ${isLocked ? 'text-slate-500' : 'text-white'}`}>
+                                                    <h4 className={`font-semibold text-sm leading-tight line-clamp-2 ${isLocked ? 'text-gray-500 dark:text-slate-500' : 'text-gray-900 dark:text-white'}`}>
                                                         {module.title}
                                                     </h4>
-                                                    <p className={`text-xs leading-relaxed line-clamp-2 ${isLocked ? 'text-slate-600' : 'text-slate-400'}`}>
+                                                    <p className={`text-xs leading-relaxed line-clamp-2 ${isLocked ? 'text-gray-400 dark:text-slate-600' : 'text-gray-600 dark:text-slate-400'}`}>
                                                         {isLocked ? 'Complete previous modules to unlock' : (module.description || 'Keep going to unlock the next milestone.')}
                                                     </p>
                                                 </div>
 
-                                                <div className="px-6 py-3 border-t border-slate-700/50 flex items-center justify-between bg-slate-900/50">
-                                                    <span className="text-xs text-slate-500 uppercase tracking-wider font-medium">Level {moduleNumber}</span>
-                                                    <span className={`text-xs font-semibold uppercase tracking-wider ${isLocked ? 'text-slate-600'
+                                                <div className="px-6 py-3 border-t border-gray-200 dark:border-slate-700/50 flex items-center justify-between bg-gray-50 dark:bg-slate-900/50">
+                                                    <span className="text-xs text-gray-500 dark:text-slate-500 uppercase tracking-wider font-medium">Level {moduleNumber}</span>
+                                                    <span className={`text-xs font-semibold uppercase tracking-wider ${isLocked ? 'text-gray-400 dark:text-slate-600'
                                                         : isCompleted ? 'text-emerald-500'
-                                                            : 'text-indigo-400'
+                                                            : 'text-indigo-600 dark:text-indigo-400'
                                                         }`}>
                                                         {isLocked ? '🔒 Locked' : status}
                                                     </span>
@@ -564,7 +564,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                         style={{ left: item.x, top: item.y, width: boxWidth, height: boxHeight, pointerEvents: 'auto' }}
                                     >
                                         <div
-                                            className={`h-full w-full rounded-xl border bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col transition-all duration-300 ${borderClass} shadow-lg hover:shadow-xl ${!readOnly && viewMode === 'admin' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${selectedNodeId === module.moduleId ? 'ring-2 ring-indigo-500' : ''} ${draggedModuleId === module.moduleId ? 'opacity-75' : ''}`}
+                                            className={`h-full w-full rounded-xl border bg-gradient-to-br from-white to-gray-50 dark:from-slate-900 dark:to-slate-800 flex flex-col transition-all duration-300 ${borderClass} shadow-lg hover:shadow-xl ${!readOnly && viewMode === 'admin' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${selectedNodeId === module.moduleId ? 'ring-2 ring-indigo-500' : ''} ${draggedModuleId === module.moduleId ? 'opacity-75' : ''}`}
                                             onMouseDown={(e) => {
                                                 if (!readOnly && viewMode === 'admin') {
                                                     handleModuleMouseDown(module.moduleId, e);
@@ -577,10 +577,10 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                                 }
                                             }}
                                         >
-                                            <div className={`px-6 py-4 flex items-center justify-between border-b border-slate-700/50`}>
+                                            <div className={`px-6 py-4 flex items-center justify-between border-b border-gray-200 dark:border-slate-700/50`}>
                                                 <div className="flex items-center gap-3">
                                                     <div className={`w-2 h-2 rounded-full ${isOptional ? 'bg-emerald-500' : isAchievement ? 'bg-amber-500' : 'bg-indigo-500'}`} />
-                                                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{module.type || 'core'}</span>
+                                                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{module.type || 'core'}</span>
                                                 </div>
                                                 <div className="flex items-center gap-2 text-xs font-semibold">
                                                     {isCompleted && <Check className="w-4 h-4 text-emerald-500" />}
@@ -589,13 +589,13 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                             </div>
 
                                             <div className="flex-1 px-6 py-4 flex flex-col gap-2.5">
-                                                <h4 className="text-white font-semibold text-sm leading-tight line-clamp-2">{module.title}</h4>
-                                                <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{module.description || 'Keep going to unlock the next milestone.'}</p>
+                                                <h4 className="text-gray-900 dark:text-white font-semibold text-sm leading-tight line-clamp-2">{module.title}</h4>
+                                                <p className="text-xs text-gray-600 dark:text-slate-400 leading-relaxed line-clamp-2">{module.description || 'Keep going to unlock the next milestone.'}</p>
                                             </div>
 
-                                            <div className="px-6 py-3 border-t border-slate-700/50 flex items-center justify-between bg-slate-900/50">
-                                                <span className="text-xs text-slate-500 uppercase tracking-wider font-medium">Level {moduleNumber}</span>
-                                                <span className={`text-xs font-semibold uppercase tracking-wider ${isCompleted ? 'text-emerald-500' : 'text-slate-500'}`}>{status}</span>
+                                            <div className="px-6 py-3 border-t border-gray-200 dark:border-slate-700/50 flex items-center justify-between bg-gray-50 dark:bg-slate-900/50">
+                                                <span className="text-xs text-gray-500 dark:text-slate-500 uppercase tracking-wider font-medium">Level {moduleNumber}</span>
+                                                <span className={`text-xs font-semibold uppercase tracking-wider ${isCompleted ? 'text-emerald-500' : 'text-gray-500 dark:text-slate-500'}`}>{status}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -818,15 +818,15 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-indigo-500" /></div>;
 
     return (
-        <div className="flex flex-col h-[calc(100vh-160px)] relative bg-[#0B0E1A] rounded-3xl border border-white/5 overflow-hidden">
+        <div className="flex flex-col h-[calc(100vh-160px)] relative bg-gray-100 dark:bg-[#0B0E1A] rounded-3xl border border-gray-200 dark:border-white/5 overflow-hidden">
 
             {/* --- Enhanced Toolbar --- */}
             {!readOnly && (
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-6 font-sans pointer-events-none">
                     <div className="pointer-events-auto flex flex-col gap-6">
                         {/* Creation Tools */}
-                        <div className="bg-[#1a1a2e]/90 backdrop-blur-xl rounded-2xl border border-white/10 p-3 shadow-2xl flex flex-col gap-3 w-16 items-center">
-                            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Add</div>
+                        <div className="bg-white dark:bg-[#1a1a2e]/90 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 p-3 shadow-2xl flex flex-col gap-3 w-16 items-center">
+                            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-wider mb-1">Add</div>
 
                             <button onClick={() => handleCreateNode(NodeType.CORE)} title="Add Core Module" className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white flex items-center justify-center transition-all shadow-sm">
                                 <Zap size={20} />
@@ -842,24 +842,24 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                         </div>
 
                         {/* Utility Tools */}
-                        <div className="bg-[#1a1a2e]/90 backdrop-blur-xl rounded-2xl border border-white/10 p-3 shadow-2xl flex flex-col gap-3 w-16 items-center">
-                            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Tools</div>
+                        <div className="bg-white dark:bg-[#1a1a2e]/90 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 p-3 shadow-2xl flex flex-col gap-3 w-16 items-center">
+                            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-wider mb-1">Tools</div>
 
-                            <button onClick={handleRedesign} title="Redesign Layout" className="w-12 h-12 rounded-xl hover:bg-pink-500/20 text-pink-400 hover:text-pink-300 flex items-center justify-center transition-all bg-white/5 border border-white/5">
+                            <button onClick={handleRedesign} title="Redesign Layout" className="w-12 h-12 rounded-xl hover:bg-pink-500/20 text-pink-600 dark:text-pink-400 hover:text-pink-500 dark:hover:text-pink-300 flex items-center justify-center transition-all bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/5">
                                 <BrainCircuit size={20} />
                             </button>
 
-                            <button onClick={() => setViewMode(v => v === 'admin' ? 'user' : 'admin')} title="Toggle Preview" className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${viewMode === 'user' ? 'bg-cyan-500 text-white shadow-cyan-500/20 shadow-lg' : 'hover:bg-white/10 text-gray-400 hover:text-white'}`}>
+                            <button onClick={() => setViewMode(v => v === 'admin' ? 'user' : 'admin')} title="Toggle Preview" className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${viewMode === 'user' ? 'bg-cyan-500 text-white shadow-cyan-500/20 shadow-lg' : 'hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}>
                                 <Eye size={20} />
                             </button>
 
-                            <button onClick={() => setIsImportModalOpen(true)} title="Import JSON" className="w-12 h-12 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-all">
+                            <button onClick={() => setIsImportModalOpen(true)} title="Import JSON" className="w-12 h-12 rounded-xl hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center justify-center transition-all">
                                 <FileJson size={20} />
                             </button>
 
-                            <div className="h-[1px] w-10 bg-white/10 my-1" />
+                            <div className="h-[1px] w-10 bg-gray-300 dark:bg-white/10 my-1" />
 
-                            <button onClick={handleSave} disabled={saving} title="Save Changes" className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-lg ${saving ? 'text-gray-500 bg-white/5' : 'bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white shadow-green-500/20'}`}>
+                            <button onClick={handleSave} disabled={saving} title="Save Changes" className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-lg ${saving ? 'text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-white/5' : 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-500 hover:text-white shadow-green-500/20'}`}>
                                 {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
                             </button>
                         </div>
@@ -910,9 +910,9 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
             {/* Module Details Dialog */}
             {isModuleDetailsOpen && selectedModuleForDetails && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsModuleDetailsOpen(false)}>
-                    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl border border-slate-700 max-w-2xl w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-gradient-to-br from-white to-gray-50 dark:from-slate-900 dark:to-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 max-w-2xl w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
                         {/* Header */}
-                        <div className="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
+                        <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className={`w-3 h-3 rounded-full ${selectedModuleForDetails.type === 'optional' ? 'bg-emerald-500' :
                                     selectedModuleForDetails.type === 'achievement' ? 'bg-amber-500' :
@@ -934,30 +934,30 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                         <div className="px-6 py-4 overflow-y-auto max-h-[calc(80vh-140px)]">
                             {/* Description */}
                             <div className="mb-6">
-                                <p className="text-slate-300 leading-relaxed">{selectedModuleForDetails.description || 'No description available.'}</p>
+                                <p className="text-gray-700 dark:text-slate-300 leading-relaxed">{selectedModuleForDetails.description || 'No description available.'}</p>
                             </div>
 
                             {/* Info Cards */}
                             <div className="grid grid-cols-3 gap-3 mb-6">
-                                <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
-                                    <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Level</div>
-                                    <div className="text-lg font-bold text-white">{(selectedModuleForDetails.level ?? 0) + 1}</div>
+                                <div className="bg-gray-100 dark:bg-slate-800/50 rounded-lg p-3 border border-gray-200 dark:border-slate-700/50">
+                                    <div className="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Level</div>
+                                    <div className="text-lg font-bold text-gray-900 dark:text-white">{(selectedModuleForDetails.level ?? 0) + 1}</div>
                                 </div>
-                                <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
-                                    <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Type</div>
-                                    <div className="text-lg font-bold text-white capitalize">{selectedModuleForDetails.type || 'core'}</div>
+                                <div className="bg-gray-100 dark:bg-slate-800/50 rounded-lg p-3 border border-gray-200 dark:border-slate-700/50">
+                                    <div className="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Type</div>
+                                    <div className="text-lg font-bold text-gray-900 dark:text-white capitalize">{selectedModuleForDetails.type || 'core'}</div>
                                 </div>
-                                <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
-                                    <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">XP Reward</div>
-                                    <div className="text-lg font-bold text-amber-400">{selectedModuleForDetails.xpReward || 0}</div>
+                                <div className="bg-gray-100 dark:bg-slate-800/50 rounded-lg p-3 border border-gray-200 dark:border-slate-700/50">
+                                    <div className="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">XP Reward</div>
+                                    <div className="text-lg font-bold text-amber-600 dark:text-amber-400">{selectedModuleForDetails.xpReward || 0}</div>
                                 </div>
                             </div>
 
                             {/* Quizzes Section */}
                             {selectedModuleForDetails.quizIds && selectedModuleForDetails.quizIds.length > 0 && (
                                 <div className="mb-6">
-                                    <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                                        <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
                                         Quizzes to Complete
@@ -969,17 +969,17 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                             const isQuizCompleted = userProgress?.completedModules?.includes(quizId) || false;
                                             
                                             return (
-                                                <div key={quizId} className={`bg-slate-800/50 rounded-lg p-3 border transition-all ${
-                                                    isQuizCompleted ? 'border-emerald-500/40 bg-emerald-900/10' : 'border-slate-700/50'
+                                                <div key={quizId} className={`bg-gray-100 dark:bg-slate-800/50 rounded-lg p-3 border transition-all ${
+                                                    isQuizCompleted ? 'border-emerald-500/40 bg-emerald-50 dark:bg-emerald-900/10' : 'border-gray-200 dark:border-slate-700/50'
                                                 }`}>
                                                     <div className="flex items-center gap-3">
                                                         <div className={`w-2 h-2 rounded-full ${isQuizCompleted ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
                                                         <div className="flex-1">
-                                                            <div className={`text-sm font-medium ${isQuizCompleted ? 'text-emerald-400 line-through' : 'text-white'}`}>
+                                                            <div className={`text-sm font-medium ${isQuizCompleted ? 'text-emerald-600 dark:text-emerald-400 line-through' : 'text-gray-900 dark:text-white'}`}>
                                                                 {quiz?.title || quizId}
                                                             </div>
                                                             {quiz?.description && (
-                                                                <div className="text-xs text-slate-400 mt-0.5">{quiz.description}</div>
+                                                                <div className="text-xs text-gray-600 dark:text-slate-400 mt-0.5">{quiz.description}</div>
                                                             )}
                                                         </div>
                                                         <div className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${
@@ -1000,8 +1000,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                             {/* Sub-Modules Section */}
                             {selectedModuleForDetails.subModules && selectedModuleForDetails.subModules.length > 0 && (
                                 <div>
-                                    <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                                        <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                         </svg>
                                         Sub-Modules
@@ -1016,7 +1016,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                             return (
                                                 <div
                                                     key={subModule.id}
-                                                    className={`bg-slate-800/50 rounded-lg p-3 border transition-all ${isCompleted ? 'border-emerald-500/40 bg-emerald-900/10' : 'border-slate-700/50'
+                                                    className={`bg-gray-100 dark:bg-slate-800/50 rounded-lg p-3 border transition-all ${isCompleted ? 'border-emerald-500/40 bg-emerald-50 dark:bg-emerald-900/10' : 'border-gray-200 dark:border-slate-700/50'
                                                         } ${isSaving ? 'opacity-70' : ''}`}
                                                 >
                                                     <div className="flex items-center gap-3">

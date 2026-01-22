@@ -236,7 +236,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
 
             <div className="flex gap-2">
                 <button onClick={onSave} className="flex-1 py-2 bg-green-600 text-white rounded-lg">Save</button>
-                <button onClick={onCancel} className="flex-1 py-2 bg-gray-600 text-white rounded-lg">Cancel</button>
+                <button onClick={onCancel} className="flex-1 py-2 bg-gray-600 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors">Cancel</button>
             </div>
         </div>
     );

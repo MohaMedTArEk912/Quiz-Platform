@@ -253,7 +253,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
 
                                         {/* Mini Progress Bar in Card (if active) */}
                                         {!isLocked && !isCompleted && progressPercent > 0 && (
-                                            <div className="mt-4 w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                            <div className="mt-4 w-full h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
                                                 <div
                                                     className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
                                                     style={{ width: `${progressPercent}%` }}
@@ -276,8 +276,8 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
 
             {/* Module Details Modal */}
             {isDetailsOpen && selectedModule && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-2xl bg-[#1e1e2d] rounded-3xl border border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-2xl bg-white dark:bg-[#1e1e2d] rounded-3xl border border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
                         {(() => {
                             const { progressPercent, completedItems, totalItems, moduleQuizzes } = getModuleDetails(selectedModule);
                             const { isCompleted } = computeStatus(selectedModule);
@@ -285,27 +285,27 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                             return (
                                 <>
                                     {/* Header */}
-                                    <div className="p-8 border-b border-white/10 bg-white/5 relative overflow-hidden flex-shrink-0">
+                                    <div className="p-8 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 relative overflow-hidden flex-shrink-0">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-bl-full -mr-8 -mt-8 pointer-events-none" />
 
                                         <div className="flex items-start justify-between relative z-10 mb-4">
                                             <div>
                                                 <div className="flex items-center gap-3 mb-3">
-                                                    <div className="px-2 py-1 bg-indigo-500/10 rounded-lg text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">
+                                                    <div className="px-2 py-1 bg-indigo-500/10 rounded-lg text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">
                                                         Module {(selectedModule.level ?? 0) + 1}
                                                     </div>
                                                     {isCompleted && (
-                                                        <div className="px-2 py-1 bg-emerald-500/10 rounded-lg text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
+                                                        <div className="px-2 py-1 bg-emerald-500/10 rounded-lg text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
                                                             Completed
                                                         </div>
                                                     )}
                                                 </div>
-                                                <h2 className="text-2xl font-black text-white mb-2">{selectedModule.title}</h2>
-                                                <p className="text-gray-400 font-medium">{selectedModule.description}</p>
+                                                <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{selectedModule.title}</h2>
+                                                <p className="text-gray-600 dark:text-gray-400 font-medium">{selectedModule.description}</p>
                                             </div>
                                             <button
                                                 onClick={() => setIsDetailsOpen(false)}
-                                                className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors"
+                                                className="p-2 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                                             >
                                                 <X className="w-5 h-5" />
                                             </button>
@@ -313,11 +313,11 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
 
                                         {/* Progress Loader */}
                                         <div className="space-y-2">
-                                            <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-gray-400">
+                                            <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">
                                                 <span>Progress</span>
                                                 <span>{completedItems}/{totalItems} Steps</span>
                                             </div>
-                                            <div className="w-full h-3 bg-black/40 rounded-full overflow-hidden border border-white/5">
+                                            <div className="w-full h-3 bg-gray-200 dark:bg-black/40 rounded-full overflow-hidden border border-gray-300 dark:border-white/5">
                                                 <div
                                                     className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-700 ease-out"
                                                     style={{ width: `${progressPercent}%` }}
@@ -331,7 +331,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
 
                                         {/* Learning Steps (Sub-modules) */}
                                         <div className="space-y-4">
-                                            <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                            <h3 className="text-sm font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                                 <Layout className="w-4 h-4" /> Learning Steps
                                             </h3>
 
@@ -347,7 +347,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                                             group flex items-start gap-4 p-4 rounded-2xl border transition-all
                                                             ${isSubCompleted
                                                                 ? 'bg-emerald-500/5 border-emerald-500/10'
-                                                                : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'}
+                                                                : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-white/10'}
                                                         `}
                                                     >
                                                         <button
@@ -357,7 +357,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                                                 mt-1 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0
                                                                 ${isSubCompleted
                                                                     ? 'bg-emerald-500 border-emerald-500'
-                                                                    : 'border-gray-500 hover:border-indigo-500 hover:bg-indigo-500/20'}
+                                                                    : 'border-gray-400 dark:border-gray-500 hover:border-indigo-500 hover:bg-indigo-500/20'}
                                                             `}
                                                         >
                                                             {isSubCompleted && <Check className="w-3.5 h-3.5 text-white" />}
@@ -365,7 +365,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
 
                                                         <div className="flex-1">
                                                             <div className="flex items-center justify-between mb-1">
-                                                                <h4 className={`font-bold ${isSubCompleted ? 'text-gray-400 line-through' : 'text-white'}`}>
+                                                                <h4 className={`font-bold ${isSubCompleted ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
                                                                     {sub.title}
                                                                 </h4>
                                                                 <div className="flex items-center gap-2">
@@ -376,9 +376,9 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            <div className="flex items-center gap-4 text-xs font-medium text-gray-500">
+                                                            <div className="flex items-center gap-4 text-xs font-medium text-gray-500 dark:text-gray-500">
                                                                 {sub.videoUrl && (
-                                                                    <a href={sub.videoUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-indigo-400 transition-colors" onClick={(e) => e.stopPropagation()}>
+                                                                    <a href={sub.videoUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" onClick={(e) => e.stopPropagation()}>
                                                                         <Video className="w-3 h-3" /> Watch Video
                                                                     </a>
                                                                 )}
@@ -389,14 +389,14 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                             })}
 
                                             {(!selectedModule.subModules || selectedModule.subModules.length === 0) && (
-                                                <p className="text-gray-500 text-sm italic py-2">No learning steps needed for this module.</p>
+                                                <p className="text-gray-500 dark:text-gray-500 text-sm italic py-2">No learning steps needed for this module.</p>
                                             )}
                                         </div>
 
                                         {/* Quizzes Section */}
                                         {moduleQuizzes.length > 0 && (
-                                            <div className="space-y-4 pt-4 border-t border-white/5">
-                                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                            <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-white/5">
+                                                <h3 className="text-sm font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                                     <GraduationCap className="w-4 h-4" /> Module Quizzes
                                                 </h3>
 
@@ -423,8 +423,8 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                                             </div>
 
                                                             <div className="flex-1">
-                                                                <h4 className="font-bold text-white mb-0.5">{quiz.title}</h4>
-                                                                <div className="flex items-center gap-3 text-xs font-medium text-gray-500">
+                                                                <h4 className="font-bold text-gray-900 dark:text-white mb-0.5">{quiz.title}</h4>
+                                                                <div className="flex items-center gap-3 text-xs font-medium text-gray-500 dark:text-gray-500">
                                                                     <span>{quiz.questions?.length} Questions</span>
                                                                     {bestAttempt && (
                                                                         <span className={isPassed ? 'text-emerald-500' : 'text-orange-500'}>
@@ -453,10 +453,10 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                     </div>
 
                                     {/* Footer */}
-                                    <div className="p-6 border-t border-white/10 bg-white/5 flex justify-end flex-shrink-0">
+                                    <div className="p-6 border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 flex justify-end flex-shrink-0">
                                         <button
                                             onClick={() => setIsDetailsOpen(false)}
-                                            className="px-6 py-3 bg-white text-black font-black uppercase tracking-widest text-xs rounded-xl hover:bg-gray-200 transition-colors"
+                                            className="px-6 py-3 bg-white dark:bg-gray-700 text-black dark:text-white font-black uppercase tracking-widest text-xs rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                                         >
                                             Close View
                                         </button>

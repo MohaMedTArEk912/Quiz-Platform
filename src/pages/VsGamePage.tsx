@@ -41,7 +41,7 @@ const VsGamePage: React.FC = () => {
 
     if ((loadingData || loadingQuizzes) && !quiz) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+            <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
                 <div className="animate-pulse">Loading Game Data...</div>
             </div>
         );

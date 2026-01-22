@@ -174,6 +174,10 @@ export interface ChallengeData {
     quizId: string;
     fromId: string;
     toId: string;
+    type?: 'async' | 'live';
+    roomId?: string;
+    fromName?: string;
+    timestamp?: number;
     status: 'pending' | 'completed';
     fromResult?: {
         score: number;

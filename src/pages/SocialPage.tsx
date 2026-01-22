@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { useNotification } from '../context/NotificationContext';
 import { api } from '../lib/api';
+import type { ChallengeData } from '../types';
 
 const SocialPage: React.FC = () => {
     const { currentUser } = useAuth();
@@ -19,8 +20,11 @@ const SocialPage: React.FC = () => {
     const [showQuizModal, setShowQuizModal] = React.useState(false);
     const [selectedFriendId, setSelectedFriendId] = React.useState<string | null>(null);
     const [challengeType, setChallengeType] = React.useState<'live' | 'async' | null>(null);
+    const [liveChallenges, setLiveChallenges] = React.useState<ChallengeData[]>([]);
+    const userId = currentUser?.userId;
 
-    if (!currentUser) return null;
+    const isLiveChallenge = (challenge: ChallengeData): challenge is ChallengeData & { type: 'live'; roomId: string } =>
+        challenge.type === 'live' && Boolean(challenge.roomId);
 
     const initiateChallenge = (friendId: string, type: 'live' | 'async') => {
         setSelectedFriendId(friendId);
@@ -93,23 +97,22 @@ const SocialPage: React.FC = () => {
         setChallengeType(null);
     };
 
-    const [liveChallenges, setLiveChallenges] = React.useState<any[]>([]);
-
     // Listen for live invites
     React.useEffect(() => {
-        if (!socket) return;
+        if (!socket || !userId) return;
 
         const handleInvite = (data: { fromId: string, fromName: string, quizId: string, roomId: string }) => {
-            const newChallenge = {
+            const newChallenge: ChallengeData = {
                 token: data.roomId, // Use roomId as token for live games
                 fromId: data.fromId,
                 fromName: data.fromName, // Store sender name for UI
-                toId: currentUser.userId,
+                toId: userId,
                 quizId: data.quizId,
                 status: 'pending',
                 type: 'live', // user-defined discriminator
                 timestamp: Date.now(),
-                roomId: data.roomId
+                roomId: data.roomId,
+                createdAt: new Date().toISOString()
             };
             setLiveChallenges(prev => [...prev, newChallenge]);
             showNotification('success', `Live challenge received from ${data.fromName}!`);
@@ -119,9 +122,11 @@ const SocialPage: React.FC = () => {
         return () => {
             socket.off('game_invite', handleInvite);
         };
-    }, [socket, currentUser.userId, showNotification]);
+    }, [socket, userId, showNotification]);
 
     const combinedChallenges = [...liveChallenges, ...challenges];
+
+    if (!currentUser) return null;
 
     return (
         <PageLayout title="Social">
@@ -134,7 +139,7 @@ const SocialPage: React.FC = () => {
                         challenges={combinedChallenges}
                         onAsyncChallenge={(id) => initiateChallenge(id, 'async')}
                         onStartChallenge={(c) => {
-                            if ((c as any).type === 'live') {
+                            if (isLiveChallenge(c)) {
                                 // Join Live Game
                                 const opponent = allUsers.find(u => u.userId === c.fromId);
                                 navigate('/game/vs', {
@@ -142,10 +147,10 @@ const SocialPage: React.FC = () => {
                                         quizId: c.quizId,
                                         opponent: {
                                             id: c.fromId,
-                                            name: opponent?.name || (c as any).fromName || 'Challenger',
+                                            name: opponent?.name || c.fromName || 'Challenger',
                                             avatar: opponent?.avatar
                                         },
-                                        roomId: (c as any).roomId
+                                        roomId: c.roomId
                                     }
                                 });
                             } else {

@@ -30,17 +30,20 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     availableQuizzes = [],
     availableBadges = []
 }) => {
-    const [editedNode, setEditedNode] = useState<SkillModule>(node);
-    const [isDirty, setIsDirty] = useState(false);
-    const [activeSection, setActiveSection] = useState<'identity' | 'config' | 'lessons' | 'deps'>('identity');
-
-    useEffect(() => {
-        // Migration: Ensure quizIds is populated from quizId if needed
+    const getInitialNode = (node: SkillModule): SkillModule => {
         const initialNode = { ...node };
         if ((!initialNode.quizIds || initialNode.quizIds.length === 0) && initialNode.quizId) {
             initialNode.quizIds = [initialNode.quizId];
         }
-        setEditedNode(initialNode);
+        return initialNode;
+    };
+
+    const [editedNode, setEditedNode] = useState<SkillModule>(() => getInitialNode(node));
+    const [isDirty, setIsDirty] = useState(false);
+    const [activeSection, setActiveSection] = useState<'identity' | 'config' | 'lessons' | 'deps'>('identity');
+
+    useEffect(() => {
+        setEditedNode(getInitialNode(node));
         setIsDirty(false);
     }, [node]);
 
@@ -112,9 +115,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
     return (
 
-        <div className={`fixed top-[64px] right-0 h-[calc(100vh-64px)] w-[420px] bg-[#0f0f18] border-l border-white/10 shadow-2xl z-[50] transform transition-transform duration-300 ease-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className={`fixed top-[64px] right-0 h-[calc(100vh-64px)] w-[420px] bg-white dark:bg-[#0f0f18] border-l border-gray-200 dark:border-white/10 shadow-2xl z-[50] transform transition-transform duration-300 ease-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
             {/* Header */}
-            <div className="h-16 flex items-center justify-between px-5 border-b border-white/10 bg-gradient-to-r from-[#1a1a2e] to-[#13131f]">
+            <div className="h-16 flex items-center justify-between px-5 border-b border-gray-200 dark:border-white/10 bg-gradient-to-r from-white to-gray-50 dark:from-[#1a1a2e] dark:to-[#13131f]">
                 <div className="flex items-center gap-3">
                     <div className={`p-2.5 rounded-xl ${editedNode.type === NodeType.CORE ? 'bg-indigo-500/20 text-indigo-400' :
                         editedNode.type === NodeType.ACHIEVEMENT ? 'bg-amber-500/20 text-amber-400' :
@@ -124,20 +127,20 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         {editedNode.type === NodeType.ACHIEVEMENT ? <Star size={18} /> : <Hash size={18} />}
                     </div>
                     <div>
-                        <h3 className="text-sm font-bold text-white">Module Editor</h3>
-                        <p className="text-[10px] text-gray-500 font-mono">{editedNode.moduleId}</p>
+                        <h3 className="text-sm font-bold text-gray-900 dark:text-white">Module Editor</h3>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-500 font-mono">{editedNode.moduleId}</p>
                     </div>
                 </div>
                 <button
                     onClick={onClose}
-                    className="p-2 hover:bg-white/5 rounded-xl text-gray-400 hover:text-white transition-colors"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
                     <X size={20} />
                 </button>
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex border-b border-white/5 bg-[#0a0a12]">
+            <div className="flex border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-[#0a0a12]">
                 {[
                     { id: 'identity', label: 'Identity', icon: BookOpen },
                     { id: 'config', label: 'Config', icon: Shield },
@@ -148,8 +151,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         key={tab.id}
                         onClick={() => setActiveSection(tab.id as any)}
                         className={`flex-1 py-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${activeSection === tab.id
-                            ? 'text-indigo-400 border-b-2 border-indigo-500 bg-indigo-500/5'
-                            : 'text-gray-500 hover:text-gray-300'
+                            ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-500 bg-indigo-50 dark:bg-indigo-500/5'
+                            : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                             }`}
                     >
                         <tab.icon size={14} />
@@ -159,31 +162,31 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </div>
 
             {/* Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 min-h-0">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 min-h-0 bg-white dark:bg-transparent">
 
                 {/* Identity Section */}
                 {activeSection === 'identity' && (
                     <div className="space-y-5">
                         <div>
-                            <label className="block text-xs font-semibold text-gray-400 mb-2">Module Title</label>
+                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Module Title</label>
                             <input
                                 type="text"
                                 value={editedNode.title}
                                 onChange={(e) => handleChange('title', e.target.value)}
-                                className="w-full bg-[#0a0a12] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all"
+                                className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all"
                                 placeholder="e.g. Variables & Data Types"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-gray-400 mb-2">Module Type</label>
+                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Module Type</label>
                             <div className="grid grid-cols-3 gap-2">
                                 <button
                                     onClick={() => handleChange('type', NodeType.CORE)}
                                     className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${
                                         editedNode.type === NodeType.CORE
-                                            ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400'
-                                            : 'bg-[#0a0a12] border-white/10 text-gray-500 hover:border-white/20'
+                                            ? 'bg-indigo-100 dark:bg-indigo-500/20 border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                                            : 'bg-gray-100 dark:bg-[#0a0a12] border-gray-300 dark:border-white/10 text-gray-500 hover:border-gray-400 dark:hover:border-white/20'
                                     }`}
                                 >
                                     CORE
@@ -192,8 +195,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                     onClick={() => handleChange('type', NodeType.OPTIONAL)}
                                     className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${
                                         editedNode.type === NodeType.OPTIONAL
-                                            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
-                                            : 'bg-[#0a0a12] border-white/10 text-gray-500 hover:border-white/20'
+                                            ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                                            : 'bg-gray-100 dark:bg-[#0a0a12] border-gray-300 dark:border-white/10 text-gray-500 hover:border-gray-400 dark:hover:border-white/20'
                                     }`}
                                 >
                                     OPTIONAL
@@ -202,8 +205,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                     onClick={() => handleChange('type', NodeType.ACHIEVEMENT)}
                                     className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${
                                         editedNode.type === NodeType.ACHIEVEMENT
-                                            ? 'bg-amber-500/20 border-amber-500 text-amber-400'
-                                            : 'bg-[#0a0a12] border-white/10 text-gray-500 hover:border-white/20'
+                                            ? 'bg-amber-100 dark:bg-amber-500/20 border-amber-500 text-amber-600 dark:text-amber-400'
+                                            : 'bg-gray-100 dark:bg-[#0a0a12] border-gray-300 dark:border-white/10 text-gray-500 hover:border-gray-400 dark:hover:border-white/20'
                                     }`}
                                 >
                                     ACHIEVEMENT
@@ -212,11 +215,11 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-gray-400 mb-2">Description</label>
+                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Description</label>
                             <textarea
                                 value={editedNode.description || ''}
                                 onChange={(e) => handleChange('description', e.target.value)}
-                                className="w-full bg-[#0a0a12] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition-all h-24 resize-none"
+                                className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all h-24 resize-none"
                                 placeholder="Brief description of what this module covers..."
                             />
                         </div>
@@ -228,13 +231,13 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     <div className="space-y-5">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-semibold text-gray-400 mb-2">Base XP Reward</label>
+                                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Base XP Reward</label>
                                 <div className="relative">
                                     <input
                                         type="number"
                                         value={editedNode.xpReward || 100}
                                         onChange={(e) => handleChange('xpReward', parseInt(e.target.value))}
-                                        className="w-full bg-[#0a0a12] border border-white/10 rounded-xl pl-4 pr-10 py-3 text-white text-sm focus:outline-none focus:border-amber-500 transition-all"
+                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl pl-4 pr-10 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-amber-500 transition-all"
                                     />
                                     <div className="absolute right-3 top-3 text-amber-500">
                                         <Star size={16} />
@@ -248,16 +251,16 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-gray-400 mb-2">Status</label>
+                                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Status</label>
                                 <div className="relative">
                                     <select
                                         value={editedNode.status || NodeState.LOCKED}
                                         onChange={(e) => handleChange('status', e.target.value)}
-                                        className="w-full bg-[#0a0a12] border border-white/10 rounded-xl pl-4 pr-10 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
-                                        style={{ colorScheme: 'dark' }}
+                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl pl-4 pr-10 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+                                        style={{ colorScheme: 'light dark' }}
                                     >
                                         {Object.values(NodeState).map(state => (
-                                            <option key={state} value={state} className="bg-[#0a0a12] text-white">
+                                            <option key={state} value={state} className="bg-white dark:bg-[#0a0a12] text-gray-900 dark:text-white">
                                                 {state.replace('_', ' ').toUpperCase()}
                                             </option>
                                         ))}
@@ -270,11 +273,11 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-gray-400 mb-2">Level (Hierarchy)</label>
+                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Level (Hierarchy)</label>
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => handleChange('level', Math.max(0, (editedNode.level || 0) - 1))}
-                                    className="px-3 py-2 bg-[#0a0a12] border border-white/10 rounded-xl text-white hover:bg-white/5 transition-all"
+                                    className="px-3 py-2 bg-gray-100 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/5 transition-all"
                                 >
                                     −
                                 </button>
@@ -282,12 +285,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                     type="number"
                                     value={editedNode.level || 0}
                                     onChange={(e) => handleChange('level', parseInt(e.target.value) || 0)}
-                                    className="flex-1 bg-[#0a0a12] border border-white/10 rounded-xl px-4 py-3 text-white text-sm text-center focus:outline-none focus:border-indigo-500 transition-all"
+                                    className="flex-1 bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm text-center focus:outline-none focus:border-indigo-500 transition-all"
                                     min={0}
                                 />
                                 <button
                                     onClick={() => handleChange('level', (editedNode.level || 0) + 1)}
-                                    className="px-3 py-2 bg-[#0a0a12] border border-white/10 rounded-xl text-white hover:bg-white/5 transition-all"
+                                    className="px-3 py-2 bg-gray-100 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/5 transition-all"
                                 >
                                     +
                                 </button>
@@ -296,24 +299,24 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-gray-400 mb-3">Pixel-Perfect Position</label>
+                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">Pixel-Perfect Position</label>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-[10px] text-gray-500 uppercase mb-1 block">X Coordinate</label>
+                                    <label className="text-[10px] text-gray-600 dark:text-gray-500 uppercase mb-1 block">X Coordinate</label>
                                     <input
                                         type="number"
                                         value={editedNode.coordinates?.x || 0}
                                         onChange={(e) => handleChange('coordinates', { ...editedNode.coordinates, x: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-[#0a0a12] border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
+                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] text-gray-500 uppercase mb-1 block">Y Coordinate</label>
+                                    <label className="text-[10px] text-gray-600 dark:text-gray-500 uppercase mb-1 block">Y Coordinate</label>
                                     <input
                                         type="number"
                                         value={editedNode.coordinates?.y || 0}
                                         onChange={(e) => handleChange('coordinates', { ...editedNode.coordinates, y: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-[#0a0a12] border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
+                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
                                     />
                                 </div>
                             </div>
@@ -321,7 +324,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2">
+                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
                                 <Video size={14} /> Video URL
                             </label>
                             <input
@@ -329,13 +332,13 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                 value={editedNode.videoUrl || ''}
                                 onChange={(e) => handleChange('videoUrl', e.target.value)}
                                 placeholder="https://youtube.com/..."
-                                className="w-full bg-[#0a0a12] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
+                                className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
                             />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2">
+                                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
                                     <BrainCircuit size={14} /> Linked Quizzes
                                 </label>
 
@@ -344,8 +347,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                     {(editedNode.quizIds || []).map(qId => {
                                         const quiz = availableQuizzes.find(q => q.id === qId);
                                         return (
-                                            <div key={qId} className="flex items-center justify-between bg-indigo-500/10 p-2.5 rounded-xl border border-indigo-500/20 text-xs group">
-                                                <span className="font-medium text-indigo-200 truncate flex-1 pr-2" title={quiz?.title}>
+                                            <div key={qId} className="flex items-center justify-between bg-indigo-50 dark:bg-indigo-500/10 p-2.5 rounded-xl border border-indigo-200 dark:border-indigo-500/20 text-xs group">
+                                                <span className="font-medium text-indigo-600 dark:text-indigo-200 truncate flex-1 pr-2" title={quiz?.title}>
                                                     {quiz?.title || 'Unknown Quiz'}
                                                 </span>
                                                 <button
@@ -353,7 +356,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                                         const newIds = (editedNode.quizIds || []).filter(id => id !== qId);
                                                         handleChange('quizIds', newIds);
                                                     }}
-                                                    className="p-1 hover:bg-red-500/20 text-indigo-400 group-hover:text-red-400 rounded-lg transition-colors"
+                                                    className="p-1 hover:bg-red-100 dark:hover:bg-red-500/20 text-indigo-600 dark:text-indigo-400 group-hover:text-red-600 dark:group-hover:text-red-400 rounded-lg transition-colors"
                                                 >
                                                     <X size={12} />
                                                 </button>
@@ -374,7 +377,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                                 }
                                             }
                                         }}
-                                        className="w-full bg-[#0a0a12] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
                                     >
                                         <option value="">+ Link Quiz...</option>
                                         {availableQuizzes
@@ -395,14 +398,14 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2">
+                                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
                                     <Award size={14} /> Reward Badge
                                 </label>
                                 <div className="relative">
                                     <select
                                         value={editedNode.badgeId || ''}
                                         onChange={(e) => handleChange('badgeId', e.target.value)}
-                                        className="w-full bg-[#0a0a12] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
                                     >
                                         <option value="">-- No Badge --</option>
                                         {availableBadges.map(b => (
@@ -425,19 +428,19 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h4 className="text-sm font-bold text-white">Lessons</h4>
-                                <p className="text-[10px] text-gray-500">Topics within this module</p>
+                                <h4 className="text-sm font-bold text-gray-900 dark:text-white">Lessons</h4>
+                                <p className="text-[10px] text-gray-600 dark:text-gray-500">Topics within this module</p>
                             </div>
                             <button
                                 onClick={handleAddSubModule}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-lg text-xs font-medium transition-colors"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 dark:bg-indigo-500/20 hover:bg-indigo-200 dark:hover:bg-indigo-500/30 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-medium transition-colors"
                             >
                                 <Plus size={14} /> Add Lesson
                             </button>
                         </div>
 
                         {subModules.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-gray-600 dark:text-gray-500">
                                 <Layers className="w-10 h-10 mx-auto mb-2 opacity-30" />
                                 <p className="text-sm">No lessons yet</p>
                                 <p className="text-xs">Add lessons to break this module into smaller topics</p>
@@ -447,10 +450,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                 {subModules.map((sub) => (
                                     <div
                                         key={sub.id}
-                                        className="bg-[#0a0a12] border border-white/10 rounded-xl p-3 group hover:border-white/20 transition-colors"
+                                        className="bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl p-3 group hover:border-gray-400 dark:hover:border-white/20 transition-colors"
                                     >
                                         <div className="flex items-start gap-3">
-                                            <div className="mt-1 text-gray-600 cursor-grab">
+                                            <div className="mt-1 text-gray-400 dark:text-gray-600 cursor-grab">
                                                 <GripVertical size={14} />
                                             </div>
                                             <div className="flex-1 space-y-2">
@@ -458,7 +461,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                                     type="text"
                                                     value={sub.title}
                                                     onChange={(e) => handleUpdateSubModule(sub.id, 'title', e.target.value)}
-                                                    className="w-full bg-transparent text-sm text-white focus:outline-none"
+                                                    className="w-full bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none"
                                                     placeholder="Lesson title..."
                                                 />
                                                 <div className="flex items-center gap-3">
@@ -468,24 +471,25 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                                             type="number"
                                                             value={sub.xp}
                                                             onChange={(e) => handleUpdateSubModule(sub.id, 'xp', parseInt(e.target.value))}
-                                                            className="w-12 bg-transparent text-xs text-gray-400 focus:outline-none"
+                                                            className="w-12 bg-transparent text-xs text-gray-600 dark:text-gray-400 focus:outline-none"
                                                         />
-                                                        <span className="text-[10px] text-gray-600">XP</span>
+                                                        <span className="text-[10px] text-gray-600 dark:text-gray-500">XP</span>
                                                     </div>
                                                     <select
                                                         value={sub.state}
                                                         onChange={(e) => handleUpdateSubModule(sub.id, 'state', e.target.value)}
-                                                        className="bg-transparent text-xs text-gray-400 focus:outline-none cursor-pointer"
+                                                        className="bg-transparent text-xs text-gray-600 dark:text-gray-400 focus:outline-none cursor-pointer"
+                                                        style={{ colorScheme: 'light dark' }}
                                                     >
-                                                        <option value="locked">🔒 Locked</option>
-                                                        <option value="available">⚪ Available</option>
-                                                        <option value="completed">✓ Completed</option>
+                                                        <option value="locked" className="bg-white dark:bg-[#0a0a12] text-gray-900 dark:text-white">🔒 Locked</option>
+                                                        <option value="available" className="bg-white dark:bg-[#0a0a12] text-gray-900 dark:text-white">⚪ Available</option>
+                                                        <option value="completed" className="bg-white dark:bg-[#0a0a12] text-gray-900 dark:text-white">✓ Completed</option>
                                                     </select>
                                                 </div>
                                             </div>
                                             <button
                                                 onClick={() => handleDeleteSubModule(sub.id)}
-                                                className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded-lg text-red-400 transition-all"
+                                                className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg text-red-600 dark:text-red-400 transition-all"
                                             >
                                                 <Trash2 size={14} />
                                             </button>
@@ -496,9 +500,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         )}
 
                         {subModules.length > 0 && (
-                            <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-gray-500">
+                            <div className="pt-3 border-t border-gray-200 dark:border-white/5 flex items-center justify-between text-xs text-gray-600 dark:text-gray-500">
                                 <span>Total: {subModules.length} lessons</span>
-                                <span className="text-amber-400 font-medium">{totalSubXP} XP</span>
+                                <span className="text-amber-600 dark:text-amber-400 font-medium">{totalSubXP} XP</span>
                             </div>
                         )}
                     </div>
@@ -508,13 +512,13 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 {activeSection === 'deps' && (
                     <div className="space-y-4">
                         <div>
-                            <h4 className="text-sm font-bold text-white mb-1">Prerequisites</h4>
-                            <p className="text-[10px] text-gray-500">Modules that must be completed before this one</p>
+                            <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Prerequisites</h4>
+                            <p className="text-[10px] text-gray-600 dark:text-gray-500">Modules that must be completed before this one</p>
                         </div>
 
-                        <div className="bg-[#0a0a12] rounded-xl border border-white/10 overflow-hidden">
+                        <div className="bg-gray-50 dark:bg-[#0a0a12] rounded-xl border border-gray-300 dark:border-white/10 overflow-hidden">
                             {allNodes.filter(n => n.moduleId !== node.moduleId).length === 0 ? (
-                                <div className="text-center py-8 text-gray-500">
+                                <div className="text-center py-8 text-gray-600 dark:text-gray-500">
                                     <p className="text-sm">No other modules</p>
                                 </div>
                             ) : (
@@ -524,7 +528,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                         return (
                                             <label
                                                 key={potentialPrereq.moduleId}
-                                                className="flex items-center justify-between p-3 hover:bg-white/5 cursor-pointer group transition-colors border-b border-white/5 last:border-0"
+                                                className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer group transition-colors border-b border-gray-200 dark:border-white/5 last:border-0"
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     handlePrerequisiteToggle(potentialPrereq.moduleId);
@@ -533,19 +537,19 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                                 <div className="flex items-center gap-3">
                                                     <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${isSelected
                                                         ? 'bg-indigo-500 border-indigo-500'
-                                                        : 'border-gray-600 group-hover:border-indigo-500/50'
+                                                        : 'border-gray-400 dark:border-gray-600 group-hover:border-indigo-400 dark:group-hover:border-indigo-500/50'
                                                         }`}>
                                                         {isSelected && <Check size={12} className="text-white" />}
                                                     </div>
                                                     <div>
-                                                        <span className={`text-sm ${isSelected ? 'text-white font-medium' : 'text-gray-400'}`}>
+                                                        <span className={`text-sm ${isSelected ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-600 dark:text-gray-400'}`}>
                                                             {potentialPrereq.title}
                                                         </span>
-                                                        <p className="text-[10px] text-gray-600 font-mono">{potentialPrereq.moduleId}</p>
+                                                        <p className="text-[10px] text-gray-500 dark:text-gray-600 font-mono">{potentialPrereq.moduleId}</p>
                                                     </div>
                                                 </div>
-                                                <span className={`text-[10px] uppercase font-bold ${potentialPrereq.type === 'core' ? 'text-indigo-500' :
-                                                    potentialPrereq.type === 'optional' ? 'text-emerald-500' : 'text-amber-500'
+                                                <span className={`text-[10px] uppercase font-bold ${potentialPrereq.type === 'core' ? 'text-indigo-600 dark:text-indigo-500' :
+                                                    potentialPrereq.type === 'optional' ? 'text-emerald-600 dark:text-emerald-500' : 'text-amber-600 dark:text-amber-500'
                                                     }`}>
                                                     {potentialPrereq.type}
                                                 </span>
@@ -557,8 +561,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         </div>
 
                         {(editedNode.prerequisites || []).length > 0 && (
-                            <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3">
-                                <p className="text-[11px] text-indigo-300">
+                            <div className="bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-xl p-3">
+                                <p className="text-[11px] text-indigo-700 dark:text-indigo-300">
                                     <strong>{(editedNode.prerequisites || []).length}</strong> prerequisite(s) selected.
                                     Lines will connect from those modules to this one.
                                 </p>
@@ -568,18 +572,18 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 )}
 
                 {/* Actions */}
-                <div className="mt-6 pt-4 border-t border-white/10">
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">Actions</h4>
+                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
+                    <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-500 uppercase mb-3">Actions</h4>
                     <div className="grid grid-cols-2 gap-2">
                         <button
                             onClick={() => onDuplicate(node)}
-                            className="flex items-center justify-center gap-2 bg-[#1a1a2e] hover:bg-[#252540] text-gray-300 py-2.5 rounded-xl border border-white/10 transition-colors text-sm font-medium"
+                            className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-[#1a1a2e] hover:bg-gray-200 dark:hover:bg-[#252540] text-gray-700 dark:text-gray-300 py-2.5 rounded-xl border border-gray-300 dark:border-white/10 transition-colors text-sm font-medium"
                         >
                             <Copy size={16} /> Duplicate
                         </button>
                         <button
                             onClick={() => onDelete(node.moduleId)}
-                            className="flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 py-2.5 rounded-xl border border-red-500/20 transition-colors text-sm font-medium"
+                            className="flex items-center justify-center gap-2 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 py-2.5 rounded-xl border border-red-200 dark:border-red-500/20 transition-colors text-sm font-medium"
                         >
                             <Trash2 size={16} /> Delete
                         </button>
@@ -588,10 +592,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </div>
 
             {/* Footer Buttons */}
-            <div className="p-5 bg-[#0f0f18] border-t border-white/10 flex gap-3 flex-none mt-auto">
+            <div className="p-5 bg-gray-50 dark:bg-[#0f0f18] border-t border-gray-200 dark:border-white/10 flex gap-3 flex-none mt-auto">
                 <button
                     onClick={onClose}
-                    className="flex-1 px-4 py-3 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 text-sm font-medium transition-colors"
+                    className="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 text-sm font-medium transition-colors"
                 >
                     Cancel
                 </button>
@@ -600,7 +604,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     disabled={!isDirty}
                     className={`flex-1 px-4 py-3 rounded-xl text-sm font-bold transition-all ${isDirty
                         ? 'bg-indigo-500 hover:bg-indigo-400 text-white shadow-lg shadow-indigo-500/25'
-                        : 'bg-indigo-500/20 text-indigo-300 cursor-not-allowed'
+                        : 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-400 dark:text-indigo-300 cursor-not-allowed'
                         }`}
                 >
                     {isDirty ? 'Save Changes' : 'No Changes'}
