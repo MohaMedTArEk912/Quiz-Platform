@@ -464,3 +464,19 @@ export interface ClanChatMessage {
     content: string;
     createdAt: string;
 }
+
+export interface DirectChatMessage {
+    id: string;
+    senderId: string;
+    senderName: string;
+    receiverId: string;
+    content: string;
+    type: 'text' | 'challenge';
+    challengeData?: {
+        quizId?: string;
+        quizTitle?: string;
+        roomId?: string;
+    };
+    createdAt: string;
+    isRead: boolean;
+}

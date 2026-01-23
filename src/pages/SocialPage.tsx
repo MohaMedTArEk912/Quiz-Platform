@@ -70,6 +70,30 @@ const SocialPage: React.FC = () => {
                     quizId
                 });
 
+                // Also send a direct message so it appears in chat
+                socket.emit('send_direct_message', {
+                    id: crypto.randomUUID(),
+                    senderId: currentUser.userId,
+                    senderName: currentUser.name,
+                    receiverId: selectedFriendId,
+                    content: 'I challenged you to a duel!',
+                    type: 'challenge',
+                    challengeData: {
+                        quizId,
+                        quizTitle: availableQuizzes.find(q => q.id === quizId)?.title || 'Quiz Challenge',
+                        roomId: 'pending_room_id'
+                    },
+                    createdAt: new Date().toISOString(),
+                    isRead: false
+                });
+
+                // Trigger DirectChat callback to add message locally
+                const quizTitle = availableQuizzes.find(q => q.id === quizId)?.title || 'Quiz Challenge';
+                if ((window as any).__pendingChallengeCallback) {
+                    (window as any).__pendingChallengeCallback(quizId, quizTitle);
+                    delete (window as any).__pendingChallengeCallback;
+                }
+
                 showNotification('success', `Challenge sent! Waiting for opponent...`);
             } else {
                 showNotification('error', 'Socket not connected. Cannot send challenge.');
@@ -79,6 +103,14 @@ const SocialPage: React.FC = () => {
                 const challenge = await api.createChallenge(selectedFriendId, quizId, currentUser.userId);
                 refreshData();
                 const link = `${window.location.origin}/challenge/${challenge.token}`;
+
+                // Trigger DirectChat callback for async challenge
+                const quizTitle = availableQuizzes.find(q => q.id === quizId)?.title || 'Quiz Challenge';
+                if ((window as any).__pendingAsyncChallengeCallback) {
+                    (window as any).__pendingAsyncChallengeCallback(quizId, quizTitle);
+                    delete (window as any).__pendingAsyncChallengeCallback;
+                }
+
                 showNotification('success', `Link generated! Copy sent to clipboard.`);
                 try {
                     await navigator.clipboard.writeText(link);

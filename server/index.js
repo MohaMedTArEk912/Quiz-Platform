@@ -220,6 +220,8 @@ app.use('/api/badge-trees', badgeTreesRoutes);
 // Socket.io event handlers (disabled on Vercel serverless)
 // In-memory game state
 const gameRooms = new Map();
+// Presence tracking: userId -> Set of socket IDs (user can have multiple tabs)
+const onlineUsers = new Map();
 
 if (io) io.on('connection', (socket) => {
   if (process.env.NODE_ENV !== 'production') {
@@ -229,8 +231,56 @@ if (io) io.on('connection', (socket) => {
   socket.on('join_user', (userId) => {
     socket.userId = userId; // Store userId on socket
     socket.join(userId);
+    
+    // Track presence
+    const wasOnline = onlineUsers.has(userId);
+    if (!onlineUsers.has(userId)) {
+      onlineUsers.set(userId, new Set());
+    }
+    onlineUsers.get(userId).add(socket.id);
+    
+    // Broadcast online status if this is their first connection
+    if (!wasOnline) {
+      io.emit('user_online', { userId });
+    }
+    
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`👤 User ${userId} joined their room`);
+      console.log(`👤 User ${userId} joined their room (online: ${onlineUsers.size} users)`);
+    }
+  });
+
+  // Check if a specific user is online
+  socket.on('check_user_online', (userId, callback) => {
+    const isOnline = onlineUsers.has(userId) && onlineUsers.get(userId).size > 0;
+    if (typeof callback === 'function') {
+      callback({ userId, isOnline });
+    } else {
+      socket.emit('user_status', { userId, isOnline });
+    }
+  });
+
+  // Get all online users (for bulk status check)
+  socket.on('get_online_users', (userIds, callback) => {
+    const statuses = {};
+    for (const uid of userIds) {
+      statuses[uid] = onlineUsers.has(uid) && onlineUsers.get(uid).size > 0;
+    }
+    if (typeof callback === 'function') {
+      callback(statuses);
+    } else {
+      socket.emit('online_users_status', statuses);
+    }
+  });
+
+  // Direct messaging
+  socket.on('send_direct_message', (message) => {
+    if (!message || !message.receiverId) return;
+    
+    // Forward to receiver's room
+    io.to(message.receiverId).emit('new_direct_message', message);
+    
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`💬 DM from ${message.senderId} to ${message.receiverId}`);
     }
   });
 
@@ -439,7 +489,8 @@ if (io) io.on('connection', (socket) => {
       if (!message) return socket.emit('chat_error', { message: 'Message not found' });
 
       // Sender can delete own, Leader can delete any
-      const isLeader = clan.leaderId === userId;
+      const member = clan.members?.find(m => m.userId === userId);
+      const isLeader = member?.role === 'leader' || clan.leaderId === userId;
       const isSender = message.senderId === userId;
       
       if (!isLeader && !isSender) {
@@ -462,14 +513,45 @@ if (io) io.on('connection', (socket) => {
       console.log(`💬 User ${socket.userId} left clan chat: ${clanId}`);
     }
   });
+
+  // ISSUE: WebSocket didn't emit update when member kicked
+  // FIX: Handle user_kicked_from_clan event from frontend
+  socket.on('user_kicked_from_clan', ({ targetUserId, clanId, clanName }) => {
+    if (targetUserId && clanId) {
+      // Notify the kicked user if they're online
+      io.to(targetUserId).emit('kicked_from_clan', {
+        clanId,
+        clanName,
+        message: `You were removed from clan ${clanName}`
+      });
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`🚪 User ${targetUserId} kicked from clan ${clanName}`);
+      }
+    }
+  });
   // ========== END CLAN CHAT ==========
   
   socket.on('disconnect', (reason) => {
     if (process.env.NODE_ENV !== 'production') {
       console.log('❌ Client disconnected:', socket.id, 'Reason:', reason);
     }
-    // Potential: Check if user was in active game and forfeit? 
-    // Keeping it simple for now.
+    
+    // Clean up presence tracking
+    const userId = socket.userId;
+    if (userId && onlineUsers.has(userId)) {
+      const sockets = onlineUsers.get(userId);
+      sockets.delete(socket.id);
+      
+      // If no more connections for this user, they're offline
+      if (sockets.size === 0) {
+        onlineUsers.delete(userId);
+        io.emit('user_offline', { userId });
+        
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`👤 User ${userId} went offline (online: ${onlineUsers.size} users)`);
+        }
+      }
+    }
   });
 });
 

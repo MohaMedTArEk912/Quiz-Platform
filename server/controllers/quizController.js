@@ -67,7 +67,11 @@ const sanitizeQuestions = (questions, quizId = 'unknown') => {
 
 export const getQuizzes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find({}).lean();
+    // OPTIMIZATION: Only fetch essential fields to reduce payload size
+    // Exclude 'questions' array which can be very large
+    const quizzes = await Quiz.find({})
+      .select('id title description difficulty category icon isTournamentOnly passingScore timeLimit coinsReward xpReward subjectId')
+      .lean();
     
     // Sort quizzes by extracted number for proper "Session 1, Session 2, ... Session 10" ordering
     quizzes.sort((a, b) => {

@@ -45,6 +45,13 @@ export const getClan = async (req, res) => {
     const { clanId } = req.params;
     const clan = await Clan.findOne({ clanId });
     if (!clan) return res.status(404).json({ message: 'Clan not found' });
+
+    // Self-heal leaderId if it ever drifted from the member with leader role
+    const storedLeader = clan.members.find(m => m.role === 'leader');
+    if (storedLeader && clan.leaderId !== storedLeader.userId) {
+      clan.leaderId = storedLeader.userId;
+      await clan.save();
+    }
     
     // Enrich member data (names, avatars)
     const memberIds = clan.members.map(m => m.userId);
@@ -142,8 +149,11 @@ export const leaveClan = async (req, res) => {
                  } else {
                      // Assign new leader (next member)
                      // Ideally sort by role/join date
-                     const newLeader = clan.members.find(m => m.userId !== userId);
-                     if (newLeader) newLeader.role = 'leader';
+                 const newLeader = clan.members.find(m => m.userId !== userId);
+                 if (newLeader) {
+                   newLeader.role = 'leader';
+                   clan.leaderId = newLeader.userId; // Keep leaderId in sync for permissions/UI
+                 }
                  }
              }
              clan.members.splice(memberIndex, 1);
@@ -208,8 +218,10 @@ export const updateClan = async (req, res) => {
         const clan = await Clan.findOne({ clanId });
         if (!clan) return res.status(404).json({ message: 'Clan not found' });
 
-        if (clan.leaderId !== userId) {
-            return res.status(403).json({ message: 'Only the leader can update clan settings' });
+        const member = clan.members.find(m => m.userId === userId);
+        const isLeader = member?.role === 'leader' || clan.leaderId === userId;
+        if (!isLeader) {
+          return res.status(403).json({ message: 'Only the leader can update clan settings' });
         }
 
         if (name) clan.name = name;
@@ -351,33 +363,77 @@ export const kickMember = async (req, res) => {
         const { clanId, targetUserId } = req.body;
         const userId = req.user.userId;
 
+        // Early self-kick check
+        if (userId === targetUserId) {
+            return res.status(403).json({ message: 'You cannot kick yourself' });
+        }
+
         const clan = await Clan.findOne({ clanId });
-        if (!clan) return res.status(404).json({ message: 'Clan not found' });
+        if (!clan) {
+            return res.status(404).json({ message: 'Clan not found' });
+        }
 
         const executor = clan.members.find(m => m.userId === userId);
         const target = clan.members.find(m => m.userId === targetUserId);
 
-        if (!executor || !target) return res.status(404).json({ message: 'Member not found' });
-
-        // Permission Logic: Leader can kick anyone. Elder can kick Member.
-        const canKick = executor.role === 'leader' || (executor.role === 'elder' && target.role === 'member');
-        if (!canKick || userId === targetUserId) { // Cannot kick self here, use leave
-             return res.status(403).json({ message: 'No permission to kick this member' });
+        if (!executor || !target) {
+            return res.status(404).json({ message: 'Member not found in clan' });
         }
 
+        // Scalable role hierarchy system
+        const rolePower = {
+            leader: 3,
+            elder: 2,
+            member: 1
+        };
+
+        // Permission: executor must have higher power than target
+        if (rolePower[executor.role] <= rolePower[target.role]) {
+            return res.status(403).json({ message: 'No permission to kick this member' });
+        }
+
+        // Defensive: re-check findIndex before splice
         const memberIndex = clan.members.findIndex(m => m.userId === targetUserId);
+        if (memberIndex === -1) {
+            return res.status(400).json({ message: 'Member not found - may have already left' });
+        }
+
         clan.members.splice(memberIndex, 1);
         await clan.save();
 
-        const targetUser = await User.findOne({ userId: targetUserId });
-        if (targetUser) {
-            targetUser.clanId = null;
-            await targetUser.save();
+        // ISSUE: Race condition - user re-joins immediately
+        // FIX: Use atomic update with clanId match condition
+        const updateResult = await User.updateOne(
+            { userId: targetUserId, clanId: clanId }, // Only clear if clanId still matches
+            { $set: { clanId: null } }
+        );
+
+        if (updateResult.matchedCount === 0) {
+            console.warn(`⚠️ User ${targetUserId} may have rejoined clan ${clanId} before clearing clanId`);
         }
 
-        res.json({ message: 'Member kicked' });
+        // ISSUE: WebSocket didn't emit update
+        // FIX: Emit events to notify kicked user and clan members
+        const io = req.app?.get?.('io');
+        if (io) {
+            io.to(targetUserId).emit('kicked_from_clan', {
+                clanId,
+                clanName: clan.name,
+                message: `You were removed from clan ${clan.name}`
+            });
+            io.to(`clan_${clanId}`).emit('member_kicked', {
+                targetUserId,
+                clanId
+            });
+        }
+
+        res.json({ message: 'Member kicked successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Error kicking member', error: error.message });
+        console.error('Error kicking member:', error);
+        res.status(500).json({
+            message: 'Error kicking member',
+            error: error.message
+        });
     }
 };
 
@@ -392,7 +448,9 @@ export const updateMemberRole = async (req, res) => {
         if (!clan) return res.status(404).json({ message: 'Clan not found' });
 
         // Only Leader can promote/demote
-        if (clan.leaderId !== userId) return res.status(403).json({ message: 'Only leader can change roles' });
+        const actingMember = clan.members.find(m => m.userId === userId);
+        const isLeader = actingMember?.role === 'leader' || clan.leaderId === userId;
+        if (!isLeader) return res.status(403).json({ message: 'Only leader can change roles' });
 
         const target = clan.members.find(m => m.userId === targetUserId);
         if (!target) return res.status(404).json({ message: 'Member not found' });

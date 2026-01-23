@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import type { UserData, ChallengeData } from '../../types';
 import { api } from '../../lib/api';
-import { Users, UserPlus, Search, Check, X, Shield, Swords, Zap, Trophy } from 'lucide-react';
+import { Users, UserPlus, Search, Check, X, Shield, Trophy, MessageCircle } from 'lucide-react';
 import Avatar from '../Avatar';
+import { DirectChat } from './DirectChat';
 
 
 interface FriendListProps {
@@ -22,6 +23,7 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
     const [isLoading, setIsLoading] = useState(false);
     const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [activeChatFriend, setActiveChatFriend] = useState<UserData | null>(null);
 
     // Build a comprehensive friend ID set from:
     // 1. The explicit friends array
@@ -164,29 +166,36 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
-                                    {onChallenge && (
-                                        <button
-                                            onClick={() => onChallenge(friend.userId, null)}
-                                            className="p-3 rounded-xl bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors border border-purple-500/20"
-                                            title="Live Challenge"
-                                        >
-                                            <Swords className="w-5 h-5" />
-                                        </button>
-                                    )}
-                                    {onAsyncChallenge && (
-                                        <button
-                                            onClick={() => onAsyncChallenge(friend.userId)}
-                                            className="p-3 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors border border-blue-500/20"
-                                            title="Async Challenge"
-                                        >
-                                            <Zap className="w-5 h-5" />
-                                        </button>
-                                    )}
+                                    <button
+                                        onClick={() => setActiveChatFriend(friend)}
+                                        className="p-3 rounded-xl bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors border border-violet-500/20"
+                                        title="Chat & Challenge"
+                                    >
+                                        <MessageCircle className="w-5 h-5" />
+                                    </button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
+
+                {activeChatFriend && (
+                    <DirectChat
+                        currentUser={currentUser}
+                        friend={activeChatFriend}
+                        onClose={() => setActiveChatFriend(null)}
+                        onStartChallenge={(onQuizSelected) => {
+                            // Store callback for when quiz is selected
+                            (window as any).__pendingChallengeCallback = onQuizSelected;
+                            onChallenge?.(activeChatFriend.userId, null);
+                        }}
+                        onStartAsyncChallenge={(onQuizSelected) => {
+                            (window as any).__pendingAsyncChallengeCallback = onQuizSelected;
+                            onAsyncChallenge?.(activeChatFriend.userId);
+                        }}
+                    />
+                )}
+
 
                 {activeTab === 'requests' && (
                     <div className="space-y-3">
