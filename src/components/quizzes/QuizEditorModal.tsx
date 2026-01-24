@@ -21,7 +21,7 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
 
     useEffect(() => {
         if (quiz) {
-            setEditingQuiz({ ...quiz });
+            setEditingQuiz({ ...quiz, questions: quiz.questions || [] });
             setActiveModalTab('general');
             setEditingQuestion(null);
         }
@@ -33,7 +33,7 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
         if (!editingQuiz) return;
 
         // Validation
-        if (!editingQuiz.title.trim() || !editingQuiz.description.trim()) {
+        if (!editingQuiz.title?.trim() || !editingQuiz.description?.trim()) {
             onNotification('error', 'Title and Description are required');
             return;
         }
@@ -41,12 +41,12 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
             onNotification('error', 'Time limit cannot be negative');
             return;
         }
-        if (editingQuiz.questions.length === 0) {
+        if (!editingQuiz.questions || editingQuiz.questions.length === 0) {
             onNotification('error', 'Quiz must have at least one question');
             return;
         }
         // Check for missing reference codes in compiler questions
-        const missingRef = editingQuiz.questions.find(q => q.isCompiler && (!q.compilerConfig?.referenceCode || !q.compilerConfig.referenceCode.trim()));
+        const missingRef = editingQuiz.questions?.find(q => q.isCompiler && (!q.compilerConfig?.referenceCode || !q.compilerConfig.referenceCode.trim()));
         if (missingRef) {
             onNotification('error', `Question "${missingRef.question}" is missing a reference answer code.`);
             return;
@@ -57,7 +57,7 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
 
     const handleQuestionUpdate = (updatedQuestion: Question) => {
         if (!editingQuiz) return;
-        const newQuestions = editingQuiz.questions.map(q =>
+        const newQuestions = (editingQuiz.questions || []).map(q =>
             q.id === updatedQuestion.id ? updatedQuestion : q
         );
         setEditingQuiz({ ...editingQuiz, questions: newQuestions });
@@ -68,7 +68,7 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
         if (!editingQuiz) return;
         setEditingQuiz({
             ...editingQuiz,
-            questions: [...editingQuiz.questions, newQuestion]
+            questions: [...(editingQuiz.questions || []), newQuestion]
         });
         setEditingQuestion(null);
     };
@@ -77,7 +77,7 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
         if (!editingQuiz) return;
         setEditingQuiz({
             ...editingQuiz,
-            questions: editingQuiz.questions.filter(q => q.id !== questionId)
+            questions: (editingQuiz.questions || []).filter(q => q.id !== questionId)
         });
     };
 
@@ -172,7 +172,7 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
                         )}
 
                         <div className="space-y-2">
-                            {editingQuiz.questions.map((q, i) => (
+                            {(editingQuiz.questions || []).map((q, i) => (
                                 <React.Fragment key={q.id}>
                                     {editingQuestion && editingQuestion.id === q.id ? (
                                         <QuestionEditor
