@@ -89,7 +89,7 @@ interface Milestone {
     index: number;
 }
 
-const UserRoads: React.FC<UserRoadsProps> = ({ quizzes, subjects, user, attempts, skillTracks, studyCards, onSelectQuiz, onViewProfile, onViewLeaderboard, onLogout, onRefreshData }) => {
+const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: subjectsProp, user, attempts: attemptsProp, skillTracks: skillTracksProp, studyCards: studyCardsProp, onSelectQuiz, onViewProfile, onViewLeaderboard, onLogout, onRefreshData }) => {
     const navigate = useNavigate();
     const { showNotification } = useNotification();
     const [searchTerm, setSearchTerm] = useState('');
@@ -97,26 +97,40 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes, subjects, user, attempts
     const [activeTab, setActiveTab] = useState<SubjectTab>('quizzes');
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const activeSubject = Array.isArray(subjects) ? subjects.find(s => s._id === selectedSubjectId) : undefined;
+    // Defensive normalization to avoid crashes if API returns unexpected shapes
+    const quizzes = Array.isArray(quizzesProp) ? quizzesProp : [];
+    const subjects = Array.isArray(subjectsProp) ? subjectsProp : [];
+    const attempts = Array.isArray(attemptsProp) ? attemptsProp : [];
+    const skillTracks = Array.isArray(skillTracksProp) ? skillTracksProp : [];
+    const studyCards = Array.isArray(studyCardsProp) ? studyCardsProp : [];
+
+    const activeSubject = subjects.find(s => s._id === selectedSubjectId);
+    const searchValue = searchTerm.toLowerCase();
 
     const filteredQuizzes = quizzes.filter(quiz => {
-        const matchesSearch = quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            quiz.description.toLowerCase().includes(searchTerm.toLowerCase());
+        const title = typeof quiz.title === 'string' ? quiz.title : '';
+        const description = typeof quiz.description === 'string' ? quiz.description : '';
+        const matchesSearch = title.toLowerCase().includes(searchValue) ||
+            description.toLowerCase().includes(searchValue);
         const matchesSubject = !selectedSubjectId || quiz.subjectId === selectedSubjectId;
         return matchesSearch && matchesSubject;
     }).sort((a, b) => {
-        const getNum = (str: string) => {
+        const getNum = (value: unknown) => {
+            const str = typeof value === 'string' ? value : '';
             const match = str.match(/(\d+)/);
             return match ? parseInt(match[0], 10) : Number.MAX_SAFE_INTEGER;
         };
         const numA = getNum(a.title);
         const numB = getNum(b.title);
         if (numA !== numB) return numA - numB;
-        return a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' });
+        const titleA = typeof a.title === 'string' ? a.title : '';
+        const titleB = typeof b.title === 'string' ? b.title : '';
+        return titleA.localeCompare(titleB, undefined, { numeric: true, sensitivity: 'base' });
     });
 
-    const getDifficultyBadgeBg = (difficulty: string) => {
-        return DIFFICULTY_COLORS[difficulty.toLowerCase()] || DIFFICULTY_COLORS.default;
+    const getDifficultyBadgeBg = (difficulty: string | undefined) => {
+        const key = typeof difficulty === 'string' ? difficulty.toLowerCase() : 'default';
+        return DIFFICULTY_COLORS[key] || DIFFICULTY_COLORS.default;
     };
 
     const getQuizId = (quiz: Quiz) => quiz.id || quiz._id || '';
@@ -684,7 +698,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes, subjects, user, attempts
                                                                 {quiz.difficulty}
                                                             </span>
                                                             <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/10">
-                                                                {quiz.questions.length} Qs
+                                                                {quiz.questions?.length || 0} Qs
                                                             </span>
                                                         </div>
 

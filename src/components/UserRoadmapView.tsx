@@ -46,35 +46,87 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
         let completedItems = 0;
 
         // Count completed sub-modules
-        subModules.forEach(sub => {
-            const subKey = `${module.moduleId}:${sub.id}`;
-            if (userProgress?.completedSubModules?.includes(subKey)) {
-                completedItems++;
-            }
-        });
+        let allSubsComplete = true;
+        if (subModules.length > 0) {
+            subModules.forEach(sub => {
+                const subKey = `${module.moduleId}:${sub.id}`;
+                if (userProgress?.completedSubModules?.includes(subKey)) {
+                    completedItems++;
+                } else {
+                    allSubsComplete = false;
+                }
+            });
+        }
 
-        // Count completed quizzes
-        moduleQuizzes.forEach(q => {
-            const qId = q.id || q._id;
-            const hasPassed = attempts.some(a => a.quizId === qId && a.percentage >= (q.passingScore || 60));
-            if (hasPassed) completedItems++;
-        });
+        // Count completed quizzes and check if all passed
+        let allQuizzesPassed = true;
+        if (moduleQuizzes.length > 0) {
+            moduleQuizzes.forEach(q => {
+                const qId = q.id || q._id;
+                const hasPassed = attempts.some(a => a.quizId === qId && a.percentage >= (q.passingScore || 60));
+                if (hasPassed) {
+                    completedItems++;
+                } else {
+                    allQuizzesPassed = false;
+                }
+            });
+        } else {
+            // If no quizzes, consider quizzes as "passed" for completion check
+            allQuizzesPassed = true;
+        }
 
         const progressPercent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
+        // Check if module is actually complete (all quizzes passed + all sub-modules done)
+        // If module has no items (no quizzes and no sub-modules), consider it complete if marked in backend
+        const isActuallyComplete = totalItems > 0 ? (allSubsComplete && allQuizzesPassed) : false;
+
         // Determine main status
         if (userProgress) {
-            if (userProgress.completedModules?.includes(module.moduleId)) {
+            // Check if marked as completed in backend OR if actually complete
+            if (userProgress.completedModules?.includes(module.moduleId) || isActuallyComplete) {
                 status = 'completed';
                 isLocked = false;
                 isCompleted = true;
             } else if (userProgress.unlockedModules?.includes(module.moduleId)) {
                 status = 'available';
                 isLocked = false;
-            } else if (modules[0].moduleId === module.moduleId && (!userProgress.completedModules?.length && !userProgress.unlockedModules?.length)) {
-                // If nothing is started, first module is available
-                status = 'available';
-                isLocked = false;
+            } else {
+                // Check if previous module is completed to unlock this one
+                const moduleIndex = sortedModules.findIndex(m => m.moduleId === module.moduleId);
+                if (moduleIndex > 0) {
+                    const prevModule = sortedModules[moduleIndex - 1];
+                    // Check if previous module is completed (avoid recursion by checking directly)
+                    const prevModuleQuizzes = quizzes.filter(q => prevModule.quizIds?.includes(q.id || q._id || ''));
+                    const prevSubModules = prevModule.subModules || [];
+                    let prevAllSubsComplete = true;
+                    if (prevSubModules.length > 0) {
+                        prevAllSubsComplete = prevSubModules.every(sub => {
+                            const subKey = `${prevModule.moduleId}:${sub.id}`;
+                            return userProgress?.completedSubModules?.includes(subKey);
+                        });
+                    }
+                    let prevAllQuizzesPassed = true;
+                    if (prevModuleQuizzes.length > 0) {
+                        prevAllQuizzesPassed = prevModuleQuizzes.every(q => {
+                            const qId = q.id || q._id;
+                            return attempts.some(a => a.quizId === qId && a.percentage >= (q.passingScore || 60));
+                        });
+                    }
+                    const prevIsComplete = prevAllSubsComplete && prevAllQuizzesPassed && (prevModuleQuizzes.length > 0 || prevSubModules.length > 0);
+                    
+                    if (userProgress.completedModules?.includes(prevModule.moduleId) || prevIsComplete) {
+                        // Auto-unlock if previous is completed
+                        status = 'available';
+                        isLocked = false;
+                    }
+                } else if (moduleIndex === 0) {
+                    // First module is always available if nothing is started
+                    if (!userProgress.completedModules?.length && !userProgress.unlockedModules?.length) {
+                        status = 'available';
+                        isLocked = false;
+                    }
+                }
             }
         } else {
             // Fallback if no user progress
@@ -84,7 +136,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
             }
         }
 
-        return { status, isLocked, isCompleted, progressPercent, totalItems, completedItems };
+        return { status, isLocked, isCompleted, progressPercent, totalItems, completedItems, isActuallyComplete };
     };
 
     const handleModuleClick = (module: SkillModule) => {
@@ -167,10 +219,10 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
 
                                 // Specific Styles
                                 const containerClasses = isLocked
-                                    ? 'bg-[#1e1e2d] border-white/5 opacity-80 grayscale-[0.5]'
+                                    ? 'bg-gray-100 dark:bg-[#1e1e2d] border-gray-300 dark:border-white/5 opacity-80 grayscale-[0.5]'
                                     : isCompleted
-                                        ? 'bg-[#1e1e2d] border-emerald-500/30'
-                                        : 'bg-[#1e1e2d] border-indigo-500/30';
+                                        ? 'bg-white dark:bg-[#1e1e2d] border-emerald-500/50 dark:border-emerald-500/30 shadow-lg'
+                                        : 'bg-white dark:bg-[#1e1e2d] border-indigo-500/50 dark:border-indigo-500/30 shadow-lg';
 
                                 const shadowClasses = !isLocked
                                     ? isCompleted
@@ -187,20 +239,20 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                             ${containerClasses}
                                             ${shadowClasses}
                                             ${!isLocked && 'cursor-pointer hover:-translate-y-2'}
-                                            ${!isLocked && !isCompleted && 'ring-1 ring-indigo-500/50'}
+                                            ${!isLocked && !isCompleted && 'ring-1 ring-indigo-500/30 dark:ring-indigo-500/50'}
                                         `}
                                     >
                                         {/* Mobile Connector Dot */}
-                                        <div className={`md:hidden absolute left-[-2rem] top-8 w-4 h-4 rounded-full border-4 border-[#0a0a0b] ${isCompleted ? 'bg-emerald-500' : isLocked ? 'bg-gray-700' : 'bg-indigo-500'
+                                        <div className={`md:hidden absolute left-[-2rem] top-8 w-4 h-4 rounded-full border-4 border-white dark:border-[#0a0a0b] ${isCompleted ? 'bg-emerald-500' : isLocked ? 'bg-gray-400 dark:bg-gray-700' : 'bg-indigo-500'
                                             }`} />
 
                                         {/* Status & Progress Circle */}
                                         <div className="flex items-center justify-between mb-6">
                                             <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${isLocked
-                                                    ? 'bg-white/5 text-gray-500 border-transparent'
+                                                    ? 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-gray-500 border-gray-300 dark:border-transparent'
                                                     : isCompleted
-                                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                                        : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 animate-pulse'
+                                                        ? 'bg-emerald-500/10 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 dark:border-emerald-500/20'
+                                                        : 'bg-indigo-500/10 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 dark:border-indigo-500/20 animate-pulse'
                                                 }`}>
                                                 {isLocked ? 'Locked' : isCompleted ? 'Completed' : 'Available'}
                                             </span>
@@ -216,7 +268,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                                         stroke="currentColor"
                                                         strokeWidth="4"
                                                         fill="transparent"
-                                                        className={isLocked ? "text-gray-800" : "text-gray-800 dark:text-white/5"}
+                                                        className={isLocked ? "text-gray-300 dark:text-gray-800" : "text-gray-200 dark:text-white/5"}
                                                     />
                                                     {/* Progress Circle */}
                                                     {!isLocked && (
@@ -236,18 +288,18 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                                     )}
                                                 </svg>
                                                 {/* Module Number Centered */}
-                                                <span className={`absolute text-xl font-black ${isCompleted ? 'text-emerald-500' : isLocked ? 'text-gray-600' : 'text-indigo-500'
+                                                <span className={`absolute text-xl font-black ${isCompleted ? 'text-emerald-600 dark:text-emerald-500' : isLocked ? 'text-gray-500 dark:text-gray-600' : 'text-indigo-600 dark:text-indigo-500'
                                                     }`}>
                                                     {String(moduleNumber).padStart(2, '0')}
                                                 </span>
                                             </div>
                                         </div>
 
-                                        <h3 className={`text-xl md:text-2xl font-black mb-3 ${isLocked ? 'text-gray-500' : 'text-white'}`}>
+                                        <h3 className={`text-xl md:text-2xl font-black mb-3 ${isLocked ? 'text-gray-500 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
                                             {module.title}
                                         </h3>
 
-                                        <p className={`text-sm font-medium leading-relaxed line-clamp-2 md:line-clamp-3 ${isLocked ? 'text-gray-600' : 'text-gray-400'}`}>
+                                        <p className={`text-sm font-medium leading-relaxed line-clamp-2 md:line-clamp-3 ${isLocked ? 'text-gray-500 dark:text-gray-600' : 'text-gray-600 dark:text-gray-400'}`}>
                                             {module.description || (isLocked ? "Complete previous modules to unlock." : "Master this topic to progress.")}
                                         </p>
 
@@ -262,7 +314,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                         )}
 
                                         {!isLocked && (
-                                            <div className="mt-6 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-500 group-hover:gap-3 transition-all">
+                                            <div className="mt-6 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-500 group-hover:gap-3 transition-all">
                                                 View Details <Layout className="w-4 h-4" />
                                             </div>
                                         )}

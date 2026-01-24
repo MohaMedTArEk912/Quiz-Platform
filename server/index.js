@@ -342,12 +342,15 @@ if (io) io.on('connection', (socket) => {
     }
   });
 
-  socket.on('update_progress', ({ roomId, userId, score, currentQuestion, percentage }) => {
+  socket.on('update_progress', ({ roomId, userId, score, currentQuestion, percentage, correctAnswers, timeElapsed, accuracy }) => {
     socket.to(roomId).emit('opponent_progress', {
       userId,
       score,
       currentQuestion,
-      percentage
+      percentage,
+      correctAnswers: correctAnswers || 0,
+      timeElapsed: timeElapsed || 0,
+      accuracy: accuracy || 0
     });
     
     // Update server state if possible
@@ -355,9 +358,19 @@ if (io) io.on('connection', (socket) => {
         const room = gameRooms.get(roomId);
         if (room.players[userId]) {
             room.players[userId].score = score;
+            room.players[userId].currentQuestion = currentQuestion;
+            room.players[userId].correctAnswers = correctAnswers || 0;
+            room.players[userId].timeElapsed = timeElapsed || 0;
         } else {
             // Lazy init if missed join
-            room.players[userId] = { finished: false, score, timeTaken: 0 };
+            room.players[userId] = { 
+                finished: false, 
+                score, 
+                timeTaken: 0,
+                currentQuestion: currentQuestion || 0,
+                correctAnswers: correctAnswers || 0,
+                timeElapsed: timeElapsed || 0
+            };
         }
     }
   });
@@ -379,16 +392,35 @@ if (io) io.on('connection', (socket) => {
     const allFinished = playerIds.length >= 2 && playerIds.every(id => room.players[id].finished);
     
     if (allFinished) {
-        // Calculate Winner
-        const players = Object.entries(room.players).map(([id, stats]) => ({ id, ...stats }));
+        // Calculate Winner with improved logic
+        const players = Object.entries(room.players).map(([id, stats]) => ({ 
+            id, 
+            ...stats,
+            correctAnswers: stats.correctAnswers || 0,
+            timeElapsed: stats.timeElapsed || stats.timeTaken || 0
+        }));
         
-        // Sort by Score (Desc), then Time (Asc)
-        players.sort((a, b) => b.score - a.score || a.timeTaken - b.timeTaken);
+        // Improved sorting: 1) Correct answers, 2) Score, 3) Time (faster is better)
+        players.sort((a, b) => {
+            // First priority: Correct answers
+            if (b.correctAnswers !== a.correctAnswers) {
+                return b.correctAnswers - a.correctAnswers;
+            }
+            // Second priority: Score
+            if (b.score !== a.score) {
+                return b.score - a.score;
+            }
+            // Third priority: Time (faster wins)
+            return a.timeElapsed - b.timeElapsed;
+        });
         
         const winner = players[0];
         const runnerUp = players[1];
         
-        const isDraw = winner.score === runnerUp.score && winner.timeTaken === runnerUp.timeTaken;
+        // Draw if same correct answers, score, and time (within 1 second tolerance)
+        const isDraw = winner.correctAnswers === runnerUp.correctAnswers &&
+                      winner.score === runnerUp.score &&
+                      Math.abs(winner.timeElapsed - runnerUp.timeElapsed) <= 1;
         
         io.to(roomId).emit('game_over', {
             winnerId: isDraw ? null : winner.id,
@@ -607,8 +639,11 @@ app.use((error, req, res, next) => {
 const distPath = path.join(projectRoot, 'dist');
 app.use(express.static(distPath, {
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js')) {
+    const ext = path.extname(filePath);
+    if (ext === '.js' || ext === '.mjs' || ext === '.cjs') {
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    } else if (ext === '.wasm') {
+      res.setHeader('Content-Type', 'application/wasm');
     }
   }
 }));

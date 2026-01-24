@@ -6,7 +6,8 @@ export const DEFAULT_AVATAR_CONFIG = {
     backgroundColor: 'bg-indigo-100',
     mood: 'happy',
     gender: 'male',
-    clothing: 'shirt'
+    clothing: 'shirt',
+    frame: 'none'
 } as const;
 
 export const AVATAR_OPTIONS = {
@@ -21,18 +22,23 @@ export const AVATAR_OPTIONS = {
     hair: {
         styles: [
             'short', 'messy', 'buzz', 'mohawk',
-            'fade', 'quiff',
-            'long', 'ponytail', 'curly', 'bob', 'wavy', 'bun'
+            'fade', 'quiff', 'spiky', 'afro',
+            'long', 'ponytail', 'curly', 'bob', 'wavy', 'bun', 'braids', 'pixie'
         ],
-        colors: ['#4A3728', '#2C1A0F', '#E6BE8A', '#A52A2A', '#D49D8B', '#000000', '#F59E0B', '#6366F1', '#EC4899', '#FFFFFF', '#9CA3AF']
+        colors: [
+            '#4A3728', '#2C1A0F', '#E6BE8A', '#A52A2A', '#D49D8B', '#000000', 
+            '#F59E0B', '#6366F1', '#EC4899', '#FFFFFF', '#9CA3AF', '#8B4513',
+            '#FFD700', '#FF1493', '#00CED1', '#9370DB', '#FF6347', '#32CD32'
+        ]
     },
     clothing: {
-        types: ['shirt', 'tshirt', 'hoodie', 'blazer', 'dress']
+        types: ['shirt', 'tshirt', 'hoodie', 'blazer', 'dress', 'jacket', 'sweater', 'tank']
     },
     style: {
         accessories: [
             'none', 'glasses', 'sunglasses', 'headphones', 'cap', 'mask',
-            'crown', 'wizard_hat', 'pirate', 'ninja', 'viking', 'astro', 'cat_ears', 'bowtie'
+            'crown', 'wizard_hat', 'pirate', 'ninja', 'viking', 'astro', 'cat_ears', 'bowtie',
+            'earrings', 'necklace', 'beret'
         ]
     },
     mood: {

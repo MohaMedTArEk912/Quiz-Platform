@@ -66,8 +66,10 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
         { id: 'mood', icon: <Smile className="w-5 h-5" />, label: 'Mood' },
     ] as const;
 
-    // Premium Item Mapping: Option Value -> Shop Item ID
+    // Comprehensive Premium Item Mapping: Option Value -> Shop Item ID
+    // Maps avatar attribute values to their corresponding shop item IDs
     const PREMIUM_ITEMS: Record<string, string> = {
+        // Accessories
         'sunglasses': 'cool-glasses',
         'crown': 'golden-crown',
         'wizard_hat': 'wizard-hat',
@@ -77,18 +79,41 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
         'astro': 'astro-helm',
         'cat_ears': 'cat-ears',
         'bowtie': 'bowtie',
+        'headphones': 'gaming-headset',
+        'earrings': 'diamond-earrings',
+        'necklace': 'gold-necklace',
+        'beret': 'artist-beret',
+        // Backgrounds/Themes
         'bg-galaxy': 'galaxy-theme',
         'bg-neon': 'neon-rave',
         'bg-slate-900': 'midnight-theme',
         'bg-emerald-900': 'forest-theme',
         'bg-orange-100': 'sunset-theme',
+        // Clothing
+        'hoodie': 'street-hoodie',
+        'blazer': 'formal-blazer',
+        'dress': 'summer-dress',
+        // Frames
+        'gold': 'gold-frame',
+        'diamond': 'diamond-frame',
+        'cyberpunk': 'cyber-frame',
     };
 
-    const isLocked = (value: string) => {
+
+    const isLocked = (value: string, attributeType?: string) => {
+        // Mark attributeType as used to satisfy strict TS rules
+        void attributeType;
         const shopItemId = PREMIUM_ITEMS[value];
         if (!shopItemId) return false;
         return !user.unlockedItems?.includes(shopItemId);
     };
+
+    // Refresh config when user data updates (e.g., after purchasing items)
+    useEffect(() => {
+        if (user.avatar) {
+            setConfig({ ...DEFAULT_AVATAR_CONFIG, ...user.avatar });
+        }
+    }, [user.avatar, user.unlockedItems]);
 
     // options definition removed, using AVATAR_OPTIONS from constants
 
@@ -239,19 +264,24 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                                     <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Background</h3>
                                     <div className="flex flex-wrap gap-4">
                                         {AVATAR_OPTIONS.base.backgroundColor.map(bg => {
-                                            const locked = isLocked(bg);
+                                            const locked = isLocked(bg, 'backgroundColor');
+                                            const isOwned = user.unlockedItems?.includes(PREMIUM_ITEMS[bg] || '');
                                             return (
                                                 <button
                                                     key={bg}
                                                     disabled={locked}
                                                     onClick={() => setConfig({ ...config, backgroundColor: bg })}
-                                                    className={`w-12 h-12 rounded-xl border-4 transition-transform hover:scale-110 relative ${bg} ${config.backgroundColor === bg ? 'border-indigo-500 scale-110' : 'border-transparent'} ${locked ? 'opacity-50 cursor-not-allowed' : ''}
+                                                    className={`w-12 h-12 rounded-xl border-4 transition-transform hover:scale-110 relative ${bg} ${config.backgroundColor === bg ? 'border-indigo-500 scale-110 ring-2 ring-indigo-300' : 'border-transparent'} ${locked ? 'opacity-50 cursor-not-allowed' : ''} ${isOwned ? 'ring-1 ring-yellow-400' : ''}
                                                     `}
+                                                    title={locked ? 'Locked - Purchase in Shop' : isOwned ? 'Owned' : ''}
                                                 >
                                                     {locked && (
                                                         <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
                                                             <Lock className="w-4 h-4 text-white/80" />
                                                         </div>
+                                                    )}
+                                                    {isOwned && !locked && (
+                                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white dark:border-gray-800" title="Owned" />
                                                     )}
                                                 </button>
                                             )
@@ -300,51 +330,105 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                         {activeTab === 'clothing' && (
                             <div>
                                 <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
-                                    Outfit {config.gender === 'male' && <span className="text-xs font-normal lowercase opacity-75">(male AVATAR_OPTIONS)</span>}
-                                    {config.gender === 'female' && <span className="text-xs font-normal lowercase opacity-75">(female AVATAR_OPTIONS)</span>}
+                                    Outfit {config.gender === 'male' && <span className="text-xs font-normal lowercase opacity-75">(male options)</span>}
+                                    {config.gender === 'female' && <span className="text-xs font-normal lowercase opacity-75">(female options)</span>}
                                 </h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    {getAvailableClothing().map(item => (
-                                        <button
-                                            key={item}
-                                            onClick={() => setConfig({ ...config, clothing: item as any })}
-                                            className={`p-4 rounded-xl border-2 text-sm font-bold capitalize transition-all ${config.clothing === item
-                                                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
-                                                : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-indigo-300'
-                                                }`}
-                                        >
-                                            {item}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'style' && (
-                            <div>
-                                <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Accessories</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    {AVATAR_OPTIONS.style.accessories.map(item => {
-                                        const locked = isLocked(item);
+                                    {getAvailableClothing().map(item => {
+                                        const locked = isLocked(item, 'clothing');
+                                        const isOwned = user.unlockedItems?.includes(PREMIUM_ITEMS[item] || '');
                                         return (
                                             <button
                                                 key={item}
                                                 disabled={locked}
-                                                onClick={() => setConfig({ ...config, accessory: item })}
-                                                className={`p-4 rounded-xl border-2 text-sm font-bold capitalize transition-all relative ${config.accessory === item
-                                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
+                                                onClick={() => setConfig({ ...config, clothing: item as any })}
+                                                className={`p-4 rounded-xl border-2 text-sm font-bold capitalize transition-all relative ${config.clothing === item
+                                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-300'
                                                     : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-indigo-300'
-                                                    } ${locked ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-white/5' : ''}`}
+                                                    } ${locked ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-white/5' : ''} ${isOwned ? 'ring-1 ring-yellow-400' : ''}`}
+                                                title={locked ? 'Locked - Purchase in Shop' : isOwned ? 'Owned' : ''}
                                             >
-                                                {item.replace(/_/g, ' ')}
+                                                {item}
                                                 {locked && (
                                                     <div className="absolute top-2 right-2">
                                                         <Lock className="w-3 h-3 text-gray-400" />
                                                     </div>
                                                 )}
+                                                {isOwned && !locked && (
+                                                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white dark:border-gray-800" title="Owned" />
+                                                )}
                                             </button>
                                         )
                                     })}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'style' && (
+                            <div className="space-y-8">
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Accessories</h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        {AVATAR_OPTIONS.style.accessories.map(item => {
+                                            const locked = isLocked(item, 'accessory');
+                                            const isOwned = user.unlockedItems?.includes(PREMIUM_ITEMS[item] || '');
+                                            return (
+                                                <button
+                                                    key={item}
+                                                    disabled={locked}
+                                                    onClick={() => setConfig({ ...config, accessory: item })}
+                                                    className={`p-4 rounded-xl border-2 text-sm font-bold capitalize transition-all relative ${config.accessory === item
+                                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-300'
+                                                        : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-indigo-300'
+                                                        } ${locked ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-white/5' : ''} ${isOwned ? 'ring-1 ring-yellow-400' : ''}`}
+                                                    title={locked ? 'Locked - Purchase in Shop' : isOwned ? 'Owned' : ''}
+                                                >
+                                                    {item.replace(/_/g, ' ')}
+                                                    {locked && (
+                                                        <div className="absolute top-2 right-2">
+                                                            <Lock className="w-3 h-3 text-gray-400" />
+                                                        </div>
+                                                    )}
+                                                    {isOwned && !locked && (
+                                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white dark:border-gray-800" title="Owned" />
+                                                    )}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                                
+                                {/* Frame/Border Selection */}
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Frame Style</h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        {['none', 'gold', 'diamond', 'cyberpunk'].map(frame => {
+                                            const locked = isLocked(frame, 'frame');
+                                            const isOwned = user.unlockedItems?.includes(PREMIUM_ITEMS[frame] || '');
+                                            return (
+                                                <button
+                                                    key={frame}
+                                                    disabled={locked}
+                                                    onClick={() => setConfig({ ...config, frame: frame as any })}
+                                                    className={`p-4 rounded-xl border-2 text-sm font-bold capitalize transition-all relative ${(config.frame || 'none') === frame
+                                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-300'
+                                                        : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-indigo-300'
+                                                        } ${locked ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-white/5' : ''} ${isOwned ? 'ring-1 ring-yellow-400' : ''}`}
+                                                    title={locked ? 'Locked - Purchase in Shop' : isOwned ? 'Owned' : ''}
+                                                >
+                                                    {frame === 'none' ? 'No Frame' : frame.replace(/_/g, ' ')}
+                                                    {locked && (
+                                                        <div className="absolute top-2 right-2">
+                                                            <Lock className="w-3 h-3 text-gray-400" />
+                                                        </div>
+                                                    )}
+                                                    {isOwned && !locked && (
+                                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white dark:border-gray-800" title="Owned" />
+                                                    )}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         )}

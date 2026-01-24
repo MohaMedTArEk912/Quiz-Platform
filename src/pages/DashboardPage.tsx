@@ -13,6 +13,13 @@ const DashboardPage: React.FC = () => {
     const { currentUser } = useAuth();
     const { showNotification } = useNotification();
 
+    // Defensive fallbacks to avoid runtime crashes when backend returns unexpected shapes
+    const safeQuizzes = Array.isArray(availableQuizzes) ? availableQuizzes : [];
+    const safeSubjects = Array.isArray(subjects) ? subjects : [];
+    const safeSkillTracks = Array.isArray(skillTracks) ? skillTracks : [];
+    const safeStudyCards = Array.isArray(studyCards) ? studyCards : [];
+    const safeAttempts = Array.isArray(allAttempts) ? allAttempts : [];
+
     // Refresh user data and all data when component mounts to get latest admin updates
     useEffect(() => {
         const loadLatestData = async () => {
@@ -31,12 +38,12 @@ const DashboardPage: React.FC = () => {
         <>
             <InstallPWA />
             <UserRoads
-                quizzes={availableQuizzes}
-                subjects={subjects}
-                skillTracks={skillTracks}
-                studyCards={studyCards}
+                quizzes={safeQuizzes}
+                subjects={safeSubjects}
+                skillTracks={safeSkillTracks}
+                studyCards={safeStudyCards}
                 user={userWithRank || currentUser}
-                attempts={allAttempts.filter(a => a.userId === currentUser.userId)}
+                attempts={safeAttempts.filter(a => a.userId === currentUser.userId)}
                 onRefreshData={async () => {
                     await Promise.all([refreshUser(), refreshData()]);
                 }}

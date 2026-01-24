@@ -21,7 +21,7 @@ const Avatar: React.FC<AvatarProps> = ({ config, size = 'md', className = '' }) 
     };
 
     const finalConfig = { ...defaultConfig, ...config };
-    const { gender, skinColor, hairColor, hairStyle, clothing, mood, accessory } = finalConfig;
+    const { gender, skinColor, hairColor, hairStyle, clothing, mood, accessory, frame = 'none' } = finalConfig;
 
     // Size mapping
     const sizeClasses = {
@@ -45,8 +45,22 @@ const Avatar: React.FC<AvatarProps> = ({ config, size = 'md', className = '' }) 
 
     const skinShadow = darken(skinColor, 20);
 
+    // Frame styling
+    const getFrameStyle = () => {
+        switch (frame) {
+            case 'gold':
+                return 'border-4 border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)] ring-2 ring-yellow-300/50';
+            case 'diamond':
+                return 'border-4 border-cyan-300 shadow-[0_0_30px_rgba(103,232,249,0.6)] ring-4 ring-cyan-200/30 animate-pulse';
+            case 'cyberpunk':
+                return 'border-4 border-purple-500 shadow-[0_0_25px_rgba(168,85,247,0.7)] ring-2 ring-pink-500/50';
+            default:
+                return 'border-4 border-white dark:border-white/10';
+        }
+    };
+
     return (
-        <div className={`relative rounded-full overflow-hidden ${sizeClasses[size]} ${className} ${finalConfig.backgroundColor} flex items-center justify-center border-4 border-white dark:border-white/10 shadow-xl`}>
+        <div className={`relative rounded-full overflow-hidden ${sizeClasses[size]} ${className} ${finalConfig.backgroundColor} flex items-center justify-center ${getFrameStyle()} shadow-xl`}>
             <svg
                 viewBox="0 0 200 200"
                 xmlns="http://www.w3.org/2000/svg"
@@ -67,11 +81,11 @@ const Avatar: React.FC<AvatarProps> = ({ config, size = 'md', className = '' }) 
                 {renderHairBack(hairStyle, hairColor)}
 
                 {/* --- 2. BODY & SHOULDERS --- */}
-                <g transform="translate(0, 10)">
+                <g transform="translate(0, 10)" filter="url(#softShadow)">
                     {gender === 'male' ? (
-                        <path d="M70,140 Q100,145 130,140 L130,220 L70,220 Z" fill={skinColor} />
+                        <path d="M70,140 Q100,145 130,140 L130,220 L70,220 Z" fill="url(#bodyGradient)" />
                     ) : (
-                        <path d="M80,140 Q100,145 120,140 L125,220 L75,220 Z" fill={skinColor} />
+                        <path d="M80,140 Q100,145 120,140 L125,220 L75,220 Z" fill="url(#bodyGradient)" />
                     )}
                 </g>
 
@@ -81,11 +95,11 @@ const Avatar: React.FC<AvatarProps> = ({ config, size = 'md', className = '' }) 
                 {/* --- 4. NECK --- */}
                 <g transform="translate(0, 0)">
                     {gender === 'male' ? (
-                        <path d="M75,120 L75,150 Q100,155 125,150 L125,120 Z" fill={skinColor} />
+                        <path d="M75,120 L75,150 Q100,155 125,150 L125,120 Z" fill="url(#bodyGradient)" />
                     ) : (
-                        <path d="M82,125 L82,150 Q100,155 118,150 L118,125 Z" fill={skinColor} />
+                        <path d="M82,125 L82,150 Q100,155 118,150 L118,125 Z" fill="url(#bodyGradient)" />
                     )}
-                    <path d={gender === 'male' ? "M75,120 Q100,140 125,120" : "M82,125 Q100,140 118,125"} fill={skinShadow} opacity="0.2" />
+                    <path d={gender === 'male' ? "M75,120 Q100,140 125,120" : "M82,125 Q100,140 118,125"} fill={skinShadow} opacity="0.3" />
                 </g>
 
 
@@ -99,9 +113,12 @@ const Avatar: React.FC<AvatarProps> = ({ config, size = 'md', className = '' }) 
                 </g>
 
                 {/* --- 6. FACE FEATURES --- */}
-                <g opacity={gender === 'female' ? 0.4 : 0.2}>
+                <g opacity={gender === 'female' ? 0.5 : 0.3}>
                     <circle cx="70" cy={105} r={8} fill="#FF9999" />
                     <circle cx="130" cy={105} r={8} fill="#FF9999" />
+                    {/* Eye highlights for depth */}
+                    <circle cx="72" cy={103} r={2.5} fill="white" opacity="0.9" />
+                    <circle cx="132" cy={103} r={2.5} fill="white" opacity="0.9" />
                 </g>
 
                 {renderFace(mood, gender)}
@@ -203,8 +220,36 @@ const renderClothing = (type: string, gender: string, skinColor: string) => {
             return (
                 <g>
                     <path d={`M${startX - 5},${shoulderY - 5} Q100,${shoulderY - 20} ${endX + 5},${shoulderY - 5} L${endX + 15},210 L${startX - 15},210 Z`} fill="#6366F1" />
+                    <path d={`M${startX - 5},${shoulderY - 5} Q100,${shoulderY - 15} ${endX + 5},${shoulderY - 5}`} fill="#4F46E5" />
                     <line x1="92" y1="160" x2="92" y2="190" stroke="white" strokeWidth="2" />
                     <line x1="108" y1="160" x2="108" y2="190" stroke="white" strokeWidth="2" />
+                </g>
+            );
+        case 'jacket':
+            return (
+                <g>
+                    {commonBase('#1F2937')}
+                    <path d={`M${startX + 15},${shoulderY} L100,170 L${endX - 15},${shoulderY}`} fill="none" stroke="#111827" strokeWidth="3" />
+                    <circle cx="88" cy="165" r="3" fill="#111827" />
+                    <circle cx="112" cy="165" r="3" fill="#111827" />
+                    <path d={`M${startX + 10},${shoulderY + 5} Q100,${shoulderY + 20} ${endX - 10},${shoulderY + 5}`} fill="#374151" />
+                </g>
+            );
+        case 'sweater':
+            return (
+                <g>
+                    {commonBase('#8B5CF6')}
+                    <path d={`M${startX + 10},${shoulderY} Q100,${shoulderY + 30} ${endX - 10},${shoulderY}`} fill={skinColor} />
+                    <path d={`M${startX + 10},${shoulderY} Q100,${shoulderY + 30} ${endX - 10},${shoulderY}`} fill="none" stroke="#7C3AED" strokeWidth="2" />
+                    <circle cx="100" cy="180" r="2" fill="rgba(0,0,0,0.2)" />
+                </g>
+            );
+        case 'tank':
+            return (
+                <g>
+                    <path d={`M${startX + 20},${shoulderY} Q100,${shoulderY + 10} ${endX - 20},${shoulderY} L${endX - 10},210 L${startX + 10},210 Z`} fill="#F59E0B" />
+                    <path d={`M${startX + 20},${shoulderY} L${startX + 15},${shoulderY - 10} L${startX + 25},${shoulderY - 5} Z`} fill="#F59E0B" />
+                    <path d={`M${endX - 20},${shoulderY} L${endX - 15},${shoulderY - 10} L${endX - 25},${shoulderY - 5} Z`} fill="#F59E0B" />
                 </g>
             );
         case 'tshirt':
@@ -250,12 +295,15 @@ const renderHairBack = (style: string, color: string) => {
         case 'long':
         case 'wavy':
         case 'ponytail':
+        case 'braids':
             return <path d="M50,90 C30,150 40,190 100,190 C160,190 170,150 150,90" fill={color} stroke={color} strokeWidth="10" strokeLinejoin="round" />;
         case 'bob':
             return <path d="M55,90 C55,140 60,150 100,150 C140,150 145,140 145,90" fill={color} stroke={color} strokeWidth="20" strokeLinejoin="round" />;
         case 'bun':
             // Bun sits on top but we need some volume behind usually
             return <circle cx="100" cy="40" r="25" fill={color} />;
+        case 'afro':
+            return <circle cx="100" cy="70" r="50" fill={color} opacity="0.8" />;
         default:
             return null;
     }
@@ -324,6 +372,48 @@ const renderHairFront = (style: string, color: string, gender: string) => {
             return (
                 <path d="M50,90 Q40,30 100,25 Q160,30 150,90 Q150,55 100,55 Q50,55 50,90" fill={color} />
             );
+        case 'spiky':
+            return (
+                <g>
+                    <path d="M55,85 C55,40 145,40 145,85" fill={color} />
+                    <path d="M70,30 L75,15 L80,30" fill={color} />
+                    <path d="M85,25 L90,10 L95,25" fill={color} />
+                    <path d="M100,20 L105,5 L110,20" fill={color} />
+                    <path d="M115,25 L120,10 L125,25" fill={color} />
+                    <path d="M130,30 L135,15 L140,30" fill={color} />
+                </g>
+            );
+        case 'afro':
+            return (
+                <g filter="url(#softShadow)">
+                    <circle cx="100" cy="70" r="45" fill={color} />
+                    <circle cx="75" cy="65" r="15" fill={color} />
+                    <circle cx="125" cy="65" r="15" fill={color} />
+                    <circle cx="85" cy="50" r="12" fill={color} />
+                    <circle cx="115" cy="50" r="12" fill={color} />
+                </g>
+            );
+        case 'braids':
+            if (gender === 'female') {
+                return (
+                    <g filter="url(#softShadow)">
+                        <path d="M55,90 C55,35 145,35 145,90" fill={color} />
+                        <path d="M60,100 L60,160" stroke={color} strokeWidth="8" strokeLinecap="round" />
+                        <path d="M80,100 L80,160" stroke={color} strokeWidth="8" strokeLinecap="round" />
+                        <path d="M100,100 L100,160" stroke={color} strokeWidth="8" strokeLinecap="round" />
+                        <path d="M120,100 L120,160" stroke={color} strokeWidth="8" strokeLinecap="round" />
+                        <path d="M140,100 L140,160" stroke={color} strokeWidth="8" strokeLinecap="round" />
+                    </g>
+                );
+            }
+            return <path d="M55,85 C55,50 145,50 145,85 Q100,70 55,85 Z" fill={color} />;
+        case 'pixie':
+            if (gender === 'female') {
+                return (
+                    <path d="M55,90 C55,40 70,30 100,30 C130,30 145,40 145,90 C145,75 140,55 100,55 C60,55 55,75 55,90 Z" fill={color} />
+                );
+            }
+            return <path d="M55,85 C55,50 145,50 145,85 Q100,70 55,85 Z" fill={color} />;
     }
 };
 

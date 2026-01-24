@@ -64,12 +64,24 @@ export const getClan = async (req, res) => {
       
     const enrichedMembers = clan.members.map(m => {
       const user = users.find(u => u.userId === m.userId);
-      return { ...m.toObject(), ...user };
+      // Explicitly map user fields to avoid overwriting member role or other internal fields
+      const memberObj = m.toObject();
+      if (user) {
+          memberObj.name = user.name;
+          memberObj.avatar = user.avatar;
+          memberObj.xp = user.xp; // User's global XP
+          memberObj.totalScore = user.totalScore;
+      }
+      return memberObj;
     });
 
     const enrichedRequests = clan.activeJoinRequests ? clan.activeJoinRequests.map(r => {
         const user = users.find(u => u.userId === r.userId);
-        return { ...r.toObject(), name: user?.name || 'Unknown', avatar: user?.avatar };
+        return { 
+            ...r.toObject(), 
+            name: user?.name || 'Unknown', 
+            avatar: user?.avatar 
+        };
     }) : [];
 
     res.json({ ...clan.toObject(), members: enrichedMembers, activeJoinRequests: enrichedRequests });

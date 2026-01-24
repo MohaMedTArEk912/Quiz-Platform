@@ -136,6 +136,7 @@ export interface AvatarConfig {
     mood: 'happy' | 'neutral' | 'cool' | 'excited';
     gender: 'male' | 'female';
     clothing: 'shirt' | 'hoodie' | 'blazer' | 'dress' | 'tshirt';
+    frame?: 'none' | 'gold' | 'diamond' | 'cyberpunk';
 }
 
 export interface AttemptData {

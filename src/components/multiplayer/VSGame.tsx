@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Quiz, UserData, QuizResult } from '../../types';
 import { useSocket } from '../../context/SocketContext';
 import QuizTaking from '../QuizTaking';
-import { Trophy, Activity, Sword, Flag, Timer, Swords, Zap, TrendingUp } from 'lucide-react';
+import { Trophy, Activity, Sword, Timer, Swords, Zap } from 'lucide-react';
 import Avatar from '../Avatar';
 import type { AvatarConfig } from '../../types';
 
@@ -11,6 +11,9 @@ type OpponentProgress = {
     score: number;
     currentQuestion: number;
     percentage: number;
+    correctAnswers?: number;
+    timeElapsed?: number;
+    accuracy?: number;
 };
 
 interface VSGameProps {
@@ -40,17 +43,25 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
     const [opponentState, setOpponentState] = useState({
         score: 0,
         currentQuestion: 0,
-        percentage: 0
+        percentage: 0,
+        correctAnswers: 0,
+        timeElapsed: 0,
+        accuracy: 0
     });
     const [myState, setMyState] = useState({
         score: 0,
-        currentQuestion: 0
+        currentQuestion: 0,
+        correctAnswers: 0,
+        timeElapsed: 0,
+        accuracy: 0
     });
     const [myProgress, setMyProgress] = useState(0);
     const [gameLogs, setGameLogs] = useState<string[]>([]);
     const logsEndRef = useRef<HTMLDivElement>(null);
     const [isAhead, setIsAhead] = useState<boolean | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
+    const [gameStartTime, setGameStartTime] = useState<number | null>(null);
+    const [myTimeElapsed, setMyTimeElapsed] = useState(0);
 
     // Auto-scroll logs
     useEffect(() => {
@@ -80,6 +91,27 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
         };
     }, [socket]);
 
+    // Update ahead status whenever state changes
+    useEffect(() => {
+        // Priority: 1) Correct answers, 2) Score, 3) Progress, 4) Time
+        if (myState.correctAnswers > opponentState.correctAnswers) {
+            setIsAhead(true);
+        } else if (myState.correctAnswers < opponentState.correctAnswers) {
+            setIsAhead(false);
+        } else if (myState.score > opponentState.score) {
+            setIsAhead(true);
+        } else if (myState.score < opponentState.score) {
+            setIsAhead(false);
+        } else if (myState.currentQuestion > opponentState.currentQuestion) {
+            setIsAhead(true);
+        } else if (myState.currentQuestion < opponentState.currentQuestion) {
+            setIsAhead(false);
+        } else {
+            // Same progress - check time (faster is better)
+            setIsAhead(myTimeElapsed <= opponentState.timeElapsed);
+        }
+    }, [myState, opponentState, myTimeElapsed]);
+
     // Listen for updates and match ready
     useEffect(() => {
         if (!socket) return;
@@ -87,33 +119,31 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
 
         const handleProgress = (data: OpponentProgress) => {
             if (data.userId === opponent.id) {
-                const prevQ = opponentState.currentQuestion;
-                const prevScore = opponentState.score;
+                setOpponentState(prev => {
+                    const prevQ = prev.currentQuestion;
+                    const prevScore = prev.score;
+                    const prevCorrect = prev.correctAnswers;
 
-                setOpponentState({
-                    score: data.score,
-                    currentQuestion: data.currentQuestion,
-                    percentage: data.percentage
-                });
+                    // Add log for question progress
+                    if (data.currentQuestion > prevQ) {
+                        const isCorrect = (data.correctAnswers || 0) > prevCorrect;
+                        addLog(`${isCorrect ? '✅' : '❌'} ${opponent.name} answered Q${data.currentQuestion} ${isCorrect ? 'correctly' : 'incorrectly'}`);
 
-                // Add log for question progress
-                if (data.currentQuestion > prevQ) {
-                    addLog(`🎯 ${opponent.name} answered Question ${data.currentQuestion}`);
-
-                    // Visual feedback on score change
-                    if (data.score > prevScore) {
-                        addLog(`✨ ${opponent.name} scored ${data.score - prevScore} points!`);
+                        // Visual feedback on score change
+                        if (data.score > prevScore) {
+                            addLog(`✨ ${opponent.name} scored ${data.score - prevScore} points!`);
+                        }
                     }
-                }
 
-                // Determine who's ahead
-                if (myState.currentQuestion > data.currentQuestion) {
-                    setIsAhead(true);
-                } else if (myState.currentQuestion < data.currentQuestion) {
-                    setIsAhead(false);
-                } else {
-                    setIsAhead(myState.score >= data.score);
-                }
+                    return {
+                        score: data.score,
+                        currentQuestion: data.currentQuestion,
+                        percentage: data.percentage,
+                        correctAnswers: data.correctAnswers || 0,
+                        timeElapsed: data.timeElapsed || 0,
+                        accuracy: data.accuracy || 0
+                    };
+                });
             }
         };
 
@@ -144,7 +174,7 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
             socket.off('match_ready', handleMatchReady);
             socket.off('game_over', handleGameOver);
         };
-    }, [socket, opponent.id, roomId, opponent.name, gameState, opponentState.currentQuestion, opponentState.score, myState.currentQuestion, myState.score, currentUser.userId]);
+    }, [socket, opponent.id, roomId, opponent.name, gameState, currentUser.userId]);
 
     // Countdown Logic
     useEffect(() => {
@@ -159,16 +189,56 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
         }
     }, [gameState, countdown]);
 
+    // Set game start time when playing starts
+    useEffect(() => {
+        if (gameState === 'playing' && !gameStartTime) {
+            setGameStartTime(Date.now());
+        }
+    }, [gameState, gameStartTime]);
+
+    // Track time elapsed
+    useEffect(() => {
+        if (gameState === 'playing' && gameStartTime) {
+            const interval = setInterval(() => {
+                setMyTimeElapsed(Math.floor((Date.now() - gameStartTime) / 1000));
+            }, 1000);
+            return () => clearInterval(interval);
+        }
+    }, [gameState, gameStartTime]);
+
     const handleAnswerUpdate = (score: number, currentQuestionIndex: number) => {
+        if (!gameStartTime) return; // Don't update if game hasn't started
+        const timeElapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+        
+        // In delayedValidation mode, currentQuestionIndex is actually correctCount
+        // In normal mode, we estimate based on score
+        // Calculate average points per question to estimate correct answers
+        const avgPointsPerQuestion = quiz.questions.reduce((sum, q) => sum + (q.points || 10), 0) / quiz.questions.length;
+        const estimatedCorrect = Math.round(score / avgPointsPerQuestion);
+        const correctAnswers = Math.min(estimatedCorrect, currentQuestionIndex); // Can't have more correct than answered
+        const accuracy = currentQuestionIndex > 0 ? Math.round((correctAnswers / currentQuestionIndex) * 100) : 0;
+
         setMyProgress(currentQuestionIndex);
-        setMyState({ score, currentQuestion: currentQuestionIndex });
+        setMyState(prev => ({ 
+            ...prev,
+            score, 
+            currentQuestion: currentQuestionIndex,
+            correctAnswers,
+            timeElapsed,
+            accuracy
+        }));
+        setMyTimeElapsed(timeElapsed);
+
         if (socket) {
             socket.emit('update_progress', {
                 roomId,
                 userId: currentUser.userId,
                 score,
                 currentQuestion: currentQuestionIndex,
-                percentage: Math.round((currentQuestionIndex / quiz.questions.length) * 100)
+                percentage: Math.round((currentQuestionIndex / quiz.questions.length) * 100),
+                correctAnswers,
+                timeElapsed,
+                accuracy
             });
         }
     };
@@ -297,12 +367,19 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
                         localResultRef.current = res;
                         setGameState('finished');
                         if (socket) {
+                            const finalTime = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : 0;
+                            const finalCorrect = res.score / 10; // Assuming 10 points per correct answer
+                            const finalAccuracy = Math.round((finalCorrect / quiz.questions.length) * 100);
+
                             socket.emit('update_progress', {
                                 roomId,
                                 userId: currentUser.userId,
                                 score: res.score,
                                 currentQuestion: quiz.questions.length,
-                                percentage: res.percentage
+                                percentage: res.percentage,
+                                correctAnswers: finalCorrect,
+                                timeElapsed: finalTime,
+                                accuracy: finalAccuracy
                             });
                             socket.emit('quiz_completed', {
                                 roomId,
@@ -362,115 +439,223 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
                     </div>
                 </div>
 
-                {/* Live Score Comparison */}
-                <div className="z-10 mb-4">
+                {/* Enhanced Live Score Comparison */}
+                <div className="z-10 mb-4 space-y-3">
+                    {/* Score Comparison */}
                     <div className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/50">
+                        <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Score</span>
+                            <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${isAhead === true ? 'bg-green-500/20 text-green-400' : isAhead === false ? 'bg-red-500/20 text-red-400' : 'bg-slate-700/50 text-slate-400'}`}>
+                                {isAhead === true ? '🔥 LEADING' : isAhead === false ? '⚡ BEHIND' : '⚖️ TIED'}
+                            </div>
+                        </div>
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-slate-400 font-semibold">YOUR SCORE</span>
-                            <span className="text-xs text-slate-400 font-semibold">OPPONENT</span>
-                        </div>
-                        <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <Trophy className="w-4 h-4 text-indigo-400" />
-                                <span className="text-2xl font-black text-indigo-400">{myState.score}</span>
-                                {isAhead === true && <TrendingUp className="w-4 h-4 text-green-400 animate-pulse" />}
+                                <div className="w-8 h-8 rounded-full bg-indigo-500/20 border-2 border-indigo-500 flex items-center justify-center">
+                                    <Trophy className="w-4 h-4 text-indigo-400" />
+                                </div>
+                                <div>
+                                    <div className="text-2xl font-black text-indigo-400">{myState.score}</div>
+                                    <div className="text-[9px] text-slate-500">You</div>
+                                </div>
                             </div>
+                            <div className="text-slate-600 font-bold">VS</div>
                             <div className="flex items-center gap-2">
-                                {isAhead === false && <TrendingUp className="w-4 h-4 text-red-400 animate-pulse" />}
-                                <span className="text-2xl font-black text-red-400">{opponentState.score}</span>
-                                <Trophy className="w-4 h-4 text-red-400" />
+                                <div>
+                                    <div className="text-2xl font-black text-red-400 text-right">{opponentState.score}</div>
+                                    <div className="text-[9px] text-slate-500 text-right">Opponent</div>
+                                </div>
+                                <div className="w-8 h-8 rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center">
+                                    <Trophy className="w-4 h-4 text-red-400" />
+                                </div>
                             </div>
                         </div>
+                        {/* Score Difference */}
                         {isAhead !== null && (
-                            <div className={`mt-2 text-center text-xs font-bold ${isAhead ? 'text-green-400' : 'text-orange-400'}`}>
-                                {isAhead ? '🔥 You\'re ahead!' : '⚡ Opponent is ahead!'}
+                            <div className={`mt-2 pt-2 border-t border-slate-700/50 text-center text-xs font-bold ${isAhead ? 'text-green-400' : 'text-orange-400'}`}>
+                                {isAhead 
+                                    ? `+${myState.score - opponentState.score} points ahead`
+                                    : `${opponentState.score - myState.score} points behind`
+                                }
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-slate-800/30 rounded-lg p-2 border border-slate-700/30">
+                            <div className="text-[9px] text-slate-400 uppercase tracking-wider mb-1">Your Accuracy</div>
+                            <div className="flex items-center gap-1.5">
+                                <Activity className="w-3 h-3 text-indigo-400" />
+                                <span className="text-lg font-black text-indigo-400">
+                                    {myState.currentQuestion > 0 ? Math.round((myState.correctAnswers / myState.currentQuestion) * 100) : 0}%
+                                </span>
+                            </div>
+                        </div>
+                        <div className="bg-slate-800/30 rounded-lg p-2 border border-slate-700/30">
+                            <div className="text-[9px] text-slate-400 uppercase tracking-wider mb-1">Their Accuracy</div>
+                            <div className="flex items-center gap-1.5">
+                                <Activity className="w-3 h-3 text-red-400" />
+                                <span className="text-lg font-black text-red-400">
+                                    {opponentState.accuracy || (opponentState.currentQuestion > 0 ? Math.round((opponentState.correctAnswers / opponentState.currentQuestion) * 100) : 0)}%
+                                </span>
+                            </div>
+                        </div>
+                        <div className="bg-slate-800/30 rounded-lg p-2 border border-slate-700/30">
+                            <div className="text-[9px] text-slate-400 uppercase tracking-wider mb-1">Your Time</div>
+                            <div className="flex items-center gap-1.5">
+                                <Timer className="w-3 h-3 text-indigo-400" />
+                                <span className="text-sm font-black text-indigo-400">
+                                    {Math.floor(myTimeElapsed / 60)}:{(myTimeElapsed % 60).toString().padStart(2, '0')}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="bg-slate-800/30 rounded-lg p-2 border border-slate-700/30">
+                            <div className="text-[9px] text-slate-400 uppercase tracking-wider mb-1">Their Time</div>
+                            <div className="flex items-center gap-1.5">
+                                <Timer className="w-3 h-3 text-red-400" />
+                                <span className="text-sm font-black text-red-400">
+                                    {opponentState.timeElapsed > 0 
+                                        ? `${Math.floor(opponentState.timeElapsed / 60)}:${(opponentState.timeElapsed % 60).toString().padStart(2, '0')}`
+                                        : '--:--'
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Enhanced Dual Progress Bar */}
+                <div className="z-10 mb-4">
+                    <div className="flex justify-between text-[10px] text-slate-400 mb-2 uppercase tracking-wider font-bold px-1">
+                        <span>Start</span>
+                        <span>🏁 Finish Line</span>
+                    </div>
+                    <div className="relative space-y-3">
+                        {/* My Progress Bar */}
+                        <div className="relative">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-[9px] text-indigo-400 font-bold">You</span>
+                                <span className="text-[9px] text-indigo-400 font-bold">{myProgress}/{totalQuestions}</span>
+                            </div>
+                            <div className="h-4 bg-slate-800/50 rounded-full w-full relative border border-slate-700/50 overflow-hidden">
+                                <div
+                                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 via-indigo-400 to-indigo-500 transition-all duration-500 ease-out shadow-lg shadow-indigo-500/50"
+                                    style={{ width: `${getProgressPercent(myProgress)}%` }}
+                                />
+                                {myProgress > 0 && (
+                                    <div className="absolute right-0 top-0 h-full w-1 bg-indigo-300 animate-pulse" style={{ left: `${getProgressPercent(myProgress)}%` }} />
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Opponent Progress Bar */}
+                        <div className="relative">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-[9px] text-red-400 font-bold">{opponent.name}</span>
+                                <span className="text-[9px] text-red-400 font-bold">{opponentState.currentQuestion}/{totalQuestions}</span>
+                            </div>
+                            <div className="h-4 bg-slate-800/50 rounded-full w-full relative border border-slate-700/50 overflow-hidden">
+                                <div
+                                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-red-500 via-red-400 to-red-500 transition-all duration-700 ease-out shadow-lg shadow-red-500/50"
+                                    style={{ width: `${getProgressPercent(opponentState.currentQuestion)}%` }}
+                                />
+                                {opponentState.currentQuestion > 0 && (
+                                    <div className="absolute right-0 top-0 h-full w-1 bg-red-300 animate-pulse" style={{ left: `${getProgressPercent(opponentState.currentQuestion)}%` }} />
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Comparison Indicator */}
+                        {isAhead !== null && (
+                            <div className={`text-center text-[10px] font-bold py-1.5 rounded-lg ${isAhead ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-orange-500/10 text-orange-400 border border-orange-500/20'}`}>
+                                {isAhead 
+                                    ? `🔥 You're ${myProgress - opponentState.currentQuestion} question${myProgress - opponentState.currentQuestion !== 1 ? 's' : ''} ahead!`
+                                    : `⚡ ${opponent.name} is ${opponentState.currentQuestion - myProgress} question${opponentState.currentQuestion - myProgress !== 1 ? 's' : ''} ahead!`
+                                }
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Enhanced Progress Bar */}
+                {/* Correct Answers Comparison */}
                 <div className="z-10 mb-4">
-                    <div className="flex justify-between text-[10px] text-slate-400 mb-1.5 uppercase tracking-wider font-bold px-1">
-                        <span>Start</span>
-                        <span>🏁 Finish (100% Correct)</span>
-                    </div>
-                    <div className="relative">
-                        {/* Track Background */}
-                        <div className="h-8 bg-slate-800/50 rounded-xl w-full relative border border-slate-700/50 overflow-hidden">
-                            {/* Progress fills with glow */}
-                            <div
-                                className="absolute top-0 left-0 h-full bg-gradient-to-r from-red-500/30 to-red-500/20 transition-all duration-700 ease-out"
-                                style={{ width: `${getProgressPercent(opponentState.currentQuestion)}%` }}
-                            />
-                            <div
-                                className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500/40 to-indigo-500/30 transition-all duration-300 ease-out"
-                                style={{ width: `${getProgressPercent(myProgress)}%` }}
-                            />
-
-                            {/* Opponent Marker */}
-                            <div
-                                className="absolute top-1/2 -translate-y-1/2 transition-all duration-700 ease-out z-20"
-                                style={{ left: `${Math.min(95, getProgressPercent(opponentState.currentQuestion))}%` }}
-                            >
-                                <div className="relative -translate-x-1/2 flex items-center">
-                                    <div className="relative">
-                                        <div className="w-6 h-6 rounded-full bg-red-500 border-2 border-slate-900 shadow-lg shadow-red-500/50 flex items-center justify-center">
-                                            <span className="text-[8px] font-bold">T</span>
-                                        </div>
-                                        <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-red-400 whitespace-nowrap">
-                                            {opponentState.currentQuestion}/{totalQuestions}
-                                        </div>
-                                    </div>
+                    <div className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/50">
+                        <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-3 font-bold">Correct Answers</div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="w-10 h-10 rounded-full bg-indigo-500/20 border-2 border-indigo-500 flex items-center justify-center">
+                                    <span className="text-lg font-black text-indigo-400">{myState.correctAnswers}</span>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-slate-400">You</div>
+                                    <div className="text-[10px] text-slate-500">{myState.currentQuestion} answered</div>
                                 </div>
                             </div>
-
-                            {/* My Marker */}
-                            <div
-                                className="absolute top-1/2 -translate-y-1/2 transition-all duration-300 ease-out z-30"
-                                style={{ left: `${Math.min(95, getProgressPercent(myProgress))}%` }}
-                            >
-                                <div className="relative -translate-x-1/2 flex items-center">
-                                    <div className="relative">
-                                        <div className="w-6 h-6 rounded-full bg-indigo-500 border-2 border-slate-900 shadow-lg shadow-indigo-500/50 flex items-center justify-center">
-                                            <span className="text-[8px] font-bold">Y</span>
-                                        </div>
-                                        <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-indigo-400 whitespace-nowrap">
-                                            {myProgress}/{totalQuestions}
-                                        </div>
-                                    </div>
+                            <div className="text-slate-600 font-bold text-lg">VS</div>
+                            <div className="flex items-center gap-2">
+                                <div>
+                                    <div className="text-xs text-slate-400 text-right">Opponent</div>
+                                    <div className="text-[10px] text-slate-500 text-right">{opponentState.currentQuestion} answered</div>
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center">
+                                    <span className="text-lg font-black text-red-400">{opponentState.correctAnswers}</span>
                                 </div>
                             </div>
-
-                            {/* Finish Flag */}
-                            <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                <Flag className="w-4 h-4 text-slate-600" />
+                        </div>
+                        {/* Progress visualization - Question by Question */}
+                        <div className="mt-3">
+                            <div className="text-[9px] text-slate-500 mb-1.5 text-center">Question Progress</div>
+                            <div className="flex gap-0.5 flex-wrap">
+                                {Array.from({ length: totalQuestions }).map((_, i) => {
+                                    const myAnswered = i < myState.currentQuestion;
+                                    const oppAnswered = i < opponentState.currentQuestion;
+                                    const myCorrect = i < myState.correctAnswers;
+                                    const oppCorrect = i < opponentState.correctAnswers;
+                                    const isCurrent = i === myState.currentQuestion;
+                                    
+                                    return (
+                                        <div 
+                                            key={i} 
+                                            className={`w-3 h-3 rounded relative overflow-hidden border transition-all ${
+                                                isCurrent ? 'ring-2 ring-yellow-400 scale-110' : ''
+                                            }`}
+                                            title={`Q${i + 1}: You ${myAnswered ? (myCorrect ? '✓' : '✗') : '?'} | Opponent ${oppAnswered ? (oppCorrect ? '✓' : '✗') : '?'}`}
+                                        >
+                                            {/* My status (bottom layer) */}
+                                            <div className={`absolute inset-0 ${
+                                                myAnswered 
+                                                    ? (myCorrect ? 'bg-indigo-500' : 'bg-indigo-500/40 border border-indigo-400/50') 
+                                                    : 'bg-slate-700/30'
+                                            }`} />
+                                            {/* Opponent status (top layer, semi-transparent) */}
+                                            <div className={`absolute inset-0 ${
+                                                oppAnswered 
+                                                    ? (oppCorrect ? 'bg-red-500/60' : 'bg-red-500/30') 
+                                                    : ''
+                                            }`} />
+                                            {/* Current question indicator */}
+                                            {isCurrent && (
+                                                <div className="absolute inset-0 bg-yellow-400/30 animate-pulse" />
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        </div>
-                        <div className="text-[9px] text-slate-500 text-center mt-1 italic">
-                            First to answer all questions 100% correctly wins!
-                        </div>
-                    </div>
-                </div>
-
-                {/* Progress Stats */}
-                <div className="z-10 grid grid-cols-2 gap-2 mb-4">
-                    <div className="bg-slate-800/30 rounded-lg p-2 border border-slate-700/30">
-                        <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Your Correct</div>
-                        <div className="flex items-center gap-1.5">
-                            <Activity className="w-3 h-3 text-indigo-400" />
-                            <span className="text-lg font-black text-indigo-400">
-                                {myProgress}/{totalQuestions}
-                            </span>
-                        </div>
-                    </div>
-                    <div className="bg-slate-800/30 rounded-lg p-2 border border-slate-700/30">
-                        <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Their Correct</div>
-                        <div className="flex items-center gap-1.5">
-                            <Activity className="w-3 h-3 text-red-400" />
-                            <span className="text-lg font-black text-red-400">
-                                {opponentState.currentQuestion}/{totalQuestions}
-                            </span>
+                            <div className="flex items-center justify-center gap-4 mt-2 text-[8px] text-slate-500">
+                                <div className="flex items-center gap-1">
+                                    <div className="w-2 h-2 rounded bg-indigo-500"></div>
+                                    <span>You Correct</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <div className="w-2 h-2 rounded bg-red-500/60"></div>
+                                    <span>Opponent Correct</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <div className="w-2 h-2 rounded bg-slate-700/30"></div>
+                                    <span>Not Answered</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
