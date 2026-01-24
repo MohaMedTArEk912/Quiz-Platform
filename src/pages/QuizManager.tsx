@@ -36,6 +36,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
     const [viewMode, setViewMode] = useState<'stacks' | 'list'>('stacks');
     const [selectedStackId, setSelectedStackId] = useState<string | null>(null);
     const [activeHeaderMenu, setActiveHeaderMenu] = useState(false);
+    const [quizTypeFilter, setQuizTypeFilter] = useState<'all' | 'quiz' | 'exam'>('all');
 
     // Handle initial subject selection
     useEffect(() => {
@@ -56,10 +57,16 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
 
     // Hooks
     const quizzesBySubject = useQuizzesBySubject(localQuizzes);
-    const { searchTerm, setSearchTerm, filteredQuizzes } = useQuizFilters({
+    const { searchTerm, setSearchTerm, filteredQuizzes: baseFilteredQuizzes } = useQuizFilters({
         quizzes: localQuizzes,
         selectedStackId,
         viewMode
+    });
+
+    // Apply quiz type filter
+    const filteredQuizzes = baseFilteredQuizzes.filter(quiz => {
+        if (quizTypeFilter === 'all') return true;
+        return (quiz.quizType || 'quiz') === quizTypeFilter;
     });
 
     // Debug logging
@@ -150,6 +157,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
             const finalQuiz = {
                 ...quizToSave,
                 questions: validatedQuestions,
+                quizType: quizToSave.quizType || 'quiz',
                 id: quizToSave.id || crypto.randomUUID()
             };
 
@@ -394,6 +402,42 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                 onChange={setSearchTerm}
                 resultCount={filteredQuizzes.length}
             />
+
+            {/* Quiz Type Filter */}
+            {viewMode === 'list' && (
+                <div className="flex gap-3 flex-wrap">
+                    <button
+                        onClick={() => setQuizTypeFilter('all')}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                            quizTypeFilter === 'all'
+                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
+                        }`}
+                    >
+                        All Quizzes
+                    </button>
+                    <button
+                        onClick={() => setQuizTypeFilter('quiz')}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                            quizTypeFilter === 'quiz'
+                                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
+                                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
+                        }`}
+                    >
+                        Regular Quizzes
+                    </button>
+                    <button
+                        onClick={() => setQuizTypeFilter('exam')}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                            quizTypeFilter === 'exam'
+                                ? 'bg-red-600 text-white shadow-lg shadow-red-500/30'
+                                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
+                        }`}
+                    >
+                        Exams
+                    </button>
+                </div>
+            )}
 
             {/* Content */}
             {viewMode === 'stacks' ? (

@@ -18,7 +18,13 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
     const [editingStudyCard, setEditingStudyCard] = useState<Partial<StudyCard> | null>(null);
     const [studyCategoryFilter, setStudyCategoryFilter] = useState<string>('all');
     const [studyLanguageFilter, setStudyLanguageFilter] = useState<string>('all');
+    const [moduleFilter, setModuleFilter] = useState<string>('all');
+    const [modules, setModules] = useState<{ moduleId: string; title: string }[]>([]);
     const [showStudyMenu, setShowStudyMenu] = useState(false);
+    // Bulk Import (CSV)
+    const [bulkImportCards, setBulkImportCards] = useState<Partial<StudyCard>[]>([]);
+    const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+    const [bulkImportModule, setBulkImportModule] = useState<string>('');
 
     // New State for Stack Navigation
     const [activeStack, setActiveStack] = useState<string | null>(null);
@@ -31,7 +37,8 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
     // Derived Logic
     const filteredCards = studyCards.filter(card =>
         (studyLanguageFilter === 'all' || card.language === studyLanguageFilter) &&
-        (studyCategoryFilter === 'all' || (card.category || 'Uncategorized') === studyCategoryFilter)
+        (studyCategoryFilter === 'all' || (card.category || 'Uncategorized') === studyCategoryFilter) &&
+        (moduleFilter === 'all' || card.moduleId === moduleFilter)
     );
     const stacks = Array.from(new Set(filteredCards.map(c => c.category || 'Uncategorized')));
 
@@ -42,6 +49,7 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
 
     useEffect(() => {
         loadData();
+        loadModules();
     }, [subjectId]);
 
     const loadData = async () => {
@@ -54,6 +62,22 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
         }
     };
 
+    const loadModules = async () => {
+        if (!subjectId) { setModules([]); return; }
+        try {
+            const tracks = await api.getSkillTracks(subjectId);
+            const collected: { moduleId: string; title: string }[] = [];
+            type Module = { moduleId: string; title: string };
+            for (const track of tracks) {
+                (track.modules || []).forEach((m: Module) => collected.push({ moduleId: m.moduleId, title: m.title }));
+            }
+            setModules(collected);
+        } catch (err) {
+            console.warn('Failed to load modules for subject', err);
+            setModules([]);
+        }
+    };
+
     // Click outside handler for menus
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -63,18 +87,83 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleDownloadExampleJson = () => {
-        const exampleData = { title: "Study Card", content: "Card content", category: "General", language: "JavaScript", tags: ["tag1"] };
-        const dataStr = JSON.stringify(exampleData, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
+    const handleDownloadSampleCsv = () => {
+        const header = 'title,content,category,language,tags\n';
+        const rows = [
+            'Quick Lists,"Bullet points or notes here",General,JavaScript,"lists,basics"',
+            'Python Loops,"for i in range(10): print(i)",Loops,Python,"loops,iteration"',
+            'SQL Select,"SELECT * FROM users;",Queries,SQL,"sql,select"'
+        ].join('\n');
+        const blob = new Blob([header + rows], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'card-example.json';
+        link.download = 'study-cards-sample.csv';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+    };
+
+    const submitBulkImport = async () => {
+        if (bulkImportCards.length === 0) {
+            onNotification('error', 'No cards to import');
+            return;
+        }
+        try {
+            let successCount = 0;
+            for (const card of bulkImportCards) {
+                const cardToCreate = {
+                    ...card,
+                    subjectId: subjectId,
+                    moduleId: bulkImportModule || undefined
+                };
+                await api.createStudyCard(cardToCreate, currentUser.userId);
+                successCount++;
+            }
+            onNotification('success', `✅ Imported ${successCount} study card(s) successfully!`);
+            setIsBulkImportOpen(false);
+            setBulkImportCards([]);
+            setBulkImportModule('');
+            await loadData();
+        } catch (error) {
+            console.error('Bulk import error:', error);
+            onNotification('error', 'Failed to import some cards');
+        }
+    };
+
+    const parseCsv = (text: string): Record<string, string>[] => {
+        const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
+        if (lines.length === 0) return [];
+        const headers = lines[0].split(',').map(h => h.trim());
+        const rows: Record<string, string>[] = [];
+        const parseLine = (line: string) => {
+            const result: string[] = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (ch === '"') {
+                    if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+                    else { inQuotes = !inQuotes; }
+                } else if (ch === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += ch;
+                }
+            }
+            result.push(current);
+            return result.map(v => v.trim());
+        };
+        for (let idx = 1; idx < lines.length; idx++) {
+            const vals = parseLine(lines[idx]);
+            if (vals.length === 1 && vals[0] === '') continue;
+            const row: Record<string, string> = {};
+            headers.forEach((h, i) => row[h] = vals[i] ?? '');
+            rows.push(row);
+        }
+        return rows;
     };
 
     // Stack Operation Handlers
@@ -155,35 +244,27 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
         const reader = new FileReader();
         reader.onload = async (e) => {
             try {
-                const json = JSON.parse(e.target?.result as string);
-
-                if (Array.isArray(json)) {
-                    // Bulk Import
-                    let successCount = 0;
-                    const importCategory = file.name.replace(/\.[^/.]+$/, "");
-
-                    for (const cardData of json) {
-                        const newCard = {
-                            title: cardData.title || 'Untitled Card',
-                            content: cardData.content || cardData.back || '',
-                            category: cardData.category || importCategory,
-                            tags: Array.isArray(cardData.tags) ? cardData.tags : [],
-                            language: cardData.language || 'General',
-                            subjectId: subjectId // Attach subjectId
-                        };
-                        await api.createStudyCard(newCard, currentUser.userId);
-                        successCount++;
-                    }
-                    onNotification('success', `Successfully imported ${successCount} cards`);
-                    loadData();
+                const csvText = (e.target?.result as string) ?? '';
+                const rows = parseCsv(csvText);
+                if (rows.length === 0) {
+                    onNotification('error', 'CSV appears empty');
                 } else {
-                    // Single Card - Load into Editor
-                    setEditingStudyCard(prev => ({ ...prev, ...json }));
-                    onNotification('success', 'JSON loaded into editor');
+                    const importCards: Partial<StudyCard>[] = rows.map(r => ({
+                        title: r.title || 'Untitled Card',
+                        content: r.content || '',
+                        category: r.category || 'General',
+                        language: r.language || '',
+                        tags: (r.tags || '').split(',').map(t => t.trim()).filter(Boolean),
+                        subjectId: subjectId,
+                    }));
+                    setBulkImportCards(importCards);
+                    setBulkImportModule(moduleFilter !== 'all' ? moduleFilter : '');
+                    setIsBulkImportOpen(true);
+                    onNotification('success', `Loaded ${importCards.length} card(s) from CSV`);
                 }
             } catch (error) {
                 console.error('Upload error', error);
-                onNotification('error', 'Failed to process file');
+                onNotification('error', 'Failed to process CSV file');
             }
             if (event.target) event.target.value = '';
         };
@@ -192,6 +273,10 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
 
     const handleSaveStudyCard = async () => {
         if (!editingStudyCard) return;
+        if (!editingStudyCard.title || !editingStudyCard.content) {
+            onNotification('error', 'Title and Content are required');
+            return;
+        }
         try {
             if (editingStudyCard.id) {
                 await api.updateStudyCard(editingStudyCard.id, editingStudyCard, currentUser.userId);
@@ -199,11 +284,11 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
                 onNotification('success', 'Study card updated');
             } else {
                 const cardToCreate = { ...editingStudyCard };
-                if (subjectId) cardToCreate.subjectId = subjectId; // Attach subjectId
+                if (subjectId) cardToCreate.subjectId = subjectId; // Attach subjectId - CRITICAL
 
                 const created = await api.createStudyCard(cardToCreate, currentUser.userId);
                 setStudyCards(prev => [created, ...prev]);
-                onNotification('success', 'Study card created');
+                onNotification('success', '✅ Study card created and will appear in student roads!');
             }
             setEditingStudyCard(null);
         } catch (error) {
@@ -277,6 +362,21 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
                             </select>
                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                         </div>
+                        {/* Module Filter */}
+                        <div className="relative">
+                            <select
+                                value={moduleFilter}
+                                onChange={e => setModuleFilter(e.target.value)}
+                                className="bg-white/60 dark:bg-black border border-white/20 dark:border-gray-700 rounded-xl pl-4 pr-10 py-2 text-sm text-gray-900 dark:text-gray-200 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm backdrop-blur-sm cursor-pointer hover:bg-white/80 dark:hover:bg-gray-900 transition-colors appearance-none"
+                                style={{ colorScheme: 'dark' }}
+                            >
+                                <option value="all">All Modules</option>
+                                {modules.map(module => (
+                                    <option key={module.moduleId} value={module.moduleId}>{module.title}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                        </div>
                     </div>
                 </div>
 
@@ -288,38 +388,39 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
                         >
                             <MoreVertical className="w-5 h-5" />
                         </button>
-
                         {showStudyMenu && (
-                            <div className="absolute right-0 top-full mt-2 w-56 bg-white/90 dark:bg-[#1e1e2d]/95 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                            <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#0f0f1a] backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                 <button
-                                    onClick={() => { handleDownloadExampleJson(); setShowStudyMenu(false); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200 transition-colors font-medium text-sm"
+                                    onClick={() => { handleDownloadSampleCsv(); setShowStudyMenu(false); }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-white/10 text-gray-800 dark:text-gray-200 transition-colors font-medium text-sm"
                                 >
                                     <Download className="w-4 h-4 text-purple-500" />
-                                    Sample JSON
+                                    Sample CSV
                                 </button>
                                 <button
                                     onClick={() => { cardUploadRef.current?.click(); setShowStudyMenu(false); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200 transition-colors font-medium text-sm border-t border-gray-100 dark:border-white/5"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-white/10 text-gray-800 dark:text-gray-200 transition-colors font-medium text-sm border-t border-gray-200 dark:border-gray-800"
                                 >
                                     <Upload className="w-4 h-4 text-indigo-500" />
-                                    Upload JSON
+                                    Upload CSV
                                 </button>
                             </div>
                         )}
                     </div>
-                    <input type="file" ref={cardUploadRef} onChange={handleEntityUpload} accept=".json" className="hidden" />
+                    <input type="file" ref={cardUploadRef} onChange={handleEntityUpload} accept=".csv" className="hidden" />
                     <button
                         onClick={() => setEditingStudyCard({
                             title: '',
                             content: '',
                             category: activeStack || 'General',
-                            language: 'JavaScript',
-                            subjectId: subjectId
+                            language: '',
+                            tags: [],
+                            subjectId: subjectId,
+                            moduleId: moduleFilter !== 'all' ? moduleFilter : undefined
                         })}
                         className="flex-1 md:flex-none px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5"
                     >
-                        <Plus className="w-5 h-5" /> Add Card
+                        <Plus className="w-5 h-5" /> New Card
                     </button>
                 </div>
             </div>
@@ -508,24 +609,72 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
                                     />
                                 </div>
                                 <div className="space-y-2">
+                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</label>
+                                    <select
+                                        value={editingStudyCard.category || activeStack || 'General'}
+                                        onChange={e => setEditingStudyCard({ ...editingStudyCard, category: e.target.value })}
+                                        className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none font-bold transition-all"
+                                    >
+                                        <option value={activeStack || 'General'}>{activeStack || 'General'}</option>
+                                        {allCategories.filter(cat => cat !== (activeStack || 'General')).map(cat => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                        <option value="">+ New Category</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
                                     <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Language</label>
                                     <input
-                                        placeholder="e.g. Python, SQL"
+                                        placeholder="e.g. Python, JavaScript, SQL"
                                         value={editingStudyCard.language || ''}
                                         onChange={e => setEditingStudyCard({ ...editingStudyCard, language: e.target.value })}
                                         className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none font-bold transition-all"
                                     />
                                 </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tags (comma-separated)</label>
+                                    <input
+                                        placeholder="e.g. functions, loops, arrays"
+                                        value={editingStudyCard.tags?.join(', ') || ''}
+                                        onChange={e => setEditingStudyCard({ ...editingStudyCard, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                                        className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none font-bold transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Module Selection */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Module</label>
+                                <select
+                                    value={editingStudyCard.moduleId || ''}
+                                    onChange={e => setEditingStudyCard({ ...editingStudyCard, moduleId: e.target.value || undefined })}
+                                    className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none font-bold transition-all"
+                                >
+                                    <option value="">None (General Road)</option>
+                                    {modules.map(m => (
+                                        <option key={m.moduleId} value={m.moduleId}>{m.title}</option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Content / Code</label>
-                                <textarea
-                                    placeholder="Paste your code or notes here..."
-                                    value={editingStudyCard.content || ''}
-                                    onChange={e => setEditingStudyCard({ ...editingStudyCard, content: e.target.value })}
-                                    className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white h-60 focus:outline-none font-mono text-sm resize-none transition-all"
-                                />
+                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Content / Code</label>
+                                    <p className="text-xs text-gray-400 mb-2">Paste code, notes, or explanations here</p>
+                                    <textarea
+                                        placeholder="Paste your code or notes here..."
+                                        value={editingStudyCard.content || ''}
+                                        onChange={e => setEditingStudyCard({ ...editingStudyCard, content: e.target.value })}
+                                        className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white h-60 focus:outline-none font-mono text-sm resize-none transition-all"
+                                    />
+                            </div>
+
+                            <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                                <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                                    💡 This study card will automatically appear in the <strong>Study Cards tab</strong> when students view this road.
+                                </p>
                             </div>
 
                             <div className="flex gap-4 mt-8 pt-4 border-t border-gray-100 dark:border-white/5">
@@ -557,6 +706,45 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
                     onConfirm={confirmState.onConfirm}
                     onCancel={handleCancel}
                 />
+            )}
+            {isBulkImportOpen && createPortal(
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-[2rem] w-full max-w-xl p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+                        <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6">Import Study Cards</h2>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">Loaded <strong>{bulkImportCards.length}</strong> card(s) from CSV. Choose a module to assign (optional).</p>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Module</label>
+                                <select
+                                    value={bulkImportModule}
+                                    onChange={e => setBulkImportModule(e.target.value)}
+                                    className="w-full mt-1 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-2 text-gray-900 dark:text-white focus:outline-none font-bold"
+                                >
+                                    <option value="">None (General Road)</option>
+                                    {modules.map(m => (
+                                        <option key={m.moduleId} value={m.moduleId}>{m.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Preview:</p>
+                                <ul className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                                    {bulkImportCards.slice(0, 5).map((c, i) => (
+                                        <li key={i} className="text-sm text-gray-700 dark:text-gray-300">• {c.title} <span className="text-gray-400">({c.category})</span></li>
+                                    ))}
+                                    {bulkImportCards.length > 5 && (
+                                        <li className="text-xs text-gray-400">…and {bulkImportCards.length - 5} more</li>
+                                    )}
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button onClick={() => { setIsBulkImportOpen(false); setBulkImportCards([]); }} className="px-6 py-2 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 rounded-xl font-bold">Cancel</button>
+                            <button onClick={submitBulkImport} className="flex-1 px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg">Import</button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
             )}
         </div>
     );

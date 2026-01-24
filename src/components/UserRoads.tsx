@@ -30,7 +30,8 @@ import {
     Brain,
     Code,
     Terminal,
-    Lock
+    Lock,
+    Clipboard
 } from 'lucide-react';
 import Navbar from './Navbar.tsx';
 import UserRoadmapView from './UserRoadmapView';
@@ -75,7 +76,7 @@ interface UserRoadsProps {
     onRefreshData?: () => Promise<void>;
 }
 
-type SubjectTab = 'overview' | 'roadmap' | 'quizzes' | 'study-cards';
+type SubjectTab = 'overview' | 'roadmap' | 'quizzes' | 'exams' | 'study-cards';
 
 /**
  * Represents a progress milestone in a learning road.
@@ -127,6 +128,12 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
         const titleB = typeof b.title === 'string' ? b.title : '';
         return titleA.localeCompare(titleB, undefined, { numeric: true, sensitivity: 'base' });
     });
+
+    // Filter quizzes by type
+    const regularQuizzes = filteredQuizzes.filter(q => (q.quizType || 'quiz') === 'quiz');
+    const examQuizzes = filteredQuizzes.filter(q => q.quizType === 'exam');
+
+
 
     const getDifficultyBadgeBg = (difficulty: string | undefined) => {
         const key = typeof difficulty === 'string' ? difficulty.toLowerCase() : 'default';
@@ -464,6 +471,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                 { id: 'overview', label: 'Overview', icon: <BookOpen className="w-4 h-4" /> },
                                 { id: 'roadmap', label: 'Roadmap', icon: <Brain className="w-4 h-4" /> },
                                 { id: 'quizzes', label: 'Quizzes', icon: <Award className="w-4 h-4" /> },
+                                { id: 'exams', label: 'Exams', icon: <Clipboard className="w-4 h-4" /> },
                                 { id: 'study-cards', label: 'Study Cards', icon: <FileText className="w-4 h-4" /> },
                             ].map((tab) => (
                                 <button
@@ -662,7 +670,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
 
                             {activeTab === 'quizzes' && (
                                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                    {filteredQuizzes.map((quiz) => {
+                                    {regularQuizzes.map((quiz) => {
                                         const quizId = getQuizId(quiz);
                                         const bestScore = getBestScore(quizId);
                                         const attempted = hasAttempted(quizId);
@@ -753,7 +761,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                         );
                                     })}
 
-                                    {filteredQuizzes.length === 0 && (
+                                    {regularQuizzes.length === 0 && (
                                         <div className="col-span-full py-20 text-center">
                                             <Search className="w-12 h-12 mx-auto mb-4 opacity-10" />
                                             <p className="text-gray-500 font-bold uppercase tracking-widest text-sm">No quizzes found for this road</p>
@@ -762,29 +770,176 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                 </div>
                             )}
 
-                            {activeTab === 'study-cards' && (
-                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {studyCards.filter(c => c.subjectId === selectedSubjectId).map((card) => (
-                                        <div key={card.id} className="bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/20 dark:border-white/5 group">
-                                            <h4 className="text-xl font-black text-gray-900 dark:text-white mb-4 uppercase tracking-tight">{card.title}</h4>
-                                            <p className="text-gray-500 dark:text-gray-400 font-medium leading-relaxed mb-6 line-clamp-4">{card.content}</p>
-                                            <div className="flex items-center justify-between">
-                                                <div className="px-3 py-1 bg-indigo-500/10 text-indigo-500 text-[10px] font-black uppercase tracking-widest rounded-lg">
-                                                    {card.category}
+                            {activeTab === 'exams' && (
+                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {examQuizzes.map((quiz) => {
+                                        const quizId = getQuizId(quiz);
+                                        const bestScore = getBestScore(quizId);
+                                        const attempted = hasAttempted(quizId);
+                                        const locked = isQuizLocked(quiz);
+
+                                        return (
+                                            <div
+                                                key={quizId}
+                                                onClick={() => !locked && onSelectQuiz(quiz)}
+                                                className={`group relative min-h-[380px] ${!locked ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                                            >
+                                                <div className={`absolute -inset-0.5 bg-gradient-to-br ${attempted ? 'from-orange-500 to-red-500' : 'from-red-500 to-pink-500'} rounded-[2.5rem] ${locked ? 'opacity-0' : 'opacity-0 group-hover:opacity-20'} blur-xl transition-all duration-500`} />
+
+                                                <div className={`relative h-full bg-white dark:bg-[#11111a] rounded-[2.5rem] border border-gray-200 dark:border-white/5 p-8 flex flex-col ${locked ? 'opacity-50 blur-sm' : 'group-hover:-translate-y-2'} transition-all duration-300`}>
+                                                    <div className="flex justify-between items-start mb-6">
+                                                        <div className={`text-5xl ${locked ? '' : 'group-hover:scale-110'} transition-transform duration-500`}>
+                                                            {quiz.icon || '📋'}
+                                                        </div>
+                                                        {locked ? (
+                                                            <div className="bg-red-500/10 text-red-500 p-2 rounded-xl">
+                                                                <Lock className="w-5 h-5" />
+                                                            </div>
+                                                        ) : attempted ? (
+                                                            <div className="bg-orange-500/10 text-orange-500 p-2 rounded-xl">
+                                                                <CheckCircle className="w-5 h-5" />
+                                                            </div>
+                                                        ) : null}
+                                                    </div>
+
+                                                    <div className="flex-grow">
+                                                        <h3 className={`text-xl font-black ${locked ? 'text-gray-500 dark:text-gray-600' : 'text-gray-900 dark:text-white'} mb-2 ${locked ? '' : 'group-hover:text-red-500'} transition-colors`}>
+                                                            {quiz.title}
+                                                        </h3>
+                                                        <p className={`${locked ? 'text-gray-400 dark:text-gray-500' : 'text-gray-500 dark:text-gray-400'} text-xs font-medium leading-relaxed line-clamp-2 mb-6`}>
+                                                            {quiz.description}
+                                                        </p>
+
+                                                        <div className="flex flex-wrap gap-2 mb-8">
+                                                            <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${getDifficultyBadgeBg(quiz.difficulty)}`}>
+                                                                {quiz.difficulty}
+                                                            </span>
+                                                            <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/10">
+                                                                {quiz.questions?.length || 0} Qs
+                                                            </span>
+                                                        </div>
+
+                                                        {!locked && attempted && (
+                                                            <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl flex items-center justify-between mb-4">
+                                                                <div>
+                                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Best Score</div>
+                                                                    <div className="text-xl font-black text-orange-500">{bestScore}%</div>
+                                                                </div>
+                                                                <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                                                                    <Target className="w-5 h-5 text-orange-500" />
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {locked && (
+                                                            <div className="p-4 bg-red-500/5 dark:bg-red-500/10 rounded-2xl flex items-center justify-between mb-4 border border-red-500/20">
+                                                                <div>
+                                                                    <div className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Locked</div>
+                                                                    <div className="text-sm font-black text-red-600 dark:text-red-400">Complete roadmap</div>
+                                                                </div>
+                                                                <Lock className="w-5 h-5 text-red-500/50" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <button
+                                                        disabled={locked}
+                                                        className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${locked
+                                                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
+                                                            : attempted
+                                                                ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20'
+                                                                : 'bg-red-600 text-white shadow-lg shadow-red-500/20'
+                                                            }`}>
+                                                        {locked ? (
+                                                            <><Lock className="w-4 h-4" /> Locked</>
+                                                        ) : attempted ? (
+                                                            <><RefreshCw className="w-4 h-4" /> Retake</>
+                                                        ) : (
+                                                            <><Play className="w-4 h-4 fill-white" /> Start</>
+                                                        )}
+                                                    </button>
                                                 </div>
-                                                <button className="text-xs font-black text-indigo-500 uppercase tracking-widest hover:underline">
-                                                    Open Card
-                                                </button>
                                             </div>
-                                        </div>
-                                    ))}
-                                    {studyCards.filter(c => c.subjectId === selectedSubjectId).length === 0 && (
-                                        <div className="col-span-full py-20 text-center bg-white/40 dark:bg-white/5 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-white/10">
-                                            <FileText className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                                            <h3 className="text-xl font-black text-gray-400 uppercase">No study cards</h3>
-                                            <p className="text-gray-500 font-medium">Coming soon! Quick-review cards for this subject.</p>
+                                        );
+                                    })}
+
+                                    {examQuizzes.length === 0 && (
+                                        <div className="col-span-full py-20 text-center">
+                                            <Clipboard className="w-12 h-12 mx-auto mb-4 opacity-10" />
+                                            <p className="text-gray-500 font-bold uppercase tracking-widest text-sm">No exams available for this road</p>
                                         </div>
                                     )}
+                                </div>
+                            )}
+
+                            {activeTab === 'study-cards' && (
+                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+                                    {(() => {
+                                        const cardsForRoad = (studyCards || []).filter((c: any) => c.subjectId === selectedSubjectId);
+                                        const moduleMap: Record<string, any[]> = {};
+                                        for (const c of cardsForRoad) {
+                                            const key = c.moduleId || 'general';
+                                            if (!moduleMap[key]) moduleMap[key] = [];
+                                            moduleMap[key].push(c);
+                                        }
+
+                                        const renderStacks = (cards: any[]) => {
+                                            const stacks = Array.from(new Set(cards.map(c => c.category || 'Uncategorized')));
+                                            return (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    {stacks.map(stack => {
+                                                        const stackCards = cards.filter(c => (c.category || 'Uncategorized') === stack);
+                                                        return (
+                                                            <div key={stack} className="bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-white/20 dark:border-white/5">
+                                                                <div className="flex items-center justify-between mb-4">
+                                                                    <h4 className="text-lg font-black text-gray-900 dark:text-white">{stack}</h4>
+                                                                    <span className="text-xs font-black text-gray-500 dark:text-gray-400">{stackCards.length} cards</span>
+                                                                </div>
+                                                                <div className="space-y-4">
+                                                                    {stackCards.map(card => (
+                                                                        <div key={card.id} className="p-4 rounded-xl bg-white/60 dark:bg-white/10 border border-white/20 dark:border-white/5">
+                                                                            <h5 className="text-base font-bold text-gray-900 dark:text-white">{card.title}</h5>
+                                                                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-3">{card.content}</p>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            );
+                                        };
+
+                                        const moduleOrder = Object.keys(moduleMap);
+                                        return moduleOrder.length === 0 ? (
+                                            <div className="py-20 text-center bg-white/40 dark:bg-white/5 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-white/10">
+                                                <FileText className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                                                <h3 className="text-xl font-black text-gray-400 uppercase">No study cards</h3>
+                                                <p className="text-gray-500 font-medium">Coming soon! Quick-review cards for this subject.</p>
+                                            </div>
+                                        ) : (
+                                            moduleOrder.map(moduleId => {
+                                                const isGeneral = moduleId === 'general';
+                                                const moduleTitle = isGeneral ? 'General' : (() => {
+                                                    const allTracks = (skillTracksProp || []).filter((t: any) => t.subjectId === selectedSubjectId);
+                                                    for (const t of allTracks) {
+                                                        const m = (t.modules || []).find((mm: any) => mm.moduleId === moduleId);
+                                                        if (m) return m.title;
+                                                    }
+                                                    return 'Module';
+                                                })();
+                                                return (
+                                                    <div key={moduleId} className="space-y-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <FileText className="w-4 h-4 text-indigo-500" />
+                                                            <h3 className="text-xl font-black text-gray-900 dark:text-white">{moduleTitle}</h3>
+                                                        </div>
+                                                        {renderStacks(moduleMap[moduleId])}
+                                                    </div>
+                                                );
+                                            })
+                                        );
+                                    })()}
                                 </div>
                             )}
                         </div>

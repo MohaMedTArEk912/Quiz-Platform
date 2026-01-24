@@ -19,6 +19,10 @@ const LoginPage: React.FC = () => {
                     const { email, name, sub } = JSON.parse(googleAuthData);
                     sessionStorage.removeItem('googleAuthData');
                     await googleLogin({ email, name, googleId: sub });
+                    
+                    // Wait a tick to ensure session storage is fully written
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
                     const session = sessionStorage.getItem('userSession');
                     const isAdmin = session ? JSON.parse(session).isAdmin : false;
                     navigate(isAdmin ? '/admin' : '/', { replace: true });
@@ -91,6 +95,10 @@ const LoginPage: React.FC = () => {
                 try {
                     const { email, name, sub } = event.data.profile;
                     await googleLogin({ email, name, googleId: sub });
+                    
+                    // Wait a tick to ensure session storage is fully written
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
                     const session = sessionStorage.getItem('userSession');
                     const isAdmin = session ? JSON.parse(session).isAdmin : false;
                     navigate(isAdmin ? '/admin' : '/', { replace: true });
@@ -105,7 +113,11 @@ const LoginPage: React.FC = () => {
                     });
                 } finally {
                     window.removeEventListener('message', handleMessage);
-                    googleWindow?.close();
+                    try {
+                        googleWindow?.close();
+                    } catch (e) {
+                        // Silently handle COOP policy errors - popup will close itself
+                    }
                 }
             } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
                 console.error('Google auth error:', event.data.error);
@@ -117,7 +129,11 @@ const LoginPage: React.FC = () => {
                     cancelText: 'Close'
                 });
                 window.removeEventListener('message', handleMessage);
-                googleWindow?.close();
+                try {
+                    googleWindow?.close();
+                } catch (e) {
+                    // Silently handle COOP policy errors - popup will close itself
+                }
             }
         };
 

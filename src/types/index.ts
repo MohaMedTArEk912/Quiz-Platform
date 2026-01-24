@@ -10,6 +10,7 @@ export interface Quiz {
     coinsReward?: number;
     xpReward?: number;
     icon: string;
+    quizType?: 'quiz' | 'exam'; // Type: regular quiz or exam
     subjectId?: string;
     moduleId?: string;
     isTournamentOnly?: boolean;
@@ -330,7 +331,9 @@ export interface StudyCard {
     content: string;
     category: string;
     language?: string;
+    // Road and module ownership
     subjectId?: string;
+    moduleId?: string;
     tags?: string[];
     createdAt: string;
 }

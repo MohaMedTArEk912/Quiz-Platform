@@ -139,6 +139,13 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
                                     ))}
                                 </select>
                             </div>
+                            <div className="space-y-1">
+                                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Quiz Type</label>
+                                <select value={editingQuiz.quizType || 'quiz'} onChange={e => setEditingQuiz({ ...editingQuiz, quizType: e.target.value as 'quiz' | 'exam' })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50">
+                                    <option value="quiz">Regular Quiz</option>
+                                    <option value="exam">Exam</option>
+                                </select>
+                            </div>
                         </div>
                         <div className="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
                             <input

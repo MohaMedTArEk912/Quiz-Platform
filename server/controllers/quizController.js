@@ -209,7 +209,7 @@ export const updateQuiz = async (req, res) => {
       updates.questions = sanitizeQuestions(updates.questions, id);
     }
     
-    const updatedQuiz = await Quiz.findOneAndUpdate({ id: id }, updates, { new: true });
+    const updatedQuiz = await Quiz.findOneAndUpdate({ id: id }, updates, { new: true, runValidators: true });
     
     if (!updatedQuiz) {
       return res.status(404).json({ message: 'Quiz not found' });
