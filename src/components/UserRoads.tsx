@@ -151,26 +151,12 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
             track.trackId === selectedSubjectId
         );
 
-        if (!skillTrack || !skillTrack.modules) {
-            // No skill track data - only first quiz is unlocked
-            const firstQuiz = filteredQuizzes[0];
-            return firstQuiz ? getQuizId(firstQuiz) !== quizId : false;
-        }
-
-        // Get user's progress for this specific track
-        const userProgress = user.skillTracks?.find((t: any) => t.trackId === skillTrack.trackId);
-
-        if (!userProgress) {
-            // No progress data - only first quiz is unlocked
-            const firstQuiz = filteredQuizzes[0];
-            return firstQuiz ? getQuizId(firstQuiz) !== quizId : false;
-        }
-
-        // Check if this quiz is in any completed or unlocked modules
-        const completedModules = userProgress.completedModules || [];
-        const unlockedModules = userProgress.unlockedModules || [];
-
         // Find which module this quiz belongs to by matching quiz ID
+        if (!skillTrack || !Array.isArray(skillTrack.modules) || skillTrack.modules.length === 0) {
+            // No roadmap defined, nothing should be locked
+            return false;
+        }
+
         const moduleWithThisQuiz = skillTrack.modules.find((module: any) => {
             if (!module.quizIds || module.quizIds.length === 0) return false;
             // Check multiple ID formats to be safe
@@ -188,10 +174,31 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
             return false;
         }
 
+        const moduleId = moduleWithThisQuiz.moduleId || moduleWithThisQuiz.id || moduleWithThisQuiz.title || moduleWithThisQuiz.name;
+
+        if (!moduleId) {
+            // Module is missing an identifier; avoid locking the quiz
+            return false;
+        }
+
+        // Get user's progress for this specific track
+        const userProgress = user.skillTracks?.find((t: any) => t.trackId === skillTrack.trackId);
+
+        if (!userProgress) {
+            // If no progress yet, only lock quizzes in later modules; module-less quizzes already returned above
+            const firstModule = skillTrack.modules[0];
+            const firstModuleId = firstModule?.moduleId || firstModule?.id || firstModule?.title || firstModule?.name;
+            return moduleId !== firstModuleId;
+        }
+
+        // Check if this quiz is in any completed or unlocked modules
+        const completedModules = userProgress.completedModules || [];
+        const unlockedModules = userProgress.unlockedModules || [];
+
         // Check if the module is completed or unlocked
         const isUnlockedOrCompleted =
-            completedModules.includes(moduleWithThisQuiz.moduleId) ||
-            unlockedModules.includes(moduleWithThisQuiz.moduleId);
+            completedModules.includes(moduleId) ||
+            unlockedModules.includes(moduleId);
 
         // Return true if locked (NOT unlocked or completed)
         return !isUnlockedOrCompleted;
