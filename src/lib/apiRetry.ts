@@ -1,21 +1,13 @@
 /**
- * API Retry Wrapper with Fallback Support
+ * API Retry Wrapper for Docker Deployment
  * Handles automatic retries with exponential backoff
- * and fallback to secondary API endpoint
  */
 
-import { apiConfig, apiHealthStatus } from './apiConfig';
+import { apiConfig } from './apiConfig';
 
 export interface FetchOptions extends RequestInit {
   timeout?: number;
   retryAttempts?: number;
-  skipFallback?: boolean;
-}
-
-interface FetchAttemptResult {
-  response?: Response;
-  error?: Error;
-  url: string;
 }
 
 /**
@@ -29,146 +21,87 @@ const sleep = (ms: number): Promise<void> =>
  */
 const fetchWithTimeout = (
   url: string,
-  options: RequestInit & { timeout?: number }
+  options: FetchOptions = {}
 ): Promise<Response> => {
-  const timeout = options.timeout || apiConfig.timeout;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const timeout = options.timeout ?? apiConfig.timeout;
 
-  return fetch(url, {
-    ...options,
-    signal: controller.signal,
-  }).finally(() => clearTimeout(timeoutId));
-};
+  return new Promise((resolve, reject) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error(`Request timeout after ${timeout}ms`));
+    }, timeout);
 
-/**
- * Attempt a single fetch request
- */
-const attemptFetch = async (
-  url: string,
-  options: FetchOptions
-): Promise<FetchAttemptResult> => {
-  try {
-    const response = await fetchWithTimeout(url, {
+    fetch(url, {
       ...options,
-      timeout: options.timeout,
-    });
-    return { response, url };
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error : new Error(String(error)),
-      url,
-    };
-  }
+      signal: controller.signal,
+    })
+      .then((response) => {
+        clearTimeout(timer);
+        resolve(response);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
 };
 
 /**
- * Retry a single URL with exponential backoff
+ * Retry a fetch with exponential backoff
  */
 const retryWithBackoff = async (
   url: string,
-  options: FetchOptions,
-  isHealthy: boolean
-): Promise<FetchAttemptResult> => {
+  options: FetchOptions = {}
+): Promise<Response> => {
   const maxAttempts = options.retryAttempts ?? apiConfig.retryAttempts;
-  let lastError: Error | undefined;
+  let lastError: Error | null = null;
 
-  // Skip retries if endpoint is known to be unhealthy
-  const attempts = isHealthy ? maxAttempts : 1;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await fetchWithTimeout(url, options);
+      
+      // Return successful responses (including 4xx/5xx to let caller handle)
+      return response;
+    } catch (error) {
+      lastError = error as Error;
+      
+      // Don't retry if it's the last attempt
+      if (attempt === maxAttempts) {
+        break;
+      }
 
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    const result = await attemptFetch(url, options);
-
-    if (result.response) {
-      return result;
-    }
-
-    lastError = result.error;
-
-    // Don't sleep after the last attempt
-    if (attempt < attempts - 1) {
-      const delay =
-        apiConfig.retryDelay *
-        Math.pow(apiConfig.retryBackoffMultiplier, attempt);
+      // Calculate backoff delay
+      const delay = apiConfig.retryDelay * Math.pow(apiConfig.retryBackoffMultiplier, attempt - 1);
       await sleep(delay);
     }
   }
 
-  return {
-    error: lastError || new Error('Unknown error'),
-    url,
-  };
+  throw lastError || new Error('Max retries exceeded');
 };
 
 /**
- * Fetch with automatic fallback to secondary API
- * Tries primary endpoint first, falls back to secondary on failure
+ * Fetch with automatic retry
  */
-export const fetchWithFallback = async (
+export const fetchWithRetry = async (
   urlPath: string,
   options: FetchOptions = {}
 ): Promise<Response> => {
   const primaryUrl = apiConfig.primary + urlPath;
-  const fallbackUrl = apiConfig.fallback + urlPath;
-  const skipFallback = options.skipFallback ?? false;
 
-  // Try primary endpoint first
-  const primaryResult = await retryWithBackoff(
-    primaryUrl,
-    options,
-    apiHealthStatus.isPrimaryHealthy()
-  );
-
-  if (primaryResult.response) {
-    apiHealthStatus.recordPrimarySuccess();
-    return primaryResult.response;
+  try {
+    return await retryWithBackoff(primaryUrl, options);
+  } catch (error) {
+    throw new Error(`API request failed: ${(error as Error).message}`);
   }
-
-  apiHealthStatus.recordPrimaryFailure();
-
-  // If we should skip fallback or primary and fallback are the same, return error
-  if (skipFallback || primaryUrl === fallbackUrl) {
-    throw primaryResult.error || new Error('Failed to fetch from primary API');
-  }
-
-  // Try fallback endpoint
-  const fallbackResult = await retryWithBackoff(
-    fallbackUrl,
-    options,
-    apiHealthStatus.isFallbackHealthy()
-  );
-
-  if (fallbackResult.response) {
-    apiHealthStatus.recordFallbackSuccess();
-    
-    // Log that we're using fallback API (helpful for debugging)
-    console.warn('Using fallback API endpoint due to primary failure:', {
-      path: urlPath,
-      primaryUrl,
-      fallbackUrl,
-    });
-
-    return fallbackResult.response;
-  }
-
-  apiHealthStatus.recordFallbackFailure();
-
-  // Both endpoints failed
-  throw new Error(
-    `Failed to fetch from both primary (${primaryUrl}) and fallback (${fallbackUrl}) APIs. ` +
-    `Primary error: ${primaryResult.error?.message || 'Unknown'}. ` +
-    `Fallback error: ${fallbackResult.error?.message || 'Unknown'}`
-  );
 };
 
 /**
  * Get current API status
  */
-export const getApiStatus = () => {
-  return {
-    config: apiConfig,
-    health: apiHealthStatus.getStatus(),
-    currentPrimary: apiConfig.primary,
-    currentFallback: apiConfig.fallback,
-  };
-};
+export const getApiStatus = () => ({
+  primary: {
+    url: apiConfig.primary,
+    healthy: true,
+  },
+});

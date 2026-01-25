@@ -8,7 +8,7 @@ import { ProtectedRoute, AdminRoute } from './components/RouteGuards';
 import MainLayout from './layouts/MainLayout';
 import PageLoader from './components/PageLoader.tsx';
 import { AiJobProvider } from './contexts/AiJobContext';
-import { useUpdateCheck } from './hooks/useAutoUpdate';
+
 
 // Lazy load all pages for better code splitting and performance
 // Critical pages (login/register) loaded first, others loaded on demand
@@ -43,15 +43,6 @@ const BadgeTreeDetailPage = lazy(() => import('./pages/BadgeTreeDetailPage'));
 
 
 const App: React.FC = () => {
-  // Manual update control - shows notification instead of auto-refresh
-  const { updateAvailable, checkForUpdate, refreshApp } = useUpdateCheck();
-
-  // Check for updates every 5 minutes (won't interrupt users)
-  useEffect(() => {
-    checkForUpdate();
-    const interval = setInterval(checkForUpdate, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [checkForUpdate]);
 
   // Mobile Performance: Preload critical pages after initial render
   useEffect(() => {

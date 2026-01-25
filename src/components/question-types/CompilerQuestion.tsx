@@ -159,7 +159,7 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
                         suggestOnTriggerCharacters: true,
                         snippetSuggestions: 'inline',
                         tabCompletion: 'on',
-                        wordBasedSuggestions: 'allDocumentWords',
+                        wordBasedSuggestions: 'allDocuments',
                         parameterHints: { enabled: true },
                         suggest: {
                             showWords: true,

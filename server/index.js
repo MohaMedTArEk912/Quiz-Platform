@@ -52,18 +52,15 @@ import aiStudioRoutes from './routes/aiStudio.js';
 // HTTP servers / Socket.IO the same way as a traditional Node process.
 // Initialize Socket.IO only for non-serverless environments.
 const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "https://thequizplatform.netlify.app",
-  "https://thequizplatform.vercel.app",
-  "https://quiz-platform-dun.vercel.app"
+  "http://localhost:7860",
+  "http://localhost:5173"
 ];
 
 if (process.env.CLIENT_URL) {
   allowedOrigins.push(process.env.CLIENT_URL);
 }
 
-const isServerless = !!process.env.VERCEL;
+const isServerless = false; // Docker is not serverless
 
 const app = express();
 let httpServer = null;
@@ -83,8 +80,8 @@ if (!isServerless) {
       origin: (origin, callback) => {
         if (!origin) return callback(null, true);
         const isAllowed = allowedOrigins.some(o => origin.startsWith(o)) || 
-                         origin.endsWith('.vercel.app') || 
-                         origin.endsWith('.netlify.app');
+                         origin.endsWith('.hf.space') || 
+                         origin.endsWith('.huggingface.co');
         if (isAllowed) {
           callback(null, true);
         } else {
@@ -113,8 +110,8 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     const isAllowed = allowedOrigins.some(o => origin.startsWith(o)) || 
-                     origin.endsWith('.vercel.app') || 
-                     origin.endsWith('.netlify.app');
+                     origin.endsWith('.hf.space') || 
+                     origin.endsWith('.huggingface.co');
                      
     if (isAllowed) {
       callback(null, true);
@@ -130,9 +127,23 @@ app.use(express.urlencoded({ limit: '200mb', extended: true }));
 
 
 // Security Middleware
+// Disable CSP in development/Docker to avoid browser caching issues
+const isDevelopment = process.env.NODE_ENV !== 'production' || process.env.PORT === '7860';
 
 app.use(helmet({
-  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" } 
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  contentSecurityPolicy: isDevelopment ? false : {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:", "data:"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
+      connectSrc: ["'self'", "https://*.vercel.app", "https://*.koyeb.app", "https://*.hf.space", "https://api.groq.com", "wss://*.vercel.app", "wss://*.koyeb.app"],
+      frameSrc: ["'self'", "https://accounts.google.com"],
+      objectSrc: ["'none'"],
+    },
+  },
 }));
 
 // Rate Limiting

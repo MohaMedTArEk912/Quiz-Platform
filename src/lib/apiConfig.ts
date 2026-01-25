@@ -1,66 +1,22 @@
 /**
- * API Configuration with Fallback Support
- * Provides primary (Koyeb) and fallback (Vercel) API URLs
- * with configurable retry behavior and health monitoring
+ * API Configuration for Docker Deployment
+ * Uses relative path to connect to backend on same host
  */
 
 export interface ApiConfig {
   primary: string;
-  fallback: string;
   timeout: number;
   retryAttempts: number;
   retryDelay: number;
   retryBackoffMultiplier: number;
-  healthCheckInterval: number;
 }
 
-const stripTrailingSlash = (value: string) =>
-  value.endsWith('/') ? value.slice(0, -1) : value;
-
-const resolvePrimaryUrl = (): string => {
-  const envUrl = import.meta.env.VITE_API_URL;
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-
-  if (envUrl) {
-    const normalized = stripTrailingSlash(envUrl);
-    // Prevent shipping a localhost URL to production builds
-    if (!isLocalhost && normalized.includes('localhost')) {
-      return 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api';
-    }
-    return normalized;
-  }
-
-  const localDefault = 'http://localhost:5000/api';
-  const hostedDefault = 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api';
-
-  // If on production but hostname matches the backend (Koyeb), use relative path
-  if (!isLocalhost && hostname.includes('koyeb.app')) {
-    return '/api';
-  }
-
-  return isLocalhost ? localDefault : hostedDefault;
-};
-
-const resolveFallbackUrl = (): string => {
-  const envUrl = import.meta.env.VITE_API_FALLBACK_URL;
-  
-  if (envUrl) {
-    return stripTrailingSlash(envUrl);
-  }
-
-  // Default fallback to Vercel deployment
-  return 'https://thequizplatform.vercel.app/api';
-};
-
 export const apiConfig: ApiConfig = {
-  primary: resolvePrimaryUrl(),
-  fallback: resolveFallbackUrl(),
-  timeout: import.meta.env.VITE_API_TIMEOUT ? parseInt(import.meta.env.VITE_API_TIMEOUT) : 10000, // 10s
-  retryAttempts: import.meta.env.VITE_API_RETRY_ATTEMPTS ? parseInt(import.meta.env.VITE_API_RETRY_ATTEMPTS) : 3,
-  retryDelay: import.meta.env.VITE_API_RETRY_DELAY ? parseInt(import.meta.env.VITE_API_RETRY_DELAY) : 1000, // 1s
-  retryBackoffMultiplier: import.meta.env.VITE_API_RETRY_BACKOFF ? parseFloat(import.meta.env.VITE_API_RETRY_BACKOFF) : 2,
-  healthCheckInterval: import.meta.env.VITE_API_HEALTH_CHECK_INTERVAL ? parseInt(import.meta.env.VITE_API_HEALTH_CHECK_INTERVAL) : 30000, // 30s
+  primary: '/api', // Relative path - works for Docker, Hugging Face, and any same-origin deployment
+  timeout: 10000, // 10 seconds
+  retryAttempts: 3,
+  retryDelay: 1000, // 1 second
+  retryBackoffMultiplier: 2,
 };
 
 /**
