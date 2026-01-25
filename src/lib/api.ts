@@ -14,6 +14,8 @@ import type {
     BadgeTree,
     BadgeTreeNode
 } from '../types';
+import { fetchWithFallback } from './apiRetry';
+
 export type {
     UserData,
     AttemptData,
@@ -30,35 +32,6 @@ export type {
     BadgeTree,
     BadgeTreeNode
 };
-
-const stripTrailingSlash = (value: string) => (value.endsWith('/') ? value.slice(0, -1) : value);
-
-const resolveApiUrl = () => {
-    const envUrl = import.meta.env.VITE_API_URL;
-    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-
-    if (envUrl) {
-        const normalized = stripTrailingSlash(envUrl);
-        // Prevent shipping a localhost URL to production builds
-        if (!isLocalhost && normalized.includes('localhost')) {
-            return 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api';
-        }
-        return normalized;
-    }
-
-    const localDefault = 'http://localhost:5000/api';
-    const hostedDefault = 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api';
-
-    // If on production but hostname matches the backend (Koyeb), use relative path
-    if (!isLocalhost && hostname.includes('koyeb.app')) {
-        return '/api';
-    }
-
-    return isLocalhost ? localDefault : hostedDefault;
-};
-
-const API_URL = resolveApiUrl();
 
 const getStoredToken = () => {
     try {
@@ -90,7 +63,7 @@ const getHeaders = (tokenOrOptions?: string | { token?: string; userId?: string 
 
 export const api = {
     async register(userData: Partial<UserData>) {
-        const response = await fetch(`${API_URL}/register`, {
+        const response = await fetchWithFallback('/register', {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(userData),
@@ -103,7 +76,7 @@ export const api = {
     },
 
     async login(credentials: { email: string; password: string }) {
-        const response = await fetch(`${API_URL}/login`, {
+        const response = await fetchWithFallback('/login', {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(credentials),
@@ -130,7 +103,7 @@ export const api = {
     },
 
     async googleLogin(googleData: { email: string; name: string; googleId: string }) {
-        const response = await fetch(`${API_URL}/auth/google`, {
+        const response = await fetchWithFallback('/auth/google', {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(googleData),
@@ -143,7 +116,7 @@ export const api = {
     },
 
     async updateUser(userId: string, updates: Partial<UserData>) {
-        const response = await fetch(`${API_URL}/users/${userId}`, {
+        const response = await fetchWithFallback(`/users/${userId}`, {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(updates),
@@ -156,7 +129,7 @@ export const api = {
     },
 
     async deleteUser(userId: string, adminId: string) {
-        const response = await fetch(`${API_URL}/users/${userId}`, {
+        const response = await fetchWithFallback(`/users/${userId}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -168,7 +141,7 @@ export const api = {
     },
 
     async saveAttempt(attemptData: AttemptData) {
-        const response = await fetch(`${API_URL}/attempts`, {
+        const response = await fetchWithFallback('/attempts', {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(attemptData),
@@ -182,9 +155,9 @@ export const api = {
 
     async getQuizzes(subjectId?: string) {
         const url = subjectId
-            ? `${API_URL}/quizzes?subjectId=${subjectId}`
-            : `${API_URL}/quizzes`;
-        const response = await fetch(url);
+            ? `/quizzes?subjectId=${subjectId}`
+            : `/quizzes`;
+        const response = await fetchWithFallback(url);
         if (!response.ok) {
             let errorMessage = 'Failed to load quizzes';
             try {
@@ -206,7 +179,7 @@ export const api = {
     },
 
     async createQuiz(quizData: Partial<Quiz>, adminId: string) {
-        const response = await fetch(`${API_URL}/quizzes`, {
+        const response = await fetchWithFallback('/quizzes', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(quizData),
@@ -219,7 +192,7 @@ export const api = {
     },
 
     async importQuizzes(quizData: unknown, adminId: string) {
-        const response = await fetch(`${API_URL}/quizzes/import`, {
+        const response = await fetchWithFallback('/quizzes/import', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(quizData),
@@ -232,7 +205,7 @@ export const api = {
     },
 
     async updateQuiz(id: string, updates: Partial<Quiz>, adminId: string) {
-        const response = await fetch(`${API_URL}/quizzes/${id}`, {
+        const response = await fetchWithFallback(`/quizzes/${id}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
             body: JSON.stringify(updates),
@@ -245,7 +218,7 @@ export const api = {
     },
 
     async deleteQuiz(id: string, adminId: string) {
-        const response = await fetch(`${API_URL}/quizzes/${id}`, {
+        const response = await fetchWithFallback(`/quizzes/${id}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -257,7 +230,7 @@ export const api = {
     },
 
     async getData(adminId: string) {
-        const response = await fetch(`${API_URL}/data`, {
+        const response = await fetchWithFallback('/data', {
             headers: getHeaders(adminId)
         });
         if (!response.ok) {
@@ -267,7 +240,7 @@ export const api = {
     },
 
     async getUserData(userId: string) {
-        const response = await fetch(`${API_URL}/user/data`, {
+        const response = await fetchWithFallback('/user/data', {
             headers: getHeaders(userId)
         });
         if (!response.ok) {
@@ -277,13 +250,13 @@ export const api = {
     },
 
     async getBadges() {
-        const response = await fetch(`${API_URL}/badges`);
+        const response = await fetchWithFallback('/badges');
         if (!response.ok) throw new Error('Failed to fetch badges');
         return response.json();
     },
 
     async createBadge(badgeData: BadgeDefinition, adminId: string) {
-        const response = await fetch(`${API_URL}/badges`, {
+        const response = await fetchWithFallback('/badges', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(badgeData),
@@ -293,7 +266,7 @@ export const api = {
     },
 
     async deleteBadge(id: string, adminId: string) {
-        const response = await fetch(`${API_URL}/badges/${id}`, {
+        const response = await fetchWithFallback(`/badges/${id}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
