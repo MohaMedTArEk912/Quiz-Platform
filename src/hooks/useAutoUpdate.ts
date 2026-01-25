@@ -156,14 +156,40 @@ export const useAutoUpdate = (
  */
 export const useUpdateCheck = () => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const checkForUpdate = async () => {
+    // Initialize version on first call
+    if (!isInitialized) {
+      const currentVersionMeta = document.querySelector('meta[name="app-version"]');
+      const currentVersion = currentVersionMeta?.getAttribute('content');
+      
+      if (currentVersion) {
+        const storedVersion = localStorage.getItem('app-version');
+        
+        // If no stored version or it matches current, just store and don't show banner
+        if (!storedVersion || storedVersion === currentVersion) {
+          localStorage.setItem('app-version', currentVersion);
+          setIsInitialized(true);
+          return false;
+        }
+      }
+      setIsInitialized(true);
+    }
+
     const available = await checkForNewVersion();
     setUpdateAvailable(available);
     return available;
   };
 
   const refreshApp = async () => {
+    // Update stored version before refresh to prevent banner on reload
+    const currentVersionMeta = document.querySelector('meta[name="app-version"]');
+    const currentVersion = currentVersionMeta?.getAttribute('content');
+    if (currentVersion) {
+      localStorage.setItem('app-version', currentVersion);
+    }
+
     await clearAllCaches();
 
     if ('serviceWorker' in navigator) {
