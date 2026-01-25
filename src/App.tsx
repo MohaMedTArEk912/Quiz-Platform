@@ -8,6 +8,7 @@ import { ProtectedRoute, AdminRoute } from './components/RouteGuards';
 import MainLayout from './layouts/MainLayout';
 import PageLoader from './components/PageLoader.tsx';
 import { AiJobProvider } from './contexts/AiJobContext';
+import { useAutoUpdate } from './hooks/useAutoUpdate';
 
 // Lazy load all pages for better code splitting and performance
 // Critical pages (login/register) loaded first, others loaded on demand
@@ -42,6 +43,10 @@ const BadgeTreeDetailPage = lazy(() => import('./pages/BadgeTreeDetailPage'));
 
 
 const App: React.FC = () => {
+  // Auto-update detection: Check for new versions every 60 seconds
+  // Automatically refresh when new version is deployed
+  useAutoUpdate(60000, true);
+
   // Mobile Performance: Preload critical pages after initial render
   useEffect(() => {
     // Only preload on mobile devices to save bandwidth

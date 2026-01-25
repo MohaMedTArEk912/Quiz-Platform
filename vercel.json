@@ -12,6 +12,15 @@
   },
   "routes": [
     {
+      "src": "/index.html",
+      "dest": "/index.html",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+      }
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/[...path].js"
     },

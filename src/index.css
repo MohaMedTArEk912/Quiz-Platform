@@ -9,16 +9,101 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+/* Prevent layout shift and element collapse */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  /* Prevent scrollbar width shift */
+  scrollbar-gutter: stable;
+}
+
 body {
   background-color: var(--color-background-light);
   color: var(--color-text-light);
   transition: background-color 0.2s, color 0.2s;
+  /* Prevent collapsing margins */
+  overflow-x: hidden;
+  /* Ensure body takes full viewport */
+  min-height: 100vh;
 }
 
 :root.dark body,
 html.dark body {
   background-color: var(--color-background-dark);
   color: var(--color-text-dark);
+}
+
+/* Ensure containers maintain proper spacing */
+main, section, article {
+  min-height: auto;
+}
+
+/* Flex container fix for items "melting together" */
+.flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing, 1rem);
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-row {
+  flex-direction: row;
+}
+
+/* Grid fix */
+.grid {
+  display: grid;
+  gap: var(--spacing, 1rem);
+}
+
+/* Ensure proper button spacing */
+button, [role="button"] {
+  min-height: 2.5rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Prevent card collapse */
+.card, [class*="card"] {
+  display: flex;
+  flex-direction: column;
+  min-height: auto;
+  width: 100%;
+}
+
+/* Media queries for responsive behavior */
+@media (max-width: 640px) {
+  body {
+    font-size: 14px;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .flex {
+    flex-direction: column;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .bg-galaxy {
@@ -28,3 +113,4 @@ html.dark body {
 .bg-neon {
   background: linear-gradient(135deg, #06b6d4 0%, #d946ef 100%);
 }
+
