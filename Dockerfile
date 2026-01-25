@@ -5,6 +5,10 @@ FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app
 
+# Build-time arguments for environment variables
+ARG VITE_API_URL=/api
+ARG VITE_GOOGLE_CLIENT_ID=
+
 # Copy package files
 COPY package*.json ./
 
@@ -22,8 +26,8 @@ COPY scripts/ ./scripts/
 COPY src/ ./src/
 COPY public/ ./public/
 
-# Build the frontend
-RUN npm run build
+# Build the frontend with environment variables
+RUN VITE_API_URL=${VITE_API_URL} VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID} npm run build
 
 # ============================================
 # Stage 2: Production Runtime
