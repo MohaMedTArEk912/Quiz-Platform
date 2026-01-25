@@ -44,7 +44,7 @@ export const useApiHealth = (intervalMs: number = apiConfig.healthCheckInterval)
     isUsingFallback: false,
   }));
 
-  const intervalIdRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Perform health check for an endpoint
   const checkEndpointHealth = async (

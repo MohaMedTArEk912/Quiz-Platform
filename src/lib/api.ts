@@ -275,13 +275,13 @@ export const api = {
     },
 
     async getPendingReviews() {
-        const response = await fetch(`${API_URL}/reviews/pending`);
+        const response = await fetchWithFallback('/reviews/pending');
         if (!response.ok) throw new Error('Failed to fetch pending reviews');
         return response.json();
     },
 
     async submitReview(attemptId: string, reviewData: { feedback: Record<string, unknown>; scoreAdjustment: number }, adminId: string) {
-        const response = await fetch(`${API_URL}/reviews/${attemptId}`, {
+        const response = await fetchWithFallback(`/reviews/${attemptId}`, {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(reviewData),
@@ -292,7 +292,7 @@ export const api = {
 
     // Password Management
     async forgotPassword(email: string) {
-        const response = await fetch(`${API_URL}/forgot-password`, {
+        const response = await fetchWithFallback('/forgot-password', {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({ email }),
@@ -305,7 +305,7 @@ export const api = {
     },
 
     async resetPassword(email: string, newPassword: string) {
-        const response = await fetch(`${API_URL}/reset-password`, {
+        const response = await fetchWithFallback('/reset-password', {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({ email, newPassword }),
@@ -318,7 +318,7 @@ export const api = {
     },
 
     async changePassword(email: string, currentPassword: string, newPassword: string) {
-        const response = await fetch(`${API_URL}/change-password`, {
+        const response = await fetchWithFallback('/change-password', {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({ email, currentPassword, newPassword }),
@@ -331,7 +331,7 @@ export const api = {
     },
 
     async adminChangeUserPassword(userId: string, newPassword: string, adminId: string) {
-        const response = await fetch(`${API_URL}/admin/change-user-password`, {
+        const response = await fetchWithFallback('/admin/change-user-password', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify({ userId, newPassword }),
@@ -345,7 +345,7 @@ export const api = {
 
     async verifySession(token?: string) {
         const resolvedToken = token || getStoredToken();
-        const response = await fetch(`${API_URL}/verify-session`, {
+        const response = await fetchWithFallback('/verify-session', {
             method: 'POST',
             headers: getHeaders({ token: resolvedToken ?? undefined }),
             body: JSON.stringify({ token: resolvedToken }),
@@ -359,7 +359,7 @@ export const api = {
 
     // Social & Multiplayer
     async sendFriendRequest(targetUserId: string) {
-        const response = await fetch(`${API_URL}/friends/request`, {
+        const response = await fetchWithFallback('/friends/request', {
             method: 'POST',
             headers: getHeaders(sessionStorage.getItem('userSession') ? JSON.parse(sessionStorage.getItem('userSession')!).user.userId : undefined),
             body: JSON.stringify({ targetUserId }),
@@ -372,7 +372,7 @@ export const api = {
     },
 
     async respondToFriendRequest(fromUserId: string, action: 'accept' | 'reject') {
-        const response = await fetch(`${API_URL}/friends/respond`, {
+        const response = await fetchWithFallback('/friends/respond', {
             method: 'POST',
             headers: getHeaders(sessionStorage.getItem('userSession') ? JSON.parse(sessionStorage.getItem('userSession')!).user.userId : undefined),
             body: JSON.stringify({ fromUserId, action }),
@@ -386,7 +386,7 @@ export const api = {
 
     async searchUsers(query: string) {
         const params = new URLSearchParams({ query });
-        const response = await fetch(`${API_URL}/users/search?${params}`, {
+        const response = await fetchWithFallback(`/users/search?${params}`, {
             headers: getHeaders(sessionStorage.getItem('userSession') ? JSON.parse(sessionStorage.getItem('userSession')!).user.userId : undefined)
         });
         if (!response.ok) {
@@ -397,7 +397,7 @@ export const api = {
 
     // Async Challenges
     async createChallenge(toId: string, quizId: string, userId: string) {
-        const response = await fetch(`${API_URL}/challenges`, {
+        const response = await fetchWithFallback('/challenges', {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify({ toId, quizId }),
@@ -410,7 +410,7 @@ export const api = {
     },
 
     async getChallenge(token: string) {
-        const response = await fetch(`${API_URL}/challenges/${token}`);
+        const response = await fetchWithFallback(`/challenges/${token}`);
         if (!response.ok) {
             throw new Error('Challenge not found');
         }
@@ -418,7 +418,7 @@ export const api = {
     },
 
     async submitChallengeResult(token: string, result: { score: number; percentage: number; timeTaken: number }, userId: string) {
-        const response = await fetch(`${API_URL}/challenges/${token}/submit`, {
+        const response = await fetchWithFallback(`/challenges/${token}/submit`, {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify(result),
@@ -431,7 +431,7 @@ export const api = {
     },
 
     async listChallenges(userId: string) {
-        const response = await fetch(`${API_URL}/challenges`, {
+        const response = await fetchWithFallback('/challenges', {
             headers: getHeaders(userId),
         });
         if (!response.ok) {
@@ -442,13 +442,13 @@ export const api = {
 
     // Shop & Economy
     async getShopItems(): Promise<ShopItem[]> {
-        const response = await fetch(`${API_URL}/shop/items`);
+        const response = await fetchWithFallback('/shop/items');
         if (!response.ok) throw new Error('Failed to fetch shop items');
         return response.json();
     },
 
     async addShopItem(item: Omit<ShopItem, 'itemId'>, adminId: string): Promise<ShopItem> {
-        const response = await fetch(`${API_URL}/shop/items`, {
+        const response = await fetchWithFallback('/shop/items', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(item),
@@ -458,7 +458,7 @@ export const api = {
     },
 
     async updateShopItem(itemId: string, item: ShopItem, adminId: string) {
-        const response = await fetch(`${API_URL}/shop/items/${itemId}`, {
+        const response = await fetchWithFallback(`/shop/items/${itemId}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
             body: JSON.stringify(item),
@@ -468,7 +468,7 @@ export const api = {
     },
 
     async deleteShopItem(itemId: string, adminId: string) {
-        const response = await fetch(`${API_URL}/shop/items/${itemId}`, {
+        const response = await fetchWithFallback(`/shop/items/${itemId}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -477,7 +477,7 @@ export const api = {
     },
 
     async purchaseItem(itemId: string, userId: string) {
-        const response = await fetch(`${API_URL}/shop/purchase`, {
+        const response = await fetchWithFallback('/shop/purchase', {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify({ itemId }),
@@ -494,7 +494,7 @@ export const api = {
 
     // Daily Challenge
     async getDailyChallenge(userId: string) {
-        const response = await fetch(`${API_URL}/daily-challenge`, {
+        const response = await fetchWithFallback('/daily-challenge', {
             headers: getHeaders(userId)
         });
         if (!response.ok) {
@@ -505,7 +505,7 @@ export const api = {
     },
 
     async usePowerUp(type: string, userId: string) {
-        const response = await fetch(`${API_URL}/shop/powerups/use`, {
+        const response = await fetchWithFallback('/shop/powerups/use', {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify({ type })
@@ -515,7 +515,7 @@ export const api = {
     },
 
     async createClanAnnouncement(clanId: string, content: string, userId: string): Promise<any> {
-        const response = await fetch(`${API_URL}/clans/${clanId}/announcements`, {
+        const response = await fetchWithFallback(`/clans/${clanId}/announcements`, {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify({ content })
@@ -525,7 +525,7 @@ export const api = {
     },
 
     async deleteClanAnnouncement(clanId: string, announcementId: string, userId: string): Promise<any> {
-        const response = await fetch(`${API_URL}/clans/${clanId}/announcements/${announcementId}`, {
+        const response = await fetchWithFallback(`/clans/${clanId}/announcements/${announcementId}`, {
             method: 'DELETE',
             headers: getHeaders(userId)
         });
@@ -534,7 +534,7 @@ export const api = {
     },
 
     async pinClanAnnouncement(clanId: string, announcementId: string, userId: string): Promise<any> {
-        const response = await fetch(`${API_URL}/clans/${clanId}/announcements/${announcementId}/pin`, {
+        const response = await fetchWithFallback(`/clans/${clanId}/announcements/${announcementId}/pin`, {
             method: 'PUT',
             headers: getHeaders(userId)
         });
@@ -543,7 +543,7 @@ export const api = {
     },
 
     async completeDailyChallenge(userId: string) {
-        const response = await fetch(`${API_URL}/daily-challenge/complete`, {
+        const response = await fetchWithFallback('/daily-challenge/complete', {
             method: 'POST',
             headers: getHeaders(userId)
         });
@@ -556,7 +556,7 @@ export const api = {
 
     // Daily Challenge Admin
     async getDailyChallengesAdmin(adminId: string) {
-        const response = await fetch(`${API_URL}/daily-challenge/admin/all`, {
+        const response = await fetchWithFallback('/daily-challenge/admin/all', {
             headers: getHeaders(adminId)
         });
         if (!response.ok) throw new Error('Failed to fetch challenges');
@@ -564,7 +564,7 @@ export const api = {
     },
 
     async createDailyChallenge(data: Partial<DailyChallengeDef>, adminId: string) {
-        const response = await fetch(`${API_URL}/daily-challenge/admin`, {
+        const response = await fetchWithFallback('/daily-challenge/admin', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(data)
@@ -574,7 +574,7 @@ export const api = {
     },
 
     async updateDailyChallenge(id: string, data: Partial<DailyChallengeDef>, adminId: string) {
-        const response = await fetch(`${API_URL}/daily-challenge/admin/${id}`, {
+        const response = await fetchWithFallback(`/daily-challenge/admin/${id}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
             body: JSON.stringify(data)
@@ -584,7 +584,7 @@ export const api = {
     },
 
     async deleteDailyChallenge(id: string, adminId: string) {
-        const response = await fetch(`${API_URL}/daily-challenge/admin/${id}`, {
+        const response = await fetchWithFallback(`/daily-challenge/admin/${id}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -595,15 +595,15 @@ export const api = {
     // Skill Tracks
     async getSkillTracks(subjectId?: string): Promise<SkillTrack[]> {
         const url = subjectId
-            ? `${API_URL}/skill-tracks?subjectId=${subjectId}`
-            : `${API_URL}/skill-tracks`;
-        const response = await fetch(url);
+            ? `/skill-tracks?subjectId=${subjectId}`
+            : `/skill-tracks`;
+        const response = await fetchWithFallback(url);
         if (!response.ok) throw new Error('Failed to load skill tracks');
         return response.json();
     },
 
     async completeSkillModule(trackId: string, moduleId: string, userId: string) {
-        const response = await fetch(`${API_URL}/skill-tracks/${trackId}/complete`, {
+        const response = await fetchWithFallback(`/skill-tracks/${trackId}/complete`, {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify({ moduleId })
@@ -620,7 +620,7 @@ export const api = {
      * @param userId - The user making the request
      */
     async completeSubModule(trackId: string, moduleId: string, subModuleId: string, userId: string) {
-        const response = await fetch(`${API_URL}/skill-tracks/${trackId}/modules/${moduleId}/submodules/complete`, {
+        const response = await fetchWithFallback(`/skill-tracks/${trackId}/modules/${moduleId}/submodules/complete`, {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify({ subModuleId })
@@ -633,7 +633,7 @@ export const api = {
     },
 
     async createSkillTrack(track: SkillTrack, adminId: string) {
-        const response = await fetch(`${API_URL}/skill-tracks`, {
+        const response = await fetchWithFallback('/skill-tracks', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(track)
@@ -646,7 +646,7 @@ export const api = {
     },
 
     async updateSkillTrack(trackId: string, track: SkillTrack, adminId: string) {
-        const response = await fetch(`${API_URL}/skill-tracks/${trackId}`, {
+        const response = await fetchWithFallback(`/skill-tracks/${trackId}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
             body: JSON.stringify(track)
@@ -659,7 +659,7 @@ export const api = {
     },
 
     async deleteSkillTrack(trackId: string, adminId: string) {
-        const response = await fetch(`${API_URL}/skill-tracks/${trackId}`, {
+        const response = await fetchWithFallback(`/skill-tracks/${trackId}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -669,13 +669,13 @@ export const api = {
 
     // Tournaments
     async getTournaments(): Promise<Tournament[]> {
-        const response = await fetch(`${API_URL}/tournaments`);
+        const response = await fetchWithFallback('/tournaments');
         if (!response.ok) throw new Error('Failed to load tournaments');
         return response.json();
     },
 
     async createTournament(data: Partial<Tournament>, adminId: string) {
-        const response = await fetch(`${API_URL}/tournaments`, {
+        const response = await fetchWithFallback('/tournaments', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(data)
@@ -685,7 +685,7 @@ export const api = {
     },
 
     async updateTournament(id: string, data: Partial<Tournament>, adminId: string) {
-        const response = await fetch(`${API_URL}/tournaments/${id}`, {
+        const response = await fetchWithFallback(`/tournaments/${id}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
             body: JSON.stringify(data)
@@ -695,7 +695,7 @@ export const api = {
     },
 
     async deleteTournament(id: string, adminId: string) {
-        const response = await fetch(`${API_URL}/tournaments/${id}`, {
+        const response = await fetchWithFallback(`/tournaments/${id}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -704,7 +704,7 @@ export const api = {
     },
 
     async joinTournament(tournamentId: string, userId: string) {
-        const response = await fetch(`${API_URL}/tournaments/${tournamentId}/join`, {
+        const response = await fetchWithFallback(`/tournaments/${tournamentId}/join`, {
             method: 'POST',
             headers: getHeaders(userId)
         });
@@ -714,7 +714,7 @@ export const api = {
 
     // Analytics
     async getAnalyticsSummary(userId: string) {
-        const response = await fetch(`${API_URL}/analytics/summary`, {
+        const response = await fetchWithFallback('/analytics/summary', {
             headers: getHeaders(userId)
         });
         if (!response.ok) throw new Error('Failed to load analytics');
@@ -724,15 +724,15 @@ export const api = {
     // Study Cards
     async getStudyCards(subjectId?: string) {
         const url = subjectId
-            ? `${API_URL}/study-cards?subjectId=${subjectId}`
-            : `${API_URL}/study-cards`;
-        const response = await fetch(url);
+            ? `/study-cards?subjectId=${subjectId}`
+            : `/study-cards`;
+        const response = await fetchWithFallback(url);
         if (!response.ok) throw new Error('Failed to load study cards');
         return response.json();
     },
 
     async createStudyCard(card: Partial<StudyCard>, adminId: string) {
-        const response = await fetch(`${API_URL}/study-cards`, {
+        const response = await fetchWithFallback('/study-cards', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(card)
@@ -742,7 +742,7 @@ export const api = {
     },
 
     async updateStudyCard(id: string, card: Partial<StudyCard>, adminId: string) {
-        const response = await fetch(`${API_URL}/study-cards/${id}`, {
+        const response = await fetchWithFallback(`/study-cards/${id}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
             body: JSON.stringify(card)
@@ -752,7 +752,7 @@ export const api = {
     },
 
     async deleteStudyCard(id: string, adminId: string) {
-        const response = await fetch(`${API_URL}/study-cards/${id}`, {
+        const response = await fetchWithFallback(`/study-cards/${id}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -761,7 +761,7 @@ export const api = {
     },
 
     async deleteStudyStack(category: string, adminId: string) {
-        const response = await fetch(`${API_URL}/study-cards/stack/${encodeURIComponent(category)}`, {
+        const response = await fetchWithFallback(`/study-cards/stack/${encodeURIComponent(category)}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -770,7 +770,7 @@ export const api = {
     },
 
     async updateStudyStack(oldCategory: string, newCategory: string, adminId: string) {
-        const response = await fetch(`${API_URL}/study-cards/stack/rename`, {
+        const response = await fetchWithFallback('/study-cards/stack/rename', {
             method: 'PUT',
             headers: getHeaders(adminId),
             body: JSON.stringify({ oldCategory, newCategory })
@@ -782,19 +782,19 @@ export const api = {
     // Badge Tree System
     // Badge Nodes
     async getBadgeNodes() {
-        const response = await fetch(`${API_URL}/badge-nodes`);
+        const response = await fetchWithFallback('/badge-nodes');
         if (!response.ok) throw new Error('Failed to load badge nodes');
         return response.json();
     },
 
     async getBadgeNode(badgeId: string) {
-        const response = await fetch(`${API_URL}/badge-nodes/${badgeId}`);
+        const response = await fetchWithFallback(`/badge-nodes/${badgeId}`);
         if (!response.ok) throw new Error('Failed to load badge node');
         return response.json();
     },
 
     async createBadgeNode(badgeData: Partial<BadgeNode>, adminId: string) {
-        const response = await fetch(`${API_URL}/badge-nodes`, {
+        const response = await fetchWithFallback('/badge-nodes', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(badgeData)
@@ -804,7 +804,7 @@ export const api = {
     },
 
     async updateBadgeNode(badgeId: string, updates: Partial<BadgeNode>, adminId: string) {
-        const response = await fetch(`${API_URL}/badge-nodes/${badgeId}`, {
+        const response = await fetchWithFallback(`/badge-nodes/${badgeId}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
             body: JSON.stringify(updates)
@@ -814,7 +814,7 @@ export const api = {
     },
 
     async deleteBadgeNode(badgeId: string, adminId: string) {
-        const response = await fetch(`${API_URL}/badge-nodes/${badgeId}`, {
+        const response = await fetchWithFallback(`/badge-nodes/${badgeId}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -823,13 +823,13 @@ export const api = {
     },
 
     async checkBadgeUnlock(userId: string, badgeId: string) {
-        const response = await fetch(`${API_URL}/badge-nodes/check/${userId}/${badgeId}`);
+        const response = await fetchWithFallback(`/badge-nodes/check/${userId}/${badgeId}`);
         if (!response.ok) throw new Error('Failed to check badge unlock');
         return response.json();
     },
 
     async manuallyUnlockBadge(userId: string, badgeId: string, adminId: string) {
-        const response = await fetch(`${API_URL}/badge-nodes/unlock/${userId}/${badgeId}`, {
+        const response = await fetchWithFallback(`/badge-nodes/unlock/${userId}/${badgeId}`, {
             method: 'POST',
             headers: getHeaders(adminId)
         });
@@ -843,20 +843,20 @@ export const api = {
         if (filters?.type) params.append('type', filters.type);
         if (filters?.isActive !== undefined) params.append('isActive', String(filters.isActive));
 
-        const url = params.toString() ? `${API_URL}/badge-trees?${params}` : `${API_URL}/badge-trees`;
-        const response = await fetch(url);
+        const url = params.toString() ? `/badge-trees?${params}` : `/badge-trees`;
+        const response = await fetchWithFallback(url);
         if (!response.ok) throw new Error('Failed to load badge trees');
         return response.json();
     },
 
     async getBadgeTree(treeId: string) {
-        const response = await fetch(`${API_URL}/badge-trees/${treeId}`);
+        const response = await fetchWithFallback(`/badge-trees/${treeId}`);
         if (!response.ok) throw new Error('Failed to load badge tree');
         return response.json();
     },
 
     async createBadgeTree(treeData: Partial<BadgeTree>, adminId: string) {
-        const response = await fetch(`${API_URL}/badge-trees`, {
+        const response = await fetchWithFallback('/badge-trees', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(treeData)
@@ -866,7 +866,7 @@ export const api = {
     },
 
     async updateBadgeTree(treeId: string, updates: Partial<BadgeTree>, adminId: string) {
-        const response = await fetch(`${API_URL}/badge-trees/${treeId}`, {
+        const response = await fetchWithFallback(`/badge-trees/${treeId}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
             body: JSON.stringify(updates)
@@ -876,7 +876,7 @@ export const api = {
     },
 
     async deleteBadgeTree(treeId: string, adminId: string) {
-        const response = await fetch(`${API_URL}/badge-trees/${treeId}`, {
+        const response = await fetchWithFallback(`/badge-trees/${treeId}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -885,7 +885,7 @@ export const api = {
     },
 
     async addNodeToTree(treeId: string, nodeData: Partial<BadgeTreeNode>, adminId: string) {
-        const response = await fetch(`${API_URL}/badge-trees/${treeId}/nodes`, {
+        const response = await fetchWithFallback(`/badge-trees/${treeId}/nodes`, {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(nodeData)
@@ -895,7 +895,7 @@ export const api = {
     },
 
     async updateNodeInTree(treeId: string, badgeId: string, updates: Partial<BadgeTreeNode>, adminId: string) {
-        const response = await fetch(`${API_URL}/badge-trees/${treeId}/nodes/${badgeId}`, {
+        const response = await fetchWithFallback(`/badge-trees/${treeId}/nodes/${badgeId}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
             body: JSON.stringify(updates)
@@ -905,7 +905,7 @@ export const api = {
     },
 
     async removeNodeFromTree(treeId: string, badgeId: string, adminId: string) {
-        const response = await fetch(`${API_URL}/badge-trees/${treeId}/nodes/${badgeId}`, {
+        const response = await fetchWithFallback(`/badge-trees/${treeId}/nodes/${badgeId}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -914,13 +914,13 @@ export const api = {
     },
 
     async getUserBadgeProgress(userId: string) {
-        const response = await fetch(`${API_URL}/badge-trees/progress/${userId}`);
+        const response = await fetchWithFallback(`/badge-trees/progress/${userId}`);
         if (!response.ok) throw new Error('Failed to load badge progress');
         return response.json();
     },
 
     async getUserTreeProgress(userId: string, treeId: string) {
-        const response = await fetch(`${API_URL}/badge-trees/progress/${userId}/${treeId}`);
+        const response = await fetchWithFallback(`/badge-trees/progress/${userId}/${treeId}`);
         if (!response.ok) throw new Error('Failed to load tree progress');
         return response.json();
     },
@@ -932,7 +932,7 @@ export const api = {
         formData.append('file', file);
         formData.append('type', type);
 
-        const response = await fetch(`${API_URL}/ai-studio/upload`, {
+        const response = await fetchWithFallback('/ai-studio/upload', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${getStoredToken()}`,
@@ -945,7 +945,7 @@ export const api = {
     },
 
     async processMaterial(subjectId: string, materialId: string, adminId: string) {
-        const response = await fetch(`${API_URL}/ai-studio/process`, {
+        const response = await fetchWithFallback('/ai-studio/process', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify({ subjectId, materialId })
@@ -955,7 +955,7 @@ export const api = {
     },
 
     async deleteMaterial(subjectId: string, materialId: string, adminId: string) {
-        const response = await fetch(`${API_URL}/ai-studio/material/${subjectId}/${materialId}`, {
+        const response = await fetchWithFallback(`/ai-studio/material/${subjectId}/${materialId}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -964,7 +964,7 @@ export const api = {
     },
 
     async generateQuizFromMaterials(data: { subjectId: string; materialIds: string[]; questionCount: number; difficulty: string }, adminId: string) {
-        const response = await fetch(`${API_URL}/ai-studio/generate`, {
+        const response = await fetchWithFallback('/ai-studio/generate', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(data)
@@ -976,7 +976,7 @@ export const api = {
     // Clans
 
     async createClan(data: { name: string; tag: string; description: string; isPublic: boolean }, userId: string) {
-        const response = await fetch(`${API_URL}/clans/create`, {
+        const response = await fetchWithFallback('/clans/create', {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify(data)
@@ -989,7 +989,7 @@ export const api = {
     },
 
     async getClan(clanId: string, userId: string): Promise<Clan> {
-        const response = await fetch(`${API_URL}/clans/${clanId}`, {
+        const response = await fetchWithFallback(`/clans/${clanId}`, {
             headers: getHeaders(userId)
         });
         if (!response.ok) throw new Error('Failed to fetch clan');
@@ -997,7 +997,7 @@ export const api = {
     },
 
     async searchClans(query: string, userId: string): Promise<Clan[]> {
-        const response = await fetch(`${API_URL}/clans/search?query=${encodeURIComponent(query)}`, {
+        const response = await fetchWithFallback(`/clans/search?query=${encodeURIComponent(query)}`, {
             headers: getHeaders(userId)
         });
         if (!response.ok) throw new Error('Failed to search clans');
@@ -1005,7 +1005,7 @@ export const api = {
     },
 
     async joinClan(clanId: string, userId: string) {
-        const response = await fetch(`${API_URL}/clans/join`, {
+        const response = await fetchWithFallback('/clans/join', {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify({ clanId })
@@ -1018,7 +1018,7 @@ export const api = {
     },
 
     async leaveClan(userId: string) {
-        const response = await fetch(`${API_URL}/clans/leave`, {
+        const response = await fetchWithFallback('/clans/leave', {
             method: 'POST',
             headers: getHeaders(userId)
         });
@@ -1030,13 +1030,13 @@ export const api = {
     },
 
     async getClanLeaderboard() {
-        const response = await fetch(`${API_URL}/clans/leaderboard`);
+        const response = await fetchWithFallback('/clans/leaderboard');
         if (!response.ok) throw new Error('Failed to fetch clan leaderboard');
         return response.json();
     },
 
     async updateClan(clanId: string, updates: Partial<Clan>, userId: string) {
-        const response = await fetch(`${API_URL}/clans/${clanId}`, {
+        const response = await fetchWithFallback(`/clans/${clanId}`, {
             method: 'PUT',
             headers: getHeaders(userId),
             body: JSON.stringify(updates)
@@ -1049,7 +1049,7 @@ export const api = {
     },
 
     async inviteToClan(clanId: string, targetUserId: string, userId: string) {
-        const response = await fetch(`${API_URL}/clans/invite`, {
+        const response = await fetchWithFallback('/clans/invite', {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify({ clanId, targetUserId })
@@ -1062,7 +1062,7 @@ export const api = {
     },
 
     async respondToClanInvite(clanId: string, accept: boolean, userId: string) {
-        const response = await fetch(`${API_URL}/clans/respond-invite`, {
+        const response = await fetchWithFallback('/clans/respond-invite', {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify({ clanId, accept })
@@ -1075,7 +1075,7 @@ export const api = {
     },
 
     async handleJoinRequest(clanId: string, targetUserId: string, accept: boolean, userId: string) {
-        const response = await fetch(`${API_URL}/clans/join-request`, {
+        const response = await fetchWithFallback('/clans/join-request', {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify({ clanId, targetUserId, accept })
@@ -1088,7 +1088,7 @@ export const api = {
     },
 
     async kickMember(clanId: string, targetUserId: string, userId: string) {
-        const response = await fetch(`${API_URL}/clans/kick`, {
+        const response = await fetchWithFallback('/clans/kick', {
             method: 'POST',
             headers: getHeaders(userId),
             body: JSON.stringify({ clanId, targetUserId })
@@ -1101,7 +1101,7 @@ export const api = {
     },
 
     async updateMemberRole(clanId: string, targetUserId: string, newRole: 'elder' | 'member', userId: string) {
-        const response = await fetch(`${API_URL}/clans/role`, {
+        const response = await fetchWithFallback('/clans/role', {
             method: 'PUT',
             headers: getHeaders(userId),
             body: JSON.stringify({ clanId, targetUserId, newRole })
@@ -1114,7 +1114,7 @@ export const api = {
     },
 
     async compileCode(sourceCode: string, language: string) {
-        const response = await fetch(`${API_URL}/compile`, {
+        const response = await fetchWithFallback('/compile', {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({ sourceCode, language }),
@@ -1143,7 +1143,7 @@ export const api = {
             delete headers['Content-Type'];
         }
 
-        const response = await fetch(`${API_URL}/ai/generate`, {
+        const response = await fetchWithFallback('/ai/generate', {
             method: 'POST',
             headers: headers,
             body: isFormData ? (data as FormData) : JSON.stringify(data),
@@ -1157,7 +1157,7 @@ export const api = {
 
     // Subjects
     async getSubjects() {
-        const response = await fetch(`${API_URL}/subjects`, {
+        const response = await fetchWithFallback('/subjects', {
             headers: getHeaders()
         });
         if (!response.ok) {
@@ -1176,7 +1176,7 @@ export const api = {
             throw new Error('Please log in again to access this feature');
         }
 
-        const response = await fetch(`${API_URL}/subjects`, { headers });
+        const response = await fetchWithFallback('/subjects', { headers });
         if (!response.ok) {
             if (response.status === 401) {
                 throw new Error('Session expired. Please log in again.');
@@ -1196,7 +1196,7 @@ export const api = {
         // @ts-ignore
         delete headers['Content-Type']; // Allow browser to set boundary
 
-        const response = await fetch(`${API_URL}/subjects`, {
+        const response = await fetchWithFallback('/subjects', {
             method: 'POST',
             headers: headers,
             body: data
@@ -1209,7 +1209,7 @@ export const api = {
     },
 
     async deleteSubject(id: string, adminId: string) {
-        const response = await fetch(`${API_URL}/subjects/${id}`, {
+        const response = await fetchWithFallback(`/subjects/${id}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
@@ -1222,7 +1222,7 @@ export const api = {
         // @ts-ignore
         delete headers['Content-Type']; // Allow browser to set boundary
 
-        const response = await fetch(`${API_URL}/subjects/${id}`, {
+        const response = await fetchWithFallback(`/subjects/${id}`, {
             method: 'PUT',
             headers: headers,
             body: data
@@ -1243,7 +1243,7 @@ export const api = {
         useOldQuestions?: boolean;
         includeNewQuestions?: boolean;
     }, adminId: string) {
-        const response = await fetch(`${API_URL}/subjects/generate-quiz`, {
+        const response = await fetchWithFallback('/subjects/generate-quiz', {
             method: 'POST',
             headers: getHeaders(adminId),
             body: JSON.stringify(data)
@@ -1257,7 +1257,7 @@ export const api = {
 
     // Admin Roadmap Management
     async getUserRoadmapProgress(userId: string, trackId: string, adminId: string) {
-        const response = await fetch(`${API_URL}/users/${userId}/roadmap/${trackId}/progress`, {
+        const response = await fetchWithFallback(`/users/${userId}/roadmap/${trackId}/progress`, {
             headers: getHeaders(adminId)
         });
         if (!response.ok) throw new Error('Failed to load user progress');
@@ -1265,7 +1265,7 @@ export const api = {
     },
 
     async updateUserRoadmapProgress(userId: string, trackId: string, progress: { completedModules?: string[], unlockedModules?: string[] }, adminId: string) {
-        const response = await fetch(`${API_URL}/users/${userId}/roadmap/${trackId}/progress`, {
+        const response = await fetchWithFallback(`/users/${userId}/roadmap/${trackId}/progress`, {
             method: 'PUT',
             headers: getHeaders(adminId),
             body: JSON.stringify(progress)
