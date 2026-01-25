@@ -17,6 +17,18 @@ interface UpdateState {
  */
 const checkForNewVersion = async (): Promise<boolean> => {
   try {
+    // Get stored version - initialize if not set
+    let storedVersion = localStorage.getItem('app-version');
+    if (!storedVersion) {
+      // First time - extract from current page and store
+      const versionMatch = document.querySelector('meta[name="app-version"]')?.getAttribute('content');
+      if (versionMatch) {
+        localStorage.setItem('app-version', versionMatch);
+        console.log('[AutoUpdate] Initialized version:', versionMatch);
+      }
+      return false; // Don't reload on first run
+    }
+
     // Fetch index.html with cache busting to get latest version
     const response = await fetch('/index.html?_t=' + Date.now(), {
       cache: 'no-store',
@@ -35,18 +47,10 @@ const checkForNewVersion = async (): Promise<boolean> => {
     const versionMatch = html.match(/<meta name="app-version" content="([^"]+)"/);
     const newVersion = versionMatch ? versionMatch[1] : '';
 
-    // Get stored version from localStorage
-    const storedVersion = localStorage.getItem('app-version');
-
-    // If versions differ, new version is available
+    // Only return true if versions are DIFFERENT
     if (newVersion && storedVersion && newVersion !== storedVersion) {
-      console.log('[AutoUpdate] New version detected:', { newVersion, storedVersion });
+      console.log('[AutoUpdate] New version detected:', { current: storedVersion, new: newVersion });
       return true;
-    }
-
-    // Store current version
-    if (newVersion) {
-      localStorage.setItem('app-version', newVersion);
     }
 
     return false;
