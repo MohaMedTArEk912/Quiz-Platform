@@ -171,10 +171,15 @@ app.get('/api/health-check', (req, res) => {
   });
 });
 
+// Alias for Docker health check
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Middleware to ensure DB connection (with timeout protection for serverless)
 app.use(async (req, res, next) => {
-  // Skip DB check for health check endpoint
-  if (req.path === '/api/health-check') {
+  // Skip DB check for health check endpoints
+  if (req.path === '/api/health-check' || req.path === '/api/health') {
     return next();
   }
   
