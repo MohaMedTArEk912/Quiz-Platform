@@ -7,10 +7,7 @@
   "functions": {
     "api/[...path].js": {
       "memory": 1024,
-      "maxDuration": 30,
-      "environment": {
-        "KOYEB_API_URL": "https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api"
-      }
+      "maxDuration": 30
     }
   },
   "routes": [
