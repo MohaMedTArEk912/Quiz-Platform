@@ -107,7 +107,7 @@
   "env": {
     "NODE_ENV": "production",
     "VITE_API_URL": "/api",
-    "VITE_API_FALLBACK_URL": "https://thequizplatform.vercel.app/api",
+    "VITE_API_FALLBACK_URL": "/api",
     "VITE_API_TIMEOUT": "10000",
     "VITE_API_RETRY_ATTEMPTS": "3",
     "VITE_API_RETRY_DELAY": "1000",
