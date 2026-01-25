@@ -22,7 +22,7 @@
     },
     {
       "src": "/api/(.*)",
-      "dest": "/api/[...path].js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/assets/(.*)",
@@ -113,6 +113,7 @@
     "VITE_API_RETRY_DELAY": "1000",
     "VITE_API_RETRY_BACKOFF": "2",
     "VITE_API_HEALTH_CHECK_INTERVAL": "30000",
-    "KOYEB_API_URL": "https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api"
+    "KOYEB_API_URL": "https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api",
+    "CLIENT_URL": "https://quiz-platform-dun.vercel.app"
   }
 }

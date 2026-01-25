@@ -55,7 +55,8 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://thequizplatform.netlify.app",
-  "https://thequizplatform.vercel.app"
+  "https://thequizplatform.vercel.app",
+  "https://quiz-platform-dun.vercel.app"
 ];
 
 if (process.env.CLIENT_URL) {
