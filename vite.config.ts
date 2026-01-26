@@ -196,7 +196,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:7860',
         changeOrigin: true,
         secure: false,
         // Timeout adapted for both development and production
