@@ -7,6 +7,7 @@ WORKDIR /app
 
 # Build-time arguments for environment variables
 ARG VITE_API_URL=/api
+ARG VITE_APP_URL=http://localhost:7860
 ARG VITE_GOOGLE_CLIENT_ID=
 
 # Copy package files
@@ -27,7 +28,10 @@ COPY src/ ./src/
 COPY public/ ./public/
 
 # Build the frontend with environment variables
-RUN VITE_API_URL=${VITE_API_URL} VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID} npm run build
+RUN VITE_API_URL=${VITE_API_URL} \
+    VITE_APP_URL=${VITE_APP_URL} \
+    VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID} \
+    npm run build
 
 # ============================================
 # Stage 2: Production Runtime

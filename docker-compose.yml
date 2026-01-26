@@ -20,6 +20,7 @@ services:
       args:
         # Build-time variables for frontend compilation
         - VITE_API_URL=/api
+        - VITE_APP_URL=http://localhost:7860
         - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
       # Use buildkit for improved build performance and caching
       cache_from:

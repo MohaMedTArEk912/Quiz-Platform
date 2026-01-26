@@ -125,8 +125,13 @@
                     document.getElementById('status-title').textContent = 'Success!';
                     document.getElementById('status-message').textContent = 'Redirecting...';
                     
+                    // Determine the correct origin for postMessage
+                    // Support both localhost:5173 (dev) and localhost:7860 (Docker)
+                    const targetOrigin = window.location.origin;
+                    
                     // Send the profile data to the parent window
                     if (window.opener && !window.opener.closed) {
+                        console.log('Sending auth success to opener at origin:', targetOrigin);
                         window.opener.postMessage({
                             type: 'GOOGLE_AUTH_SUCCESS',
                             profile: {
@@ -135,7 +140,7 @@
                                 sub: profile.id,
                                 picture: profile.picture || null
                             }
-                        }, window.location.origin);
+                        }, targetOrigin);
                         
                         setTimeout(() => {
                             window.close();
@@ -150,6 +155,7 @@
                         }, 300);
                     } else {
                         // If no opener (tab was opened instead of popup), store data and redirect to main page
+                        console.log('No opener found, storing auth data in sessionStorage');
                         sessionStorage.setItem('googleAuthData', JSON.stringify({
                             email: profile.email,
                             name: profile.name,

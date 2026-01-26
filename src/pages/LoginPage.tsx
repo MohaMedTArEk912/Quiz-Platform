@@ -19,7 +19,7 @@ const LoginPage: React.FC = () => {
                     const { email, name, sub } = JSON.parse(googleAuthData);
                     sessionStorage.removeItem('googleAuthData');
                     await googleLogin({ email, name, googleId: sub });
-                    
+
                     const session = sessionStorage.getItem('userSession');
                     const isAdmin = session ? JSON.parse(session).isAdmin : false;
                     window.location.href = isAdmin ? '/admin' : '/';
@@ -53,7 +53,12 @@ const LoginPage: React.FC = () => {
             return;
         }
 
-        const redirectUri = `${window.location.origin}/auth/google/callback.html`;
+        // Use VITE_APP_URL if set, otherwise fall back to window.location.origin
+        // This allows proper OAuth redirect in both dev (localhost:5173) and Docker (localhost:7860)
+        const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+        const redirectUri = `${appUrl}/auth/google/callback.html`;
+
+        console.log('OAuth Redirect URI:', redirectUri); // Debug log
 
         const googleAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
             new URLSearchParams({
@@ -82,16 +87,26 @@ const LoginPage: React.FC = () => {
         }
 
         const handleMessage = async (event: MessageEvent) => {
-            // Verify the origin for security
-            if (event.origin !== window.location.origin) {
+            // Verify the origin for security - allow localhost with any port
+            // This supports both dev (localhost:5173) and Docker (localhost:7860)
+            const eventOrigin = new URL(event.origin);
+            const currentOrigin = new URL(window.location.origin);
+
+            // Check if hostname matches (localhost or 127.0.0.1)
+            const isLocalhost = (eventOrigin.hostname === 'localhost' || eventOrigin.hostname === '127.0.0.1') &&
+                (currentOrigin.hostname === 'localhost' || currentOrigin.hostname === '127.0.0.1');
+
+            if (!isLocalhost) {
                 console.warn('Received message from untrusted origin:', event.origin);
                 return;
             }
 
+            console.log('Received message from:', event.origin, 'Type:', event.data.type);
+
             if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
                 // Remove listener immediately to prevent duplicate processing
                 window.removeEventListener('message', handleMessage);
-                
+
                 // Close popup immediately
                 try {
                     if (googleWindow && !googleWindow.closed) {
@@ -100,14 +115,14 @@ const LoginPage: React.FC = () => {
                 } catch (e) {
                     console.log('Could not close popup:', e);
                 }
-                
+
                 try {
                     const { email, name, sub } = event.data.profile;
                     console.log('Google auth success, calling googleLogin...');
                     await googleLogin({ email, name, googleId: sub });
-                    
+
                     console.log('Login successful, session stored');
-                    
+
                     // Force page reload to ensure auth context updates properly
                     const session = sessionStorage.getItem('userSession');
                     const isAdmin = session ? JSON.parse(session).isAdmin : false;
