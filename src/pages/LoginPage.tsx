@@ -101,6 +101,16 @@ const LoginPage: React.FC = () => {
                     
                     const session = sessionStorage.getItem('userSession');
                     const isAdmin = session ? JSON.parse(session).isAdmin : false;
+                    
+                    // Close popup first
+                    try {
+                        googleWindow?.close();
+                    } catch (e) {
+                        // Silently handle COOP policy errors - popup will close itself
+                    }
+                    
+                    // Then navigate
+                    window.removeEventListener('message', handleMessage);
                     navigate(isAdmin ? '/admin' : '/', { replace: true });
                 } catch (error) {
                     console.error('Google login error:', error);
@@ -111,7 +121,6 @@ const LoginPage: React.FC = () => {
                         type: 'danger',
                         cancelText: 'Close'
                     });
-                } finally {
                     window.removeEventListener('message', handleMessage);
                     try {
                         googleWindow?.close();
