@@ -92,19 +92,21 @@ const LoginPage: React.FC = () => {
                 // Remove listener immediately to prevent duplicate processing
                 window.removeEventListener('message', handleMessage);
                 
+                // Close popup immediately
+                try {
+                    if (googleWindow && !googleWindow.closed) {
+                        googleWindow.close();
+                    }
+                } catch (e) {
+                    console.log('Could not close popup:', e);
+                }
+                
                 try {
                     const { email, name, sub } = event.data.profile;
                     console.log('Google auth success, calling googleLogin...');
                     await googleLogin({ email, name, googleId: sub });
                     
                     console.log('Login successful, session stored');
-                    
-                    // Close popup
-                    try {
-                        googleWindow?.close();
-                    } catch (e) {
-                        // Silently handle COOP policy errors
-                    }
                     
                     // Force page reload to ensure auth context updates properly
                     const session = sessionStorage.getItem('userSession');

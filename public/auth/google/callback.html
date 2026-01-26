@@ -122,6 +122,10 @@
                         throw new Error('Incomplete profile data received from Google');
                     }
 
+                    // Update UI to show success
+                    document.getElementById('status-title').textContent = 'Success!';
+                    document.getElementById('status-message').textContent = 'Signing you in...';
+                    
                     // Send the profile data to the parent window
                     if (window.opener && !window.opener.closed) {
                         window.opener.postMessage({
@@ -134,10 +138,23 @@
                             }
                         }, window.location.origin);
                         
-                        // Close this popup window immediately
-                        window.close();
+                        // Show closing message
+                        document.getElementById('status-message').textContent = 'You can close this window now.';
+                        document.querySelector('.spinner').style.display = 'none';
+                        
+                        // Try multiple methods to close
+                        setTimeout(() => {
+                            try {
+                                window.close();
+                            } catch (e) {
+                                // If close fails, try alternative
+                                if (!window.closed) {
+                                    window.opener.focus();
+                                }
+                            }
+                        }, 100);
                     } else {
-                        // If no opener (tab was opened instead of popup), store data and redirect in opener
+                        // If no opener (tab was opened instead of popup), store data and redirect
                         sessionStorage.setItem('googleAuthData', JSON.stringify({
                             email: profile.email,
                             name: profile.name,
@@ -145,13 +162,11 @@
                             picture: profile.picture || null
                         }));
                         
-                        // Try to close (might not work if opened as tab)
-                        window.close();
-                        
-                        // Fallback: redirect after a brief delay if window didn't close
+                        // Redirect to login page
+                        document.getElementById('status-message').textContent = 'Redirecting...';
                         setTimeout(() => {
                             window.location.href = '/login';
-                        }, 100);
+                        }, 500);
                     }
                 })
                 .catch(error => {
