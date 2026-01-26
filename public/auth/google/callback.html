@@ -134,19 +134,24 @@
                             }
                         }, window.location.origin);
                         
-                        // Close this popup window
-                        setTimeout(() => {
-                            window.close();
-                        }, 500);
+                        // Close this popup window immediately
+                        window.close();
                     } else {
-                        // If no opener, store the data and redirect
+                        // If no opener (tab was opened instead of popup), store data and redirect in opener
                         sessionStorage.setItem('googleAuthData', JSON.stringify({
                             email: profile.email,
                             name: profile.name,
                             sub: profile.id,
                             picture: profile.picture || null
                         }));
-                        window.location.href = '/login';
+                        
+                        // Try to close (might not work if opened as tab)
+                        window.close();
+                        
+                        // Fallback: redirect after a brief delay if window didn't close
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 100);
                     }
                 })
                 .catch(error => {
@@ -158,6 +163,9 @@
                             type: 'GOOGLE_AUTH_ERROR',
                             error: error.message
                         }, window.location.origin);
+                        
+                        // Close popup after error is sent
+                        setTimeout(() => window.close(), 1000);
                     }
                 });
             } catch (error) {
