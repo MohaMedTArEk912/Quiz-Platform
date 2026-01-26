@@ -20,25 +20,22 @@ const LoginPage: React.FC = () => {
                     sessionStorage.removeItem('googleAuthData');
                     await googleLogin({ email, name, googleId: sub });
                     
-                    // Wait a tick to ensure session storage is fully written
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    
                     const session = sessionStorage.getItem('userSession');
                     const isAdmin = session ? JSON.parse(session).isAdmin : false;
-                    navigate(isAdmin ? '/admin' : '/', { replace: true });
+                    window.location.href = isAdmin ? '/admin' : '/';
                 } catch (error) {
                     console.error('Error processing stored Google auth:', error);
                 }
             }
         };
         checkGoogleAuth();
-    }, [googleLogin, navigate]);
+    }, [googleLogin]);
 
     const handleLogin = async (email: string, password: string) => {
         await login(email, password);
         const session = sessionStorage.getItem('userSession');
         const isAdmin = session ? JSON.parse(session).isAdmin : false;
-        navigate(isAdmin ? '/admin' : '/', { replace: true });
+        window.location.href = isAdmin ? '/admin' : '/';
     };
 
     const handleGoogleSignIn = () => {
@@ -92,26 +89,28 @@ const LoginPage: React.FC = () => {
             }
 
             if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+                // Remove listener immediately to prevent duplicate processing
+                window.removeEventListener('message', handleMessage);
+                
                 try {
                     const { email, name, sub } = event.data.profile;
+                    console.log('Google auth success, calling googleLogin...');
                     await googleLogin({ email, name, googleId: sub });
                     
-                    // Wait a tick to ensure session storage is fully written
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    console.log('Login successful, session stored');
                     
-                    const session = sessionStorage.getItem('userSession');
-                    const isAdmin = session ? JSON.parse(session).isAdmin : false;
-                    
-                    // Close popup first
+                    // Close popup
                     try {
                         googleWindow?.close();
                     } catch (e) {
-                        // Silently handle COOP policy errors - popup will close itself
+                        // Silently handle COOP policy errors
                     }
                     
-                    // Then navigate
-                    window.removeEventListener('message', handleMessage);
-                    navigate(isAdmin ? '/admin' : '/', { replace: true });
+                    // Force page reload to ensure auth context updates properly
+                    const session = sessionStorage.getItem('userSession');
+                    const isAdmin = session ? JSON.parse(session).isAdmin : false;
+                    console.log('Reloading to:', isAdmin ? '/admin' : '/');
+                    window.location.href = isAdmin ? '/admin' : '/';
                 } catch (error) {
                     console.error('Google login error:', error);
                     confirm({
@@ -121,11 +120,10 @@ const LoginPage: React.FC = () => {
                         type: 'danger',
                         cancelText: 'Close'
                     });
-                    window.removeEventListener('message', handleMessage);
                     try {
                         googleWindow?.close();
                     } catch (e) {
-                        // Silently handle COOP policy errors - popup will close itself
+                        // Silently handle COOP policy errors
                     }
                 }
             } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
