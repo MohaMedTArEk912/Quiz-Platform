@@ -177,31 +177,16 @@
                         // TAB MODE - Store in sessionStorage and redirect
                         console.log('%c[OAuth Callback] TAB MODE - Using sessionStorage fallback', 'color: #FBBC05; font-weight: bold');
                         
-                        // Update UI with BIG visible message
-                        document.getElementById('status-title').textContent = '✅ Authentication Successful!';
-                        document.getElementById('status-message').textContent = 'Saving your credentials...';
-                        document.querySelector('.spinner').style.display = 'none';
+                        document.getElementById('status-title').textContent = 'Success!';
+                        document.getElementById('status-message').textContent = 'Redirecting...';
                         
-                        sessionStorage.setItem('googleAuthData', JSON.stringify(authData));
+                        const authDataString = JSON.stringify(authData);
+                        console.log('[OAuth Callback] Storing auth data:', authDataString);
+                        sessionStorage.setItem('googleAuthData', authDataString);
                         console.log('[OAuth Callback] Auth data stored in sessionStorage');
-                        console.log('[OAuth Callback] Stored data:', authData);
                         
-                        // Show what we're doing
-                        document.getElementById('status-message').innerHTML = `
-                            <div style="text-align: left; margin-top: 20px;">
-                                <p style="font-size: 16px; margin: 10px 0;">✅ Email: ${authData.email}</p>
-                                <p style="font-size: 16px; margin: 10px 0;">✅ Name: ${authData.name}</p>
-                                <p style="font-size: 16px; margin: 10px 0;">✅ Data saved to sessionStorage</p>
-                                <p style="font-size: 18px; margin: 20px 0; color: #34A853; font-weight: bold;">→ Redirecting to login page in 2 seconds...</p>
-                            </div>
-                        `;
-                        
-                        console.log('[OAuth Callback] Redirecting to /login in 2000ms');
-                        
-                        setTimeout(() => {
-                            console.log('[OAuth Callback] EXECUTING REDIRECT NOW');
-                            window.location.href = '/login';
-                        }, 2000); // Give user time to see the success message
+                        console.log('[OAuth Callback] Redirecting to /login immediately');
+                        window.location.href = '/login';
                     }
                 })
                 .catch(error => {

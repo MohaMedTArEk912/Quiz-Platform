@@ -103,16 +103,26 @@ export const api = {
     },
 
     async googleLogin(googleData: { email: string; name: string; googleId: string }) {
+        console.log('%c[API] Calling Google Login endpoint', 'color: #4285F4; font-weight: bold');
+        console.log('[API] Sending data:', googleData);
+        
         const response = await fetchWithRetry('/auth/google', {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(googleData),
         });
+        
+        console.log('[API] Google Login response status:', response.status);
+        
         if (!response.ok) {
             const error = await response.json();
+            console.error('[API] Google Login error response:', error);
             throw new Error(error.message || 'Google login failed');
         }
-        return response.json();
+        
+        const result = await response.json();
+        console.log('[API] Google Login successful:', { user: result.user?.userId, hasToken: !!result.token });
+        return result;
     },
 
     async updateUser(userId: string, updates: Partial<UserData>) {

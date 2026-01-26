@@ -129,13 +129,19 @@ export const login = async (req, res) => {
 
 export const googleAuth = async (req, res) => {
   try {
+    console.log('%c[Google Auth] Request received', 'color: #4285F4; font-weight: bold');
+    console.log('[Google Auth] Request body:', req.body);
+    
     const { email, name, googleId } = req.body;
     const normalizedEmail = email.toLowerCase().trim();
+    
+    console.log('[Google Auth] Processing user:', { email: normalizedEmail, name, googleId: googleId ? 'present' : 'missing' });
     
     // Check if user exists
     let user = await User.findOne({ email: normalizedEmail });
     
     if (!user) {
+      console.log('[Google Auth] Creating new user for:', normalizedEmail);
       // Create new user with Google account
       const userId = normalizedEmail.replace(/[^a-z0-9]/g, '_');
       user = new User({
@@ -153,7 +159,9 @@ export const googleAuth = async (req, res) => {
         badges: []
       });
       await user.save();
+      console.log('[Google Auth] New user created:', userId);
     } else {
+      console.log('[Google Auth] User exists, updating login info');
       // Existing user - calculate and update streak
       const newStreak = calculateStreak(user.lastLoginDate, user.streak);
       user.streak = newStreak;
@@ -168,8 +176,10 @@ export const googleAuth = async (req, res) => {
     const enrichedUser = await getEnrichedUser(user.userId);
     const { password: _pw, ...safeUser } = enrichedUser || user.toObject();
     
+    console.log('[Google Auth] Login successful, sending response');
     res.json({ user: safeUser, token });
   } catch (error) {
+    console.error('%c[Google Auth] Error:', 'color: #EA4335; font-weight: bold', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

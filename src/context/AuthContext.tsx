@@ -6,6 +6,7 @@ interface AuthContextType {
     currentUser: UserData | null;
     isAdmin: boolean;
     isLoading: boolean;
+    authError: string | null;
     login: (email: string, password: string) => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<void>;
     googleLogin: (profile: { email: string; name: string; googleId: string }) => Promise<void>;
@@ -30,6 +31,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isAdmin, setIsAdmin] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [token, setToken] = useState<string | null>(null);
+    const [authError, setAuthError] = useState<string | null>(null);
 
     // Load session on mount
     useEffect(() => {
@@ -41,18 +43,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     const { email, name, sub } = JSON.parse(googleAuthData);
                     sessionStorage.removeItem('googleAuthData');
                     console.log('Processing stored Google auth data...');
-                    
+
                     // Call googleLogin which will set the session
                     const { user, token: jwt } = await api.googleLogin({ email, name, googleId: sub });
                     const isAdminUser = user.role === 'admin';
                     setCurrentUser(user);
                     setIsAdmin(isAdminUser);
                     setToken(jwt);
+                    setAuthError(null);
                     sessionStorage.setItem('userSession', JSON.stringify({ user, token: jwt, isAdmin: isAdminUser }));
                     setIsLoading(false);
                     return; // Exit early, we've completed auth
-                } catch (error) {
+                } catch (error: any) {
                     console.error('Error processing stored Google auth:', error);
+                    setAuthError(error.message || 'Google authentication failed');
                     sessionStorage.removeItem('googleAuthData');
                     // Continue to check for existing session below
                 }
@@ -71,6 +75,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         setCurrentUser(user);
                         setIsAdmin(user.role === 'admin');
                         setToken(sessionToken ?? null);
+                        setAuthError(null);
                     } else {
                         throw new Error('Invalid session');
                     }
@@ -80,6 +85,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     setCurrentUser(null);
                     setIsAdmin(false);
                     setToken(null);
+                    // Do not set auth error here as this is just a session restore failure, user might just need to login
                 }
             }
             setIsLoading(false);
@@ -102,6 +108,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const login = async (email: string, password: string) => {
+        setAuthError(null);
         const normalizedEmail = email.toLowerCase().trim();
         const { user, token: jwt } = await api.login({ email: normalizedEmail, password });
         const isAdminUser = user.role === 'admin';
@@ -113,6 +120,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const register = async (name: string, email: string, password: string) => {
+        setAuthError(null);
         const normalizedEmail = email.toLowerCase().trim();
         const userId = normalizedEmail.replace(/[^a-z0-9]/g, '_');
 
@@ -140,6 +148,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const googleLogin = async (profile: { email: string; name: string; googleId: string }) => {
+        setAuthError(null);
         const { user, token: jwt } = await api.googleLogin(profile);
         const isAdminUser = user.role === 'admin';
         setCurrentUser(user);
@@ -152,6 +161,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setCurrentUser(null);
         setIsAdmin(false);
         setToken(null);
+        setAuthError(null);
         sessionStorage.removeItem('userSession');
     };
 
@@ -164,7 +174,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ currentUser, isAdmin, isLoading, login, register, googleLogin, logout, updateUser, refreshUser }}>
+        <AuthContext.Provider value={{ currentUser, isAdmin, isLoading, authError, login, register, googleLogin, logout, updateUser, refreshUser }}>
             {children}
         </AuthContext.Provider>
     );

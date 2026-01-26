@@ -6,64 +6,52 @@ import { useConfirm } from '../hooks/useConfirm';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const LoginPage: React.FC = () => {
-    const { login, googleLogin } = useAuth();
+    const { login, googleLogin, currentUser, isLoading, authError } = useAuth();
     const navigate = useNavigate();
     const { confirm, confirmState, handleCancel } = useConfirm();
 
-    // Check for Google auth data in session storage (in case popup closed)
+    // Redirect if already logged in
     useEffect(() => {
-        const checkGoogleAuth = async () => {
-            console.log('%c[LoginPage] Checking for stored Google auth data...', 'color: #9C27B0; font-weight: bold');
-            const googleAuthData = sessionStorage.getItem('googleAuthData');
-            console.log('[LoginPage] googleAuthData found:', !!googleAuthData);
+        if (!isLoading && currentUser) {
+            const redirectUrl = (currentUser as any).role === 'admin' ? '/admin' : '/';
+            console.log('[LoginPage] User already logged in, redirecting to:', redirectUrl);
+            navigate(redirectUrl, { replace: true });
+        }
+    }, [currentUser, isLoading, navigate]);
 
-            // VISIBLE ALERT FOR DEBUGGING
-            if (googleAuthData) {
-                alert(`🔍 Found Google auth data! Will attempt auto-login.\n\nData: ${googleAuthData.substring(0, 50)}...`);
-            } else {
-                console.log('[LoginPage] No stored Google auth data found');
-            }
+    // Show auth errors (like from automatic Google login)
+    useEffect(() => {
+        if (authError) {
+            confirm({
+                title: 'Authentication Error',
+                message: authError,
+                confirmText: 'OK',
+                type: 'danger',
+                cancelText: 'Close'
+            });
+        }
+    }, [authError, confirm]);
 
-            if (googleAuthData) {
-                try {
-                    const { email, name, sub } = JSON.parse(googleAuthData);
-                    console.log('[LoginPage] Parsed auth data:', { email, name, hasSubId: !!sub });
-                    console.log('[LoginPage] Removing googleAuthData from sessionStorage');
-                    sessionStorage.removeItem('googleAuthData');
-
-                    console.log('[LoginPage] Calling googleLogin...');
-                    await googleLogin({ email, name, googleId: sub });
-                    console.log('[LoginPage] googleLogin completed successfully');
-
-                    // Give React a moment to update state
-                    await new Promise(resolve => setTimeout(resolve, 100));
-
-                    const session = sessionStorage.getItem('userSession');
-                    const isAdmin = session ? JSON.parse(session).isAdmin : false;
-                    const redirectUrl = isAdmin ? '/admin' : '/';
-
-                    console.log('[LoginPage] Session after login:', session);
-                    console.log('[LoginPage] Redirecting to:', redirectUrl);
-
-                    // Show success message
-                    alert(`✅ Login successful!\n\nRedirecting to ${redirectUrl}...`);
-
-                    // Use replace() for more forceful navigation
-                    window.location.replace(redirectUrl);
-                } catch (error: any) {
-                    console.error('%c[LoginPage] ERROR processing stored Google auth:', 'color: #f44336; font-weight: bold', error);
-                    alert(`❌ Auto-login failed!\n\n${error?.message || error}\n\nPlease try logging in manually.`);
-                }
-            }
-        };
-        checkGoogleAuth();
-    }, [googleLogin]);
+    // Show loading spinner while checking auth state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0b] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+            </div>
+        );
+    }
 
     const handleLogin = async (email: string, password: string) => {
-        await login(email, password);
-        const session = sessionStorage.getItem('userSession');
-        const isAdmin = session ? JSON.parse(session).isAdmin : false;
-        window.location.href = isAdmin ? '/admin' : '/';
+        try {
+            await login(email, password);
+            const session = sessionStorage.getItem('userSession');
+            const isAdmin = session ? JSON.parse(session).isAdmin : false;
+            const redirectUrl = isAdmin ? '/admin' : '/';
+            navigate(redirectUrl, { replace: true });
+        } catch (error) {
+            console.error('Login failed:', error);
+            // Error handling is done in LoginScreen component
+        }
     };
 
     const handleGoogleSignIn = () => {
@@ -81,12 +69,13 @@ const LoginPage: React.FC = () => {
             return;
         }
 
-        // Use VITE_APP_URL if set, otherwise fall back to window.location.origin
-        // This allows proper OAuth redirect in both dev (localhost:5173) and Docker (localhost:7860)
-        const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+        // Always use the current window origin to work on both dev (5173) and production (7860)
+        // This ensures the OAuth redirect URI matches the actual browser URL
+        const appUrl = window.location.origin;
         const redirectUri = `${appUrl}/auth/google/callback.html`;
 
-        console.log('OAuth Redirect URI:', redirectUri); // Debug log
+        console.log('[Google OAuth] Current origin:', window.location.origin);
+        console.log('[Google OAuth] Redirect URI:', redirectUri);
 
 
         const googleAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
