@@ -122,9 +122,8 @@
                         throw new Error('Incomplete profile data received from Google');
                     }
 
-                    // Update UI to show success
                     document.getElementById('status-title').textContent = 'Success!';
-                    document.getElementById('status-message').textContent = 'Signing you in...';
+                    document.getElementById('status-message').textContent = 'Redirecting...';
                     
                     // Send the profile data to the parent window
                     if (window.opener && !window.opener.closed) {
@@ -138,21 +137,17 @@
                             }
                         }, window.location.origin);
                         
-                        // Show closing message
-                        document.getElementById('status-message').textContent = 'You can close this window now.';
-                        document.querySelector('.spinner').style.display = 'none';
-                        
-                        // Try multiple methods to close
                         setTimeout(() => {
-                            try {
-                                window.close();
-                            } catch (e) {
-                                // If close fails, try alternative
-                                if (!window.closed) {
-                                    window.opener.focus();
+                            window.close();
+                            if (!window.closed) {
+                                try {
+                                    window.opener.location.reload();
+                                } catch (e) {
+                                    document.getElementById('status-message').textContent = 'Please close this window.';
+                                    document.querySelector('.spinner').style.display = 'none';
                                 }
                             }
-                        }, 100);
+                        }, 300);
                     } else {
                         // If no opener (tab was opened instead of popup), store data and redirect
                         sessionStorage.setItem('googleAuthData', JSON.stringify({
@@ -161,12 +156,7 @@
                             sub: profile.id,
                             picture: profile.picture || null
                         }));
-                        
-                        // Redirect to login page
-                        document.getElementById('status-message').textContent = 'Redirecting...';
-                        setTimeout(() => {
-                            window.location.href = '/login';
-                        }, 500);
+                        window.location.href = '/login';
                     }
                 })
                 .catch(error => {
