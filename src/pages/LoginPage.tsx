@@ -6,7 +6,7 @@ import { useConfirm } from '../hooks/useConfirm';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const LoginPage: React.FC = () => {
-    const { login, googleLogin, currentUser, isLoading, authError } = useAuth();
+    const { login, currentUser, isLoading, authError } = useAuth();
     const navigate = useNavigate();
     const { confirm, confirmState, handleCancel } = useConfirm();
 

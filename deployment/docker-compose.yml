@@ -15,16 +15,14 @@ services:
   app:
     container_name: quiz-platform-app
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: deployment/Dockerfile
       args:
         # Build-time variables for frontend compilation
         - VITE_API_URL=/api
         - VITE_APP_URL=http://localhost:7860
         - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
       # Use buildkit for improved build performance and caching
-      cache_from:
-        - quiz-platform-app:latest
 
     image: quiz-platform-app:latest
 
@@ -52,7 +50,7 @@ services:
 
     volumes:
       # Persist uploaded files across container restarts
-      - ./uploads:/app/uploads:rw
+      - ../uploads:/app/uploads:rw
       # Optional: Bind mount for development hot-reload
       # - ./server:/app/server:ro
 
