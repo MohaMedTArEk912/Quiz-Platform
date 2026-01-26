@@ -13,18 +13,46 @@ const LoginPage: React.FC = () => {
     // Check for Google auth data in session storage (in case popup closed)
     useEffect(() => {
         const checkGoogleAuth = async () => {
+            console.log('%c[LoginPage] Checking for stored Google auth data...', 'color: #9C27B0; font-weight: bold');
             const googleAuthData = sessionStorage.getItem('googleAuthData');
+            console.log('[LoginPage] googleAuthData found:', !!googleAuthData);
+
+            // VISIBLE ALERT FOR DEBUGGING
+            if (googleAuthData) {
+                alert(`🔍 Found Google auth data! Will attempt auto-login.\n\nData: ${googleAuthData.substring(0, 50)}...`);
+            } else {
+                console.log('[LoginPage] No stored Google auth data found');
+            }
+
             if (googleAuthData) {
                 try {
                     const { email, name, sub } = JSON.parse(googleAuthData);
+                    console.log('[LoginPage] Parsed auth data:', { email, name, hasSubId: !!sub });
+                    console.log('[LoginPage] Removing googleAuthData from sessionStorage');
                     sessionStorage.removeItem('googleAuthData');
+
+                    console.log('[LoginPage] Calling googleLogin...');
                     await googleLogin({ email, name, googleId: sub });
+                    console.log('[LoginPage] googleLogin completed successfully');
+
+                    // Give React a moment to update state
+                    await new Promise(resolve => setTimeout(resolve, 100));
 
                     const session = sessionStorage.getItem('userSession');
                     const isAdmin = session ? JSON.parse(session).isAdmin : false;
-                    window.location.href = isAdmin ? '/admin' : '/';
-                } catch (error) {
-                    console.error('Error processing stored Google auth:', error);
+                    const redirectUrl = isAdmin ? '/admin' : '/';
+
+                    console.log('[LoginPage] Session after login:', session);
+                    console.log('[LoginPage] Redirecting to:', redirectUrl);
+
+                    // Show success message
+                    alert(`✅ Login successful!\n\nRedirecting to ${redirectUrl}...`);
+
+                    // Use replace() for more forceful navigation
+                    window.location.replace(redirectUrl);
+                } catch (error: any) {
+                    console.error('%c[LoginPage] ERROR processing stored Google auth:', 'color: #f44336; font-weight: bold', error);
+                    alert(`❌ Auto-login failed!\n\n${error?.message || error}\n\nPlease try logging in manually.`);
                 }
             }
         };
@@ -60,6 +88,7 @@ const LoginPage: React.FC = () => {
 
         console.log('OAuth Redirect URI:', redirectUri); // Debug log
 
+
         const googleAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
             new URLSearchParams({
                 client_id: clientId,
@@ -69,106 +98,11 @@ const LoginPage: React.FC = () => {
                 prompt: 'select_account'
             });
 
-        const googleWindow = window.open(
-            googleAuthUrl,
-            'Google Sign In',
-            'width=500,height=600,scrollbars=yes'
-        );
-
-        if (!googleWindow) {
-            confirm({
-                title: 'Pop-up Blocked',
-                message: 'Pop-up blocked! Please allow pop-ups for this site to use Google Sign-In.',
-                confirmText: 'OK',
-                type: 'warning',
-                cancelText: 'Close'
-            });
-            return;
-        }
-
-        const handleMessage = async (event: MessageEvent) => {
-            // Verify the origin for security - allow localhost with any port
-            // This supports both dev (localhost:5173) and Docker (localhost:7860)
-            const eventOrigin = new URL(event.origin);
-            const currentOrigin = new URL(window.location.origin);
-
-            // Check if hostname matches (localhost or 127.0.0.1)
-            const isLocalhost = (eventOrigin.hostname === 'localhost' || eventOrigin.hostname === '127.0.0.1') &&
-                (currentOrigin.hostname === 'localhost' || currentOrigin.hostname === '127.0.0.1');
-
-            if (!isLocalhost) {
-                console.warn('Received message from untrusted origin:', event.origin);
-                return;
-            }
-
-            console.log('Received message from:', event.origin, 'Type:', event.data.type);
-
-            if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-                // Remove listener immediately to prevent duplicate processing
-                window.removeEventListener('message', handleMessage);
-
-                // Close popup immediately
-                try {
-                    if (googleWindow && !googleWindow.closed) {
-                        googleWindow.close();
-                    }
-                } catch (e) {
-                    console.log('Could not close popup:', e);
-                }
-
-                try {
-                    const { email, name, sub } = event.data.profile;
-                    console.log('Google auth success, calling googleLogin...');
-                    await googleLogin({ email, name, googleId: sub });
-
-                    console.log('Login successful, session stored');
-
-                    // Force page reload to ensure auth context updates properly
-                    const session = sessionStorage.getItem('userSession');
-                    const isAdmin = session ? JSON.parse(session).isAdmin : false;
-                    console.log('Reloading to:', isAdmin ? '/admin' : '/');
-                    window.location.href = isAdmin ? '/admin' : '/';
-                } catch (error) {
-                    console.error('Google login error:', error);
-                    confirm({
-                        title: 'Login Failed',
-                        message: 'Failed to sign in with Google. Please try again.',
-                        confirmText: 'OK',
-                        type: 'danger',
-                        cancelText: 'Close'
-                    });
-                    try {
-                        googleWindow?.close();
-                    } catch (e) {
-                        // Silently handle COOP policy errors
-                    }
-                }
-            } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
-                console.error('Google auth error:', event.data.error);
-                confirm({
-                    title: 'Login Error',
-                    message: `Google Sign-In failed: ${event.data.error}`,
-                    confirmText: 'OK',
-                    type: 'danger',
-                    cancelText: 'Close'
-                });
-                window.removeEventListener('message', handleMessage);
-                try {
-                    googleWindow?.close();
-                } catch (e) {
-                    // Silently handle COOP policy errors - popup will close itself
-                }
-            }
-        };
-
-        window.addEventListener('message', handleMessage);
-
-        // Cleanup listener if window is closed manually
-        // Use try-catch to handle Cross-Origin-Opener-Policy restrictions
-        // Fallback cleanup after 5 minutes
-        setTimeout(() => {
-            window.removeEventListener('message', handleMessage);
-        }, 300000);
+        // SAME-TAB REDIRECT: Navigate the current window to Google OAuth
+        console.log('%c[Google OAuth] Starting same-tab redirect flow', 'color: #4285F4; font-weight: bold');
+        console.log('[Google OAuth] Redirect URI:', redirectUri);
+        console.log('[Google OAuth] Redirecting to Google...');
+        window.location.href = googleAuthUrl;
     };
 
     return (

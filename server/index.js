@@ -656,11 +656,72 @@ app.use((error, req, res, next) => {
 const distPath = path.join(projectRoot, 'dist');
 app.use(express.static(distPath, {
   setHeaders: (res, filePath) => {
-    const ext = path.extname(filePath);
+    const ext = path.extname(filePath).toLowerCase();
+    
+    // Set proper MIME types for all file types
     if (ext === '.js' || ext === '.mjs' || ext === '.cjs') {
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    } else if (ext === '.css') {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    } else if (ext === '.json') {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
     } else if (ext === '.wasm') {
       res.setHeader('Content-Type', 'application/wasm');
+    } else if (ext === '.html' || ext === '.htm') {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    } else if (ext === '.svg') {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    } else if (ext === '.webp') {
+      res.setHeader('Content-Type', 'image/webp');
+    } else if (ext === '.png') {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (ext === '.jpg' || ext === '.jpeg') {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (ext === '.gif') {
+      res.setHeader('Content-Type', 'image/gif');
+    } else if (ext === '.ico') {
+      res.setHeader('Content-Type', 'image/x-icon');
+    } else if (ext === '.webmanifest') {
+      res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+    } else if (ext === '.br') {
+      // Brotli compressed files - need to check the original file type
+      const originalPath = filePath.slice(0, -3); // Remove .br extension
+      const originalExt = path.extname(originalPath).toLowerCase();
+      
+      res.setHeader('Content-Encoding', 'br');
+      
+      if (originalExt === '.js' || originalExt === '.mjs' || originalExt === '.cjs') {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      } else if (originalExt === '.css') {
+        res.setHeader('Content-Type', 'text/css; charset=utf-8');
+      } else if (originalExt === '.json') {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      } else if (originalExt === '.html') {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      }
+    } else if (ext === '.gz') {
+      // Gzip compressed files
+      const originalPath = filePath.slice(0, -3); // Remove .gz extension
+      const originalExt = path.extname(originalPath).toLowerCase();
+      
+      res.setHeader('Content-Encoding', 'gzip');
+      
+      if (originalExt === '.js' || originalExt === '.mjs' || originalExt === '.cjs') {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      } else if (originalExt === '.css') {
+        res.setHeader('Content-Type', 'text/css; charset=utf-8');
+      } else if (originalExt === '.json') {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      } else if (originalExt === '.html') {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      }
+    }
+    
+    // Cache control for static assets
+    if (ext === '.js' || ext === '.css' || ext === '.br' || ext === '.gz') {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (ext === '.html') {
+      res.setHeader('Cache-Control', 'no-cache');
     }
   }
 }));
