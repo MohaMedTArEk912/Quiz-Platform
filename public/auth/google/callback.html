@@ -83,7 +83,7 @@
                 if (window.opener) {
                     window.close();
                 } else {
-                    window.location.href = '/login';
+                    window.location.href = '/';
                 }
             }, 3000);
         }
@@ -149,14 +149,14 @@
                             }
                         }, 300);
                     } else {
-                        // If no opener (tab was opened instead of popup), store data and redirect
+                        // If no opener (tab was opened instead of popup), store data and redirect to main page
                         sessionStorage.setItem('googleAuthData', JSON.stringify({
                             email: profile.email,
                             name: profile.name,
                             sub: profile.id,
                             picture: profile.picture || null
                         }));
-                        window.location.href = '/login';
+                        window.location.href = '/';
                     }
                 })
                 .catch(error => {

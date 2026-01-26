@@ -34,6 +34,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Load session on mount
     useEffect(() => {
         const verifyAndLoadSession = async () => {
+            // First check if there's pending Google auth data (from tab-based OAuth flow)
+            const googleAuthData = sessionStorage.getItem('googleAuthData');
+            if (googleAuthData) {
+                try {
+                    const { email, name, sub } = JSON.parse(googleAuthData);
+                    sessionStorage.removeItem('googleAuthData');
+                    console.log('Processing stored Google auth data...');
+                    
+                    // Call googleLogin which will set the session
+                    const { user, token: jwt } = await api.googleLogin({ email, name, googleId: sub });
+                    const isAdminUser = user.role === 'admin';
+                    setCurrentUser(user);
+                    setIsAdmin(isAdminUser);
+                    setToken(jwt);
+                    sessionStorage.setItem('userSession', JSON.stringify({ user, token: jwt, isAdmin: isAdminUser }));
+                    setIsLoading(false);
+                    return; // Exit early, we've completed auth
+                } catch (error) {
+                    console.error('Error processing stored Google auth:', error);
+                    sessionStorage.removeItem('googleAuthData');
+                    // Continue to check for existing session below
+                }
+            }
+
+            // Check for existing session
             const savedSession = sessionStorage.getItem('userSession');
             if (savedSession) {
                 try {
