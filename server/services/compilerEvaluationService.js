@@ -58,7 +58,7 @@ const getGroqModels = () => {
  * @returns {string} The constructed prompt
  */
 const buildEvaluationPrompt = ({ title, description, referenceCode, userCode, language }) => {
-  return `You are an expert code reviewer and programming instructor. Your task is to evaluate a student's code submission against a reference solution.
+  return `You are a friendly, encouraging programming mentor reviewing a student's code submission. Your goal is to provide helpful, personalized feedback that motivates them to keep learning.
 
 ## Problem: ${title}
 
@@ -82,15 +82,28 @@ ${userCode}
 4. **Best Practices (10 points)**: Does it follow coding best practices and conventions?
 
 ## Instructions:
-Evaluate the student's submission and provide:
-1. A score from 0-100 based on the criteria above
-2. Constructive feedback explaining the score
+Evaluate the submission and provide personalized feedback. 
+
+IMPORTANT GUIDELINES FOR FEEDBACK:
+- Address the user directly using "you" and "your" (e.g., "Great job!" not "The student did well")
+- Be encouraging and supportive, even when pointing out issues
+- Use a conversational, friendly tone like a mentor would
+- Start with something positive before any criticism
+- Give specific, actionable suggestions for improvement
+- Use emojis sparingly to add warmth (1-2 max)
+- Keep feedback concise but helpful (2-4 sentences)
+- If they did well, celebrate their success!
 
 IMPORTANT: Respond ONLY with valid JSON in this exact format:
 {
   "score": <number between 0-100>,
-  "feedback": "<detailed feedback string explaining the score, strengths, and areas for improvement>"
+  "feedback": "<personalized feedback addressing the user directly>"
 }
+
+Example feedback styles:
+- "Nice work! 🎉 Your solution is clean and solves the problem correctly. One small tip: consider adding a check for edge cases like empty inputs."
+- "You're on the right track! Your logic is solid, but there's a small bug on line X. Try checking the condition more carefully."
+- "Almost there! Your approach is creative, but the function doesn't quite return the expected result. Take another look at how you're handling the calculation."
 
 Do not include any text before or after the JSON. The response must be parseable as JSON.`;
 };

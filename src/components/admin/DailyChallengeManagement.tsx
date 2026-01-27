@@ -1,60 +1,77 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { Zap, Plus, Edit2, Trash2, RefreshCw } from 'lucide-react';
-import type { UserData, Quiz, BadgeDefinition } from '../../types/index.ts';
+import { Zap, Plus, Edit2, Trash2, RefreshCw, Code2, Calendar } from 'lucide-react';
+import Modal from '../common/Modal';
+import type { UserData, Quiz, BadgeDefinition, CompilerQuestion } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
+import CompilerQuestionManagement from './CompilerQuestionManagement';
 
 interface DailyChallengeManagementProps {
     currentUser: UserData;
-    quizzes: Quiz[];
+    quizzes: Quiz[]; // Kept for type compatibility but not used for new challenges
     onNotification: (type: 'success' | 'error', message: string) => void;
 }
 
-const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ currentUser, quizzes, onNotification }) => {
+const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ currentUser, onNotification }) => {
+    const [activeTab, setActiveTab] = useState<'schedule' | 'questions'>('schedule');
     const [dailyChallenges, setDailyChallenges] = useState<any[]>([]);
+    const [compilerQuestions, setCompilerQuestions] = useState<CompilerQuestion[]>([]);
     const [editingChallenge, setEditingChallenge] = useState<any | null>(null);
     const [badges, setBadges] = useState<BadgeDefinition[]>([]);
     const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'reschedule', item: any } | null>(null);
 
     useEffect(() => {
-        loadData();
-    }, [currentUser.userId]);
+        if (activeTab === 'schedule') {
+            loadData();
+        }
+    }, [currentUser.userId, activeTab]);
 
     const loadData = async () => {
         try {
-            const data = await api.getDailyChallengesAdmin(currentUser.userId);
-            setDailyChallenges(data);
-            const badgesData = await api.getBadgeNodes();
+            const [challengesData, badgesData, questionsData] = await Promise.all([
+                api.getDailyChallengesAdmin(currentUser.userId),
+                api.getBadgeNodes(),
+                api.getCompilerQuestionsAdmin(currentUser.userId)
+            ]);
+            setDailyChallenges(challengesData);
             setBadges(badgesData);
+            setCompilerQuestions(questionsData);
         } catch (err) {
-            console.error('Failed to load challenges', err);
-            onNotification('error', 'Failed to load daily challenges');
+            console.error('Failed to load data', err);
+            onNotification('error', 'Failed to load daily challenges data');
         }
     }
 
     const handleSaveChallenge = async () => {
         if (!editingChallenge) return;
+
+        if (!editingChallenge.compilerQuestionId) {
+            onNotification('error', 'Please select a compiler question');
+            return;
+        }
+
         try {
             // Check if exists
             const exists = dailyChallenges.some(c => new Date(c.date).toDateString() === new Date(editingChallenge.date).toDateString());
 
-            // Prepare payload without UI-only flags
+            // Prepare payload
             const { _isNew, _id, ...payload } = editingChallenge;
 
-            // Just use API logic
+            // Clean up old quiz fields if present
+            delete payload.quizId;
+            delete payload.criteria;
+
             if (!editingChallenge._id) {
                 if (exists && editingChallenge._isNew) {
-                    // Check strictly if date conflict actually exists in DB or just in list
-                    // For now, let backend handle duplicate date error (409)
+                    // Let backend handle duplicate date error (409)
                 }
                 await api.createDailyChallenge(payload, currentUser.userId);
-                onNotification('success', 'Challenge created');
+                onNotification('success', 'Challenge scheduled');
             } else {
                 await api.updateDailyChallenge(editingChallenge._id, payload, currentUser.userId);
                 onNotification('success', 'Challenge updated');
             }
             setEditingChallenge(null);
-            loadData(); // Refresh to be safe
+            loadData();
         } catch (error) {
             console.error('Save challenge error:', error);
             onNotification('error', 'Failed to save challenge');
@@ -67,19 +84,19 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
 
         try {
             if (type === 'delete') {
-                await api.deleteDailyChallenge(item._id, currentUser.userId);
-                setDailyChallenges(prev => prev.filter(c => c._id !== item._id));
+                await api.deleteDailyChallenge(item._id || item.challengeId, currentUser.userId);
+                setDailyChallenges(prev => prev.filter(c => (c._id || c.challengeId) !== (item._id || item.challengeId)));
                 onNotification('success', 'Challenge deleted');
             } else if (type === 'reschedule') {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const todayStr = today.toISOString();
 
-                // Update the challenge with new date via ID
-                const { _id, ...rest } = item;
+                const id = item._id || item.challengeId;
+                const { _id, challengeId, ...rest } = item;
                 const newPayload = { ...rest, date: todayStr };
 
-                await api.updateDailyChallenge(item._id, newPayload, currentUser.userId);
+                await api.updateDailyChallenge(id, newPayload, currentUser.userId);
                 loadData();
                 onNotification('success', 'Challenge rescheduled to today');
             }
@@ -95,6 +112,25 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
         }
     };
 
+    if (activeTab === 'questions') {
+        return (
+            <div className="space-y-4 animate-in fade-in duration-500">
+                <div className="flex items-center gap-4 mb-6">
+                    <button
+                        onClick={() => setActiveTab('schedule')}
+                        className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                    >
+                        ← Back to Schedule
+                    </button>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                        Manage Question Bank
+                    </h2>
+                </div>
+                <CompilerQuestionManagement adminId={currentUser.userId} />
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-4 animate-in fade-in duration-500">
             {/* Header Section */}
@@ -105,15 +141,23 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                     </div>
                     <div>
                         <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Daily Challenges</h2>
-                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Schedule recurring daily tasks</p>
+                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Schedule recurring coding tasks</p>
                     </div>
                 </div>
-                <button
-                    onClick={() => setEditingChallenge({ date: new Date().toISOString(), title: '', description: '', rewardCoins: 100, rewardXP: 50, criteria: { type: 'complete_quiz', threshold: 1 }, _isNew: true })}
-                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:scale-95"
-                >
-                    <Plus className="w-4 h-4" /> Schedule New
-                </button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                        onClick={() => setActiveTab('questions')}
+                        className="flex-1 sm:flex-none px-6 py-3 bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                    >
+                        <Code2 className="w-4 h-4" /> Question Bank
+                    </button>
+                    <button
+                        onClick={() => setEditingChallenge({ date: new Date().toISOString(), rewardCoins: 100, rewardXP: 50, _isNew: true })}
+                        className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:scale-95"
+                    >
+                        <Plus className="w-4 h-4" /> Schedule New
+                    </button>
+                </div>
             </div>
 
             {/* Main Content Table */}
@@ -123,8 +167,7 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                         <thead>
                             <tr className="bg-gray-50/50 dark:bg-black/20 text-gray-400 dark:text-gray-500 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em]">
                                 <th className="px-6 py-4">Status & Date</th>
-                                <th className="px-6 py-4">Challenge Info</th>
-                                <th className="px-6 py-4">Criteria</th>
+                                <th className="px-6 py-4">Questions</th>
                                 <th className="px-6 py-4">Rewards</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
@@ -133,6 +176,9 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                             {dailyChallenges.map((challenge) => {
                                 const isPast = new Date(challenge.date) < new Date(new Date().setHours(0, 0, 0, 0));
                                 const isToday = new Date(challenge.date).toDateString() === new Date().toDateString();
+
+                                // Find associated question title if available
+                                const question = compilerQuestions.find(q => q.questionId === challenge.compilerQuestionId);
 
                                 return (
                                     <tr key={challenge._id || challenge.date} className="hover:bg-indigo-50/20 dark:hover:bg-indigo-500/5 transition-colors group">
@@ -145,13 +191,12 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="font-bold text-gray-900 dark:text-white uppercase text-sm tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{challenge.title}</div>
-                                            <div className="text-[11px] text-gray-400 dark:text-gray-500 truncate max-w-[180px] font-medium">{challenge.description}</div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="inline-block px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">
-                                                {challenge.criteria?.type?.replace('_', ' ') || 'Complete'}
-                                            </span>
+                                            <div className="font-bold text-gray-900 dark:text-white uppercase text-sm tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                                {question?.title || challenge.title || 'Unknown Question'}
+                                            </div>
+                                            <div className="text-[11px] text-gray-400 dark:text-gray-500 truncate max-w-[180px] font-medium">
+                                                {question?.category || 'General'}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex gap-2">
@@ -196,7 +241,7 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                                     <td colSpan={5}>
                                         <div className="py-20 text-center">
                                             <div className="w-20 h-20 bg-indigo-500/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                <Zap className="w-10 h-10 text-indigo-500/20" />
+                                                <Calendar className="w-10 h-10 text-indigo-500/20" />
                                             </div>
                                             <p className="text-gray-400 font-black uppercase tracking-widest text-xs">No active challenges found</p>
                                         </div>
@@ -209,165 +254,138 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
             </div>
 
             {/* Confirmation Modal */}
-            {confirmAction && createPortal(
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300 text-center">
-                        <div className={`mx-auto flex h-20 w-20 items-center justify-center rounded-3xl mb-6 border ${confirmAction.type === 'delete' ? 'bg-red-500/10 border-red-500/20' : 'bg-emerald-500/10 border-emerald-500/20'}`}>
-                            {confirmAction.type === 'delete' ? <Trash2 className="h-10 w-10 text-red-500" /> : <RefreshCw className="h-10 w-10 text-emerald-500" />}
-                        </div>
-                        <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight">Confirm Action</h3>
-                        <p className="text-gray-500 dark:text-gray-400 mb-8 font-bold text-sm leading-relaxed">
-                            {confirmAction.type === 'delete'
-                                ? 'Are you sure you want to permanently delete this daily challenge?'
-                                : 'Do you want to move this challenge to today?'}
-                        </p>
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setConfirmAction(null)}
-                                className="flex-1 py-4 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={executeAction}
-                                className={`flex-1 py-4 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-all transform hover:-translate-y-0.5 ${confirmAction.type === 'delete' ? 'bg-red-600 shadow-red-500/20' : 'bg-emerald-600 shadow-emerald-500/20'}`}
-                            >
-                                Execute
-                            </button>
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+            {/* Confirmation Modal */}
+            <Modal
+                isOpen={!!confirmAction}
+                onClose={() => setConfirmAction(null)}
+                title="Confirm Action"
+                description={confirmAction?.type === 'delete' ? 'Are you sure you want to permanently delete this daily challenge?' : 'Do you want to move this challenge to today?'}
+                icon={confirmAction?.type === 'delete' ? <Trash2 className="w-6 h-6 text-red-500" /> : <RefreshCw className="w-6 h-6 text-emerald-500" />}
+                maxWidth="max-w-md"
+                footer={
+                    <>
+                        <button
+                            onClick={() => setConfirmAction(null)}
+                            className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest transition-colors hover:bg-gray-200 dark:hover:bg-white/10"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={executeAction}
+                            className={`flex-1 py-3 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-all transform hover:-translate-y-0.5 ${confirmAction?.type === 'delete' ? 'bg-red-600 shadow-red-500/20 hover:bg-red-700' : 'bg-emerald-600 shadow-emerald-500/20 hover:bg-emerald-700'}`}
+                        >
+                            Execute
+                        </button>
+                    </>
+                }
+            >
+                <div className={`p-4 rounded-2xl border ${confirmAction?.type === 'delete' ? 'bg-red-500/10 border-red-500/20' : 'bg-emerald-500/10 border-emerald-500/20'}`}>
+                    <p className={`text-sm font-bold text-center ${confirmAction?.type === 'delete' ? 'text-red-500' : 'text-emerald-500'}`}>
+                        {confirmAction?.type === 'delete' ? '⚠️ This action cannot be undone.' : '📅 This will update the challenge date.'}
+                    </p>
+                </div>
+            </Modal>
 
             {/* Edit Challenge Modal */}
-            {editingChallenge && createPortal(
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-[3rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 sm:p-10 shadow-3xl relative animate-in zoom-in-95 duration-300">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/5 rounded-bl-[10rem] pointer-events-none" />
-
-                        <div className="flex justify-between items-center mb-8 relative z-10">
-                            <div>
-                                <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Edit Challenge</h2>
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Configure daily goal parameters</p>
-                            </div>
-                            <button onClick={() => setEditingChallenge(null)} className="p-3 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl text-gray-400 dark:text-gray-500 transition-colors">
-                                <Plus className="w-6 h-6 rotate-45" />
-                            </button>
-                        </div>
-
-                        <div className="space-y-6 relative z-10">
-                            {/* Date & Title */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Date</label>
-                                    <input
-                                        type="date"
-                                        value={new Date(editingChallenge.date).toISOString().split('T')[0]}
-                                        onChange={e => setEditingChallenge({ ...editingChallenge, date: e.target.value })}
-                                        className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500/50 rounded-2xl px-5 py-3.5 text-gray-900 dark:text-white font-black outline-none transition-all"
-                                    />
-                                </div>
-                                <div className="sm:col-span-2 space-y-1.5">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Challenge Title</label>
-                                    <input
-                                        placeholder="e.g. History Buff"
-                                        value={editingChallenge.title}
-                                        onChange={e => setEditingChallenge({ ...editingChallenge, title: e.target.value })}
-                                        className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500/50 rounded-2xl px-5 py-3.5 text-gray-900 dark:text-white font-black outline-none transition-all"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Description */}
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Description</label>
-                                <textarea
-                                    placeholder="What should the student achieve today?"
-                                    value={editingChallenge.description}
-                                    onChange={e => setEditingChallenge({ ...editingChallenge, description: e.target.value })}
-                                    className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500/50 rounded-2xl px-5 py-3.5 text-gray-900 dark:text-white font-bold outline-none transition-all min-h-[100px] resize-none"
-                                />
-                            </div>
-
-                            {/* Settings Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 bg-gray-50/50 dark:bg-black/20 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-white/5">
-                                <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] ml-2">Target & Criteria</h4>
-                                    <select
-                                        value={editingChallenge.quizId || ''}
-                                        onChange={e => setEditingChallenge({ ...editingChallenge, quizId: e.target.value })}
-                                        className="w-full bg-white dark:bg-[#1e1e2d] border-2 border-transparent focus:border-indigo-500 rounded-2xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all shadow-sm"
-                                    >
-                                        <option value="">Any Quiz</option>
-                                        {quizzes.filter(q => !q.isTournamentOnly).map(q => (
-                                            <option key={q.id} value={q.id}>{q.title}</option>
-                                        ))}
-                                    </select>
-                                    <div className="flex gap-2">
-                                        <select
-                                            value={editingChallenge.criteria?.type || 'complete_quiz'}
-                                            onChange={e => setEditingChallenge({ ...editingChallenge, criteria: { ...(editingChallenge.criteria || {}), type: e.target.value } })}
-                                            className="flex-1 bg-white dark:bg-[#1e1e2d] border-2 border-transparent focus:border-indigo-500 rounded-2xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all shadow-sm"
-                                        >
-                                            <option value="complete_quiz">Complete</option>
-                                            <option value="min_score">Min Score</option>
-                                            <option value="speed_run">Speed Run</option>
-                                        </select>
-                                        <input
-                                            type="number"
-                                            placeholder="Val"
-                                            value={editingChallenge.criteria?.threshold || 1}
-                                            onChange={e => setEditingChallenge({ ...editingChallenge, criteria: { ...(editingChallenge.criteria || {}), threshold: parseInt(e.target.value) } })}
-                                            className="w-20 bg-white dark:bg-[#1e1e2d] border-2 border-transparent focus:border-indigo-500 rounded-2xl px-4 py-3 text-gray-900 dark:text-white font-black outline-none transition-all shadow-sm"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] ml-2">Rewards</h4>
-                                    <div className="flex gap-2">
-                                        <div className="relative flex-1">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🪙</span>
-                                            <input type="number" placeholder="Coins" value={editingChallenge.rewardCoins} onChange={e => setEditingChallenge({ ...editingChallenge, rewardCoins: parseInt(e.target.value) })} className="w-full bg-white dark:bg-[#1e1e2d] border-2 border-transparent focus:border-amber-500 rounded-2xl px-4 py-3 pl-10 text-gray-900 dark:text-white font-black outline-none transition-all shadow-sm" />
-                                        </div>
-                                        <div className="relative flex-1">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">⚡</span>
-                                            <input type="number" placeholder="XP" value={editingChallenge.rewardXP} onChange={e => setEditingChallenge({ ...editingChallenge, rewardXP: parseInt(e.target.value) })} className="w-full bg-white dark:bg-[#1e1e2d] border-2 border-transparent focus:border-blue-500 rounded-2xl px-4 py-3 pl-10 text-gray-900 dark:text-white font-black outline-none transition-all shadow-sm" />
-                                        </div>
-                                    </div>
-                                    <select
-                                        value={editingChallenge.rewardBadgeId || ''}
-                                        onChange={e => setEditingChallenge({ ...editingChallenge, rewardBadgeId: e.target.value || undefined })}
-                                        className="w-full bg-white dark:bg-[#1e1e2d] border-2 border-transparent focus:border-purple-500 rounded-2xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all shadow-sm"
-                                    >
-                                        <option value="">No Badge Bonus</option>
-                                        {badges.map(b => (
-                                            <option key={b.id} value={b.id}>{b.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-4 mt-10">
-                                <button
-                                    onClick={() => setEditingChallenge(null)}
-                                    className="flex-1 py-4 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
-                                >
-                                    Discard Changes
-                                </button>
-                                <button
-                                    onClick={handleSaveChallenge}
-                                    className="flex-[2] py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-1 transition-all"
-                                >
-                                    Save Challenge
-                                </button>
-                            </div>
+            {/* Edit Challenge Modal */}
+            <Modal
+                isOpen={!!editingChallenge}
+                onClose={() => setEditingChallenge(null)}
+                title="Edit Schedule"
+                description="Configure daily goal parameters"
+                maxWidth="max-w-2xl"
+                icon={<Calendar className="w-6 h-6 text-purple-500" />}
+                footer={
+                    <>
+                        <button
+                            onClick={() => setEditingChallenge(null)}
+                            className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                        >
+                            Discard Changes
+                        </button>
+                        <button
+                            onClick={handleSaveChallenge}
+                            className="flex-[2] py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-1 transition-all"
+                        >
+                            Save Challenge
+                        </button>
+                    </>
+                }
+            >
+                <div className="space-y-6">
+                    {/* Date */}
+                    <div className="grid grid-cols-1 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-2">Date</label>
+                            <input
+                                type="date"
+                                value={editingChallenge ? new Date(editingChallenge.date).toISOString().split('T')[0] : ''}
+                                onChange={e => editingChallenge && setEditingChallenge({ ...editingChallenge, date: e.target.value })}
+                                className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-5 py-3.5 text-gray-900 dark:text-white font-bold outline-none transition-all"
+                            />
                         </div>
                     </div>
-                </div>,
-                document.body
-            )}
+
+                    {/* Settings Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 bg-gray-50 dark:bg-black/20 rounded-3xl border border-gray-200 dark:border-white/5">
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] ml-2">Compiler Question</h4>
+                            <select
+                                value={editingChallenge?.compilerQuestionId || ''}
+                                onChange={e => editingChallenge && setEditingChallenge({ ...editingChallenge, compilerQuestionId: e.target.value })}
+                                className="w-full bg-white dark:bg-[#111219] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-indigo-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all cursor-pointer"
+                            >
+                                <option value="">Select a Question...</option>
+                                {compilerQuestions.filter(q => q.isActive).map(q => (
+                                    <option key={q.questionId} value={q.questionId}>
+                                        {q.title} ({q.difficulty})
+                                    </option>
+                                ))}
+                            </select>
+
+                            <p className="text-xs text-gray-400 dark:text-gray-500 pl-2">
+                                Select the coding question for this date. If left empty, the system will auto-select one.
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] ml-2">Rewards Override</h4>
+                            <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🪙</span>
+                                    <input
+                                        type="number"
+                                        placeholder="Coins"
+                                        value={editingChallenge?.rewardCoins || 0}
+                                        onChange={e => editingChallenge && setEditingChallenge({ ...editingChallenge, rewardCoins: parseInt(e.target.value) })}
+                                        className="w-full bg-white dark:bg-[#111219] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-amber-500/50 rounded-xl px-4 py-3 pl-10 text-gray-900 dark:text-white font-black outline-none transition-all"
+                                    />
+                                </div>
+                                <div className="relative flex-1">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">⚡</span>
+                                    <input
+                                        type="number"
+                                        placeholder="XP"
+                                        value={editingChallenge?.rewardXP || 0}
+                                        onChange={e => editingChallenge && setEditingChallenge({ ...editingChallenge, rewardXP: parseInt(e.target.value) })}
+                                        className="w-full bg-white dark:bg-[#111219] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-blue-500/50 rounded-xl px-4 py-3 pl-10 text-gray-900 dark:text-white font-black outline-none transition-all"
+                                    />
+                                </div>
+                            </div>
+                            <select
+                                value={editingChallenge?.rewardBadgeId || ''}
+                                onChange={e => editingChallenge && setEditingChallenge({ ...editingChallenge, rewardBadgeId: e.target.value || undefined })}
+                                className="w-full bg-white dark:bg-[#111219] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all cursor-pointer"
+                            >
+                                <option value="">No Badge Bonus</option>
+                                {badges.map(b => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

@@ -31,7 +31,6 @@ const dailyChallengeSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-// Index for efficient date lookups
-dailyChallengeSchema.index({ date: 1 });
+// Index created by unique: true on date field
 
 export const DailyChallenge = mongoose.model('DailyChallenge', dailyChallengeSchema);

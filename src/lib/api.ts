@@ -516,6 +516,22 @@ export const api = {
         return response.json();
     },
 
+    /**
+     * Run code without submitting for grading (test/debug mode)
+     */
+    async runCode(sourceCode: string, language: string) {
+        const response = await fetchWithFallback('/compiler/compile', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ sourceCode, language })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to run code');
+        }
+        return response.json();
+    },
+
     async usePowerUp(type: string, userId: string) {
         const response = await fetchWithFallback('/shop/powerups/use', {
             method: 'POST',

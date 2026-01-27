@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Edit2, Trash2, Users, Eye, EyeOff, Search, BarChart3, Mail, Trophy, Calendar, X, Map, Lock, Unlock, CheckCircle, Gift } from 'lucide-react';
+import { Edit2, Trash2, Users, Eye, EyeOff, Search, BarChart3, Mail, Trophy, Calendar, Map, Lock, Unlock, CheckCircle, Gift, ChevronDown } from 'lucide-react';
+import Modal from '../common/Modal';
 import Avatar from '../Avatar.tsx';
 import type { UserData, AttemptData } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
@@ -47,31 +47,31 @@ const RoadmapEditorModal: React.FC<{
             // First, get the track details to find which quizzes are in completed modules
             const allTracks = await api.getSkillTracks();
             const currentTrack = allTracks.find((t: any) => t.trackId === selectedTrack);
-            
+
             if (currentTrack) {
                 // Find modules that were just marked as completed (not in original progress)
                 const originalProgress = await api.getUserRoadmapProgress(user.userId, selectedTrack, currentUser.userId);
                 const originalCompleted = new Set(originalProgress?.completedModules || []);
                 const newCompleted = new Set(progress.completedModules);
-                
+
                 // Get newly completed modules
                 const newlyCompletedModules = Array.from(newCompleted).filter(moduleId => !originalCompleted.has(moduleId));
-                
+
                 if (newlyCompletedModules.length > 0) {
                     // Get all quizzes for the newly completed modules
                     const quizzesToMark = currentTrack.modules
                         .filter((m: any) => newlyCompletedModules.includes(m.moduleId))
                         .flatMap((m: any) => m.quizIds || []);
-                    
+
                     if (quizzesToMark.length > 0) {
                         // Get all available quizzes to get their full data
                         const allQuizzes = await api.getQuizzes();
                         const quizzesToMarkFull = allQuizzes.filter((q: any) => quizzesToMark.includes(q.id || q._id));
-                        
+
                         // Create attempts for each quiz with 100% score
                         for (const quiz of quizzesToMarkFull) {
                             const quizId = quiz.id || quiz._id;
-                            
+
                             const attempt = {
                                 attemptId: crypto.randomUUID(),
                                 userId: user.userId,
@@ -88,10 +88,10 @@ const RoadmapEditorModal: React.FC<{
                                 passed: true,
                                 powerUpsUsed: []
                             };
-                            
+
                             await api.saveAttempt(attempt);
                         }
-                        
+
                         // Update user stats
                         const existingUser = await api.getUserData(user.userId);
                         const newStats = {
@@ -105,10 +105,10 @@ const RoadmapEditorModal: React.FC<{
                             friends: existingUser.user?.friends,
                             rank: existingUser.user?.rank
                         };
-                        
+
                         await api.updateUser(user.userId, newStats);
                     }
-                    
+
                     // Auto-unlock next modules
                     newlyCompletedModules.forEach(completedModuleId => {
                         const moduleIndex = currentTrack.modules.findIndex((m: any) => m.moduleId === completedModuleId);
@@ -122,13 +122,13 @@ const RoadmapEditorModal: React.FC<{
                     });
                 }
             }
-            
+
             // Update roadmap progress
             await api.updateUserRoadmapProgress(user.userId, selectedTrack, progress, currentUser.userId);
-            
+
             // Force a full data refresh to ensure the UI updates with latest skill track progress
             onNotification('success', 'Module marked complete! Quizzes completed, user stats updated, and next modules unlocked!');
-            
+
             // Small delay to ensure database is updated before refresh
             setTimeout(() => {
                 // Call onRefresh to update the user list
@@ -164,94 +164,102 @@ const RoadmapEditorModal: React.FC<{
 
     const track = tracks.find(t => t.trackId === selectedTrack);
 
-    return createPortal(
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-[#1e1e2d] border border-white/10 rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
-                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/20">
-                    <div>
-                        <h2 className="text-xl font-bold text-white">Manage Roadmap</h2>
-                        <p className="text-xs text-gray-400 font-mono mt-1">{user.name}</p>
+    return (
+        <Modal
+            isOpen={true}
+            onClose={onClose}
+            title="Manage Roadmap"
+            description={user.name}
+            maxWidth="max-w-2xl"
+            footer={
+                <button
+                    onClick={handleSave}
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-0.5 transition-all"
+                >
+                    Save Changes
+                </button>
+            }
+        >
+            <div className="space-y-6">
+                <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Select Track</label>
+                    <div className="relative">
+                        <select
+                            className="w-full p-4 rounded-xl bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer font-bold"
+                            value={selectedTrack}
+                            onChange={e => setSelectedTrack(e.target.value)}
+                        >
+                            <option value="">Select a Roadmap...</option>
+                            {tracks.map(t => <option key={t.trackId} value={t.trackId}>{t.title}</option>)}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                            ▼
+                        </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl"><X className="text-gray-400 w-5 h-5" /></button>
                 </div>
 
-                <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
-                    <label className="block text-xs font-bold text-gray-400 w-full mb-2 uppercase tracking-wider">Select Track</label>
-                    <select
-                        className="w-full bg-gray-900 border border-white/20 rounded-xl p-3 text-white mb-6 focus:border-indigo-500 outline-none transition-colors appearance-none cursor-pointer relative z-10"
-                        style={{ 
-                            backgroundColor: '#1a1a2e',
-                            color: 'white'
-                        }}
-                        value={selectedTrack}
-                        onChange={e => setSelectedTrack(e.target.value)}
-                    >
-                        <option value="" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>Select a Roadmap...</option>
-                        {tracks.map(t => <option key={t.trackId} value={t.trackId} style={{ backgroundColor: '#1a1a2e', color: 'white' }}>{t.title}</option>)}
-                    </select>
-
-                    {/* Legend */}
-                    {track && (
-                        <div className="flex gap-4 mb-4 text-[10px] uppercase font-bold text-gray-500">
-                            <div className="flex items-center gap-1"><Lock size={12} /> Locked</div>
-                            <div className="flex items-center gap-1"><Unlock size={12} className="text-indigo-400" /> Unlocked</div>
-                            <div className="flex items-center gap-1"><CheckCircle size={12} className="text-green-400" /> Completed</div>
+                {/* Legend */}
+                {track && (
+                    <div className="flex gap-4 p-4 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/5">
+                        <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
+                            <Lock size={14} /> Locked
                         </div>
-                    )}
+                        <div className="flex items-center gap-2 text-xs font-bold text-indigo-500">
+                            <Unlock size={14} /> Unlocked
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-500">
+                            <CheckCircle size={14} /> Completed
+                        </div>
+                    </div>
+                )}
 
-                    {track && (
-                        <div className="space-y-2">
-                            {track.modules.map((m: any) => {
-                                const isComp = progress.completedModules.includes(m.moduleId);
-                                const isUnl = progress.unlockedModules.includes(m.moduleId) || isComp;
+                {track && (
+                    <div className="space-y-2">
+                        {track.modules.map((m: any) => {
+                            const isComp = progress.completedModules.includes(m.moduleId);
+                            const isUnl = progress.unlockedModules.includes(m.moduleId) || isComp;
 
-                                let status = 'Locked';
-                                let color = 'text-gray-500 opacity-50';
-                                let icon = <Lock size={16} />;
-                                let border = 'border-white/5';
+                            let status = 'Locked';
+                            let color = 'text-gray-500 opacity-75';
+                            let icon = <Lock size={16} />;
+                            let containerClass = 'bg-gray-50 dark:bg-black/20 border-gray-200 dark:border-white/5';
 
-                                if (isComp) {
-                                    status = 'Completed';
-                                    color = 'text-green-400';
-                                    icon = <CheckCircle size={16} />;
-                                    border = 'border-green-500/20 bg-green-500/5';
-                                } else if (isUnl) {
-                                    status = 'Unlocked';
-                                    color = 'text-indigo-400';
-                                    icon = <Unlock size={16} />;
-                                    border = 'border-indigo-500/20 bg-indigo-500/5';
-                                }
+                            if (isComp) {
+                                status = 'Completed';
+                                color = 'text-emerald-500';
+                                icon = <CheckCircle size={16} />;
+                                containerClass = 'bg-emerald-500/5 border-emerald-500/20';
+                            } else if (isUnl) {
+                                status = 'Unlocked';
+                                color = 'text-indigo-500';
+                                icon = <Unlock size={16} />;
+                                containerClass = 'bg-indigo-500/5 border-indigo-500/20';
+                            }
 
-                                return (
-                                    <div key={m.moduleId}
-                                        onClick={() => toggleModule(m.moduleId)}
-                                        className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer hover:bg-white/10 transition-all ${border}`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg bg-black/20 ${color}`}>
-                                                {isComp ? <CheckCircle size={14} /> : <Map size={14} />}
-                                            </div>
-                                            <div>
-                                                <span className="text-sm font-bold text-gray-200 block">{m.title}</span>
-                                                <span className="text-[10px] text-gray-500 font-mono">{m.moduleId}</span>
-                                            </div>
+                            return (
+                                <div key={m.moduleId}
+                                    onClick={() => toggleModule(m.moduleId)}
+                                    className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-all ${containerClass}`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-lg bg-white dark:bg-black/20 ${color}`}>
+                                            {isComp ? <CheckCircle size={14} /> : <Map size={14} />}
                                         </div>
-                                        <div className={`flex items-center gap-2 ${color} text-xs font-bold uppercase tracking-wider`}>
-                                            {status} {icon}
+                                        <div>
+                                            <span className="text-sm font-bold text-gray-900 dark:text-gray-200 block">{m.title}</span>
+                                            <span className="text-[10px] text-gray-500 font-mono">{m.moduleId}</span>
                                         </div>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-
-                <div className="p-6 border-t border-white/10 flex justify-end bg-black/20">
-                    <button onClick={handleSave} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-0.5 transition-all">Save Changes</button>
-                </div>
+                                    <div className={`flex items-center gap-2 ${color} text-xs font-bold uppercase tracking-wider`}>
+                                        {status} {icon}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
-        </div>,
-        document.body
+        </Modal>
     );
 };
 
@@ -340,7 +348,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
             } else if (giftType === 'shopitem') {
                 // Add to inventory
                 const inventory = Array.isArray(user.inventory) ? user.inventory : [];
-                const itemExists = inventory.some((item: any) => 
+                const itemExists = inventory.some((item: any) =>
                     (typeof item === 'string' ? item : item.itemId) === selectedShopItem
                 );
                 if (!itemExists) {
@@ -350,11 +358,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
             }
 
             await api.updateUser(user.userId, updates);
-            
-            const itemName = giftType === 'coins' ? `${giftAmount} Coins` : 
-                            giftType === 'xp' ? `${giftAmount} XP` :
-                            selectedShopItem;
-            
+
+            const itemName = giftType === 'coins' ? `${giftAmount} Coins` :
+                giftType === 'xp' ? `${giftAmount} XP` :
+                    selectedShopItem;
+
             onNotification('success', `Gifted ${itemName} to ${user.name}`);
             setGiftingUser(null);
             setGiftAmount('');
@@ -508,144 +516,121 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
             </div>
 
             {/* User Attempts Explorer Modal */}
-            {viewingAttempts && createPortal(
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[120] flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-[3rem] w-full max-w-2xl max-h-[85vh] shadow-3xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
-                        <div className="p-8 border-b border-white/5 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
-                                    <BarChart3 className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{viewingAttempts.name}'s Pulse</h2>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Performance History Log</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setViewingAttempts(null)} className="p-3 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl text-gray-400 transition-colors">
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
-                            {attempts.filter(a => a.userId === viewingAttempts.userId).length > 0 ? (
-                                attempts.filter(a => a.userId === viewingAttempts.userId).sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()).map(attempt => (
-                                    <div key={attempt.attemptId} className="bg-gray-50/50 dark:bg-black/20 p-5 rounded-[2rem] border border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 hover:border-indigo-500/20 transition-all">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-3 rounded-xl bg-white dark:bg-white/5 border border-white/10">
-                                                <Trophy className={`w-5 h-5 ${attempt.percentage >= 60 ? 'text-emerald-500' : 'text-red-500'}`} />
-                                            </div>
-                                            <div>
-                                                <div className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight mb-0.5">{attempt.quizTitle}</div>
-                                                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                                    <Calendar className="w-3 h-3" />
-                                                    {new Date(attempt.completedAt).toLocaleDateString()}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-6">
-                                            <div className="text-right">
-                                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">SCORE</div>
-                                                <div className={`text-lg font-black ${attempt.percentage >= 60 ? 'text-emerald-500' : 'text-red-500'}`}>
-                                                    {attempt.percentage}%
-                                                </div>
-                                            </div>
-                                            <div className="w-1.5 h-12 bg-white/5 rounded-full overflow-hidden hidden sm:block">
-                                                <div
-                                                    className={`w-full transition-all duration-1000 ${attempt.percentage >= 60 ? 'bg-emerald-500' : 'bg-red-500'}`}
-                                                    style={{ height: `${attempt.percentage}%`, marginTop: `${100 - attempt.percentage}%` }}
-                                                />
-                                            </div>
+            <Modal
+                isOpen={!!viewingAttempts}
+                onClose={() => setViewingAttempts(null)}
+                title={viewingAttempts ? `${viewingAttempts.name}'s Pulse` : 'Attempts'}
+                description="Performance History Log"
+                maxWidth="max-w-2xl"
+                icon={<BarChart3 className="w-6 h-6" />}
+            >
+                <div className="space-y-3">
+                    {viewingAttempts && attempts.filter(a => a.userId === viewingAttempts.userId).length > 0 ? (
+                        attempts.filter(a => a.userId === viewingAttempts.userId).sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()).map(attempt => (
+                            <div key={attempt.attemptId} className="bg-gray-50/50 dark:bg-black/20 p-5 rounded-[2rem] border border-gray-200 dark:border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 hover:border-indigo-500/20 transition-all">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10">
+                                        <Trophy className={`w-5 h-5 ${attempt.percentage >= 60 ? 'text-emerald-500' : 'text-red-500'}`} />
+                                    </div>
+                                    <div>
+                                        <div className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight mb-0.5">{attempt.quizTitle}</div>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                            <Calendar className="w-3 h-3" />
+                                            {new Date(attempt.completedAt).toLocaleDateString()}
                                         </div>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="py-20 text-center opacity-40">
-                                    <BarChart3 className="w-12 h-12 mx-auto mb-4" />
-                                    <p className="text-xs font-black uppercase tracking-widest">No activity recorded for this agent</p>
                                 </div>
-                            )}
+                                <div className="flex items-center gap-6">
+                                    <div className="text-right">
+                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">SCORE</div>
+                                        <div className={`text-lg font-black ${attempt.percentage >= 60 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                            {attempt.percentage}%
+                                        </div>
+                                    </div>
+                                    <div className="w-1.5 h-12 bg-gray-200 dark:bg-white/5 rounded-full overflow-hidden hidden sm:block">
+                                        <div
+                                            className={`w-full transition-all duration-1000 ${attempt.percentage >= 60 ? 'bg-emerald-500' : 'bg-red-500'}`}
+                                            style={{ height: `${attempt.percentage}%`, marginTop: `${100 - attempt.percentage}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="py-20 text-center opacity-40">
+                            <BarChart3 className="w-12 h-12 mx-auto mb-4" />
+                            <p className="text-xs font-black uppercase tracking-widest">No activity recorded for this agent</p>
                         </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+                    )}
+                </div>
+            </Modal>
 
             {/* Edit User Modal */}
-            {editingUser && createPortal(
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[130] flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-[3rem] w-full max-w-lg shadow-3xl p-8 relative overflow-hidden animate-in zoom-in-95 duration-300">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-bl-full -mr-16 -mt-16 pointer-events-none" />
+            <Modal
+                isOpen={!!editingUser}
+                onClose={() => setEditingUser(null)}
+                title="Edit Agent"
+                description="Update credentials and access"
+                maxWidth="max-w-lg"
+                footer={
+                    <>
+                        <button
+                            onClick={() => setEditingUser(null)}
+                            className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-colors hover:bg-gray-200 dark:hover:bg-white/10"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => editingUser && handleUpdateUser(editingUser)}
+                            className="flex-[2] py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all transform hover:-translate-y-1"
+                        >
+                            Update Identity
+                        </button>
+                    </>
+                }
+            >
+                <div className="space-y-5">
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Display Name</label>
+                        <input
+                            placeholder="e.g. John Wick"
+                            value={editingUser?.name || ''}
+                            onChange={e => editingUser && setEditingUser({ ...editingUser, name: e.target.value })}
+                            className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-indigo-500/50 rounded-xl px-5 py-4 text-gray-900 dark:text-white font-bold outline-none transition-all placeholder:text-gray-400"
+                        />
+                    </div>
 
-                        <div className="flex justify-between items-center mb-8 relative z-10">
-                            <div>
-                                <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Edit Agent</h2>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Update credentials and access</p>
-                            </div>
-                            <button onClick={() => setEditingUser(null)} className="p-3 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl text-gray-400 transition-colors">
-                                <X className="w-6 h-6" />
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Email Identity</label>
+                        <input
+                            placeholder="e.g. wick@continental.com"
+                            value={editingUser?.email || ''}
+                            onChange={e => editingUser && setEditingUser({ ...editingUser, email: e.target.value })}
+                            className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-indigo-500/50 rounded-xl px-5 py-4 text-gray-900 dark:text-white font-bold outline-none transition-all placeholder:text-gray-400"
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Access Key Override</label>
+                        <div className="relative">
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Secure blank for status quo"
+                                value={editingUser?.password || ''}
+                                onChange={e => editingUser && setEditingUser({ ...editingUser, password: e.target.value })}
+                                className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-indigo-500/50 rounded-xl px-5 py-4 text-gray-900 dark:text-white font-bold outline-none transition-all pr-14 placeholder:text-gray-400"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-indigo-500 transition-colors"
+                            >
+                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                             </button>
                         </div>
-
-                        <div className="space-y-5 relative z-10">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Display Name</label>
-                                <input
-                                    placeholder="e.g. John Wick"
-                                    value={editingUser.name}
-                                    onChange={e => setEditingUser({ ...editingUser, name: e.target.value })}
-                                    className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-indigo-500 rounded-2xl px-5 py-4 text-gray-900 dark:text-white font-black outline-none transition-all placeholder:text-gray-400"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Email Identity</label>
-                                <input
-                                    placeholder="e.g. wick@continental.com"
-                                    value={editingUser.email}
-                                    onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
-                                    className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-indigo-500 rounded-2xl px-5 py-4 text-gray-900 dark:text-white font-black outline-none transition-all placeholder:text-gray-400"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Access Key Override</label>
-                                <div className="relative">
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        placeholder="Secure blank for status quo"
-                                        value={editingUser.password || ''}
-                                        onChange={e => setEditingUser({ ...editingUser, password: e.target.value })}
-                                        className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-indigo-500 rounded-2xl px-5 py-4 text-gray-900 dark:text-white font-black outline-none transition-all pr-14 placeholder:text-gray-400"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-indigo-500 transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-4 mt-8">
-                                <button
-                                    onClick={() => setEditingUser(null)}
-                                    className="flex-1 py-4 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={() => handleUpdateUser(editingUser)}
-                                    className="flex-[2] py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all transform hover:-translate-y-1"
-                                >
-                                    Update Identity
-                                </button>
-                            </div>
-                        </div>
                     </div>
-                </div>,
-                document.body
-            )}
+                </div>
+            </Modal>
 
             {/* Roadmap Manager Modal */}
             {managingRoadmap && (
@@ -659,175 +644,156 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
             )}
 
             {/* Gift Modal */}
-            {giftingUser && createPortal(
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[120] flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-[3rem] w-full max-w-xl max-h-[90vh] shadow-3xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
-                        <div className="p-8 border-b border-white/5 flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-3">
-                                <Gift className="w-8 h-8 text-amber-500" />
-                                <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Send Gift</h2>
-                            </div>
-                            <button
-                                onClick={() => setGiftingUser(null)}
-                                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        <div className="p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
-                            <div>
-                                <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-3">
-                                    Recipient: {giftingUser.name}
-                                </label>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 font-bold">{giftingUser.email}</p>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-3">
-                                    Gift Type
-                                </label>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {(['coins', 'xp', 'shopitem'] as const).map(type => (
-                                        <button
-                                            key={type}
-                                            onClick={() => {
-                                                setGiftType(type);
-                                                setGiftAmount('');
-                                            }}
-                                            className={`py-3 px-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
-                                                giftType === type
-                                                    ? type === 'coins' ? 'bg-yellow-500/20 border-2 border-yellow-500 text-yellow-600 dark:text-yellow-400'
-                                                    : type === 'xp' ? 'bg-purple-500/20 border-2 border-purple-500 text-purple-600 dark:text-purple-400'
-                                                    : 'bg-blue-500/20 border-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                                    : 'bg-gray-100 dark:bg-white/5 border-2 border-transparent text-gray-600 dark:text-gray-400'
-                                }`}
-                                        >
-                                            {type === 'coins' ? '🪙 Coins' : type === 'xp' ? '⭐ XP' : '🛍️ Item'}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {giftType === 'coins' && (
-                                <div>
-                                    <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-3">
-                                        Coins Amount
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={giftAmount}
-                                        onChange={(e) => setGiftAmount(e.target.value)}
-                                        placeholder="Enter coins amount"
-                                        min="0"
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl font-black text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
-                                    />
-                                </div>
-                            )}
-
-                            {giftType === 'xp' && (
-                                <div>
-                                    <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-3">
-                                        XP Amount
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={giftAmount}
-                                        onChange={(e) => setGiftAmount(e.target.value)}
-                                        placeholder="Enter XP amount"
-                                        min="0"
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl font-black text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
-                                    />
-                                </div>
-                            )}
-
-                            {giftType === 'shopitem' && (
-                                <div>
-                                    <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-3">
-                                        Select Item
-                                    </label>
-                                    <select
-                                        value={selectedShopItem}
-                                        onChange={(e) => setSelectedShopItem(e.target.value)}
-                                        className="w-full px-4 py-3 bg-gray-900 dark:bg-gray-800 border border-gray-700 dark:border-gray-600 rounded-2xl font-black text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 appearance-none cursor-pointer"
-                                        style={{
-                                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
-                                            backgroundRepeat: 'no-repeat',
-                                            backgroundPosition: 'right 1rem center',
-                                            backgroundColor: '#111827',
-                                            paddingRight: '2.5rem'
-                                        }}
-                                    >
-                                        <option value="" style={{ backgroundColor: '#1f2937', color: 'white' }}>Choose an item...</option>
-                                        {shopItems.length > 0 ? (
-                                            shopItems.map(item => (
-                                                <option key={item.itemId} value={item.itemId} style={{ backgroundColor: '#1f2937', color: 'white' }}>
-                                                    {item.name} ({item.price} coins)
-                                                </option>
-                                            ))
-                                        ) : (
-                                            <option value="" disabled style={{ backgroundColor: '#1f2937', color: '#9ca3af' }}>Loading items...</option>
-                                        )}
-                                    </select>
-                                </div>
-                            )}
-
-                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4">
-                                <p className="text-xs text-blue-600 dark:text-blue-400 font-bold">
-                                    💡 The gift will be added to the user's inventory immediately.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="p-8 border-t border-white/5 flex gap-4 shrink-0 bg-gray-50/50 dark:bg-black/20">
-                            <button
-                                onClick={() => setGiftingUser(null)}
-                                className="flex-1 py-4 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => handleGiftSend(giftingUser)}
-                                disabled={!giftAmount && giftType !== 'shopitem' || (giftType === 'shopitem' && !selectedShopItem)}
-                                className="flex-[2] py-4 bg-gradient-to-r from-amber-500 to-yellow-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-amber-500/30 hover:shadow-amber-500/50 transition-all transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Send Gift
-                            </button>
+            <Modal
+                isOpen={!!giftingUser}
+                onClose={() => setGiftingUser(null)}
+                title="Send Gift"
+                description={giftingUser ? `To: ${giftingUser.name}` : ''}
+                icon={<Gift className="w-6 h-6" />}
+                maxWidth="max-w-xl"
+                footer={
+                    <>
+                        <button
+                            onClick={() => setGiftingUser(null)}
+                            className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => giftingUser && handleGiftSend(giftingUser)}
+                            disabled={!giftAmount && giftType !== 'shopitem' || (giftType === 'shopitem' && !selectedShopItem)}
+                            className="flex-[2] py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-amber-500/30 hover:shadow-amber-500/50 transition-all transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Send Gift
+                        </button>
+                    </>
+                }
+            >
+                <div className="space-y-6">
+                    <div>
+                        <label className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">
+                            Gift Type
+                        </label>
+                        <div className="grid grid-cols-3 gap-3">
+                            {(['coins', 'xp', 'shopitem'] as const).map(type => (
+                                <button
+                                    key={type}
+                                    onClick={() => {
+                                        setGiftType(type);
+                                        setGiftAmount('');
+                                    }}
+                                    className={`py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${giftType === type
+                                        ? type === 'coins' ? 'bg-yellow-500/10 border border-yellow-500 text-yellow-600 dark:text-yellow-400'
+                                            : type === 'xp' ? 'bg-purple-500/10 border border-purple-500 text-purple-600 dark:text-purple-400'
+                                                : 'bg-blue-500/10 border border-blue-500 text-blue-600 dark:text-blue-400'
+                                        : 'bg-gray-100 dark:bg-[#1a1b26] border border-transparent text-gray-600 dark:text-gray-400'
+                                        }`}
+                                >
+                                    {type === 'coins' ? '🪙 Coins' : type === 'xp' ? '⭐ XP' : '🛍️ Item'}
+                                </button>
+                            ))}
                         </div>
                     </div>
-                </div>,
-                document.body
-            )}
+
+                    {giftType === 'coins' && (
+                        <div>
+                            <label className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">
+                                Coins Amount
+                            </label>
+                            <input
+                                type="number"
+                                value={giftAmount}
+                                onChange={(e) => setGiftAmount(e.target.value)}
+                                placeholder="Enter coins amount"
+                                min="0"
+                                className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 rounded-xl font-bold text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
+                            />
+                        </div>
+                    )}
+
+                    {giftType === 'xp' && (
+                        <div>
+                            <label className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">
+                                XP Amount
+                            </label>
+                            <input
+                                type="number"
+                                value={giftAmount}
+                                onChange={(e) => setGiftAmount(e.target.value)}
+                                placeholder="Enter XP amount"
+                                min="0"
+                                className="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 rounded-xl font-bold text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+                            />
+                        </div>
+                    )}
+
+                    {giftType === 'shopitem' && (
+                        <div>
+                            <label className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">
+                                Select Item
+                            </label>
+                            <div className="relative">
+                                <select
+                                    value={selectedShopItem}
+                                    onChange={(e) => setSelectedShopItem(e.target.value)}
+                                    className="w-full px-4 py-3 bg-gray-900 dark:bg-[#1a1b26] border border-gray-700 dark:border-gray-800 rounded-xl font-bold text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 appearance-none cursor-pointer"
+                                >
+                                    <option value="">Choose an item...</option>
+                                    {shopItems.length > 0 ? (
+                                        shopItems.map(item => (
+                                            <option key={item.itemId} value={item.itemId}>
+                                                {item.name} ({item.price} coins)
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option value="" disabled>Loading items...</option>
+                                    )}
+                                </select>
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                        <p className="text-xs text-blue-600 dark:text-blue-400 font-bold">
+                            💡 The gift will be added to the user's inventory immediately.
+                        </p>
+                    </div>
+                </div>
+            </Modal>
 
             {/* Delete Confirmation Modal */}
-            {deleteConfirmation && createPortal(
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[140] flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-[3rem] p-10 max-w-sm w-full shadow-3xl text-center animate-in zoom-in-95 duration-300">
-                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[2rem] bg-red-500/10 mb-6 border border-red-500/20">
-                            <Trash2 className="h-10 w-10 text-red-500" />
-                        </div>
-                        <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight">Abolish Agent?</h3>
-                        <p className="text-gray-500 dark:text-gray-400 mb-8 font-bold text-sm leading-relaxed">
-                            This will permanently extinguish the agent and all their progress histories.
-                        </p>
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setDeleteConfirmation(null)}
-                                className="flex-1 py-4 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest transition-colors"
-                            >
-                                Back
-                            </button>
-                            <button
-                                onClick={confirmDeleteUser}
-                                className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-red-500/20 transform hover:-translate-y-0.5 transition-all"
-                            >
-                                Abolish
-                            </button>
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+            {/* Delete Confirmation Modal */}
+            <Modal
+                isOpen={!!deleteConfirmation}
+                onClose={() => setDeleteConfirmation(null)}
+                title="Abolish Agent?"
+                description="This will permanently extinguish the agent and all their progress histories."
+                icon={<Trash2 className="w-6 h-6 text-red-500" />}
+                maxWidth="max-w-md"
+                footer={
+                    <>
+                        <button
+                            onClick={() => setDeleteConfirmation(null)}
+                            className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest transition-colors hover:bg-gray-200 dark:hover:bg-white/10"
+                        >
+                            Back
+                        </button>
+                        <button
+                            onClick={confirmDeleteUser}
+                            className="flex-1 py-3 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-red-500/20 transform hover:-translate-y-0.5 transition-all hover:bg-red-700"
+                        >
+                            Abolish
+                        </button>
+                    </>
+                }
+            >
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                    <p className="text-red-500 text-sm font-bold text-center">
+                        ⚠️ This action cannot be undone.
+                    </p>
+                </div>
+            </Modal>
         </div>
     );
 };

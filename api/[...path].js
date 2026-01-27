@@ -7,7 +7,7 @@
  * Routes like /api/quizzes will be caught and proxied to Koyeb backend
  */
 
-const KOYEB_API = process.env.KOYEB_API_URL || 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api';
+const KOYEB_API = process.env.BACKEND_URL || 'http://localhost:7860';
 const TIMEOUT = 15000; // 15 seconds
 
 // MongoDB Atlas connection string (both Koyeb and Vercel use same DB)

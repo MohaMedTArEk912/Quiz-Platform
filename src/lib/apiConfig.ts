@@ -14,53 +14,22 @@ export interface ApiConfig {
   healthCheckInterval: number;
 }
 
-const stripTrailingSlash = (value: string) =>
-  value.endsWith('/') ? value.slice(0, -1) : value;
-
 const resolvePrimaryUrl = (): string => {
-  const envUrl = import.meta.env.VITE_API_URL;
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-
-  if (envUrl) {
-    const normalized = stripTrailingSlash(envUrl);
-    // Prevent shipping a localhost URL to production builds
-    if (!isLocalhost && normalized.includes('localhost')) {
-      return 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api';
-    }
-    return normalized;
-  }
-
-  const localDefault = 'http://localhost:5000/api';
-  const hostedDefault = 'https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api';
-
-  // If on production but hostname matches the backend (Koyeb), use relative path
-  if (!isLocalhost && hostname.includes('koyeb.app')) {
-    return '/api';
-  }
-
-  return isLocalhost ? localDefault : hostedDefault;
+  return '/api';
 };
 
 const resolveFallbackUrl = (): string => {
-  const envUrl = import.meta.env.VITE_API_FALLBACK_URL;
-  
-  if (envUrl) {
-    return stripTrailingSlash(envUrl);
-  }
-
-  // Default fallback to Vercel deployment
-  return 'https://thequizplatform.vercel.app/api';
+  return '/api';
 };
 
 export const apiConfig: ApiConfig = {
   primary: resolvePrimaryUrl(),
   fallback: resolveFallbackUrl(),
-  timeout: import.meta.env.VITE_API_TIMEOUT ? parseInt(import.meta.env.VITE_API_TIMEOUT) : 10000, // 10s
+  timeout: import.meta.env.VITE_API_TIMEOUT ? parseInt(import.meta.env.VITE_API_TIMEOUT) : 10000,
   retryAttempts: import.meta.env.VITE_API_RETRY_ATTEMPTS ? parseInt(import.meta.env.VITE_API_RETRY_ATTEMPTS) : 3,
-  retryDelay: import.meta.env.VITE_API_RETRY_DELAY ? parseInt(import.meta.env.VITE_API_RETRY_DELAY) : 1000, // 1s
+  retryDelay: import.meta.env.VITE_API_RETRY_DELAY ? parseInt(import.meta.env.VITE_API_RETRY_DELAY) : 1000,
   retryBackoffMultiplier: import.meta.env.VITE_API_RETRY_BACKOFF ? parseFloat(import.meta.env.VITE_API_RETRY_BACKOFF) : 2,
-  healthCheckInterval: import.meta.env.VITE_API_HEALTH_CHECK_INTERVAL ? parseInt(import.meta.env.VITE_API_HEALTH_CHECK_INTERVAL) : 30000, // 30s
+  healthCheckInterval: import.meta.env.VITE_API_HEALTH_CHECK_INTERVAL ? parseInt(import.meta.env.VITE_API_HEALTH_CHECK_INTERVAL) : 30000,
 };
 
 /**

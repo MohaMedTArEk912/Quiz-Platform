@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import type { UserData, DailyCompilerChallenge, CompilerSubmissionResult } from '../../types';
 import { api } from '../../lib/api';
-import { Flame, Calendar, Trophy, CheckCircle2, Sparkles, Target, Zap, Swords, Gift, Send, AlertCircle, Code2, ChevronDown, ChevronUp, Lightbulb, Loader2, XCircle } from 'lucide-react';
+import { Flame, Calendar, Trophy, CheckCircle2, Sparkles, Target, Zap, Swords, Gift, Send, AlertCircle, Code2, ChevronDown, ChevronUp, Lightbulb, Loader2, XCircle, Play, Terminal } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface DailyChallengeProps {
@@ -9,11 +9,20 @@ interface DailyChallengeProps {
   onUserUpdate: (updates: Partial<UserData>) => void;
 }
 
+interface RunOutput {
+  output: string;
+  isError: boolean;
+  executionTime?: string;
+  memory?: number;
+}
+
 const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, onUserUpdate }) => {
   const [challenge, setChallenge] = useState<DailyCompilerChallenge | null>(null);
   const [code, setCode] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [runOutput, setRunOutput] = useState<RunOutput | null>(null);
   const [result, setResult] = useState<CompilerSubmissionResult | null>(null);
   const [showHints, setShowHints] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -25,8 +34,8 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, onUserUpdate }) =
         setLoading(true);
         const res = await api.getDailyChallenge(user.userId);
         setChallenge(res);
-      } catch (err: any) {
-        const errorMessage = err.message || 'Failed to load daily challenge';
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load daily challenge';
         if (errorMessage.includes('No compiler questions') || errorMessage.includes('not found')) {
           setError('No daily challenge available today. Check back tomorrow!');
         } else {
@@ -39,6 +48,39 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, onUserUpdate }) =
     };
     load();
   }, [user.userId]);
+
+  /**
+   * Run code without submitting (test/debug mode)
+   */
+  const handleRunCode = async () => {
+    if (!code.trim()) {
+      setError('Please write some code before running');
+      return;
+    }
+
+    setError(null);
+    setRunning(true);
+    setRunOutput(null);
+
+    try {
+      const language = challenge?.question?.language || 'javascript';
+      const res = await api.runCode(code, language);
+      setRunOutput({
+        output: res.output || '(No output)',
+        isError: res.isError || false,
+        executionTime: res.executionTime,
+        memory: res.memory
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to run code';
+      setRunOutput({
+        output: message,
+        isError: true
+      });
+    } finally {
+      setRunning(false);
+    }
+  };
 
   /**
    * Submit code for AI evaluation
@@ -76,8 +118,9 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, onUserUpdate }) =
 
         setChallenge(prev => prev ? { ...prev, completed: true } : null);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit code');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to submit code';
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -283,20 +326,56 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({ user, onUserUpdate }) =
                 ref={textareaRef}
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                disabled={isCompleted || submitting}
+                disabled={isCompleted || submitting || running}
                 placeholder={`// Write your ${challenge.question.language} code here...`}
                 className="w-full h-64 bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-xl p-4 font-mono text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 spellCheck={false}
               />
 
-              {/* Submit Button */}
-              <div className="mt-4 flex justify-end">
+              {/* Run Output Panel */}
+              {runOutput && (
+                <div className={`mt-4 rounded-xl border overflow-hidden ${runOutput.isError ? 'border-red-500/30 bg-red-500/5' : 'border-emerald-500/30 bg-emerald-500/5'}`}>
+                  <div className={`px-4 py-2 flex items-center justify-between ${runOutput.isError ? 'bg-red-500/10' : 'bg-emerald-500/10'}`}>
+                    <div className="flex items-center gap-2">
+                      <Terminal className={`w-4 h-4 ${runOutput.isError ? 'text-red-400' : 'text-emerald-400'}`} />
+                      <span className={`text-sm font-bold uppercase tracking-wider ${runOutput.isError ? 'text-red-400' : 'text-emerald-400'}`}>
+                        {runOutput.isError ? 'Error' : 'Output'}
+                      </span>
+                    </div>
+                    {runOutput.executionTime && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {runOutput.executionTime}s {runOutput.memory ? `• ${(runOutput.memory / 1024).toFixed(1)} KB` : ''}
+                      </span>
+                    )}
+                  </div>
+                  <pre className="p-4 font-mono text-sm overflow-x-auto max-h-48 overflow-y-auto text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                    {runOutput.output}
+                  </pre>
+                </div>
+              )}
+
+              {/* Buttons Row */}
+              <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-end">
+                {/* Run Only Button */}
+                <button
+                  onClick={handleRunCode}
+                  disabled={running || submitting || !code.trim()}
+                  className="px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-2 bg-gray-200 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {running ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Running...</>
+                  ) : (
+                    <><Play className="w-4 h-4" /> Run Code</>
+                  )}
+                </button>
+
+                {/* Submit Button */}
                 <button
                   onClick={handleSubmit}
-                  disabled={submitting || isCompleted || !code.trim()}
-                  className={`px-8 py-3 rounded-xl font-black text-base uppercase tracking-widest flex items-center gap-3 shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${isCompleted
-                      ? 'bg-emerald-600 text-white cursor-default'
-                      : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white hover:shadow-orange-500/30'
+                  disabled={submitting || isCompleted || !code.trim() || running}
+                  className={`px-8 py-3 rounded-xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${isCompleted
+                    ? 'bg-emerald-600 text-white cursor-default'
+                    : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white hover:shadow-orange-500/30'
                     }`}
                 >
                   {submitting ? (

@@ -107,13 +107,6 @@
   "env": {
     "NODE_ENV": "production",
     "VITE_API_URL": "/api",
-    "VITE_API_FALLBACK_URL": "/api",
-    "VITE_API_TIMEOUT": "10000",
-    "VITE_API_RETRY_ATTEMPTS": "3",
-    "VITE_API_RETRY_DELAY": "1000",
-    "VITE_API_RETRY_BACKOFF": "2",
-    "VITE_API_HEALTH_CHECK_INTERVAL": "30000",
-    "KOYEB_API_URL": "https://profitable-starr-mohamedtarek-27df73a5.koyeb.app/api",
     "CLIENT_URL": "https://quiz-platform-dun.vercel.app"
   }
 }

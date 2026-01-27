@@ -208,7 +208,7 @@ app.use('/api', engagementRoutes); // mounts /daily-challenge, /skill-tracks, /t
 app.use('/api', analyticsRoutes); // mounts /analytics/summary, /data
 app.use('/api/study-cards', studyCardsRoutes);
 app.use('/api/clans', clanRoutes);
-app.use('/api', compilerRoutes);
+app.use('/api/compiler', compilerRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/ai-studio', aiStudioRoutes);

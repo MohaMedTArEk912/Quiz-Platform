@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { BookOpen, Download, Upload, Plus, MoreVertical, Edit2, Trash2, Code, ArrowLeft, ChevronDown } from 'lucide-react';
+import Modal from '../common/Modal';
 import type { StudyCard, UserData } from '../../types/index';
 import { api } from '../../lib/api';
 import { useConfirm } from '../../hooks/useConfirm';
@@ -541,79 +541,86 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
             )}
 
             {/* Rename Modal */}
-            {renameState.isOpen && createPortal(
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-[2rem] w-full max-w-md p-8 shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-bl-full -mr-16 -mt-16 pointer-events-none" />
-
-                        <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center mb-6 text-purple-600 dark:text-purple-400 shadow-sm border border-white/50 dark:border-white/10 relative z-10">
-                            <Edit2 className="w-8 h-8" />
-                        </div>
-
-                        <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2 relative z-10">
-                            Rename Stack
-                        </h2>
-                        <p className="text-gray-500 dark:text-gray-400 mb-6 font-medium relative z-10">
-                            Enter a new name for the <span className="text-purple-600 dark:text-purple-400 font-bold">"{renameState.oldName}"</span> stack.
-                        </p>
-
-                        <div className="relative z-10">
-                            <input
-                                value={renameState.newName}
-                                onChange={(e) => setRenameState(prev => ({ ...prev, newName: e.target.value }))}
-                                className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none font-bold mb-6 transition-all"
-                                placeholder="Stack Name"
-                                autoFocus
-                            />
-
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setRenameState(prev => ({ ...prev, isOpen: false }))}
-                                    className="flex-1 py-3 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 rounded-xl font-bold transition-all"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={submitRename}
-                                    className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all transform active:scale-95"
-                                >
-                                    Save Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+            {/* Rename Modal */}
+            <Modal
+                isOpen={renameState.isOpen}
+                onClose={() => setRenameState({ ...renameState, isOpen: false })}
+                title="Rename Stack"
+                description={`Enter a new name for the "${renameState.oldName}" stack.`}
+                icon={<Edit2 className="w-6 h-6 text-purple-600 dark:text-purple-400" />}
+                maxWidth="max-w-md"
+                footer={
+                    <>
+                        <button
+                            onClick={() => setRenameState(prev => ({ ...prev, isOpen: false }))}
+                            className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={submitRename}
+                            className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-transform hover:-translate-y-0.5"
+                        >
+                            Save Changes
+                        </button>
+                    </>
+                }
+            >
+                <div>
+                    <input
+                        value={renameState.newName}
+                        onChange={(e) => setRenameState(prev => ({ ...prev, newName: e.target.value }))}
+                        className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all placeholder:text-gray-400"
+                        placeholder="Stack Name"
+                        autoFocus
+                    />
+                </div>
+            </Modal>
 
             {/* Edit Study Card Modal */}
-            {editingStudyCard && createPortal(
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 shadow-2xl relative scale-100 animate-in zoom-in-95 duration-200">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-bl-full -mr-16 -mt-16 pointer-events-none" />
-
-                        <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-4 mb-8 relative z-10">
-                            <span className="p-2 bg-blue-500/10 rounded-xl"><Code className="w-6 h-6 text-blue-500" /></span>
-                            {editingStudyCard.id ? 'Edit Study Card' : 'New Study Card'}
-                        </h2>
-
-                        <div className="space-y-6 relative z-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Title</label>
-                                    <input
-                                        placeholder="Card Title"
-                                        value={editingStudyCard.title || ''}
-                                        onChange={e => setEditingStudyCard({ ...editingStudyCard, title: e.target.value })}
-                                        className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none font-bold transition-all"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</label>
+            {/* Edit Study Card Modal */}
+            {editingStudyCard && (
+                <Modal
+                    isOpen={!!editingStudyCard}
+                    onClose={() => setEditingStudyCard(null)}
+                    title={editingStudyCard.id ? 'Edit Study Card' : 'New Study Card'}
+                    icon={<Code className="w-6 h-6 text-blue-500" />}
+                    maxWidth="max-w-2xl"
+                    footer={
+                        <>
+                            <button
+                                onClick={() => setEditingStudyCard(null)}
+                                className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveStudyCard}
+                                className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-transform hover:-translate-y-0.5"
+                            >
+                                Save Study Card
+                            </button>
+                        </>
+                    }
+                >
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Title</label>
+                                <input
+                                    placeholder="Card Title"
+                                    value={editingStudyCard.title || ''}
+                                    onChange={e => setEditingStudyCard({ ...editingStudyCard, title: e.target.value })}
+                                    className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all placeholder:text-gray-400"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Category</label>
+                                <div className="relative">
                                     <select
                                         value={editingStudyCard.category || activeStack || 'General'}
                                         onChange={e => setEditingStudyCard({ ...editingStudyCard, category: e.target.value })}
-                                        className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none font-bold transition-all"
+                                        className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all appearance-none cursor-pointer"
                                     >
                                         <option value={activeStack || 'General'}>{activeStack || 'General'}</option>
                                         {allCategories.filter(cat => cat !== (activeStack || 'General')).map(cat => (
@@ -621,80 +628,68 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
                                         ))}
                                         <option value="">+ New Category</option>
                                     </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Language</label>
-                                    <input
-                                        placeholder="e.g. Python, JavaScript, SQL"
-                                        value={editingStudyCard.language || ''}
-                                        onChange={e => setEditingStudyCard({ ...editingStudyCard, language: e.target.value })}
-                                        className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none font-bold transition-all"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tags (comma-separated)</label>
-                                    <input
-                                        placeholder="e.g. functions, loops, arrays"
-                                        value={editingStudyCard.tags?.join(', ') || ''}
-                                        onChange={e => setEditingStudyCard({ ...editingStudyCard, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
-                                        className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none font-bold transition-all"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Module Selection */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Module</label>
+                                <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Language</label>
+                                <input
+                                    placeholder="e.g. Python, JavaScript, SQL"
+                                    value={editingStudyCard.language || ''}
+                                    onChange={e => setEditingStudyCard({ ...editingStudyCard, language: e.target.value })}
+                                    className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all placeholder:text-gray-400"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Tags (comma-separated)</label>
+                                <input
+                                    placeholder="e.g. functions, loops, arrays"
+                                    value={editingStudyCard.tags?.join(', ') || ''}
+                                    onChange={e => setEditingStudyCard({ ...editingStudyCard, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                                    className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all placeholder:text-gray-400"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Module Selection */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Module</label>
+                            <div className="relative">
                                 <select
                                     value={editingStudyCard.moduleId || ''}
                                     onChange={e => setEditingStudyCard({ ...editingStudyCard, moduleId: e.target.value || undefined })}
-                                    className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none font-bold transition-all"
+                                    className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all appearance-none cursor-pointer"
                                 >
                                     <option value="">None (General Road)</option>
                                     {modules.map(m => (
                                         <option key={m.moduleId} value={m.moduleId}>{m.title}</option>
                                     ))}
                                 </select>
-                            </div>
-
-                            <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Content / Code</label>
-                                    <p className="text-xs text-gray-400 mb-2">Paste code, notes, or explanations here</p>
-                                    <textarea
-                                        placeholder="Paste your code or notes here..."
-                                        value={editingStudyCard.content || ''}
-                                        onChange={e => setEditingStudyCard({ ...editingStudyCard, content: e.target.value })}
-                                        className="w-full bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white h-60 focus:outline-none font-mono text-sm resize-none transition-all"
-                                    />
-                            </div>
-
-                            <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-                                <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
-                                    💡 This study card will automatically appear in the <strong>Study Cards tab</strong> when students view this road.
-                                </p>
-                            </div>
-
-                            <div className="flex gap-4 mt-8 pt-4 border-t border-gray-100 dark:border-white/5">
-                                <button
-                                    onClick={() => setEditingStudyCard(null)}
-                                    className="px-6 py-3 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 rounded-xl font-bold transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleSaveStudyCard}
-                                    className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-purple-500/25 transition-all text-center"
-                                >
-                                    Save Study Card
-                                </button>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                             </div>
                         </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Content / Code</label>
+                            <p className="text-xs text-gray-400 ml-1">Paste code, notes, or explanations here</p>
+                            <textarea
+                                placeholder="Paste your code or notes here..."
+                                value={editingStudyCard.content || ''}
+                                onChange={e => setEditingStudyCard({ ...editingStudyCard, content: e.target.value })}
+                                className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white h-60 font-mono text-sm resize-none transition-all outline-none"
+                            />
+                        </div>
+
+                        <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                            <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                                💡 This study card will automatically appear in the <strong>Study Cards tab</strong> when students view this road.
+                            </p>
+                        </div>
                     </div>
-                </div>,
-                document.body
+                </Modal>
             )}
             {confirmState.isOpen && (
                 <ConfirmDialog
@@ -707,44 +702,65 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
                     onCancel={handleCancel}
                 />
             )}
-            {isBulkImportOpen && createPortal(
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#1e1e2d] border border-white/20 dark:border-white/5 rounded-[2rem] w-full max-w-xl p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
-                        <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6">Import Study Cards</h2>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">Loaded <strong>{bulkImportCards.length}</strong> card(s) from CSV. Choose a module to assign (optional).</p>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Module</label>
+            {isBulkImportOpen && (
+                <Modal
+                    isOpen={isBulkImportOpen}
+                    onClose={() => { setIsBulkImportOpen(false); setBulkImportCards([]); }}
+                    title="Import Study Cards"
+                    description={`Loaded ${bulkImportCards.length} card(s) from CSV. Choose a module to assign (optional).`}
+                    icon={<Upload className="w-6 h-6 text-purple-600 dark:text-purple-400" />}
+                    maxWidth="max-w-xl"
+                    footer={
+                        <>
+                            <button
+                                onClick={() => { setIsBulkImportOpen(false); setBulkImportCards([]); }}
+                                className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={submitBulkImport}
+                                className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-transform hover:-translate-y-0.5"
+                            >
+                                Import
+                            </button>
+                        </>
+                    }
+                >
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Module</label>
+                            <div className="relative">
                                 <select
                                     value={bulkImportModule}
                                     onChange={e => setBulkImportModule(e.target.value)}
-                                    className="w-full mt-1 bg-gray-50 dark:bg-black/20 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-2 text-gray-900 dark:text-white focus:outline-none font-bold"
+                                    className="w-full mt-1 bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all appearance-none cursor-pointer"
                                 >
                                     <option value="">None (General Road)</option>
                                     {modules.map(m => (
                                         <option key={m.moduleId} value={m.moduleId}>{m.title}</option>
                                     ))}
                                 </select>
-                            </div>
-                            <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Preview:</p>
-                                <ul className="mt-2 space-y-1 max-h-32 overflow-y-auto">
-                                    {bulkImportCards.slice(0, 5).map((c, i) => (
-                                        <li key={i} className="text-sm text-gray-700 dark:text-gray-300">• {c.title} <span className="text-gray-400">({c.category})</span></li>
-                                    ))}
-                                    {bulkImportCards.length > 5 && (
-                                        <li className="text-xs text-gray-400">…and {bulkImportCards.length - 5} more</li>
-                                    )}
-                                </ul>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                             </div>
                         </div>
-                        <div className="flex gap-3 mt-6">
-                            <button onClick={() => { setIsBulkImportOpen(false); setBulkImportCards([]); }} className="px-6 py-2 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 rounded-xl font-bold">Cancel</button>
-                            <button onClick={submitBulkImport} className="flex-1 px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg">Import</button>
+                        <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-bold mb-2">Preview:</p>
+                            <ul className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+                                {bulkImportCards.slice(0, 5).map((c, i) => (
+                                    <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0" />
+                                        <span className="font-medium truncate">{c.title}</span>
+                                        <span className="text-xs text-gray-400 flex-shrink-0">({c.category})</span>
+                                    </li>
+                                ))}
+                                {bulkImportCards.length > 5 && (
+                                    <li className="text-xs text-gray-400 italic pl-3.5">…and {bulkImportCards.length - 5} more</li>
+                                )}
+                            </ul>
                         </div>
                     </div>
-                </div>,
-                document.body
+                </Modal>
             )}
         </div>
     );
