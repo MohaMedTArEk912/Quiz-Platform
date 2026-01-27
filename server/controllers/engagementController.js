@@ -4,83 +4,101 @@ import { SkillTrack } from '../models/SkillTrack.js';
 import { Tournament } from '../models/Tournament.js';
 
 import { DailyChallenge } from '../models/DailyChallenge.js';
+import { CompilerQuestion } from '../models/CompilerQuestion.js';
+import { CompilerSubmission } from '../models/CompilerSubmission.js';
 import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
 import { checkAndUnlockBadges } from './badgeNodeController.js';
 import { completeSpecificModule } from '../services/progressService.js';
+import { evaluateSubmission, getPassThreshold } from '../services/compilerEvaluationService.js';
 
-// --- Daily Challenge ---
+// --- Daily Compiler Challenge ---
+
+/**
+ * Get today's daily compiler challenge.
+ * If no challenge is scheduled, auto-selects a random question not used in 7 days.
+ * 
+ * @route GET /api/daily-challenge
+ * @returns {Object} Challenge with question details (without reference code)
+ */
 export const getDailyChallenge = async (req, res) => {
-  let errorDetails = { step: 'init' };
   try {
     // Step 1: Verify authentication
     if (!req.user) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
     const userId = req.user.userId;
-    errorDetails.step = `auth_ok_${userId}`;
 
     // Step 2: Get today's date (Midnight)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    errorDetails.step = 'date_ok';
 
-    // Step 3: Fetch challenge from DB
+    // Step 3: Check if user already completed today's challenge
+    const hasPassedToday = await CompilerSubmission.hasPassedToday(userId, today);
+
+    // Step 4: Fetch today's challenge from DB
     let challenge = await DailyChallenge.findOne({ 
       date: { $gte: today, $lt: tomorrow } 
     }).lean();
-    errorDetails.step = challenge ? 'challenge_found' : 'challenge_fallback';
 
-    // Step 4: Resolve Quiz
-    let quiz = null;
-    if (challenge && challenge.quizId) {
-      // Try by ID (custom string ID)
-      quiz = await Quiz.findOne({ id: challenge.quizId }).lean();
+    // Step 5: If no challenge exists, auto-create one with a random question
+    if (!challenge) {
+      const eligibleQuestion = await CompilerQuestion.findEligibleQuestion();
       
-      // Fallback to _id
-      if (!quiz && mongoose.Types.ObjectId.isValid(challenge.quizId)) {
-        quiz = await Quiz.findById(challenge.quizId).lean();
+      if (!eligibleQuestion) {
+        return res.status(404).json({ 
+          message: 'No compiler questions available. Please ask admin to add questions.',
+          reason: 'no_questions'
+        });
       }
+
+      // Create today's challenge
+      challenge = await DailyChallenge.create({
+        date: today,
+        compilerQuestionId: eligibleQuestion.questionId
+      });
+      
+      // Mark question as used
+      await CompilerQuestion.markAsUsed(eligibleQuestion.questionId);
+      
+      challenge = challenge.toObject();
     }
 
-    // If no specific quiz or challenge, pick a random/first one
-    if (!quiz) {
-      quiz = await Quiz.findOne({ isTournamentOnly: { $ne: true } }).lean();
-      if (!quiz) {
-        quiz = await Quiz.findOne({}).lean();
-      }
-      
-      if (quiz && !challenge) {
-        challenge = {
-          title: 'Daily Mission',
-          description: `Complete the ${quiz.title} quiz to earn rewards!`,
-          criteria: { type: 'complete_quiz', threshold: 1 },
-          rewardCoins: 50,
-          rewardXP: 100,
-          quizId: quiz.id || quiz._id,
-          date: today
-        };
-      }
-    }
+    // Step 6: Fetch the compiler question details
+    const question = await CompilerQuestion.findOne({ 
+      questionId: challenge.compilerQuestionId 
+    }).lean();
 
-    // Step 5: Final Validation
-    if (!quiz || !challenge) {
+    if (!question) {
       return res.status(404).json({ 
-        message: 'No quizzes or daily challenges are currently available in the system.',
-        reason: !quiz ? 'no_quizzes' : 'no_challenge'
+        message: 'Challenge question not found',
+        reason: 'question_missing'
       });
     }
 
-    // Step 6: Send response
-    const challengeDateTimestamp = req.user.dailyChallengeDate ? new Date(req.user.dailyChallengeDate).setHours(0,0,0,0) : null;
-    
+    // Step 7: Send response (exclude reference code for security)
     const response = {
-      ...challenge,
-      quizId: quiz.id || quiz._id,
+      challengeId: challenge._id,
+      date: today,
+      question: {
+        questionId: question.questionId,
+        title: question.title,
+        description: question.description,
+        language: question.language || 'javascript',
+        difficulty: question.difficulty,
+        category: question.category,
+        hints: question.hints || []
+      },
+      rewards: {
+        coins: challenge.rewardCoins || question.rewardCoins || 100,
+        xp: challenge.rewardXP || question.rewardXP || 150,
+        badgeId: challenge.rewardBadgeId,
+        itemId: challenge.rewardItemId
+      },
       streak: req.user.dailyChallengeStreak || 0,
-      completed: req.user.dailyChallengeCompleted && challengeDateTimestamp === today.getTime(),
-      date: today
+      completed: hasPassedToday,
+      passThreshold: getPassThreshold()
     };
     
     res.json(response);
@@ -89,119 +107,470 @@ export const getDailyChallenge = async (req, res) => {
     console.error('Daily Challenge Error:', error);
     res.status(500).json({ 
       message: 'Failed to process daily challenge request', 
-      error: error.message,
-      debug: process.env.NODE_ENV === 'development' ? errorDetails : undefined
+      error: error.message
     });
   }
 };
 
-export const createDailyChallenge = async (req, res) => {
-    try {
-        const { date, title, description, rewardCoins, rewardXP, quizId, criteria, rewardBadgeId, rewardItemId } = req.body;
-        
-        if (!date) return res.status(400).json({ message: 'Date is required' });
-
-        const challengeDate = new Date(date);
-        if (isNaN(challengeDate.getTime())) {
-            return res.status(400).json({ message: 'Invalid date format' });
-        }
-        challengeDate.setHours(0, 0, 0, 0);
-
-        const existing = await DailyChallenge.findOne({ date: challengeDate });
-        if (existing) {
-            return res.status(409).json({ message: 'Challenge already exists for this date' });
-        }
-
-        const payload = {
-            date: challengeDate,
-            title,
-            description,
-            rewardCoins: Number(rewardCoins) || 0,
-            rewardXP: Number(rewardXP) || 0,
-            criteria,
-            quizId: quizId || undefined,
-            rewardBadgeId: rewardBadgeId || undefined,
-            rewardItemId: rewardItemId || undefined
-        };
-
-        const challenge = new DailyChallenge(payload);
-        await challenge.save();
-        res.status(201).json(challenge);
-    } catch (error) {
-        console.error('Create Daily Challenge Error:', error);
-        res.status(500).json({ message: 'Error creating daily challenge', error: error.message });
+/**
+ * Submit code for today's daily compiler challenge.
+ * Evaluates the submission using Groq AI and awards prizes if passed.
+ * 
+ * @route POST /api/daily-challenge/submit
+ * @param {string} code - User's submitted code
+ * @returns {Object} Evaluation result with score, feedback, and pass status
+ */
+export const submitCompilerAnswer = async (req, res) => {
+  try {
+    // Step 1: Validate auth
+    if (!req.user) {
+      return res.status(401).json({ message: 'User not authenticated' });
     }
+    const user = req.user;
+    const userId = user.userId;
+
+    // Step 2: Get submitted code
+    const { code } = req.body;
+    if (!code || typeof code !== 'string' || code.trim().length === 0) {
+      return res.status(400).json({ message: 'Code submission is required' });
+    }
+
+    // Step 3: Get today's date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Step 4: Check if already completed today
+    const alreadyPassed = await CompilerSubmission.hasPassedToday(userId, today);
+    if (alreadyPassed) {
+      return res.status(400).json({ 
+        message: 'You have already completed today\'s challenge',
+        alreadyCompleted: true,
+        streak: user.dailyChallengeStreak || 0
+      });
+    }
+
+    // Step 5: Get today's challenge
+    const challenge = await DailyChallenge.findOne({ 
+      date: { $gte: today, $lt: tomorrow } 
+    }).lean();
+
+    if (!challenge) {
+      return res.status(404).json({ message: 'No challenge available today' });
+    }
+
+    // Step 6: Get the question with reference code
+    const question = await CompilerQuestion.findOne({ 
+      questionId: challenge.compilerQuestionId 
+    }).lean();
+
+    if (!question) {
+      return res.status(404).json({ message: 'Challenge question not found' });
+    }
+
+    // Step 7: Evaluate using Groq AI
+    let evaluationResult;
+    try {
+      evaluationResult = await evaluateSubmission(question, code.trim());
+    } catch (evalError) {
+      console.error('AI Evaluation Error:', evalError);
+      return res.status(500).json({ 
+        message: 'Failed to evaluate submission. Please try again.',
+        error: evalError.message
+      });
+    }
+
+    const { score, feedback, passed } = evaluationResult;
+
+    // Step 8: Save submission record
+    await CompilerSubmission.create({
+      userId,
+      questionId: question.questionId,
+      submittedCode: code.trim(),
+      aiScore: score,
+      aiFeedback: feedback,
+      passed,
+      challengeDate: today
+    });
+
+    // Step 9: If passed, award prizes and update streak
+    let coinsAwarded = 0;
+    let xpAwarded = 0;
+    let newStreak = user.dailyChallengeStreak || 0;
+
+    if (passed) {
+      // Calculate rewards
+      coinsAwarded = challenge.rewardCoins || question.rewardCoins || 100;
+      xpAwarded = challenge.rewardXP || question.rewardXP || 150;
+
+      // Update streak
+      const lastChallengeDate = user.dailyChallengeDate ? new Date(user.dailyChallengeDate) : null;
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      if (lastChallengeDate && lastChallengeDate.getTime() === yesterday.getTime()) {
+        // Consecutive day - increment streak
+        newStreak = (user.dailyChallengeStreak || 0) + 1;
+      } else if (lastChallengeDate && lastChallengeDate.getTime() === today.getTime()) {
+        // Same day - keep streak (shouldn't happen due to check above)
+        newStreak = user.dailyChallengeStreak || 1;
+      } else {
+        // Streak broken - reset to 1
+        newStreak = 1;
+      }
+
+      // Bonus for streak milestones
+      if (newStreak === 7) {
+        coinsAwarded += 50;
+        xpAwarded += 100;
+      } else if (newStreak === 30) {
+        coinsAwarded += 200;
+        xpAwarded += 500;
+      }
+
+      // Update user
+      user.coins = (user.coins || 0) + coinsAwarded;
+      user.xp = (user.xp || 0) + xpAwarded;
+      user.dailyChallengeCompleted = true;
+      user.dailyChallengeDate = today;
+      user.dailyChallengeStreak = newStreak;
+
+      await user.save();
+
+      // Check for badges
+      await checkAndUnlockBadges(userId, 'daily_challenge_completed', {
+        streak: newStreak,
+        score
+      });
+    }
+
+    // Step 10: Send response
+    res.json({
+      score,
+      feedback,
+      passed,
+      passThreshold: getPassThreshold(),
+      rewards: passed ? {
+        coins: coinsAwarded,
+        xp: xpAwarded,
+        streak: newStreak
+      } : null,
+      streak: passed ? newStreak : (user.dailyChallengeStreak || 0)
+    });
+
+  } catch (error) {
+    console.error('Submit Compiler Answer Error:', error);
+    res.status(500).json({ 
+      message: 'Failed to process submission', 
+      error: error.message
+    });
+  }
 };
 
-export const updateDailyChallenge = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const challenge = await DailyChallenge.findByIdAndUpdate(id, req.body, { new: true });
-        if (!challenge) return res.status(404).json({ message: 'Challenge not found' });
-        res.json(challenge);
-    } catch (error) {
-        res.status(500).json({ message: 'Error updating challenge', error: error.message });
-    }
-};
-
-export const getDailyChallengesAdmin = async (req, res) => {
-    try {
-        const challenges = await DailyChallenge.find({}).sort({ date: -1 }).limit(30);
-        res.json(challenges);
-    } catch (error) {
-         res.status(500).json({ message: 'Error fetching challenges', error: error.message });
-    }
-}
-
-export const deleteDailyChallenge = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const result = await DailyChallenge.deleteOne({ _id: id });
-        if (result.deletedCount === 0) return res.status(404).json({ message: 'Challenge not found' });
-        res.json({ message: 'Challenge deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting challenge', error: error.message });
-    }
-};
-
-
+/**
+ * Legacy endpoint - kept for backwards compatibility.
+ * Now just checks if user has completed today's challenge.
+ * 
+ * @route POST /api/daily-challenge/complete
+ * @deprecated Use submitCompilerAnswer instead
+ */
 export const completeDailyChallenge = async (req, res) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const user = req.user;
-    const last = user.dailyChallengeDate ? new Date(user.dailyChallengeDate) : null;
-    const lastDay = last ? new Date(last.setHours(0, 0, 0, 0)) : null;
 
-    if (lastDay && lastDay.getTime() === today.getTime() && user.dailyChallengeCompleted) {
-      return res.json({ message: 'Already completed today', streak: user.dailyChallengeStreak });
+    const hasPassedToday = await CompilerSubmission.hasPassedToday(user.userId, today);
+    
+    if (hasPassedToday) {
+      return res.json({ 
+        message: 'Challenge completed', 
+        streak: user.dailyChallengeStreak,
+        coins: user.coins,
+        xp: user.xp
+      });
     }
 
-    // Logic: Verify criteria if needed (e.g., check score passed in body?)
-    // For now, assuming client side validates criteria or passed simply by calling this endpoint.
-    // Ideally, we check the attempt ID passed in.
-    
-    // Get today's challenge to know rewards
-    let challenge = await DailyChallenge.findOne({ date: today }).lean();
-    const coinsReward = challenge ? challenge.rewardCoins : 20;
-    const xpReward = challenge ? challenge.rewardXP : 100;
-
-    if (lastDay && lastDay.getTime() === today.getTime() - 86400000) {
-      user.dailyChallengeStreak = (user.dailyChallengeStreak || 0) + 1;
-    } else {
-      user.dailyChallengeStreak = 1;
-    }
-
-    user.dailyChallengeCompleted = true;
-    user.dailyChallengeDate = today;
-    user.coins = (user.coins || 0) + coinsReward;
-    user.xp = (user.xp || 0) + xpReward; // Add XP too
-    
-    await user.save();
-
-    res.json({ message: 'Daily challenge completed', streak: user.dailyChallengeStreak, coins: user.coins, xp: user.xp });
+    return res.status(400).json({ 
+      message: 'Please submit your code solution first',
+      completed: false
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error completing daily challenge', error: error.message });
+    res.status(500).json({ message: 'Error checking challenge status', error: error.message });
+  }
+};
+
+// --- Compiler Question Admin CRUD ---
+
+/**
+ * Get all compiler questions (Admin).
+ * @route GET /api/compiler-questions/admin
+ */
+export const getCompilerQuestionsAdmin = async (req, res) => {
+  try {
+    const questions = await CompilerQuestion.find({})
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    // Add stats to each question
+    const questionsWithStats = await Promise.all(
+      questions.map(async (q) => {
+        const stats = await CompilerSubmission.getQuestionStats(q.questionId);
+        return { ...q, stats };
+      })
+    );
+
+    res.json(questionsWithStats);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching questions', error: error.message });
+  }
+};
+
+/**
+ * Create a new compiler question (Admin).
+ * @route POST /api/compiler-questions/admin
+ */
+export const createCompilerQuestion = async (req, res) => {
+  try {
+    const { title, description, referenceCode, language, difficulty, category, hints, rewardCoins, rewardXP } = req.body;
+
+    if (!title || !description || !referenceCode) {
+      return res.status(400).json({ message: 'Title, description, and reference code are required' });
+    }
+
+    const question = new CompilerQuestion({
+      title,
+      description,
+      referenceCode,
+      language: language || 'javascript',
+      difficulty: difficulty || 'medium',
+      category: category || 'general',
+      hints: hints || [],
+      rewardCoins: rewardCoins || 100,
+      rewardXP: rewardXP || 150
+    });
+
+    await question.save();
+    res.status(201).json(question);
+  } catch (error) {
+    console.error('Create Question Error:', error);
+    res.status(500).json({ message: 'Error creating question', error: error.message });
+  }
+};
+
+/**
+ * Bulk upload compiler questions (Admin).
+ * @route POST /api/compiler-questions/admin/bulk
+ */
+export const bulkUploadCompilerQuestions = async (req, res) => {
+  try {
+    const { questions } = req.body;
+
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ message: 'Questions array is required' });
+    }
+
+    const results = { created: 0, errors: [] };
+
+    for (const q of questions) {
+      try {
+        if (!q.title || !q.description || !q.referenceCode) {
+          results.errors.push({ title: q.title || 'Unknown', error: 'Missing required fields' });
+          continue;
+        }
+
+        const question = new CompilerQuestion({
+          title: q.title,
+          description: q.description,
+          referenceCode: q.referenceCode,
+          language: q.language || 'javascript',
+          difficulty: q.difficulty || 'medium',
+          category: q.category || 'general',
+          hints: q.hints || [],
+          rewardCoins: q.rewardCoins || 100,
+          rewardXP: q.rewardXP || 150
+        });
+
+        await question.save();
+        results.created++;
+      } catch (err) {
+        results.errors.push({ title: q.title || 'Unknown', error: err.message });
+      }
+    }
+
+    res.json({
+      message: `Uploaded ${results.created} questions`,
+      created: results.created,
+      errors: results.errors
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error bulk uploading questions', error: error.message });
+  }
+};
+
+/**
+ * Update a compiler question (Admin).
+ * @route PUT /api/compiler-questions/admin/:id
+ */
+export const updateCompilerQuestion = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const question = await CompilerQuestion.findOneAndUpdate(
+      { questionId: id },
+      updates,
+      { new: true }
+    );
+
+    if (!question) {
+      // Try by _id
+      const byObjectId = await CompilerQuestion.findByIdAndUpdate(id, updates, { new: true });
+      if (!byObjectId) {
+        return res.status(404).json({ message: 'Question not found' });
+      }
+      return res.json(byObjectId);
+    }
+
+    res.json(question);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating question', error: error.message });
+  }
+};
+
+/**
+ * Delete a compiler question (Admin).
+ * @route DELETE /api/compiler-questions/admin/:id
+ */
+export const deleteCompilerQuestion = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    let result = await CompilerQuestion.deleteOne({ questionId: id });
+    
+    if (result.deletedCount === 0) {
+      // Try by _id
+      result = await CompilerQuestion.deleteOne({ _id: id });
+    }
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    res.json({ message: 'Question deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting question', error: error.message });
+  }
+};
+
+// --- Daily Challenge Admin CRUD (Updated for Compiler Questions) ---
+
+/**
+ * Create/Schedule a daily challenge (Admin).
+ * @route POST /api/daily-challenge/admin
+ */
+export const createDailyChallenge = async (req, res) => {
+  try {
+    const { date, compilerQuestionId, rewardCoins, rewardXP, rewardBadgeId, rewardItemId } = req.body;
+    
+    if (!date || !compilerQuestionId) {
+      return res.status(400).json({ message: 'Date and compilerQuestionId are required' });
+    }
+
+    const challengeDate = new Date(date);
+    if (isNaN(challengeDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid date format' });
+    }
+    challengeDate.setHours(0, 0, 0, 0);
+
+    // Verify question exists
+    const question = await CompilerQuestion.findOne({ questionId: compilerQuestionId }).lean();
+    if (!question) {
+      return res.status(404).json({ message: 'Compiler question not found' });
+    }
+
+    // Check for existing challenge on this date
+    const existing = await DailyChallenge.findOne({ date: challengeDate });
+    if (existing) {
+      return res.status(409).json({ message: 'Challenge already exists for this date' });
+    }
+
+    const challenge = new DailyChallenge({
+      date: challengeDate,
+      compilerQuestionId,
+      rewardCoins,
+      rewardXP,
+      rewardBadgeId,
+      rewardItemId
+    });
+
+    await challenge.save();
+    res.status(201).json({ ...challenge.toObject(), question });
+  } catch (error) {
+    console.error('Create Daily Challenge Error:', error);
+    res.status(500).json({ message: 'Error creating daily challenge', error: error.message });
+  }
+};
+
+/**
+ * Update a daily challenge (Admin).
+ * @route PUT /api/daily-challenge/admin/:id
+ */
+export const updateDailyChallenge = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { compilerQuestionId, rewardCoins, rewardXP, rewardBadgeId, rewardItemId } = req.body;
+
+    const updates = {};
+    if (compilerQuestionId) updates.compilerQuestionId = compilerQuestionId;
+    if (rewardCoins !== undefined) updates.rewardCoins = rewardCoins;
+    if (rewardXP !== undefined) updates.rewardXP = rewardXP;
+    if (rewardBadgeId !== undefined) updates.rewardBadgeId = rewardBadgeId;
+    if (rewardItemId !== undefined) updates.rewardItemId = rewardItemId;
+
+    const challenge = await DailyChallenge.findByIdAndUpdate(id, updates, { new: true });
+    if (!challenge) return res.status(404).json({ message: 'Challenge not found' });
+    res.json(challenge);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating challenge', error: error.message });
+  }
+};
+
+/**
+ * Get all daily challenges (Admin).
+ * @route GET /api/daily-challenge/admin/all
+ */
+export const getDailyChallengesAdmin = async (req, res) => {
+  try {
+    const challenges = await DailyChallenge.find({}).sort({ date: -1 }).limit(30).lean();
+    
+    // Populate question data
+    const populated = await Promise.all(
+      challenges.map(async (c) => {
+        const question = await CompilerQuestion.findOne({ questionId: c.compilerQuestionId }).lean();
+        return { ...c, question };
+      })
+    );
+
+    res.json(populated);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching challenges', error: error.message });
+  }
+};
+
+/**
+ * Delete a daily challenge (Admin).
+ * @route DELETE /api/daily-challenge/admin/:id
+ */
+export const deleteDailyChallenge = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await DailyChallenge.deleteOne({ _id: id });
+    if (result.deletedCount === 0) return res.status(404).json({ message: 'Challenge not found' });
+    res.json({ message: 'Challenge deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting challenge', error: error.message });
   }
 };
 

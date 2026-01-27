@@ -312,6 +312,16 @@ export interface Tournament {
 
 export interface DailyChallengeDef {
     date: string; // ISO date
+    compilerQuestionId: string;
+    rewardCoins?: number;
+    rewardXP?: number;
+    rewardBadgeId?: string;
+    rewardItemId?: string;
+}
+
+/** @deprecated Use DailyChallengeDef for backend compatibility, DailyCompilerChallenge for frontend */
+export interface LegacyDailyChallengeDef {
+    date: string;
     title: string;
     description: string;
     quizId?: string;
@@ -323,6 +333,66 @@ export interface DailyChallengeDef {
     rewardXP: number;
     rewardBadgeId?: string;
     rewardItemId?: string;
+}
+
+export interface CompilerQuestion {
+    questionId: string;
+    title: string;
+    description: string;
+    referenceCode?: string; // Only visible to admin
+    language: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    category: string;
+    hints?: string[];
+    rewardCoins: number;
+    rewardXP: number;
+    isActive: boolean;
+    usageCount?: number;
+    lastUsedAt?: string;
+    createdAt?: string;
+    stats?: {
+        totalSubmissions: number;
+        passCount: number;
+        passRate: number;
+        averageScore: number;
+    };
+}
+
+export interface CompilerSubmissionResult {
+    score: number;
+    feedback: string;
+    passed: boolean;
+    passThreshold: number;
+    rewards: {
+        coins: number;
+        xp: number;
+        streak: number;
+    } | null;
+    streak: number;
+    alreadyCompleted?: boolean;
+}
+
+export interface DailyCompilerChallenge {
+    challengeId: string;
+    date: string;
+    question: {
+        questionId: string;
+        title: string;
+        description: string;
+        language: string;
+        difficulty: 'easy' | 'medium' | 'hard';
+        category: string;
+        hints: string[];
+    };
+    rewards: {
+        coins: number;
+        xp: number;
+        badgeId?: string;
+        itemId?: string;
+    };
+    streak: number;
+    completed: boolean;
+    passThreshold: number;
 }
 
 export interface StudyCard {

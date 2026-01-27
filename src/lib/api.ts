@@ -491,8 +491,7 @@ export const api = {
 
 
 
-
-    // Daily Challenge
+    // Daily Compiler Challenge
     async getDailyChallenge(userId: string) {
         const response = await fetchWithFallback('/daily-challenge', {
             headers: getHeaders(userId)
@@ -500,6 +499,19 @@ export const api = {
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
             throw new Error(error.message || 'Failed to load daily challenge');
+        }
+        return response.json();
+    },
+
+    async submitCompilerAnswer(code: string, userId: string) {
+        const response = await fetchWithFallback('/daily-challenge/submit', {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ code })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to submit code');
         }
         return response.json();
     },
@@ -542,6 +554,7 @@ export const api = {
         return response.json();
     },
 
+    /** @deprecated Use submitCompilerAnswer instead */
     async completeDailyChallenge(userId: string) {
         const response = await fetchWithFallback('/daily-challenge/complete', {
             method: 'POST',
@@ -563,7 +576,7 @@ export const api = {
         return response.json();
     },
 
-    async createDailyChallenge(data: Partial<DailyChallengeDef>, adminId: string) {
+    async createDailyChallenge(data: { date: string; compilerQuestionId: string; rewardCoins?: number; rewardXP?: number; rewardBadgeId?: string; rewardItemId?: string }, adminId: string) {
         const response = await fetchWithFallback('/daily-challenge/admin', {
             method: 'POST',
             headers: getHeaders(adminId),
@@ -573,7 +586,7 @@ export const api = {
         return response.json();
     },
 
-    async updateDailyChallenge(id: string, data: Partial<DailyChallengeDef>, adminId: string) {
+    async updateDailyChallenge(id: string, data: { compilerQuestionId?: string; rewardCoins?: number; rewardXP?: number; rewardBadgeId?: string; rewardItemId?: string }, adminId: string) {
         const response = await fetchWithFallback(`/daily-challenge/admin/${id}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
@@ -589,6 +602,54 @@ export const api = {
             headers: getHeaders(adminId)
         });
         if (!response.ok) throw new Error('Failed to delete daily challenge');
+        return response.json();
+    },
+
+    // Compiler Question Admin CRUD
+    async getCompilerQuestionsAdmin(adminId: string) {
+        const response = await fetchWithFallback('/compiler-questions/admin', {
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) throw new Error('Failed to fetch compiler questions');
+        return response.json();
+    },
+
+    async createCompilerQuestion(data: { title: string; description: string; referenceCode: string; language?: string; difficulty?: string; category?: string; hints?: string[]; rewardCoins?: number; rewardXP?: number }, adminId: string) {
+        const response = await fetchWithFallback('/compiler-questions/admin', {
+            method: 'POST',
+            headers: getHeaders(adminId),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('Failed to create question');
+        return response.json();
+    },
+
+    async bulkUploadCompilerQuestions(questions: Array<{ title: string; description: string; referenceCode: string; language?: string; difficulty?: string; category?: string }>, adminId: string) {
+        const response = await fetchWithFallback('/compiler-questions/admin/bulk', {
+            method: 'POST',
+            headers: getHeaders(adminId),
+            body: JSON.stringify({ questions })
+        });
+        if (!response.ok) throw new Error('Failed to bulk upload questions');
+        return response.json();
+    },
+
+    async updateCompilerQuestion(id: string, updates: Partial<{ title: string; description: string; referenceCode: string; language: string; difficulty: string; category: string; hints: string[]; rewardCoins: number; rewardXP: number; isActive: boolean }>, adminId: string) {
+        const response = await fetchWithFallback(`/compiler-questions/admin/${id}`, {
+            method: 'PUT',
+            headers: getHeaders(adminId),
+            body: JSON.stringify(updates)
+        });
+        if (!response.ok) throw new Error('Failed to update question');
+        return response.json();
+    },
+
+    async deleteCompilerQuestion(id: string, adminId: string) {
+        const response = await fetchWithFallback(`/compiler-questions/admin/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) throw new Error('Failed to delete question');
         return response.json();
     },
 

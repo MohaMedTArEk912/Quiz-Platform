@@ -4,15 +4,23 @@ import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Daily Challenge
+// Daily Compiler Challenge
 router.get('/daily-challenge', verifyUser, engagementController.getDailyChallenge); // GET /api/daily-challenge
-router.post('/daily-challenge/complete', verifyUser, engagementController.completeDailyChallenge); // POST /api/daily-challenge/complete
+router.post('/daily-challenge/submit', verifyUser, engagementController.submitCompilerAnswer); // POST /api/daily-challenge/submit
+router.post('/daily-challenge/complete', verifyUser, engagementController.completeDailyChallenge); // POST /api/daily-challenge/complete (legacy)
 
 // Daily Challenge Management (Admin)
 router.get('/daily-challenge/admin/all', verifyUser, verifyAdmin, engagementController.getDailyChallengesAdmin);
 router.post('/daily-challenge/admin', verifyUser, verifyAdmin, engagementController.createDailyChallenge);
 router.put('/daily-challenge/admin/:id', verifyUser, verifyAdmin, engagementController.updateDailyChallenge);
 router.delete('/daily-challenge/admin/:id', verifyUser, verifyAdmin, engagementController.deleteDailyChallenge);
+
+// Compiler Question Management (Admin)
+router.get('/compiler-questions/admin', verifyUser, verifyAdmin, engagementController.getCompilerQuestionsAdmin);
+router.post('/compiler-questions/admin', verifyUser, verifyAdmin, engagementController.createCompilerQuestion);
+router.post('/compiler-questions/admin/bulk', verifyUser, verifyAdmin, engagementController.bulkUploadCompilerQuestions);
+router.put('/compiler-questions/admin/:id', verifyUser, verifyAdmin, engagementController.updateCompilerQuestion);
+router.delete('/compiler-questions/admin/:id', verifyUser, verifyAdmin, engagementController.deleteCompilerQuestion);
 
 // Skill Tracks
 router.get('/skill-tracks', engagementController.getSkillTracks); // GET /api/skill-tracks
