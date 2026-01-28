@@ -3,7 +3,6 @@ import type { UserData, ShopItem } from '../../types';
 import { api } from '../../lib/api';
 import { ShoppingBag, Coins, Zap, Clock, Target, CheckCircle2, AlertCircle, Sparkles, TrendingUp, Shield } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { staticItems } from '../../constants/shopItems';
 import { SHOP_ITEM_GRADIENTS, DEFAULT_SHOP_LOADING_MESSAGE, PURCHASE_SUCCESS_MESSAGE } from '../../constants/shopDefaults';
 
 interface ShopProps {
@@ -20,9 +19,19 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Static items imported from lib
-    setItems(staticItems);
-    setLoading(false);
+    const fetchItems = async () => {
+      try {
+        const shopItems = await api.getShopItems();
+        setItems(shopItems);
+      } catch (err) {
+        setError("Failed to load shop items. Please try again later.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchItems();
   }, []);
 
   const getItemIcon = (name: string) => {

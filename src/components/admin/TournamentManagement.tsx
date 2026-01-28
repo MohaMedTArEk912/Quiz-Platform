@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Trophy, MoreVertical, Download, Upload, Plus, Edit2, Trash2, BookOpen, X } from 'lucide-react';
 import Modal from '../common/Modal';
-import type { Tournament, Quiz, UserData, BadgeDefinition } from '../../types/index.ts';
+import type { Tournament, Quiz, UserData, BadgeDefinition, ShopItem } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
-import { staticItems } from '../../constants/shopItems';
 
 interface TournamentManagementProps {
     currentUser: UserData;
@@ -18,6 +17,7 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
     const [showTournamentMenu, setShowTournamentMenu] = useState(false);
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; id: string } | null>(null);
     const [badges, setBadges] = useState<BadgeDefinition[]>([]);
+    const [shopItems, setShopItems] = useState<ShopItem[]>([]);
 
     const tournamentUploadRef = useRef<HTMLInputElement>(null);
     const tournamentMenuRef = useRef<HTMLDivElement>(null);
@@ -38,13 +38,17 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
 
     const loadData = async () => {
         try {
-            const data = await api.getTournaments();
-            setTournaments(data);
-            const badgesData = await api.getBadgeNodes();
+            const [tournamentsData, badgesData, shopItemsData] = await Promise.all([
+                api.getTournaments(),
+                api.getBadgeNodes(),
+                api.getShopItems().catch(() => [])
+            ]);
+            setTournaments(tournamentsData);
             setBadges(badgesData);
+            setShopItems(shopItemsData);
         } catch (err) {
-            console.error('Failed to load tournaments', err);
-            onNotification('error', 'Failed to load tournaments');
+            console.error('Failed to load data', err);
+            onNotification('error', 'Failed to load tournaments data');
         }
     }
 
@@ -329,7 +333,7 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
                                 className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-amber-500/50 rounded-xl px-5 py-3.5 text-gray-900 dark:text-white font-black outline-none transition-all appearance-none cursor-pointer"
                             >
                                 <option value="">No Item Reward</option>
-                                {staticItems.map(item => (
+                                {shopItems.map(item => (
                                     <option key={item.itemId} value={item.itemId}>📦 {item.name}</option>
                                 ))}
                             </select>

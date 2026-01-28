@@ -3,7 +3,7 @@ export const COMPILER_ALLOWED_LANGUAGES = ['javascript', 'python', 'typescript']
 export const COMPILER_INITIAL_CODE: Record<string, string> = {
   javascript: '// Write your javascript code here\n',
   typescript: '// Write your typescript code here\n',
-  python: '# Write your python code here\nprint("Hello World")\n',
+  python: '# Write your python code here\n',
 };
 
 export const BLOCKLY_BACKDROP_OPTIONS = [

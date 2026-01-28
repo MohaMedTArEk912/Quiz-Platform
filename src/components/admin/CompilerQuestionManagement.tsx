@@ -198,8 +198,17 @@ const CompilerQuestionManagement: React.FC<CompilerQuestionManagementProps> = ({
     // ===== JSON Import/Export =====
     const handleDownloadSampleJson = () => {
         const sample = [
-            { title: "Reverse a String", description: "Write a function that reverses the input string.", referenceCode: "function reverseString(str) {\n  return str.split('').reverse().join('');\n}", language: "javascript", difficulty: "easy", category: "Strings", hints: ["Think about array methods"], rewardCoins: 50, rewardXP: 100 },
-            { title: "Two Sum", description: "Given an array of integers and a target sum, return indices of two numbers that add up to the target.", referenceCode: "function twoSum(nums, target) {\n  const map = {};\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (map[complement] !== undefined) return [map[complement], i];\n    map[nums[i]] = i;\n  }\n  return [];\n}", language: "javascript", difficulty: "medium", category: "Arrays", hints: ["Use a hash map for O(n) solution"], rewardCoins: 100, rewardXP: 150 }
+            {
+                title: "Example Challenge Title",
+                description: "Describe the problem here. You can use Markdown.",
+                referenceCode: "function solution(args) {\n  // Write your reference solution here\n  return true;\n}",
+                language: "javascript",
+                difficulty: "easy",
+                category: "General",
+                hints: ["First hint", "Second hint"],
+                rewardCoins: 50,
+                rewardXP: 100
+            }
         ];
         const blob = new Blob([JSON.stringify(sample, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
