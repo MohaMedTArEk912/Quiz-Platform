@@ -95,6 +95,12 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
         }
     };
 
+    // Calculate correct answers count (for display "X out of Y correct")
+    // result.answers is Record<number, DetailedAnswer>
+    const correctCount = Object.values(result.answers).filter((a: any) =>
+        a && typeof a === 'object' && 'isCorrect' in a && a.isCorrect
+    ).length;
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0b] flex flex-col transition-colors selection:bg-indigo-500/30">
             {/* Ambient Background */}
@@ -179,7 +185,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                         </div>
 
                         <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 font-medium">
-                            You scored <span className="font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-lg border border-gray-200 dark:border-white/5">{result.score}</span> out of <span className="font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-lg border border-gray-200 dark:border-white/5">{result.totalQuestions}</span> questions
+                            You got <span className="font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-lg border border-gray-200 dark:border-white/5">{correctCount}</span> out of <span className="font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-lg border border-gray-200 dark:border-white/5">{result.totalQuestions}</span> correct
                         </p>
 
                         {/* Review Mode Indicator */}

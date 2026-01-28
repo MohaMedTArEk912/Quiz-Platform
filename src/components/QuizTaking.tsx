@@ -151,7 +151,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 setQuestionOrder(savedState.questionOrder);
             }
         }
-        resetQuestionState();
+        resetQuestionState(savedState?.currentQuestion ?? 0);
         setShowResumePrompt(false);
     };
 
@@ -164,18 +164,23 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         resetQuestionState();
     };
 
-    const resetQuestionState = () => {
+    const resetQuestionState = (targetIndex = currentQuestion) => {
         setShakeError(false);
 
         if (!quiz.reviewMode) {
             setQuestionSubmitted(false);
             setIsCurrentAnswerCorrect(false);
         } else {
-            // In review mode, we might want to check if we already answered/submitted this one
-            const qIndex = retryMode ? wrongQuestionIndices[currentQuestion] : currentQuestion;
-            // Note: reviewMode usually implies iterating 0..N.
-            setQuestionSubmitted(submittedQuestions[qIndex] || false);
-            setIsCurrentAnswerCorrect(questionCorrectness[qIndex] || false);
+            // In review mode, we need to check if we already answered/submitted this question
+            // Use the actual question index from the order, not just currentQuestion
+            const actualIdx = retryMode
+                ? questionOrder[wrongQuestionIndices[targetIndex]]
+                : questionOrder[targetIndex];
+
+            // Only restore submitted state if we actually have an answer recorded
+            const hasAnswer = answers[actualIdx] !== undefined;
+            setQuestionSubmitted(hasAnswer && (submittedQuestions[actualIdx] || false));
+            setIsCurrentAnswerCorrect(hasAnswer && (questionCorrectness[actualIdx] || false));
         }
     };
 
@@ -271,9 +276,18 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
     const nextQuestion = () => {
         if (isSubmitting) return;
+
+        // In review mode, require the user to answer before proceeding
+        const actualIdx = getActualQuestionIndex();
+        if (quiz.reviewMode && !delayedValidation && answers[actualIdx] === undefined) {
+            setShakeError(true);
+            setTimeout(() => setShakeError(false), 400);
+            return; // Do not advance without an answer in review mode
+        }
+
         if (!isLastQuestion) {
             setCurrentQuestion(c => c + 1);
-            resetQuestionState();
+            resetQuestionState(currentQuestion + 1);
         } else {
             // End of list
             handleQuizComplete();
@@ -284,7 +298,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         if (isSubmitting) return;
         if (currentQuestion > 0) {
             setCurrentQuestion(c => c - 1);
-            resetQuestionState();
+            resetQuestionState(currentQuestion - 1);
         }
     };
 
@@ -505,8 +519,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
                             {/* Timer */}
                             <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono text-lg font-black shadow-lg ${!countUpTimer && timeLeft < 30
-                                    ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white animate-pulse shadow-red-500/50'
-                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700'
+                                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white animate-pulse shadow-red-500/50'
+                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700'
                                 }`}>
                                 <Clock className={`w-5 h-5 ${!countUpTimer && timeLeft < 30 ? 'animate-spin' : ''}`} />
                                 {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
@@ -557,8 +571,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         <div className="relative h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                             <div
                                 className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out ${retryMode
-                                        ? 'bg-gradient-to-r from-orange-500 to-red-500'
-                                        : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'
+                                    ? 'bg-gradient-to-r from-orange-500 to-red-500'
+                                    : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'
                                     }`}
                                 style={{ width: `${progressPercentage}%` }}
                             >
@@ -591,8 +605,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     </div>
                 </div>
 
-                {/* Enhanced Question Card */}
-                <div className="flex-1 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 relative flex flex-col group hover:shadow-indigo-500/10 transition-shadow">
+                {/* Enhanced Question Card */}\r\n                <div className={`flex-1 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 relative flex flex-col group hover:shadow-indigo-500/10 transition-shadow ${shakeError ? 'animate-shake' : ''}`}>
                     {/* Retry Mode Banner */}
                     {retryMode && (
                         <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white text-center py-3 px-4 text-sm font-black uppercase tracking-wider animate-in slide-in-from-top shadow-lg relative overflow-hidden">
@@ -638,6 +651,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                     {currentOptions.map((originalIndex, visualIndex) => {
                                         const option = q.options![originalIndex];
                                         const isSelected = answers[actualIndex] === originalIndex;
+                                        const isCorrectOption = originalIndex === q.correctAnswer;
+                                        const showCorrectHighlight = questionSubmitted && !delayedValidation && !isCurrentAnswerCorrect && isCorrectOption;
+                                        const showWrongHighlight = questionSubmitted && !delayedValidation && !isCurrentAnswerCorrect && isSelected;
+                                        const showSuccessHighlight = questionSubmitted && !delayedValidation && isCurrentAnswerCorrect && isSelected;
 
                                         return (
                                             <button
@@ -645,43 +662,77 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                                 onClick={() => handleAnswer(originalIndex)}
                                                 disabled={isSubmitting || (questionSubmitted && !delayedValidation)}
                                                 className={`group relative p-5 rounded-2xl text-left transition-all duration-300 border-2 flex items-center gap-4 overflow-hidden
-                                                    ${isSelected
-                                                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 border-indigo-500 text-white shadow-2xl shadow-indigo-500/30 scale-[1.02] translate-x-1'
-                                                        : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-lg hover:scale-[1.01] hover:translate-x-1'
+                                                    ${showSuccessHighlight
+                                                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 border-green-400 text-white shadow-2xl shadow-green-500/30 scale-[1.02]'
+                                                        : showWrongHighlight
+                                                            ? 'bg-gradient-to-r from-red-500 to-rose-500 border-red-400 text-white shadow-2xl shadow-red-500/30 scale-[1.02]'
+                                                            : showCorrectHighlight
+                                                                ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500 text-green-700 dark:text-green-300 shadow-lg shadow-green-500/20 scale-[1.02] ring-2 ring-green-400'
+                                                                : isSelected
+                                                                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 border-indigo-500 text-white shadow-2xl shadow-indigo-500/30 scale-[1.02] translate-x-1'
+                                                                    : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-lg hover:scale-[1.01] hover:translate-x-1'
                                                     }
                                                     disabled:opacity-50 disabled:cursor-not-allowed
                                                 `}
                                             >
                                                 {/* Animated Background */}
-                                                {isSelected && (
+                                                {(isSelected || showCorrectHighlight) && (
                                                     <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 animate-shimmer" />
                                                 )}
 
                                                 {/* Option Letter Badge */}
                                                 <div className={`relative z-10 w-10 h-10 rounded-xl flex items-center justify-center font-black text-base shadow-lg transition-all
-                                                    ${isSelected
-                                                        ? 'bg-white text-indigo-600 shadow-white/50'
-                                                        : 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white group-hover:scale-110'
+                                                    ${showSuccessHighlight
+                                                        ? 'bg-white text-green-600 shadow-white/50'
+                                                        : showWrongHighlight
+                                                            ? 'bg-white text-red-600 shadow-white/50'
+                                                            : showCorrectHighlight
+                                                                ? 'bg-green-500 text-white shadow-green-500/50'
+                                                                : isSelected
+                                                                    ? 'bg-white text-indigo-600 shadow-white/50'
+                                                                    : 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white group-hover:scale-110'
                                                     }
                                                 `}>
                                                     {String.fromCharCode(65 + visualIndex)}
                                                 </div>
 
                                                 {/* Option Text */}
-                                                <span className={`relative z-10 font-bold text-base flex-1 ${isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+                                                <span className={`relative z-10 font-bold text-base flex-1 
+                                                    ${showSuccessHighlight || showWrongHighlight ? 'text-white'
+                                                        : showCorrectHighlight ? 'text-green-700 dark:text-green-300'
+                                                            : isSelected ? 'text-white'
+                                                                : 'text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
                                                     }`}>
                                                     {option}
+                                                    {showCorrectHighlight && (
+                                                        <span className="ml-2 text-xs font-black uppercase tracking-wide bg-green-500 text-white px-2 py-0.5 rounded-full">✓ Correct</span>
+                                                    )}
                                                 </span>
 
                                                 {/* Selection Indicator */}
-                                                {isSelected && (
+                                                {showSuccessHighlight && (
+                                                    <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm">
+                                                        <CheckCircle className="w-5 h-5 text-white" />
+                                                    </div>
+                                                )}
+                                                {showWrongHighlight && (
+                                                    <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm">
+                                                        <XCircle className="w-5 h-5 text-white" />
+                                                    </div>
+                                                )}
+                                                {showCorrectHighlight && (
+                                                    <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-green-500 shadow-lg">
+                                                        <CheckCircle className="w-5 h-5 text-white" />
+                                                    </div>
+                                                )}
+                                                {isSelected && !questionSubmitted && (
                                                     <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm">
                                                         <CheckCircle className="w-5 h-5 text-white" />
                                                     </div>
                                                 )}
 
                                                 {/* Hover Arrow */}
-                                                {!isSelected && (
+                                                {!isSelected && !showCorrectHighlight && !questionSubmitted && (
                                                     <div className="relative z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center">
                                                             <span className="text-indigo-600 dark:text-indigo-400 text-sm font-black">→</span>
@@ -739,10 +790,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 <div
                                     key={idx}
                                     className={`w-2 h-2 rounded-full transition-all ${idx === currentQuestion
-                                            ? 'bg-indigo-600 dark:bg-indigo-400 w-8'
-                                            : idx < currentQuestion
-                                                ? 'bg-green-500 dark:bg-green-400'
-                                                : 'bg-slate-300 dark:bg-slate-600'
+                                        ? 'bg-indigo-600 dark:bg-indigo-400 w-8'
+                                        : idx < currentQuestion
+                                            ? 'bg-green-500 dark:bg-green-400'
+                                            : 'bg-slate-300 dark:bg-slate-600'
                                         }`}
                                 />
                             ))}

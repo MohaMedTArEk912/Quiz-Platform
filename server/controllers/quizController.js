@@ -73,21 +73,21 @@ export const getQuizzes = async (req, res) => {
     // Sort quizzes by extracted number for proper "Session 1, Session 2, ... Session 10" ordering
     quizzes.sort((a, b) => {
         const getNum = (str) => {
+            if (!str || typeof str !== 'string') return Number.MAX_SAFE_INTEGER;
             const match = str.match(/(\d+)/);
             return match ? parseInt(match[0], 10) : Number.MAX_SAFE_INTEGER;
         };
-        const numA = getNum(a.title);
-        const numB = getNum(b.title);
+        
+        const titleA = a.title || '';
+        const titleB = b.title || '';
+        
+        const numA = getNum(titleA);
+        const numB = getNum(titleB);
         
         if (numA !== numB) {
-             // If one has no number (MAX_SAFE_INTEGER), put it at the end? 
-             // Or if both have numbers, compare them.
-             // If you want "Introduction" (no number) to be FIRST, change MAX_SAFE_INTEGER to -1.
-             // Assuming numbered sessions come after introductory stuff, let's keep MAX_SAFE_INTEGER 
-             // BUT if both are MAX_SAFE_INTEGER (no number), we fall through to alpha sort.
              return numA - numB;
         }
-        return a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' });
+        return titleA.localeCompare(titleB, undefined, { numeric: true, sensitivity: 'base' });
     });
 
     const normalized = quizzes.map((quiz) => ({

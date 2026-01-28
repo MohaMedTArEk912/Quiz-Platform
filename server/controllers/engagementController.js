@@ -10,6 +10,7 @@ import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
 import { checkAndUnlockBadges } from './badgeNodeController.js';
 import { completeSpecificModule } from '../services/progressService.js';
 import { evaluateSubmission, getPassThreshold } from '../services/compilerEvaluationService.js';
+import { syncClanXp } from '../utils/xpSync.js';
 
 // --- Daily Compiler Challenge ---
 
@@ -232,6 +233,22 @@ export const submitCompilerAnswer = async (req, res) => {
       // Update user
       user.coins = (user.coins || 0) + coinsAwarded;
       user.xp = (user.xp || 0) + xpAwarded;
+      
+      if (user.clanId) {
+          await syncClanXp(userId, xpAwarded, user.clanId);
+      }
+
+      // Award Shop Item if present
+      if (challenge.rewardItemId) {
+          if (!user.inventory) user.inventory = [];
+          const existingItem = user.inventory.find(i => i.itemId === challenge.rewardItemId);
+          if (existingItem) {
+              existingItem.quantity += 1;
+          } else {
+              user.inventory.push({ itemId: challenge.rewardItemId, quantity: 1 });
+          }
+      }
+
       user.dailyChallengeCompleted = true;
       user.dailyChallengeDate = today;
       user.dailyChallengeStreak = newStreak;
@@ -545,13 +562,18 @@ export const getDailyChallengesAdmin = async (req, res) => {
   try {
     const challenges = await DailyChallenge.find({}).sort({ date: -1 }).limit(30).lean();
     
-    // Populate question data
-    const populated = await Promise.all(
-      challenges.map(async (c) => {
-        const question = await CompilerQuestion.findOne({ questionId: c.compilerQuestionId }).lean();
-        return { ...c, question };
-      })
-    );
+    // OPTIMIZATION: Bulk fetch all questions in one query instead of N+1
+    const questionIds = [...new Set(challenges.map(c => c.compilerQuestionId).filter(Boolean))];
+    const questions = await CompilerQuestion.find({ questionId: { $in: questionIds } }).lean();
+    
+    // Create a lookup map for O(1) access
+    const questionMap = new Map(questions.map(q => [q.questionId, q]));
+    
+    // Populate using the map
+    const populated = challenges.map(c => ({
+      ...c,
+      question: questionMap.get(c.compilerQuestionId) || null
+    }));
 
     res.json(populated);
   } catch (error) {

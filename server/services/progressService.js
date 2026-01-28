@@ -170,12 +170,15 @@ export const completeSubModule = async (userId, trackId, moduleId, subModuleId) 
                 if (targetModule.quizId) allQuizIds.add(targetModule.quizId);
                 const uniqueQuizIds = Array.from(allQuizIds);
 
+                // Module completion requires 70% minimum on ALL quizzes
+                const MODULE_PASSING_THRESHOLD = 70;
+                
                 if (uniqueQuizIds.length > 0) {
                     const passedAttempts = await Attempt.find({
                         userId,
                         quizId: { $in: uniqueQuizIds },
-                        passed: true
-                    }).select('quizId').lean();
+                        percentage: { $gte: MODULE_PASSING_THRESHOLD }
+                    }).select('quizId percentage').lean();
                     const passedQuizIds = new Set(passedAttempts.map(a => a.quizId));
                     allQuizzesPassed = uniqueQuizIds.every(id => passedQuizIds.has(id));
                 }
@@ -278,11 +281,14 @@ export const syncRoadmapProgress = async (userId, trackId) => {
             if (m.quizIds) m.quizIds.forEach(q => allTrackQuizIds.add(q));
         });
         
+        // Module completion requires 70% minimum on ALL quizzes
+        const MODULE_PASSING_THRESHOLD = 70;
+        
         const passedAttempts = await Attempt.find({
             userId,
             quizId: { $in: Array.from(allTrackQuizIds) },
-            passed: true
-        }).select('quizId').lean();
+            percentage: { $gte: MODULE_PASSING_THRESHOLD }
+        }).select('quizId percentage').lean();
         const passedQuizIds = new Set(passedAttempts.map(a => a.quizId));
 
         // Iterate modules to check completion

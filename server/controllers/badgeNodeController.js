@@ -2,6 +2,7 @@ import { BadgeNode } from '../models/BadgeNode.js';
 import { BadgeTree } from '../models/BadgeTree.js';
 import { User } from '../models/User.js';
 import { Attempt } from '../models/Attempt.js';
+import { syncClanXp } from '../utils/xpSync.js';
 
 // Create a new badge node
 export const createBadgeNode = async (req, res) => {
@@ -260,8 +261,13 @@ export const manuallyUnlockBadge = async (req, res) => {
     });
     
     // Award rewards
-    user.xp = (user.xp || 0) + badge.rewards.xp;
+    const xpAwarded = badge.rewards.xp || 0;
+    user.xp = (user.xp || 0) + xpAwarded;
     user.coins = (user.coins || 0) + badge.rewards.coins;
+    
+    if (user.clanId && xpAwarded > 0) {
+        await syncClanXp(userId, xpAwarded, user.clanId);
+    }
     
     // Award power-ups
     if (badge.rewards.powerUps && badge.rewards.powerUps.length > 0) {
@@ -299,6 +305,7 @@ export const checkAndUnlockBadges = async (userId, attemptData) => {
     
     const allBadges = await BadgeNode.find();
     const newlyUnlocked = [];
+    let totalClanXpEarned = 0;
     
     for (const badge of allBadges) {
       // Skip if already earned
@@ -341,8 +348,13 @@ export const checkAndUnlockBadges = async (userId, attemptData) => {
         });
         
         // Award rewards
-        user.xp = (user.xp || 0) + badge.rewards.xp;
+        const xpAwarded = badge.rewards.xp || 0;
+        user.xp = (user.xp || 0) + xpAwarded;
         user.coins = (user.coins || 0) + badge.rewards.coins;
+        
+        if (user.clanId && xpAwarded > 0) {
+            totalClanXpEarned += xpAwarded;
+        }
         
         // Award power-ups
         if (badge.rewards.powerUps && badge.rewards.powerUps.length > 0) {
@@ -371,6 +383,9 @@ export const checkAndUnlockBadges = async (userId, attemptData) => {
     }
     
     if (newlyUnlocked.length > 0) {
+      if (totalClanXpEarned > 0 && user.clanId) {
+          await syncClanXp(userId, totalClanXpEarned, user.clanId);
+      }
       await user.save();
     }
     

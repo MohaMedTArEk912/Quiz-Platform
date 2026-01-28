@@ -28,9 +28,13 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
     const [selectedModule, setSelectedModule] = useState<SkillModule | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [completingSubModule, setCompletingSubModule] = useState<string | null>(null);
+    const [optimisticCompleted, setOptimisticCompleted] = useState<Set<string>>(new Set());
 
     // Sort modules by level/index to ensure correct order
     const sortedModules = [...modules].sort((a, b) => (a.level || 0) - (b.level || 0));
+
+    // Module completion requires 70% minimum on ALL quizzes
+    const MODULE_PASSING_THRESHOLD = 70;
 
     const computeStatus = (module: SkillModule) => {
         // Default to locked
@@ -50,7 +54,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
         if (subModules.length > 0) {
             subModules.forEach(sub => {
                 const subKey = `${module.moduleId}:${sub.id}`;
-                if (userProgress?.completedSubModules?.includes(subKey)) {
+                if (userProgress?.completedSubModules?.includes(subKey) || optimisticCompleted.has(subKey)) {
                     completedItems++;
                 } else {
                     allSubsComplete = false;
@@ -63,7 +67,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
         if (moduleQuizzes.length > 0) {
             moduleQuizzes.forEach(q => {
                 const qId = q.id || q._id;
-                const hasPassed = attempts.some(a => a.quizId === qId && a.percentage >= (q.passingScore || 60));
+                const hasPassed = attempts.some(a => a.quizId === qId && a.percentage >= MODULE_PASSING_THRESHOLD);
                 if (hasPassed) {
                     completedItems++;
                 } else {
@@ -110,11 +114,11 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                     if (prevModuleQuizzes.length > 0) {
                         prevAllQuizzesPassed = prevModuleQuizzes.every(q => {
                             const qId = q.id || q._id;
-                            return attempts.some(a => a.quizId === qId && a.percentage >= (q.passingScore || 60));
+                            return attempts.some(a => a.quizId === qId && a.percentage >= MODULE_PASSING_THRESHOLD);
                         });
                     }
                     const prevIsComplete = prevAllSubsComplete && prevAllQuizzesPassed && (prevModuleQuizzes.length > 0 || prevSubModules.length > 0);
-                    
+
                     if (userProgress.completedModules?.includes(prevModule.moduleId) || prevIsComplete) {
                         // Auto-unlock if previous is completed
                         status = 'available';
@@ -155,11 +159,20 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
 
         if (isCompleted) return; // One-way completion for now
 
+        // Optimistic Update
+        setOptimisticCompleted(prev => new Set(prev).add(subModuleKey));
+
         setCompletingSubModule(subModuleId);
         try {
             await onSubModuleComplete(selectedModule.moduleId, subModuleId);
         } catch (error) {
             console.error("Failed to complete sub-module", error);
+            // Revert optimistic update on failure
+            setOptimisticCompleted(prev => {
+                const next = new Set(prev);
+                next.delete(subModuleKey);
+                return next;
+            });
         } finally {
             setCompletingSubModule(null);
         }
@@ -249,10 +262,10 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                         {/* Status & Progress Circle */}
                                         <div className="flex items-center justify-between mb-6">
                                             <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${isLocked
-                                                    ? 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-gray-500 border-gray-300 dark:border-transparent'
-                                                    : isCompleted
-                                                        ? 'bg-emerald-500/10 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 dark:border-emerald-500/20'
-                                                        : 'bg-indigo-500/10 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 dark:border-indigo-500/20 animate-pulse'
+                                                ? 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-gray-500 border-gray-300 dark:border-transparent'
+                                                : isCompleted
+                                                    ? 'bg-emerald-500/10 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 dark:border-emerald-500/20'
+                                                    : 'bg-indigo-500/10 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 dark:border-indigo-500/20 animate-pulse'
                                                 }`}>
                                                 {isLocked ? 'Locked' : isCompleted ? 'Completed' : 'Available'}
                                             </span>
@@ -389,7 +402,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
 
                                             {selectedModule.subModules?.map((sub) => {
                                                 const subKey = `${selectedModule.moduleId}:${sub.id}`;
-                                                const isSubCompleted = userProgress?.completedSubModules?.includes(subKey);
+                                                const isSubCompleted = userProgress?.completedSubModules?.includes(subKey) || optimisticCompleted.has(subKey);
                                                 const isProcessing = completingSubModule === sub.id;
 
                                                 return (
@@ -448,14 +461,31 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                         {/* Quizzes Section */}
                                         {moduleQuizzes.length > 0 && (
                                             <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-white/5">
-                                                <h3 className="text-sm font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                                    <GraduationCap className="w-4 h-4" /> Module Quizzes
-                                                </h3>
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="text-sm font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                                        <GraduationCap className="w-4 h-4" /> Module Quizzes
+                                                    </h3>
+                                                </div>
+
+                                                {/* 70% Requirement Alert */}
+                                                <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                                                    <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                        <Target className="w-4 h-4 text-amber-500" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                                                            70% Required to Pass
+                                                        </p>
+                                                        <p className="text-xs text-amber-600/80 dark:text-amber-400/70 mt-0.5">
+                                                            You must score at least 70% on all quizzes to complete this module and unlock the next one.
+                                                        </p>
+                                                    </div>
+                                                </div>
 
                                                 {moduleQuizzes.map(quiz => {
                                                     const qId = quiz.id || quiz._id || '';
                                                     const bestAttempt = attempts.filter(a => a.quizId === qId).sort((a, b) => b.percentage - a.percentage)[0];
-                                                    const isPassed = bestAttempt && bestAttempt.percentage >= (quiz.passingScore || 60);
+                                                    const isPassed = bestAttempt && bestAttempt.percentage >= MODULE_PASSING_THRESHOLD;
 
                                                     return (
                                                         <div
@@ -476,12 +506,19 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
 
                                                             <div className="flex-1">
                                                                 <h4 className="font-bold text-gray-900 dark:text-white mb-0.5">{quiz.title}</h4>
-                                                                <div className="flex items-center gap-3 text-xs font-medium text-gray-500 dark:text-gray-500">
+                                                                <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-gray-500 dark:text-gray-500">
                                                                     <span>{quiz.questions?.length} Questions</span>
                                                                     {bestAttempt && (
-                                                                        <span className={isPassed ? 'text-emerald-500' : 'text-orange-500'}>
-                                                                            Best: {bestAttempt.percentage}%
-                                                                        </span>
+                                                                        <>
+                                                                            <span className={isPassed ? 'text-emerald-500' : 'text-orange-500'}>
+                                                                                Best: {bestAttempt.percentage}%
+                                                                            </span>
+                                                                            {!isPassed && bestAttempt.percentage > 0 && (
+                                                                                <span className="text-red-500 font-bold">
+                                                                                    Need {MODULE_PASSING_THRESHOLD - bestAttempt.percentage}% more to pass
+                                                                                </span>
+                                                                            )}
+                                                                        </>
                                                                     )}
                                                                 </div>
                                                             </div>

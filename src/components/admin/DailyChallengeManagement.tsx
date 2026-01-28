@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, Plus, Edit2, Trash2, RefreshCw, Code2, Calendar } from 'lucide-react';
+import { Zap, Plus, Edit2, Trash2, RefreshCw, Code2, Calendar, Sparkles } from 'lucide-react';
 import Modal from '../common/Modal';
-import type { UserData, Quiz, BadgeDefinition, CompilerQuestion } from '../../types/index.ts';
+import type { UserData, Quiz, CompilerQuestion, ShopItem } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 import CompilerQuestionManagement from './CompilerQuestionManagement';
 
@@ -16,8 +16,9 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
     const [dailyChallenges, setDailyChallenges] = useState<any[]>([]);
     const [compilerQuestions, setCompilerQuestions] = useState<CompilerQuestion[]>([]);
     const [editingChallenge, setEditingChallenge] = useState<any | null>(null);
-    const [badges, setBadges] = useState<BadgeDefinition[]>([]);
+    const [shopItems, setShopItems] = useState<ShopItem[]>([]);
     const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'reschedule', item: any } | null>(null);
+    const [isAutoScheduling, setIsAutoScheduling] = useState(false);
 
     useEffect(() => {
         if (activeTab === 'schedule') {
@@ -27,19 +28,97 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
 
     const loadData = async () => {
         try {
-            const [challengesData, badgesData, questionsData] = await Promise.all([
+            const [challengesData, itemsData, questionsData] = await Promise.all([
                 api.getDailyChallengesAdmin(currentUser.userId),
-                api.getBadgeNodes(),
+                api.getShopItems(),
                 api.getCompilerQuestionsAdmin(currentUser.userId)
             ]);
             setDailyChallenges(challengesData);
-            setBadges(badgesData);
+            setShopItems(itemsData);
             setCompilerQuestions(questionsData);
         } catch (err) {
             console.error('Failed to load data', err);
             onNotification('error', 'Failed to load daily challenges data');
         }
     }
+
+    const handleAutoScheduleWeek = async () => {
+        if (compilerQuestions.length < 7) {
+            onNotification('error', 'Not enough questions to generate a week (need at least 7)');
+            return;
+        }
+
+        setIsAutoScheduling(true);
+        try {
+            // 1. Determine Start Date (Latest existing date + 1 day, or Tomorrow)
+            let startDate = new Date();
+            startDate.setHours(0, 0, 0, 0);
+            startDate.setDate(startDate.getDate() + 1); // Default tomorrow
+
+            const existingDates = dailyChallenges.map(c => new Date(c.date).getTime());
+            if (existingDates.length > 0) {
+                const maxDate = new Date(Math.max(...existingDates));
+                maxDate.setHours(0, 0, 0, 0);
+                if (maxDate >= startDate) {
+                    startDate = new Date(maxDate);
+                    startDate.setDate(startDate.getDate() + 1);
+                }
+            }
+
+            // 2. Schedule 7 days
+            let scheduledCount = 0;
+            const tempUsedQuestionIds = new Set(dailyChallenges.map(c => c.compilerQuestionId));
+
+            for (let i = 0; i < 7; i++) {
+                const currentDate = new Date(startDate);
+                currentDate.setDate(startDate.getDate() + i);
+
+                // Filter available questions (ensure uniqueness across recent history + current batch)
+                // Constraints: Not used in existing challenges (simple) OR not used in last X days.
+                // Simpler approach: Prefer questions appearing LEAST recently.
+                // For "no duplicate week twice", we ensure distinct questions from previous week.
+
+                // Filter out questions used in the last 14 days to be safe and diverse
+                const recentCutoff = new Date(currentDate);
+                recentCutoff.setDate(recentCutoff.getDate() - 14);
+
+                const recentQuestionIds = dailyChallenges
+                    .filter(c => new Date(c.date) > recentCutoff)
+                    .map(c => c.compilerQuestionId);
+
+                const candidates = compilerQuestions.filter(q =>
+                    q.isActive &&
+                    !recentQuestionIds.includes(q.questionId) &&
+                    !tempUsedQuestionIds.has(q.questionId) // Don't reuse within this batch
+                );
+
+                // Fallback if we run out of fresh questions: use any active not in batch
+                const pool = candidates.length > 0 ? candidates : compilerQuestions.filter(q => q.isActive && !tempUsedQuestionIds.has(q.questionId));
+
+                if (pool.length === 0) break; // Should not happen given check above, unless batch exhausts all
+
+                const randomQ = pool[Math.floor(Math.random() * pool.length)];
+                tempUsedQuestionIds.add(randomQ.questionId);
+
+                await api.createDailyChallenge({
+                    date: currentDate.toISOString(),
+                    compilerQuestionId: randomQ.questionId,
+                    rewardCoins: 100,
+                    rewardXP: 50
+                }, currentUser.userId);
+
+                scheduledCount++;
+            }
+
+            onNotification('success', `Scheduled ${scheduledCount} days successfully!`);
+            loadData();
+        } catch (error) {
+            console.error(error);
+            onNotification('error', 'Failed to auto-schedule');
+        } finally {
+            setIsAutoScheduling(false);
+        }
+    };
 
     const handleSaveChallenge = async () => {
         if (!editingChallenge) return;
@@ -145,6 +224,18 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                     </div>
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                        onClick={handleAutoScheduleWeek}
+                        disabled={isAutoScheduling}
+                        className="flex-1 sm:flex-none px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {isAutoScheduling ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Sparkles className="w-4 h-4" />
+                        )}
+                        Auto-Assign Week
+                    </button>
                     <button
                         onClick={() => setActiveTab('questions')}
                         className="flex-1 sm:flex-none px-6 py-3 bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2"
@@ -372,14 +463,17 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                                     />
                                 </div>
                             </div>
+
                             <select
-                                value={editingChallenge?.rewardBadgeId || ''}
-                                onChange={e => editingChallenge && setEditingChallenge({ ...editingChallenge, rewardBadgeId: e.target.value || undefined })}
+                                value={editingChallenge?.rewardItemId || ''}
+                                onChange={e => editingChallenge && setEditingChallenge({ ...editingChallenge, rewardItemId: e.target.value || undefined, rewardBadgeId: undefined })}
                                 className="w-full bg-white dark:bg-[#111219] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all cursor-pointer"
                             >
-                                <option value="">No Badge Bonus</option>
-                                {badges.map(b => (
-                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                <option value="">No Shop Item Bonus</option>
+                                {shopItems.map(item => (
+                                    <option key={item.itemId} value={item.itemId}>
+                                        {item.name} ({item.price} Coins)
+                                    </option>
                                 ))}
                             </select>
                         </div>

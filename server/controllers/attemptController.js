@@ -4,6 +4,7 @@ import { Quiz } from '../models/Quiz.js';
 import { SkillTrack } from '../models/SkillTrack.js';
 import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
 import { updateSkillTrackProgress } from '../services/progressService.js';
+import { syncClanXp } from '../utils/xpSync.js';
 
 import { checkAndUnlockBadges } from './badgeNodeController.js';
 
@@ -62,10 +63,16 @@ export const saveAttempt = async (req, res) => {
 
             // XP Logic
             const baseXp = quiz.xpReward || 50;
+            let xpEarned = 0;
              if (attemptData.passed) {
-                user.xp = (user.xp || 0) + baseXp;
+                xpEarned = baseXp;
             } else {
-                user.xp = (user.xp || 0) + 10; // Participation XP
+                xpEarned = 10; // Participation XP
+            }
+            user.xp = (user.xp || 0) + xpEarned;
+
+            if (user.clanId) {
+                await syncClanXp(userId, xpEarned, user.clanId);
             }
         } else {
             // Default fallbacks if quiz not found
@@ -190,13 +197,16 @@ const updateRoadmapProgress = async (userId, quizId) => {
                 const uniqueQuizIds = Array.from(allQuizIds);
 
                 let allQuizzesPassed = true;
+                // Module completion requires 70% minimum on ALL quizzes
+                const MODULE_PASSING_THRESHOLD = 70;
+                
                 if (uniqueQuizIds.length > 0) {
-                    // Count how many of these quizzes are passed
+                    // Count how many of these quizzes have at least 70% score
                     const passedAttempts = await Attempt.find({
                         userId,
                         quizId: { $in: uniqueQuizIds },
-                        passed: true
-                    }).select('quizId').lean();
+                        percentage: { $gte: MODULE_PASSING_THRESHOLD }
+                    }).select('quizId percentage').lean();
                     
                     const passedQuizIds = new Set(passedAttempts.map(a => a.quizId));
                     allQuizzesPassed = uniqueQuizIds.every(id => passedQuizIds.has(id));
