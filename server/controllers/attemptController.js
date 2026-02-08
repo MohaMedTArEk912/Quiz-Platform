@@ -38,8 +38,6 @@ export const saveAttempt = async (req, res) => {
     const newAttempt = new Attempt(attemptData);
     await newAttempt.save();
 
-    let newBadges = [];
-
     // UPDATE USER STATS & REWARDS
     if (user) {
         user.totalAttempts = (user.totalAttempts || 0) + 1;
@@ -85,16 +83,19 @@ export const saveAttempt = async (req, res) => {
         
         await user.save();
 
-        // Check for new badges
-        newBadges = await checkAndUnlockBadges(userId, attemptData);
+        // Send response IMMEDIATELY — don't make the user wait for badges/roadmap
+        res.status(201).json({ ...newAttempt.toObject(), newBadges: [] });
 
-        // Update Roadmap Progress (Unlock modules)
-        if (attemptData.passed) {
-            await updateRoadmapProgress(userId, attemptData.quizId);
-        }
+        // Fire-and-forget: badge checks + roadmap progress in background
+        Promise.all([
+            checkAndUnlockBadges(userId, attemptData),
+            attemptData.passed ? updateRoadmapProgress(userId, attemptData.quizId) : Promise.resolve()
+        ]).catch(err => console.error('Post-submission background processing error:', err));
+
+        return; // Early return — response already sent
     }
 
-    res.status(201).json({ ...newAttempt.toObject(), newBadges });
+    res.status(201).json({ ...newAttempt.toObject(), newBadges: [] });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

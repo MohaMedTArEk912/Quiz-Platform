@@ -300,32 +300,36 @@ export const manuallyUnlockBadge = async (req, res) => {
 // Check and auto-unlock badges after quiz attempt
 export const checkAndUnlockBadges = async (userId, attemptData) => {
   try {
-    const user = await User.findOne({ userId });
+    // Batch load: fetch user, all badges, and all badge trees in parallel
+    const [user, allBadges, allTrees] = await Promise.all([
+      User.findOne({ userId }),
+      BadgeNode.find().lean(),
+      BadgeTree.find().lean()
+    ]);
     if (!user) return [];
     
-    const allBadges = await BadgeNode.find();
+    // Build a lookup: badgeId -> prerequisites from all trees
+    const prereqMap = new Map();
+    for (const tree of allTrees) {
+      for (const node of tree.nodes) {
+        if (node.prerequisites && node.prerequisites.length > 0) {
+          const existing = prereqMap.get(node.badgeId) || [];
+          prereqMap.set(node.badgeId, [...existing, ...node.prerequisites]);
+        }
+      }
+    }
+
+    const earnedBadgeIds = new Set(user.badges.map(b => b.id));
     const newlyUnlocked = [];
     let totalClanXpEarned = 0;
     
     for (const badge of allBadges) {
       // Skip if already earned
-      if (user.badges.some(b => b.id === badge.badgeId)) continue;
+      if (earnedBadgeIds.has(badge.badgeId)) continue;
       
-      // Check prerequisites
-      const trees = await BadgeTree.find({ 'nodes.badgeId': badge.badgeId });
-      let hasPrereqs = true;
-      
-      for (const tree of trees) {
-        const node = tree.nodes.find(n => n.badgeId === badge.badgeId);
-        if (node.prerequisites && node.prerequisites.length > 0) {
-          hasPrereqs = node.prerequisites.every(prereqId =>
-            user.badges.some(b => b.id === prereqId)
-          );
-          if (!hasPrereqs) break;
-        }
-      }
-      
-      if (!hasPrereqs) continue;
+      // Check prerequisites using pre-built map (no DB queries)
+      const prereqs = prereqMap.get(badge.badgeId) || [];
+      if (prereqs.length > 0 && !prereqs.every(pid => earnedBadgeIds.has(pid))) continue;
       
       // Check all criteria
       let meetsAllCriteria = true;
@@ -339,18 +343,20 @@ export const checkAndUnlockBadges = async (userId, attemptData) => {
       
       if (meetsAllCriteria) {
         // Unlock badge
-        user.badges.push({
+        const newBadge = {
           id: badge.badgeId,
           name: badge.name,
           description: badge.description,
           icon: badge.icon,
           dateEarned: new Date()
-        });
+        };
+        user.badges.push(newBadge);
+        earnedBadgeIds.add(badge.badgeId);
         
         // Award rewards
         const xpAwarded = badge.rewards.xp || 0;
         user.xp = (user.xp || 0) + xpAwarded;
-        user.coins = (user.coins || 0) + badge.rewards.coins;
+        user.coins = (user.coins || 0) + (badge.rewards.coins || 0);
         
         if (user.clanId && xpAwarded > 0) {
             totalClanXpEarned += xpAwarded;
@@ -383,10 +389,11 @@ export const checkAndUnlockBadges = async (userId, attemptData) => {
     }
     
     if (newlyUnlocked.length > 0) {
+      const saveOps = [user.save()];
       if (totalClanXpEarned > 0 && user.clanId) {
-          await syncClanXp(userId, totalClanXpEarned, user.clanId);
+          saveOps.push(syncClanXp(userId, totalClanXpEarned, user.clanId));
       }
-      await user.save();
+      await Promise.all(saveOps);
     }
     
     return newlyUnlocked;

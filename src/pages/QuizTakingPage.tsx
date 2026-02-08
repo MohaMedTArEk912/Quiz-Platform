@@ -6,12 +6,12 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import type { AttemptData } from '../lib/api';
 import type { QuizResult } from '../types';
-import { calculateLevel, checkNewBadges } from '../lib/gamification';
+import { calculateLevel } from '../lib/gamification';
 
 
 const QuizTakingPage: React.FC = () => {
     const { quizId: encodedQuizId } = useParams<{ quizId: string }>();
-    const { availableQuizzes, userWithRank, allBadges, refreshData } = useData();
+    const { availableQuizzes, userWithRank, refreshData } = useData();
     const { currentUser, updateUser } = useAuth();
     const navigate = useNavigate();
 
@@ -68,140 +68,39 @@ const QuizTakingPage: React.FC = () => {
                 powerUpsUsed: result.powerUpsUsed || []
             };
 
-            // 1. Save Attempt
-            await api.saveAttempt(attempt);
+            // 1. Save Attempt (backend handles XP, coins, badges, roadmap progress)
+            const savedAttempt = await api.saveAttempt(attempt);
 
-            // 2. Calculate Gamification
-            let xpGained = 0;
-            let coinsGained = 0;
+            // 2. Optimistic local state update for instant feedback
+            const xpGained = result.passed ? (quiz.xpReward ?? 50) : Math.floor((quiz.xpReward ?? 50) * 0.1);
+            const coinsGained = result.passed ? (quiz.coinsReward ?? 10) : 0;
+            const newXP = (currentUser.xp || 0) + xpGained;
+            const newCoins = (currentUser.coins || 0) + coinsGained;
 
-            if (result.passed) {
-                xpGained = quiz.xpReward ?? 50;
-                coinsGained = quiz.coinsReward ?? 10;
-            } else {
-                // Optional: Give simplified participation XP (e.g. 10% of reward) or 0
-                xpGained = Math.floor((quiz.xpReward ?? 50) * 0.1);
-            }
-
-            const currentXP = currentUser.xp || 0;
-            const newXP = currentXP + xpGained;
-            const newLevel = calculateLevel(newXP);
-
-            // Coins logic
-            const currentCoins = currentUser.coins || 0;
-            const newCoins = currentCoins + coinsGained;
-
-            // Check badges
-            const tempUserForBadges = {
-                ...currentUser,
+            const userUpdates = {
                 totalScore: (currentUser.totalScore || 0) + result.score,
                 totalAttempts: (currentUser.totalAttempts || 0) + 1,
                 totalTime: (currentUser.totalTime || 0) + (result.timeTaken || 0),
                 xp: newXP,
-                level: newLevel,
-                coins: newCoins
-            };
-
-            const newBadges = checkNewBadges(tempUserForBadges, allBadges, {
-                score: result.score,
-                maxScore: quiz.questions.reduce((sum, q) => sum + q.points, 0),
-                timeSpent: result.timeTaken || 0
-            });
-
-            // 3. Update User - Include ALL user fields to prevent data loss
-            const userUpdates = {
-                totalScore: tempUserForBadges.totalScore,
-                totalAttempts: tempUserForBadges.totalAttempts,
-                totalTime: tempUserForBadges.totalTime,
-                xp: newXP,
-                level: newLevel,
-                badges: [...(currentUser.badges || []), ...newBadges],
+                level: calculateLevel(newXP),
                 coins: newCoins,
-                // Preserve existing data that shouldn't change
-                inventory: currentUser.inventory,
-                powerUps: currentUser.powerUps,
-                streak: currentUser.streak,
-                friends: currentUser.friends,
-                rank: currentUser.rank
+                badges: [
+                    ...(currentUser.badges || []),
+                    ...(savedAttempt.newBadges || [])
+                ],
             };
-
-            // Update local state first
             updateUser(userUpdates);
 
-            // Save to backend
-            await api.updateUser(currentUser.userId, userUpdates);
-
-            // 4. Unlock next module in skill track if quiz passed
-            if (result.passed) {
-                try {
-                    // Find which subject and skill track this quiz belongs to
-                    const subject = quiz.subjectId;
-                    if (subject) {
-                        // Get all skill tracks to find the one for this subject
-                        const allTracks = await api.getSkillTracks();
-                        const trackForSubject = allTracks.find((t: any) => t.subjectId === subject);
-                        
-                        if (trackForSubject) {
-                            // Find which module contains this quiz
-                            const currentModuleIndex = trackForSubject.modules.findIndex((m: any) =>
-                                m.quizIds?.includes(resolvedQuizId)
-                            );
-                            
-                            if (currentModuleIndex >= 0) {
-                                // Mark current module as completed
-                                const currentModuleId = trackForSubject.modules[currentModuleIndex].moduleId;
-                                
-                                // Get current progress
-                                const currentProgress = await api.getUserRoadmapProgress(currentUser.userId, trackForSubject.trackId, currentUser.userId);
-                                
-                                const completedModules = new Set(currentProgress?.completedModules || []);
-                                const unlockedModules = new Set(currentProgress?.unlockedModules || []);
-                                
-                                // Add current module to completed
-                                completedModules.add(currentModuleId);
-                                
-                                // Unlock next module if it exists
-                                if (currentModuleIndex + 1 < trackForSubject.modules.length) {
-                                    const nextModuleId = trackForSubject.modules[currentModuleIndex + 1].moduleId;
-                                    unlockedModules.add(nextModuleId);
-                                }
-                                
-                                // Save updated progress
-                                await api.updateUserRoadmapProgress(
-                                    currentUser.userId,
-                                    trackForSubject.trackId,
-                                    {
-                                        completedModules: Array.from(completedModules) as string[],
-                                        unlockedModules: Array.from(unlockedModules) as string[]
-                                    },
-                                    currentUser.userId
-                                );
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Failed to unlock next module:', error);
-                    // Don't fail the quiz completion if this fails
-                }
-            }
-
-            // Fetch fresh user data from backend to ensure we have the latest
-            try {
-                const freshUserData = await api.verifySession(currentUser.userId);
-                if (freshUserData.valid && freshUserData.user) {
-                    updateUser(freshUserData.user);
-                }
-            } catch (error) {
-                console.error('Failed to fetch fresh user data:', error);
-            }
-
-            // Refresh other data (attempts, leaderboard, etc.)
-            await refreshData();
-
-            // Navigate to results
-            // Pass result state via Location State or Context?
-            // Ideally we pass it in state so we don't need to fetch it or store it in context.
+            // 3. Navigate to results IMMEDIATELY — user sees results fast
             navigate('/results', { state: { result, quizId: resolvedQuizId } });
+
+            // 4. Background sync — refresh data without blocking the user
+            Promise.all([
+                api.verifySession(currentUser.userId).then(fresh => {
+                    if (fresh.valid && fresh.user) updateUser(fresh.user);
+                }),
+                refreshData()
+            ]).catch(err => console.error('Background sync error:', err));
 
         } catch (error) {
             console.error('Error submitting quiz:', error);

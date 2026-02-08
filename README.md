@@ -75,7 +75,7 @@ Complete control over the platform's content and users.
 1. **Clone the repository**
    ```bash
    git clone <your-repo-url>
-   cd Quiz
+  cd "Quiz Platform"
    ```
 
 2. **Install dependencies**
@@ -96,6 +96,15 @@ Complete control over the platform's content and users.
    # Security
    JWT_SECRET=your_super_secret_jwt_key
    JWT_EXPIRE=30d
+
+  # Client / Server URLs
+  CLIENT_URL=http://localhost:5173
+  VITE_API_URL=http://localhost:5000/api
+  VITE_SOCKET_URL=http://localhost:5000
+  VITE_ENABLE_SOCKET=true
+
+  # AI (optional)
+  GROQ_API_KEY=your_groq_api_key
    
    # Optional: Supabase (Legacy/Hybrid support)
    VITE_SUPABASE_URL=your_supabase_url
@@ -110,6 +119,12 @@ Complete control over the platform's content and users.
    - Client: http://localhost:5173
    - Server: http://localhost:5000
 
+  Or run them separately:
+  ```bash
+  npm run client
+  npm run server
+  ```
+
 5. **Build for production**
    ```bash
    npm run build
@@ -118,10 +133,12 @@ Complete control over the platform's content and users.
 ## 📦 Project Structure
 
 ```
-Quiz/
+Quiz Platform/
+├── api/                  # Serverless API (Vercel/Netlify)
+├── netlify/functions/    # Netlify Functions entry
 ├── public/               # Static assets & Legacy JSON quizzes
+├── scripts/              # Build/maintenance scripts
 ├── server/               # Backend Logic (Express + Mongoose)
-│   ├── config/           # DB & App Configuration
 │   ├── controllers/      # Route logic (Auth, Users, Shop, etc.)
 │   ├── middleware/       # Auth, Error handling, Security
 │   ├── models/           # Mongoose Schemas (User, Attempt, Clan)
@@ -131,6 +148,7 @@ Quiz/
 │   ├── pages/            # Main Application Pages
 │   ├── context/          # Global State (Auth, Theme, Notifications)
 │   └── lib/              # Utilities & Third-party configs
+├── uploads/              # Uploaded files (local dev)
 ├── .env                  # Environment variables
 └── package.json
 ```
