@@ -50,4 +50,10 @@ const quizSchema = new mongoose.Schema({
   questions: [questionSchema]
 });
 
+// Performance indexes for frequent filtering and sorting
+quizSchema.index({ category: 1 });
+quizSchema.index({ difficulty: 1 });
+quizSchema.index({ quizType: 1 });
+quizSchema.index({ subjectId: 1 });
+
 export const Quiz = mongoose.model('Quiz', quizSchema);

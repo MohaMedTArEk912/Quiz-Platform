@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://quiz-platform-dun.vercel.app/sitemap.xml

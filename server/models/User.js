@@ -70,5 +70,6 @@ const userSchema = new mongoose.Schema({
 // Indexes to speed up lookups and leaderboards
 userSchema.index({ totalScore: -1 });
 userSchema.index({ name: 1 });
+userSchema.index({ clanId: 1 });
 
 export const User = mongoose.model('User', userSchema);
