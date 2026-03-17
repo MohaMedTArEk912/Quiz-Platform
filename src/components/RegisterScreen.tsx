@@ -52,7 +52,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
             <div className="hidden lg:flex flex-col flex-[1.2] relative z-10 bg-gray-50/50 dark:bg-white/[0.02] backdrop-blur-xl border-r border-gray-200/50 dark:border-white/10 items-center justify-center p-12">
                 <div className="w-full max-w-lg flex flex-col items-center">
                     {/* Character/Mascot Container */}
-                    <div className="w-[400px] h-[400px] flex items-center justify-center mb-8">
+                    <div className="w-[400px] h-[400px] flex items-center justify-center mb-4">
                         <AnimatedCharacter 
                             isEmailFocused={isEmailFocused} 
                             isPasswordFocused={isPasswordFocused} 
@@ -72,8 +72,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
             </div>
 
             {/* Right Column - Form */}
-            <div className="flex-1 flex flex-col justify-center items-center p-6 lg:p-12 relative z-10 w-full animate-in fade-in duration-700">
-                <div className="w-full max-w-md space-y-10">
+            <div className="flex-1 flex flex-col justify-center items-center p-6 lg:p-8 relative z-10 w-full animate-in fade-in duration-700">
+                <div className="w-full max-w-lg space-y-6">
                     {/* Mobile Logo & Heading (Visible only when Mascot is hidden) */}
                     <div className="lg:hidden text-center mb-6">
                         <div className="w-24 h-24 mx-auto mb-6 relative flex items-center justify-center animate-bounce-slow">
@@ -98,7 +98,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2 group">
                             <label className="block text-sm font-bold text-gray-700 dark:text-gray-400 ml-1 transition-colors group-focus-within:text-pink-600">
                                 Full Name
@@ -111,7 +111,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="Your full name"
                                     disabled={isLoading}
-                                    className="w-full pl-14 pr-4 py-4.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 rounded-[1.25rem] text-gray-900 dark:text-white placeholder-gray-400 focus:bg-white dark:focus:bg-[#13141f] focus:outline-none focus:border-pink-500/50 focus:ring-4 focus:ring-pink-500/10 transition-all font-semibold disabled:opacity-50 shadow-sm"
+                                    className="w-full pl-14 pr-4 py-4.5 bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 rounded-[1.25rem] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-pink-500/50 focus:ring-4 focus:ring-pink-500/10 transition-all font-semibold disabled:opacity-50 shadow-sm"
                                     autoComplete="name"
                                     required
                                 />
@@ -132,7 +132,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                                     onBlur={() => setIsEmailFocused(false)}
                                     placeholder="your@email.com"
                                     disabled={isLoading}
-                                    className="w-full pl-14 pr-4 py-4.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 rounded-[1.25rem] text-gray-900 dark:text-white placeholder-gray-400 focus:bg-white dark:focus:bg-[#13141f] focus:outline-none focus:border-pink-500/50 focus:ring-4 focus:ring-pink-500/10 transition-all font-semibold disabled:opacity-50 shadow-sm"
+                                    className="w-full pl-14 pr-4 py-4.5 bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 rounded-[1.25rem] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-pink-500/50 focus:ring-4 focus:ring-pink-500/10 transition-all font-semibold disabled:opacity-50 shadow-sm"
                                     autoComplete="email"
                                     required
                                 />
@@ -153,7 +153,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                                     onBlur={() => setIsPasswordFocused(false)}
                                     placeholder="••••••••"
                                     disabled={isLoading}
-                                    className="w-full pl-14 pr-14 py-4.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 rounded-[1.25rem] text-gray-900 dark:text-white placeholder-gray-400 focus:bg-white dark:focus:bg-[#13141f] focus:outline-none focus:border-pink-500/50 focus:ring-4 focus:ring-pink-500/10 transition-all font-semibold disabled:opacity-50 shadow-sm"
+                                    className="w-full pl-14 pr-14 py-4.5 bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 rounded-[1.25rem] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-pink-500/50 focus:ring-4 focus:ring-pink-500/10 transition-all font-semibold disabled:opacity-50 shadow-sm"
                                     autoComplete="new-password"
                                     required
                                 />
@@ -189,12 +189,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                         </button>
                     </form>
 
-                    <div className="relative py-4">
+                    <div className="relative py-2">
                         <div className="absolute inset-0 flex items-center">
                             <div className="w-full border-t border-gray-100 dark:border-white/5"></div>
-                        </div>
-                        <div className="relative flex justify-center text-xs font-black uppercase tracking-widest">
-                            <span className="px-6 bg-white dark:bg-[#0a0a0b] text-gray-400 dark:text-gray-500">Wait, I have an account!</span>
                         </div>
                     </div>
 
