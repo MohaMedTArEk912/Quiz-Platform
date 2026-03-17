@@ -71,7 +71,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
             </div>
 
             {/* === Top Navigation Bar === */}
-            <header className="flex-none h-16 flex items-center justify-between px-6 bg-white/80 dark:bg-[#0d0d1c]/70 lg:bg-transparent border-b border-gray-100 lg:border-transparent dark:border-white/[0.06] backdrop-blur-xl lg:backdrop-blur-none z-20">
+            <header className="flex-none h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-6 bg-white/80 dark:bg-[#0d0d1c]/70 lg:bg-transparent border-b border-gray-100 lg:border-transparent dark:border-white/[0.06] backdrop-blur-xl lg:backdrop-blur-none z-20 transition-all">
                 <button
                     onClick={onBackToQuizzes}
                     className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/[0.10] border border-transparent dark:border-white/[0.08] transition-all"
@@ -93,7 +93,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
             <div className="flex-1 flex flex-col lg:flex-row w-full overflow-y-auto lg:overflow-hidden z-10">
                 
                 {/* --- LEFT SIDE: Big Score / Result --- */}
-                <div className="w-full lg:w-1/2 flex-none lg:flex-1 h-auto lg:h-full flex flex-col items-center justify-center bg-white/90 dark:bg-[#111827]/90 backdrop-blur-2xl border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-gray-800 p-8 py-16 lg:p-12 relative overflow-hidden">
+                <div className="w-full lg:w-1/2 flex-none lg:flex-1 h-auto lg:h-full flex flex-col items-center justify-center bg-white/90 dark:bg-[#111827]/90 backdrop-blur-2xl border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-gray-800 p-8 py-16 landscape:py-8 lg:p-12 relative overflow-hidden transition-all">
                     
                     {/* Subtle Background pattern for Left Side */}
                     <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
@@ -113,9 +113,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                         </p>
 
                         {/* Huge Circular Score Ring */}
-                        <div className="relative w-64 h-64 mb-10 group">
+                        <div className="relative w-64 h-64 landscape:w-40 landscape:h-40 lg:landscape:w-64 lg:landscape:h-64 mb-10 landscape:mb-6 lg:landscape:mb-10 group transition-all">
                             <div className={`absolute inset-0 rounded-full blur-2xl opacity-20 transition-all duration-1000 ${result.passed ? 'bg-emerald-500 group-hover:opacity-40' : 'bg-fuchsia-500 group-hover:opacity-40'}`} />
-                            <svg className="w-full h-full transform -rotate-90 relative z-10">
+                            <svg className="w-full h-full transform -rotate-90 relative z-10" viewBox="0 0 256 256">
                                 <circle cx="128" cy="128" r="116" stroke="currentColor" strokeWidth="16" fill="transparent" className="text-gray-100 dark:text-white/[0.03]" />
                                 <circle
                                     cx="128" cy="128" r="116" stroke="currentColor" strokeWidth="16" fill="transparent"
@@ -126,10 +126,10 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                                 />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-                                <span className={`text-6xl font-black ${result.passed ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-fuchsia-400'}`}>
-                                    {Math.round(result.percentage)}<span className="text-3xl opacity-60">%</span>
+                                <span className={`text-6xl landscape:text-4xl lg:landscape:text-6xl font-black ${result.passed ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-fuchsia-400'}`}>
+                                    {Math.round(result.percentage)}<span className="text-3xl landscape:text-xl lg:landscape:text-3xl opacity-60">%</span>
                                 </span>
-                                <span className="text-sm font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mt-1">Score</span>
+                                <span className="text-sm landscape:text-[10px] lg:landscape:text-sm font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mt-1">Score</span>
                             </div>
                         </div>
 
@@ -138,7 +138,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
 
 
                 {/* --- RIGHT SIDE: Detailed Stats & Actions --- */}
-                <div className="w-full lg:w-1/2 flex-none lg:flex-1 h-auto lg:h-full flex flex-col bg-transparent lg:bg-white/40 dark:bg-[#0b0f19] overflow-visible lg:overflow-y-auto no-scrollbar relative p-8 lg:p-16">
+                <div className="w-full lg:w-1/2 flex-none lg:flex-1 h-auto lg:h-full flex flex-col bg-transparent lg:bg-white/40 dark:bg-[#0b0f19] overflow-visible lg:overflow-y-auto no-scrollbar relative p-8 landscape:p-6 lg:p-16 transition-all">
                     
                     <div className="max-w-xl w-full mx-auto flex flex-col gap-8 animate-in slide-in-from-right-8 duration-500 delay-150 fill-mode-both">
                         
@@ -148,10 +148,10 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                             </h3>
                             
                             {/* Stats Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 landscape:grid-cols-2 gap-4 landscape:gap-3">
                                 
                                 {/* Time Card */}
-                                <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 flex items-center gap-5 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-white/[0.08] rounded-3xl p-6 flex items-center gap-5 shadow-sm hover:shadow-md transition-all">
                                     <div className="p-4 bg-blue-50 dark:bg-blue-500/10 rounded-2xl">
                                         <Clock className="w-6 h-6 text-blue-500 dark:text-blue-400" />
                                     </div>
@@ -162,7 +162,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                                 </div>
 
                                 {/* Total Points */}
-                                <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 flex items-center gap-5 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-white/[0.08] rounded-3xl p-6 flex items-center gap-5 shadow-sm hover:shadow-md transition-all">
                                     <div className="p-4 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl">
                                         <Target className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
                                     </div>
@@ -173,7 +173,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                                 </div>
                                 
                                 {/* Correct Card */}
-                                <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                                <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-white/[0.08] rounded-3xl p-6 flex flex-col shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/5 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-150" />
                                     <div className="flex items-center gap-2 mb-3 relative z-10">
                                         <CheckCircle className="w-5 h-5 text-green-500 dark:text-emerald-500" />
@@ -183,7 +183,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                                 </div>
 
                                 {/* Incorrect Card */}
-                                <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                                <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-white/[0.08] rounded-3xl p-6 flex flex-col shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-150" />
                                     <div className="flex items-center gap-2 mb-3 relative z-10">
                                         <XCircle className="w-5 h-5 text-red-500 dark:text-fuchsia-500" />
@@ -198,7 +198,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                         <div className="flex-1 min-h-[20px]" /> {/* Spacer */}
                         
                         {/* Action Buttons */}
-                        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+                        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8 landscape:mb-4 lg:landscape:mb-8 transition-all">
                             <button
                                 onClick={onRetake}
                                 className="w-full sm:w-1/2 group flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-all font-black text-gray-700 dark:text-gray-200 shadow-sm"
@@ -214,10 +214,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                             </button>
                         </div>
 
-                        {/* --- REVIEW SECTION TOGGLE --- */}
                         <button
                             onClick={() => setShowReview(!showReview)}
-                            className="w-full flex items-center justify-between p-6 bg-white dark:bg-[#161b22] border border-gray-200 dark:border-gray-800 rounded-3xl shadow-sm hover:shadow-md transition-all group"
+                            className="w-full flex items-center justify-between p-6 landscape:p-4 lg:landscape:p-6 bg-white dark:bg-[#161b22] border border-gray-200 dark:border-gray-800 rounded-3xl shadow-sm hover:shadow-md transition-all group"
                         >
                             <div className="flex items-center gap-3">
                                 <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
@@ -251,7 +250,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                                                     )}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="font-bold text-gray-800 dark:text-gray-200 mb-3 text-lg leading-snug">
+                                                    <p className="font-bold text-gray-800 dark:text-gray-200 mb-3 landscape:mb-1.5 lg:landscape:mb-3 text-lg landscape:text-base lg:landscape:text-lg leading-snug">
                                                         <span className="opacity-50 mr-2">{idx + 1}.</span> {q.question}
                                                     </p>
                                                     
@@ -261,7 +260,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                                                         </pre>
                                                     )}
 
-                                                    <div className="flex flex-col gap-2 mt-4 bg-white/50 dark:bg-black/20 p-4 rounded-2xl border border-gray-100 dark:border-white/5">
+                                                    <div className="flex flex-col gap-2 mt-4 landscape:mt-2 lg:landscape:mt-4 bg-white/50 dark:bg-black/20 p-4 landscape:p-3 lg:landscape:p-4 rounded-2xl border border-gray-100 dark:border-white/5 transition-all">
                                                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                                                             <span className="text-xs font-bold uppercase tracking-widest text-gray-400 w-24">Your Answer</span>
                                                             <span className={`font-semibold ${isCorrect ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-fuchsia-400'}`}>

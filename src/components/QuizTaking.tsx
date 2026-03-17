@@ -59,6 +59,18 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [shakeError, setShakeError] = useState(false);
+    const [isMobileDevice, setIsMobileDevice] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            const isSmallHeight = window.innerHeight < 500;
+            setIsMobileDevice(isTouch || isSmallHeight);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     // Delayed Validation / Retry Mode State
     const [retryMode, setRetryMode] = useState(false);
@@ -575,14 +587,14 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
             {/* --- TOP BAR (Full width) --- */}
             {!embedded && (
-                <header className="flex-none h-16 flex items-center justify-between px-6 bg-white dark:bg-[#0d0d1c]/70 border-b border-gray-200 dark:border-white/[0.06] backdrop-blur-xl z-20">
-                    <div className="flex items-center gap-4">
-                        <button onClick={onBack} className="flex items-center gap-2 p-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.10] text-gray-600 dark:text-slate-400 transition-all">
-                            <ArrowLeft className="w-5 h-5" />
+                <header className="flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 bg-white dark:bg-[#0d0d1c]/80 border-b border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-20 shadow-sm">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        <button onClick={onBack} className="flex items-center gap-2 p-1.5 sm:p-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-gray-600 dark:text-slate-400 transition-all border border-gray-200 dark:border-white/10">
+                            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
-                        <div className="hidden md:flex flex-col">
-                            <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate max-w-xs px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg border border-indigo-100 dark:border-indigo-500/20">
-                                {retryMode ? '⚠ Retry Mode' : quiz.title}
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[10px] sm:text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate max-w-[120px] sm:max-w-xs px-2 sm:px-3 py-1 sm:py-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg border border-indigo-100 dark:border-indigo-500/20">
+                                {retryMode ? '⚠ Retry' : quiz.title}
                             </span>
                         </div>
                     </div>
@@ -616,29 +628,30 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             )}
 
             {/* --- HORIZONTAL SPLIT LAYOUT --- */}
-            <div className={`flex-1 flex flex-col lg:flex-row w-full overflow-hidden ${embedded ? '' : 'z-10'}`}>
-                
-                {/* --- LEFT SIDE: Question Context --- */}
-                <div className="w-full lg:w-1/2 h-full flex flex-col bg-white/90 dark:bg-[#111827]/90 backdrop-blur-2xl border-r border-gray-200 dark:border-gray-800 relative z-10 overflow-hidden">
+            <div className={`flex-1 flex flex-col landscape:flex-row lg:flex-row w-full ${embedded ? '' : 'z-10'} overflow-y-auto landscape:overflow-hidden lg:overflow-hidden`}>
+                      {/* --- LEFT SIDE: Question Context --- */}
+                <div className="w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col bg-white/95 dark:bg-[#111827]/95 backdrop-blur-3xl border-r border-gray-200 dark:border-gray-800/50 relative z-20 sticky top-0 landscape:relative landscape:top-auto landscape:overflow-hidden shadow-xl landscape:shadow-2xl">
                     
                     {/* Progress Header */}
-                    <div className="flex items-center justify-between p-6 pb-2">
-                        <div className="font-bold text-gray-500 dark:text-gray-400">
-                            Question {currentQuestion + 1} <span className="opacity-50">/ {retryMode ? wrongQuestionIndices.length : quiz.questions.length}</span>
+                    <div className="flex items-center justify-between p-4 px-5 sm:p-6 landscape:p-2 landscape:px-5 pb-2">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest">Question</span>
+                            <span className="text-base sm:text-lg landscape:text-sm lg:landscape:text-lg font-black text-gray-900 dark:text-white">{currentQuestion + 1} / {quiz.questions.length}</span>
                         </div>
-                        <div className="font-black text-indigo-600 dark:text-indigo-400">{Math.round(progressPercentage)}%</div>
+                        <div className="font-black text-sm sm:text-base landscape:text-xs lg:landscape:text-base text-indigo-600 dark:text-indigo-400">{Math.round(progressPercentage)}%</div>
                     </div>
+
                     {/* Progress Bar Line */}
-                    <div className="px-6 pb-6 border-b border-gray-100 dark:border-gray-800/50">
-                        <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden flex shadow-inner">
+                    <div className="px-5 sm:px-6 pb-3 sm:pb-6 landscape:pb-1 lg:landscape:pb-6 border-b border-gray-100 dark:border-gray-800/50">
+                        <div className="h-1 sm:h-2 landscape:h-1 lg:landscape:h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden flex shadow-inner">
                             <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
                         </div>
                     </div>
 
                     {/* Question Content */}
-                    <div className={`flex-1 overflow-y-auto px-6 lg:px-12 pb-12 flex flex-col pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
+                    <div className={`flex-none landscape:flex-1 landscape:overflow-y-auto px-5 sm:px-8 lg:px-12 pb-8 landscape:pb-4 flex flex-col pt-4 sm:pt-8 landscape:pt-3 lg:landscape:pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
                         
-                        <h2 className="text-2xl lg:text-[32px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight mb-8">
+                        <h2 className="text-xl sm:text-2xl lg:text-[32px] landscape:text-base lg:landscape:text-[32px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight mb-4 sm:mb-8 landscape:mb-2 lg:landscape:mb-8">
                             {q.question}
                         </h2>
 
@@ -709,8 +722,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 </div>
 
                 {/* --- RIGHT SIDE: Answer Options --- */}
-                <div className="w-full lg:w-1/2 h-full flex flex-col bg-transparent lg:bg-white/40 dark:bg-[#0b0f19] relative">
-                    <div className="flex-1 overflow-y-auto p-6 lg:p-12 pb-32 flex flex-col justify-center gap-4 no-scrollbar">
+                <div className="w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col bg-transparent lg:bg-white/40 dark:bg-[#0b0f19] relative z-10">
+                    <div className="flex-1 landscape:overflow-y-auto p-5 sm:p-8 lg:p-12 pt-10 sm:pt-12 landscape:pt-6 pb-32 sm:pb-40 landscape:pb-32 flex flex-col justify-start lg:justify-center gap-3 sm:gap-4 no-scrollbar">
                         {q.isCompiler ? (
                             <Suspense fallback={<div className="animate-spin w-8 h-8 border-4 border-indigo-500 rounded-full border-t-transparent mx-auto"></div>}>
                                 <div className="h-[400px] rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-xl bg-white dark:bg-black">
@@ -738,9 +751,9 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 const label = letters[visualIndex] || (visualIndex + 1);
 
                                 // Dynamic classes based on state
-                                let baseClass = "group relative flex items-center p-5 lg:p-6 rounded-2xl cursor-pointer transition-all duration-300 w-full text-left";
-                                let stateClass = "bg-white dark:bg-[#1f2937] border-2 border-transparent lg:shadow-[0_4px_16px_rgba(0,0,0,0.03)] dark:border-[#374151] hover:border-indigo-400 lg:hover:border-transparent lg:hover:ring-2 lg:hover:ring-indigo-400 dark:hover:border-indigo-500 hover:shadow-lg hover:-translate-y-1";
-                                let textClass = "text-gray-800 dark:text-gray-200 font-medium";
+                                let baseClass = "group relative flex items-center p-4 sm:p-5 lg:p-6 rounded-[1.25rem] cursor-pointer transition-all duration-300 w-full text-left border-2 shadow-sm font-semibold mb-1";
+                                let stateClass = "bg-white dark:bg-[#1f2937] border-gray-100 dark:border-[#374151] hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]";
+                                let textClass = "text-gray-800 dark:text-gray-200";
                                 let badgeClass = "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 group-hover:text-indigo-600 dark:group-hover:text-indigo-400";
                                 
                                 if (showSuccess) {
@@ -781,13 +794,15 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     </div>
 
                     {/* Bottom Action Footer Overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8 bg-gradient-to-t from-gray-50 via-gray-50 dark:from-[#0b0f19] dark:via-[#0b0f19] to-transparent pt-12 flex items-center justify-between z-10 w-full pointer-events-none">
-                        <div className="hidden sm:flex text-gray-500 dark:text-gray-500 font-medium items-center gap-2 bg-white/80 dark:bg-black/50 backdrop-blur-md px-4 py-2 rounded-xl pointer-events-auto border border-gray-200/50 dark:border-white/10">
-                            <span className="hidden md:inline px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">1-4</span>
-                            <span className="hidden md:inline px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">A-D</span> 
-                            to select, 
-                            <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">Enter ↵</span> to advance
-                        </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-6 landscape:p-4 lg:p-8 bg-gradient-to-t from-gray-50 via-gray-50 dark:from-[#0b0f19] dark:via-[#0b0f19] to-transparent pt-12 landscape:pt-8 lg:landscape:pt-12 flex items-center justify-between z-10 w-full pointer-events-none">
+                        {!isMobileDevice && (
+                            <div className="hidden lg:flex text-gray-500 dark:text-gray-500 font-medium items-center gap-2 bg-white/80 dark:bg-black/50 backdrop-blur-md px-4 py-2 rounded-xl pointer-events-auto border border-gray-200/50 dark:border-white/10">
+                                <span className="hidden md:inline px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">1-4</span>
+                                <span className="hidden md:inline px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">A-D</span> 
+                                to select, 
+                                <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">Enter ↵</span> to advance
+                            </div>
+                        )}
                         
                         <div className="flex w-full sm:w-auto gap-4 pointer-events-auto ml-auto">
                             {!isLastQuestion && (
