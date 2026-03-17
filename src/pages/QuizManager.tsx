@@ -16,6 +16,7 @@ import StackEditModal from '../components/stacks/StackEditModal';
 import StackDeleteModal from '../components/stacks/StackDeleteModal';
 import QuizEditorModal from '../components/quizzes/QuizEditorModal';
 import DeleteQuizModal from '../components/quizzes/DeleteQuizModal';
+import ShareQuizModal from '../components/quizzes/ShareQuizModal';
 
 interface QuizManagerProps {
     quizzes: Quiz[];
@@ -51,6 +52,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
     const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null);
     const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
     const [deleteQuizConfirmation, setDeleteQuizConfirmation] = useState<{ isOpen: boolean; id: string } | null>(null);
+    const [sharingQuiz, setSharingQuiz] = useState<Quiz | null>(null);
 
     // Import State
     const [importTargetStackId, setImportTargetStackId] = useState<string | null>(null);
@@ -227,11 +229,12 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                     id: 1,
                     type: 'multiple-choice',
                     part: 'Part 1',
-                    question: 'What is the answer?',
-                    options: ['A', 'B', 'C', 'D'],
+                    question: 'What is the output of this code?',
+                    codeSnippet: 'console.log("Hello World!");',
+                    options: ['Hello World!', 'undefined', 'null', 'Error'],
                     correctAnswer: 0,
                     points: 10,
-                    explanation: 'Explanation here.'
+                    explanation: 'console.log prints the given string to the console.'
                 }
             ]
         };
@@ -455,6 +458,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                     onExport={handleDownloadQuiz}
                     onEdit={setEditingQuiz}
                     onDelete={(id) => setDeleteQuizConfirmation({ isOpen: true, id })}
+                    onShare={setSharingQuiz}
                     onCreateFirstQuiz={() => setEditingQuiz(getEmptyQuiz())}
                 />
             )}
@@ -487,6 +491,12 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                 isOpen={!!deleteQuizConfirmation}
                 onClose={() => setDeleteQuizConfirmation(null)}
                 onDelete={confirmDeleteQuiz}
+            />
+
+            <ShareQuizModal
+                quiz={sharingQuiz}
+                isOpen={!!sharingQuiz}
+                onClose={() => setSharingQuiz(null)}
             />
         </div>
     );

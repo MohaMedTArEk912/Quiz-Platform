@@ -8,10 +8,11 @@ interface QuizGridProps {
     onExport: (quiz: Quiz) => void;
     onEdit: (quiz: Quiz) => void;
     onDelete: (id: string) => void;
+    onShare: (quiz: Quiz) => void;
     onCreateFirstQuiz?: () => void;
 }
 
-const QuizGrid: React.FC<QuizGridProps> = ({ quizzes, onExport, onEdit, onDelete, onCreateFirstQuiz }) => {
+const QuizGrid: React.FC<QuizGridProps> = ({ quizzes, onExport, onEdit, onDelete, onShare, onCreateFirstQuiz }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-right-4 duration-300">
             {quizzes.map(quiz => (
@@ -21,6 +22,7 @@ const QuizGrid: React.FC<QuizGridProps> = ({ quizzes, onExport, onEdit, onDelete
                     onExport={onExport}
                     onEdit={onEdit}
                     onDelete={onDelete}
+                    onShare={onShare}
                 />
             ))}
             {quizzes.length === 0 && (

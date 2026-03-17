@@ -17,6 +17,7 @@ export interface Quiz {
     linkedTrackId?: string;
     linkedModuleId?: string;
     reviewMode?: boolean;
+    shuffleQuestions?: boolean; // Default: true. Set to false to disable question shuffling.
     questions: Question[];
 }
 

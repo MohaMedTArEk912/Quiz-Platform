@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { AmbientBackground } from './AmbientBackground';
 import type { Quiz, UserData, AttemptData, Subject } from '../types/index.ts';
 import { DIFFICULTY_COLORS } from '../constants/quizDefaults.ts';
 import {
@@ -93,9 +94,27 @@ interface Milestone {
 const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: subjectsProp, user, attempts: attemptsProp, skillTracks: skillTracksProp, studyCards: studyCardsProp, onSelectQuiz, onViewProfile, onViewLeaderboard, onLogout, onRefreshData }) => {
     const navigate = useNavigate();
     const { showNotification } = useNotification();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Derive selected state from URL so refresh / back button work correctly
+    const selectedSubjectId = searchParams.get('subject');
+    const activeTab = (searchParams.get('tab') as SubjectTab) || 'quizzes';
+
+    const setSelectedSubjectId = (id: string | null) => {
+        if (id === null) {
+            setSearchParams({});
+        } else {
+            setSearchParams({ subject: id, tab: searchParams.get('tab') || 'quizzes' });
+        }
+    };
+
+    const setActiveTab = (tab: SubjectTab) => {
+        if (selectedSubjectId) {
+            setSearchParams({ subject: selectedSubjectId, tab });
+        }
+    };
+
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<SubjectTab>('quizzes');
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     // Defensive normalization to avoid crashes if API returns unexpected shapes
@@ -263,12 +282,9 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
     });
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0b] text-gray-900 dark:text-white selection:bg-indigo-500/30">
+        <div className="min-h-screen bg-white dark:bg-[#0a0a0b] text-gray-900 dark:text-white selection:bg-indigo-500/30">
             {/* Ambient Background Effects */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[128px] mix-blend-screen animate-pulse" />
-                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[128px] mix-blend-screen animate-pulse delay-1000" />
-            </div>
+            <AmbientBackground />
 
             <Navbar
                 user={user}

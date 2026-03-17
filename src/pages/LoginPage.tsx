@@ -25,7 +25,13 @@ const LoginPage: React.FC = () => {
                     
                     const session = sessionStorage.getItem('userSession');
                     const isAdmin = session ? JSON.parse(session).isAdmin : false;
-                    navigate(isAdmin ? '/admin' : '/', { replace: true });
+                    const redirect = sessionStorage.getItem('redirectAfterLogin');
+                    if (redirect) {
+                        sessionStorage.removeItem('redirectAfterLogin');
+                        navigate(redirect, { replace: true });
+                    } else {
+                        navigate(isAdmin ? '/admin' : '/', { replace: true });
+                    }
                 } catch (error) {
                     console.error('Error processing stored Google auth:', error);
                 }
@@ -38,7 +44,13 @@ const LoginPage: React.FC = () => {
         await login(email, password);
         const session = sessionStorage.getItem('userSession');
         const isAdmin = session ? JSON.parse(session).isAdmin : false;
-        navigate(isAdmin ? '/admin' : '/', { replace: true });
+        const redirect = sessionStorage.getItem('redirectAfterLogin');
+        if (redirect) {
+            sessionStorage.removeItem('redirectAfterLogin');
+            navigate(redirect, { replace: true });
+        } else {
+            navigate(isAdmin ? '/admin' : '/', { replace: true });
+        }
     };
 
     const handleGoogleSignIn = () => {
@@ -101,7 +113,13 @@ const LoginPage: React.FC = () => {
                     
                     const session = sessionStorage.getItem('userSession');
                     const isAdmin = session ? JSON.parse(session).isAdmin : false;
-                    navigate(isAdmin ? '/admin' : '/', { replace: true });
+                    const redirect = sessionStorage.getItem('redirectAfterLogin');
+                    if (redirect) {
+                        sessionStorage.removeItem('redirectAfterLogin');
+                        navigate(redirect, { replace: true });
+                    } else {
+                        navigate(isAdmin ? '/admin' : '/', { replace: true });
+                    }
                 } catch (error) {
                     console.error('Google login error:', error);
                     confirm({

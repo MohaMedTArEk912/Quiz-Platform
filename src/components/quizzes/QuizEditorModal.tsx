@@ -190,6 +190,19 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
                             <div className="text-xs text-purple-700 dark:text-purple-300">Show immediate feedback and explanations after each answer</div>
                         </label>
                     </div>
+                    <div className="flex items-center gap-3 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-200 dark:border-orange-800">
+                        <input
+                            type="checkbox"
+                            id="shuffleQuestions"
+                            checked={editingQuiz.shuffleQuestions !== false}
+                            onChange={e => setEditingQuiz({ ...editingQuiz, shuffleQuestions: e.target.checked })}
+                            className="w-5 h-5 rounded border-orange-300 text-orange-600 focus:ring-orange-500 focus:ring-offset-0 cursor-pointer"
+                        />
+                        <label htmlFor="shuffleQuestions" className="flex-1 cursor-pointer">
+                            <div className="text-sm font-bold text-orange-900 dark:text-orange-100">Shuffle Questions</div>
+                            <div className="text-xs text-orange-700 dark:text-orange-300">Randomize question order for each attempt. Uncheck to always show questions in fixed order.</div>
+                        </label>
+                    </div>
                 </div>
             ) : (
                 <div className="space-y-4">

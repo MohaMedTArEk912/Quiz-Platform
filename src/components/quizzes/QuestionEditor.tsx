@@ -67,6 +67,17 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
             </div>
 
             <div className="space-y-1">
+                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Code Snippet Preview (Optional)</label>
+                <textarea
+                    placeholder="Provide code to be displayed with the question. Useful for 'What is the output of this code?'"
+                    value={question.codeSnippet || ''}
+                    onChange={e => onChange({ ...question, codeSnippet: e.target.value })}
+                    className="w-full bg-gray-50 dark:bg-black/60 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-800 dark:text-gray-300 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[120px] resize-y"
+                    rows={5}
+                />
+            </div>
+
+            <div className="space-y-1">
                 <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Image URL (Optional)</label>
                 <input
                     type="url"

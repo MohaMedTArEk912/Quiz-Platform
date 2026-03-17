@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
-import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, TrendingUp, Award, Flame } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins } from 'lucide-react';
 import type { Quiz, UserData, QuizResult, AttemptAnswers } from '../types';
-import Navbar from './Navbar';
+import { api } from '../lib/api';
+import { AmbientBackground } from './AmbientBackground';
 
 const CompilerQuestion = React.lazy(() => import('./question-types/CompilerQuestion'));
-// const Loader = React.lazy(() => import('./PageLoader')); // Unused locally? Using inline loader for now.
 
-// Define Props
 interface QuizTakingProps {
     quiz: Quiz;
     user: UserData;
@@ -48,20 +47,23 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     // --- STATE MANAGEMENT ---
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState<Record<number, string | number>>({});
-
-    // Timer: if countUp, this is elapsed time. If countdown, this is remaining time.
     const [timeLeft, setTimeLeft] = useState(countUpTimer ? 0 : quiz.timeLimit * 60);
     const startTimeRef = useRef(Date.now());
 
-    // PowerUp States
-
+    // PowerUp / Shop States
+    const [showShop, setShowShop] = useState(false);
+    const [localCoins, setLocalCoins] = useState(user.coins || 0);
+    const [localPowerUps, setLocalPowerUps] = useState(powerUps || []);
+    const [hiddenOptions, setHiddenOptions] = useState<Record<number, number[]>>({}); // actualIndex -> [originalOptionsToHide]
+    const [activePowerUpAnimation, setActivePowerUpAnimation] = useState<string | null>(null);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [shakeError, setShakeError] = useState(false);
 
     // Delayed Validation / Retry Mode State
     const [retryMode, setRetryMode] = useState(false);
-    const [wrongQuestionIndices, setWrongQuestionIndices] = useState<number[]>([]); const [correctAnswersCount, setCorrectAnswersCount] = useState(0); // Track actual correct count for progress
+    const [wrongQuestionIndices, setWrongQuestionIndices] = useState<number[]>([]); 
+    
     // Review Mode / Immediate Feedback States
     const [questionSubmitted, setQuestionSubmitted] = useState(false);
     const [isCurrentAnswerCorrect, setIsCurrentAnswerCorrect] = useState(false);
@@ -83,13 +85,18 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         return indices;
     }, []);
 
-    const [questionOrder, setQuestionOrder] = useState<number[]>(() =>
-        generateShuffledIndices(quiz.questions ? quiz.questions.length : 0)
-    );
+    const [questionOrder, setQuestionOrder] = useState<number[]>(() => {
+        const len = quiz.questions ? quiz.questions.length : 0;
+        if (quiz.shuffleQuestions === false) {
+            return Array.from({ length: len }, (_, i) => i);
+        }
+        return generateShuffledIndices(len);
+    });
 
     const [optionsOrder, setOptionsOrder] = useState<Record<number, number[]>>({});
 
     useEffect(() => {
+        if (!quiz.questions || quiz.questions.length === 0) return;
         const newOptionsOrder: Record<number, number[]> = {};
         quiz.questions.forEach((q, index) => {
             if (q.options && q.options.length > 0) {
@@ -103,13 +110,16 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         setOptionsOrder(newOptionsOrder);
     }, [quiz.questions, generateShuffledIndices]);
 
+    // Update local states if props change
+    useEffect(() => { setLocalPowerUps(powerUps || []); }, [powerUps]);
+    useEffect(() => { setLocalCoins(user.coins || 0); }, [user.coins]);
+
     // --- LOGIC: Restore Saved State ---
     const initialSavedState = useMemo(() => {
         const saved = sessionStorage.getItem(storageKey);
         if (!saved) return null;
         try {
             const parsed = JSON.parse(saved);
-            // Invalidate if quiz settings changed drastically
             if (parsed.quizId === quizIdentifier) {
                 return parsed as SavedQuizState;
             }
@@ -122,15 +132,12 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     const [showResumePrompt, setShowResumePrompt] = useState(Boolean(initialSavedState) && !embedded);
     const [savedState, setSavedState] = useState<SavedQuizState | null>(initialSavedState);
 
-    // Initial Timer reference
     useEffect(() => {
         startTimeRef.current = Date.now();
     }, [quizIdentifier]);
 
-    // Save state effect
     useEffect(() => {
-        if (showResumePrompt || isSubmitting || embedded || countUpTimer) return; // Don't save for embedded usually or countUp race
-
+        if (showResumePrompt || isSubmitting || embedded || countUpTimer) return;
         const state = {
             quizId: quizIdentifier,
             currentQuestion,
@@ -156,185 +163,79 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     };
 
     const handleStartNew = () => {
-        setQuestionOrder(generateShuffledIndices(quiz.questions.length));
-        // Reshuffle options logic again? Already done by default initial state.
+        const len = quiz.questions.length;
+        setQuestionOrder(quiz.shuffleQuestions === false
+            ? Array.from({ length: len }, (_, i) => i)
+            : generateShuffledIndices(len));
         sessionStorage.removeItem(storageKey);
         setSavedState(null);
         setShowResumePrompt(false);
         resetQuestionState();
     };
 
+    const getActualQuestionIndex = useCallback((targetIndex = currentQuestion) => {
+        if (retryMode) {
+            const wrongIndex = wrongQuestionIndices[targetIndex]; 
+            return questionOrder[wrongIndex];
+        }
+        return questionOrder[targetIndex];
+    }, [currentQuestion, questionOrder, retryMode, wrongQuestionIndices]);
+
+
     const resetQuestionState = (targetIndex = currentQuestion) => {
         setShakeError(false);
-
         if (!quiz.reviewMode) {
             setQuestionSubmitted(false);
             setIsCurrentAnswerCorrect(false);
         } else {
-            // In review mode, we need to check if we already answered/submitted this question
-            // Use the actual question index from the order, not just currentQuestion
-            const actualIdx = retryMode
-                ? questionOrder[wrongQuestionIndices[targetIndex]]
-                : questionOrder[targetIndex];
-
-            // Only restore submitted state if we actually have an answer recorded
+            const actualIdx = getActualQuestionIndex(targetIndex);
             const hasAnswer = answers[actualIdx] !== undefined;
             setQuestionSubmitted(hasAnswer && (submittedQuestions[actualIdx] || false));
             setIsCurrentAnswerCorrect(hasAnswer && (questionCorrectness[actualIdx] || false));
         }
     };
 
-    // --- LOGIC: Answering & Validation ---
 
-    // Helper to determine the ACTUAL index in the original quiz.questions array
-    const getActualQuestionIndex = () => {
-        if (retryMode) {
-            const wrongIndex = wrongQuestionIndices[currentQuestion]; // index into questionOrder
-            return questionOrder[wrongIndex];
-        }
-        return questionOrder[currentQuestion];
-    };
-
-    const handleAnswer = (answer: string | number) => {
-        if (isSubmitting) return;
-
-        const actualIndex = getActualQuestionIndex();
-        const q = quiz.questions[actualIndex];
-
-        // Strict Mode Check (Immediate Failure)
-        if (mustAnswerCorrectly && !delayedValidation) {
-            if (!q.isCompiler && q.type !== 'text') {
-                if (answer !== q.correctAnswer) {
-                    setShakeError(true);
-                    setTimeout(() => setShakeError(false), 400);
-                    return;
-                }
-            }
-        }
-
-        // Save Answer
-        const newAnswers = { ...answers, [actualIndex]: answer };
-        setAnswers(newAnswers);
-
-        // Immediate Feedback Logic (Normal Mode)
-        // Only show immediate feedback if reviewMode is NOT explicitly disabled
-        if (!delayedValidation && quiz.reviewMode !== false) {
-            const isCorrect = q.type === 'text' ? false : answer === q.correctAnswer;
-            setIsCurrentAnswerCorrect(isCorrect);
-            setQuestionSubmitted(true);
-
-            // Persist valid state for navigation
-            setSubmittedQuestions(prev => ({ ...prev, [actualIndex]: true }));
-            setQuestionCorrectness(prev => ({ ...prev, [actualIndex]: isCorrect }));
-        }
-
-        // Progress Callback
-        if (onProgress) {
-            let currentScore = 0;
-            let answered = 0;
-            let correctCount = 0;
-            quiz.questions.forEach((qObj, idx) => {
-                const currentAns = newAnswers[idx];
-                if (currentAns !== undefined && qObj.type !== 'text') {
-                    answered++;
-                    const isCorrect = checkComplexAnswer(qObj, currentAns);
-                    if (isCorrect) {
-                        currentScore += qObj.points;
-                        correctCount++;
-                    }
-                }
-            });
-            // For VS Game in delayed mode, we track correct answers for actual progress
-            // In regular mode, we track answered questions
-            const progressIndex = delayedValidation ? correctCount : answered;
-            onProgress(currentScore, progressIndex);
-            if (delayedValidation) {
-                setCorrectAnswersCount(correctCount);
-            }
-        }
-
-        // Auto Advance (for non-delayed, strict or simple flow)
-        // If delayedValidation is ON, we generally DON'T auto-advance on click, user must navigate or submit.
-        // BUT if it's the simplifed VS mode where speed matters:
-        // "make the qusiton sumbet without right or wrong till the user submet"
-        // This implies manual navigation or "Next" button.
-        // I will let the UI buttons handle navigation.
-
-        // HOWEVER, if it's strict mode (Start -> Finish race), users usually want auto-advance on correct.
-        if (mustAnswerCorrectly && !delayedValidation && !q.isCompiler && q.type !== 'text') {
-            setTimeout(() => {
-                nextQuestion();
-            }, 300);
-        }
-    };
-
-    // Navigation
-    // `currentQuestion` is the index in the CURRENT VIEW (Normal or Retry).
     const isLastQuestion = retryMode
         ? currentQuestion === wrongQuestionIndices.length - 1
         : currentQuestion === quiz.questions.length - 1;
 
-    const nextQuestion = () => {
-        if (isSubmitting) return;
-
-        // In review mode, require the user to answer before proceeding
-        const actualIdx = getActualQuestionIndex();
-        if (quiz.reviewMode && !delayedValidation && answers[actualIdx] === undefined) {
-            setShakeError(true);
-            setTimeout(() => setShakeError(false), 400);
-            return; // Do not advance without an answer in review mode
+    // Helper for checking correctness
+    const checkComplexAnswer = useCallback((q: { type?: string; isCompiler?: boolean; compilerConfig?: { referenceCode?: string }; correctAnswer?: string | number }, ans: string | number | undefined): boolean => {
+        if (q.type === 'text') return false;
+        if (q.isCompiler) {
+            if (q.compilerConfig?.referenceCode && ans) {
+                const norm = (s: string) => s.replace(/\s+/g, '').trim();
+                return norm(String(ans)) === norm(q.compilerConfig.referenceCode);
+            }
+            return false;
         }
+        return ans === q.correctAnswer;
+    }, []);
 
-        if (!isLastQuestion) {
-            setCurrentQuestion(c => c + 1);
-            resetQuestionState(currentQuestion + 1);
-        } else {
-            // End of list
-            handleQuizComplete();
-        }
-    };
-
-    const previousQuestion = () => {
-        if (isSubmitting) return;
-        if (currentQuestion > 0) {
-            setCurrentQuestion(c => c - 1);
-            resetQuestionState(currentQuestion - 1);
-        }
-    };
-
-    // --- LOGIC: Completion & Grading ---
     const handleQuizComplete = useCallback(() => {
         if (isSubmitting) return;
 
-        // 1. Delayed Validation Check (VS Mode with Retry)
         if (delayedValidation) {
             const wrongs: number[] = [];
-
-            // Iterate over all questions to check correctness
             questionOrder.forEach((actualIndex, orderIdx) => {
                 const q = quiz.questions[actualIndex];
                 const ans = answers[actualIndex];
-
                 let isCorrect = false;
                 if (q.type === 'text') {
-                    isCorrect = false; // Manual review
+                    isCorrect = false;
                 } else if (q.isCompiler) {
                     isCorrect = checkComplexAnswer(q, ans);
                 } else {
                     isCorrect = ans === q.correctAnswer;
                 }
-
                 if (!isCorrect) {
                     wrongs.push(orderIdx);
                 }
             });
 
             if (wrongs.length > 0) {
-                // Calculate new progress: total questions - wrong answers
                 const newCorrectCount = quiz.questions.length - wrongs.length;
-                setCorrectAnswersCount(newCorrectCount);
-
-                // Notify progress rollback
                 if (onProgress) {
                     let currentScore = 0;
                     quiz.questions.forEach((qObj, idx) => {
@@ -345,33 +246,27 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     });
                     onProgress(currentScore, newCorrectCount);
                 }
-
                 setRetryMode(true);
                 setWrongQuestionIndices(wrongs);
                 setCurrentQuestion(0);
                 setShakeError(true);
                 setTimeout(() => setShakeError(false), 500);
-                return; // STOP here, let user fix wrongs.
+                return;
             }
         }
 
-        // 2. Final Submission (All correct or Strict Mode passed or Time Up)
         setIsSubmitting(true);
         sessionStorage.removeItem(storageKey);
-
         const endTime = Date.now();
         const duration = countUpTimer ? timeLeft : Math.floor((endTime - startTimeRef.current) / 1000);
 
-        // Final Score Calc
         let score = 0;
         const detailedAnswers: AttemptAnswers = {};
 
         quiz.questions.forEach((q, idx) => {
             const ans = answers[idx];
             const isCorrect = checkComplexAnswer(q, ans);
-
             if (isCorrect) score += q.points;
-
             detailedAnswers[idx] = {
                 selected: ans,
                 isCorrect,
@@ -393,35 +288,199 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             powerUpsUsed: []
         });
 
-    }, [answers, delayedValidation, isSubmitting, onComplete, onProgress, questionOrder, quiz.questions, quiz.passingScore, storageKey, timeLeft, countUpTimer, setCorrectAnswersCount]);
+    }, [answers, delayedValidation, isSubmitting, onComplete, onProgress, questionOrder, quiz.questions, quiz.passingScore, storageKey, timeLeft, countUpTimer, checkComplexAnswer]);
 
+    const nextQuestion = useCallback(() => {
+        if (isSubmitting) return;
+        const actualIdx = getActualQuestionIndex();
+        if (quiz.reviewMode && !delayedValidation && answers[actualIdx] === undefined) {
+            setShakeError(true);
+            setTimeout(() => setShakeError(false), 400);
+            return; 
+        }
+        if (!isLastQuestion) {
+            setCurrentQuestion(c => c + 1);
+            resetQuestionState(currentQuestion + 1);
+        } else {
+            handleQuizComplete();
+        }
+    }, [isSubmitting, getActualQuestionIndex, quiz.reviewMode, delayedValidation, answers, isLastQuestion, handleQuizComplete, currentQuestion]);
 
-    // Helper for checking correctness (used in grading and retry logic)
-    const checkComplexAnswer = (q: { type?: string; isCompiler?: boolean; compilerConfig?: { referenceCode?: string }; correctAnswer?: string | number }, ans: string | number | undefined): boolean => {
-        if (q.type === 'text') return false;
+    const handleAnswer = useCallback((answer: string | number) => {
+        if (isSubmitting) return;
 
-        if (q.isCompiler) {
-            if (q.compilerConfig?.referenceCode && ans) {
-                // Normalize
-                const norm = (s: string) => s.replace(/\s+/g, '').trim();
-                return norm(String(ans)) === norm(q.compilerConfig.referenceCode);
+        const actualIndex = getActualQuestionIndex();
+        const q = quiz.questions[actualIndex];
+
+        // Strict Mode Check
+        if (mustAnswerCorrectly && !delayedValidation) {
+            if (!q.isCompiler && q.type !== 'text') {
+                if (answer !== q.correctAnswer) {
+                    setShakeError(true);
+                    setTimeout(() => setShakeError(false), 400);
+                    return;
+                }
             }
-            return false;
         }
 
-        return ans === q.correctAnswer;
+        const newAnswers = { ...answers, [actualIndex]: answer };
+        setAnswers(newAnswers);
+
+        if (!delayedValidation && quiz.reviewMode !== false) {
+            const isCorrect = q.type === 'text' ? false : answer === q.correctAnswer;
+            setIsCurrentAnswerCorrect(isCorrect);
+            setQuestionSubmitted(true);
+            setSubmittedQuestions(prev => ({ ...prev, [actualIndex]: true }));
+            setQuestionCorrectness(prev => ({ ...prev, [actualIndex]: isCorrect }));
+        }
+
+        if (onProgress) {
+            let currentScore = 0;
+            let answered = 0;
+            let correctCount = 0;
+            quiz.questions.forEach((qObj, idx) => {
+                const currentAns = newAnswers[idx];
+                if (currentAns !== undefined && qObj.type !== 'text') {
+                    answered++;
+                    const isCorrect = checkComplexAnswer(qObj, currentAns);
+                    if (isCorrect) {
+                        currentScore += qObj.points;
+                        correctCount++;
+                    }
+                }
+            });
+            const progressIndex = delayedValidation ? correctCount : answered;
+            onProgress(currentScore, progressIndex);
+        }
+
+        if (mustAnswerCorrectly && !delayedValidation && !q.isCompiler && q.type !== 'text') {
+            setTimeout(() => {
+                nextQuestion();
+            }, 300);
+        }
+    }, [isSubmitting, getActualQuestionIndex, quiz.questions, mustAnswerCorrectly, delayedValidation, answers, quiz.reviewMode, onProgress, checkComplexAnswer, nextQuestion]);
+
+
+    // --- Keyboard Shortcuts ---
+    useEffect(() => {
+        if (showResumePrompt || isSubmitting || showShop) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const actualIndex = getActualQuestionIndex();
+            const q = quiz.questions[actualIndex];
+            
+            // Allow Enter to advance
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Prevent advancing if required to answer
+                if (quiz.reviewMode && !delayedValidation && answers[actualIndex] === undefined) {
+                    setShakeError(true);
+                    setTimeout(() => setShakeError(false), 400);
+                } else {
+                    nextQuestion();
+                }
+                return;
+            }
+
+            // Keyboard option selection (1-4 or A-D/a-d)
+            if (q && q.options && !q.isCompiler && (!questionSubmitted || delayedValidation)) {
+                const currentOptions = optionsOrder[actualIndex] || [];
+                let selectedVisualIndex = -1;
+
+                if (['1', '2', '3', '4', '5'].includes(e.key)) {
+                    selectedVisualIndex = parseInt(e.key) - 1;
+                } else if (['a', 'b', 'c', 'd', 'e'].includes(e.key.toLowerCase())) {
+                    selectedVisualIndex = e.key.toLowerCase().charCodeAt(0) - 97;
+                }
+
+                if (selectedVisualIndex >= 0 && selectedVisualIndex < currentOptions.length) {
+                    const originalIndex = currentOptions[selectedVisualIndex];
+                    const hiddenOpts = hiddenOptions[actualIndex] || [];
+                    if (!hiddenOpts.includes(originalIndex)) {
+                        handleAnswer(originalIndex);
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [showResumePrompt, isSubmitting, showShop, getActualQuestionIndex, quiz.questions, quiz.reviewMode, delayedValidation, answers, questionSubmitted, nextQuestion, optionsOrder, hiddenOptions, handleAnswer]);
+
+
+    // --- Power-up Application Logic ---
+    const applyPowerUp = useCallback((type: string) => {
+        setActivePowerUpAnimation(type);
+        setTimeout(() => setActivePowerUpAnimation(null), 1500);
+
+        const actualIdx = getActualQuestionIndex();
+        const q = quiz.questions[actualIdx];
+
+        if (type === 'hint' && q && q.options && q.correctAnswer !== undefined) {
+            // Pick 2 random wrong options to hide
+            const wrongIndices = q.options
+                .map((_, i) => i)
+                .filter(i => i !== q.correctAnswer);
+            
+            // Shuffle and pick up to 2
+            for (let i = wrongIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [wrongIndices[i], wrongIndices[j]] = [wrongIndices[j], wrongIndices[i]];
+            }
+            const toHide = wrongIndices.slice(0, Math.min(2, wrongIndices.length));
+            setHiddenOptions(prev => ({ ...prev, [actualIdx]: [...(prev[actualIdx] || []), ...toHide] }));
+        }
+        else if (type === 'time') {
+            setTimeLeft(prev => countUpTimer ? prev : prev + 30); // Add 30s to countdown
+        }
+        else if (type === 'skip') {
+            // Auto complete as correct
+            if (q.correctAnswer !== undefined) {
+                handleAnswer(q.correctAnswer);
+            } else if (q.isCompiler && q.compilerConfig?.referenceCode) {
+                handleAnswer(q.compilerConfig.referenceCode);
+            } else {
+                handleAnswer("SKIPPED");
+            }
+            // Auto-advance
+            setTimeout(() => nextQuestion(), 600);
+        }
+    }, [getActualQuestionIndex, quiz.questions, countUpTimer, handleAnswer, nextQuestion]);
+
+
+    const handleUseOwnedItem = (type: string) => {
+        const itemIdx = localPowerUps.findIndex(p => p.type === type);
+        if (itemIdx >= 0 && localPowerUps[itemIdx].quantity > 0) {
+            // Update local state temporarily
+            const newPowerups = [...localPowerUps];
+            newPowerups[itemIdx] = { ...newPowerups[itemIdx], quantity: newPowerups[itemIdx].quantity - 1 };
+            setLocalPowerUps(newPowerups);
+            
+            // Notify parent
+            if (onPowerUpUsed) onPowerUpUsed(type);
+            
+            applyPowerUp(type);
+        }
     };
 
+    const handleBuyItem = async (type: string, cost: number, itemId: string) => {
+        if (localCoins < cost) return;
+        setLocalCoins(prev => prev - cost);
+        try {
+            await api.purchaseItem(itemId, user.userId);
+            applyPowerUp(type);
+        } catch (e) {
+            console.error("Purchase failed", e);
+            setLocalCoins(prev => prev + cost); // Revert
+        }
+    };
 
-    // --- LOGIC: Timer ---
+    // --- Timer Tick ---
     useEffect(() => {
         if (showResumePrompt || isSubmitting || isUnlimitedTime) return;
-
         const timer = setInterval(() => {
             setTimeLeft((prev) => {
-                if (countUpTimer) {
-                    return prev + 1;
-                }
+                if (countUpTimer) return prev + 1;
                 if (prev <= 1) {
                     handleQuizComplete();
                     return 0;
@@ -429,34 +488,31 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 return prev - 1;
             });
         }, 1000);
-
         return () => clearInterval(timer);
     }, [countUpTimer, isSubmitting, isUnlimitedTime, showResumePrompt, handleQuizComplete]);
 
 
-    // --- RENDER HELPERS ---
+
+    // --- RENDER ---
     const actualIndex = getActualQuestionIndex();
     const q = quiz.questions[actualIndex];
-    if (!q) return <div>Loading...</div>;
+    if (!q) return <div className="p-8 text-center text-gray-500">Loading...</div>;
 
     const currentOptions = optionsOrder[actualIndex] || [];
-
-
-
-
-    // Calculate progress percentage
     const progressPercentage = retryMode
         ? ((currentQuestion + 1) / wrongQuestionIndices.length) * 100
         : ((currentQuestion + 1) / quiz.questions.length) * 100;
 
-    // Power-up helpers
-    const getPowerUpIcon = (type: string) => {
+    const hiddenOptsForCurrent = hiddenOptions[actualIndex] || [];
+
+    // Helper functions for UI
+    const getPowerUpIcon = (type: string, sizeClass = "w-4 h-4") => {
         switch (type) {
-            case 'hint': return <Lightbulb className="w-4 h-4" />;
-            case 'time': return <Clock className="w-4 h-4" />;
-            case 'skip': return <Target className="w-4 h-4" />;
-            case 'shield': return <Shield className="w-4 h-4" />;
-            default: return <Zap className="w-4 h-4" />;
+            case 'hint': return <Lightbulb className={sizeClass} />;
+            case 'time': return <Clock className={sizeClass} />;
+            case 'skip': return <Target className={sizeClass} />;
+            case 'shield': return <Shield className={sizeClass} />;
+            default: return <Zap className={sizeClass} />;
         }
     };
 
@@ -471,173 +527,193 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     };
 
     return (
-        <div className={`w-full transition-colors ${embedded ? 'h-full flex flex-col bg-transparent' : 'min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50 dark:from-slate-900 dark:via-indigo-950/30 dark:to-slate-900 p-4 md:p-6'}`}>
-            {/* Animated Background Elements */}
-            {!embedded && (
-                <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-20 right-20 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" />
-                    <div className="absolute bottom-20 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-700" />
+        <div className={`w-full transition-colors flex flex-col font-sans relative ${embedded
+            ? 'h-full bg-transparent'
+            : 'h-screen bg-white dark:bg-[#080812] overflow-hidden'
+            } text-gray-900 dark:text-gray-100`}>
+            
+            {!embedded && <AmbientBackground />}
+
+            {/* Animations defined globally */}
+            <style>{`
+                @keyframes pulse-glow {
+                    0%, 100% { box-shadow: 0 0 15px currentColor; }
+                    50% { box-shadow: 0 0 30px currentColor; }
+                }
+                @keyframes powerup-fly {
+                    0% { transform: scale(0.5) translateY(50px); opacity: 0; }
+                    20% { transform: scale(1.5) translateY(-20px); opacity: 1; }
+                    80% { transform: scale(1.2) translateY(-40px); opacity: 1; }
+                    100% { transform: scale(2) translateY(-100px); opacity: 0; }
+                }
+                .powerup-animation {
+                    animation: powerup-fly 1.5s ease-out forwards;
+                }
+                @keyframes shake {
+                    0%,100% { transform: translateX(0); }
+                    25% { transform: translateX(-8px); }
+                    75% { transform: translateX(8px); }
+                }
+                .animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+                
+                /* Hide scrollbar for cleaner look */
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+            `}</style>
+
+
+            {/* Power-up Screen Overlay Animation */}
+            {activePowerUpAnimation && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+                    <div className={`text-6xl powerup-animation drop-shadow-2xl`}>
+                        {activePowerUpAnimation === 'hint' && '💡'}
+                        {activePowerUpAnimation === 'skip' && '⏭️'}
+                        {activePowerUpAnimation === 'time' && '⏳'}
+                    </div>
                 </div>
             )}
 
+            {/* --- TOP BAR (Full width) --- */}
             {!embedded && (
-                <Navbar
-                    user={user}
-                    onBack={onBack}
-                    title={quiz.title}
-                    onViewProfile={() => { }}
-                    onViewLeaderboard={() => { }}
-                    onLogout={() => { }}
-                />
-            )}
+                <header className="flex-none h-16 flex items-center justify-between px-6 bg-white dark:bg-[#0d0d1c]/70 border-b border-gray-200 dark:border-white/[0.06] backdrop-blur-xl z-20">
+                    <div className="flex items-center gap-4">
+                        <button onClick={onBack} className="flex items-center gap-2 p-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.10] text-gray-600 dark:text-slate-400 transition-all">
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
+                        <div className="hidden md:flex flex-col">
+                            <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate max-w-xs px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg border border-indigo-100 dark:border-indigo-500/20">
+                                {retryMode ? '⚠ Retry Mode' : quiz.title}
+                            </span>
+                        </div>
+                    </div>
 
-            <div className={`flex flex-col h-full ${embedded ? '' : 'max-w-5xl mx-auto mt-4 relative z-10'}`}>
-                {/* Enhanced Header with Progress Bar */}
-                <div className="mb-6 space-y-4">
-                    {/* Top Bar */}
-                    <div className="flex items-center justify-between">
-                        {/* Back Button */}
-                        {!embedded && (
-                            <button
-                                onClick={onBack}
-                                className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm hover:shadow-md"
-                            >
-                                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                                <span className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Back</span>
+                    <div className="flex items-center gap-4">
+                        {/* Shop Button */}
+                        {!hidePowerUps && (
+                            <button onClick={() => setShowShop(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-500/20 dark:hover:bg-yellow-500/30 text-yellow-700 dark:text-yellow-400 font-bold rounded-xl border border-yellow-200 dark:border-yellow-500/30 transition-all">
+                                <ShoppingBag className="w-4 h-4" />
+                                <span className="hidden sm:inline">Store</span>
                             </button>
                         )}
-
-                        {/* Timer & Stats */}
-                        <div className="flex items-center gap-3 ml-auto">
-                            {/* Score Display */}
-                            {delayedValidation && correctAnswersCount > 0 && (
-                                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25">
-                                    <Award className="w-4 h-4" />
-                                    <span className="font-black text-sm">{correctAnswersCount} Correct</span>
+                        
+                        {/* Timer */}
+                        {(() => {
+                            const urgent = !countUpTimer && timeLeft < 30 && !isUnlimitedTime;
+                            return (
+                                <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono font-black border transition-all ${urgent
+                                    ? 'bg-red-50 border-red-300 text-red-600 dark:bg-red-500/20 dark:border-red-500/40 dark:text-red-300 animate-pulse'
+                                    : 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-white/[0.05] dark:border-white/[0.08] dark:text-white'
+                                    }`}>
+                                    <Clock className={`w-4 h-4 ${urgent ? 'animate-spin' : ''}`} />
+                                    <span className="tabular-nums text-base">
+                                        {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                                    </span>
                                 </div>
-                            )}
+                            );
+                        })()}
+                    </div>
+                </header>
+            )}
 
-                            {/* Timer */}
-                            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono text-lg font-black shadow-lg ${!countUpTimer && timeLeft < 30
-                                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white animate-pulse shadow-red-500/50'
-                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700'
-                                }`}>
-                                <Clock className={`w-5 h-5 ${!countUpTimer && timeLeft < 30 ? 'animate-spin' : ''}`} />
-                                {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-                            </div>
+            {/* --- HORIZONTAL SPLIT LAYOUT --- */}
+            <div className={`flex-1 flex flex-col lg:flex-row w-full overflow-hidden ${embedded ? '' : 'z-10'}`}>
+                
+                {/* --- LEFT SIDE: Question Context --- */}
+                <div className="w-full lg:w-1/2 h-full flex flex-col bg-white/90 dark:bg-[#111827]/90 backdrop-blur-2xl border-r border-gray-200 dark:border-gray-800 relative z-10 overflow-hidden">
+                    
+                    {/* Progress Header */}
+                    <div className="flex items-center justify-between p-6 pb-2">
+                        <div className="font-bold text-gray-500 dark:text-gray-400">
+                            Question {currentQuestion + 1} <span className="opacity-50">/ {retryMode ? wrongQuestionIndices.length : quiz.questions.length}</span>
+                        </div>
+                        <div className="font-black text-indigo-600 dark:text-indigo-400">{Math.round(progressPercentage)}%</div>
+                    </div>
+                    {/* Progress Bar Line */}
+                    <div className="px-6 pb-6 border-b border-gray-100 dark:border-gray-800/50">
+                        <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden flex shadow-inner">
+                            <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
                         </div>
                     </div>
-
-                    {/* Progress Bar */}
-                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-black text-lg shadow-lg shadow-indigo-500/25">
-                                    {retryMode ? currentQuestion + 1 : currentQuestion + 1}
-                                </div>
-                                <div>
-                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                        {retryMode ? 'Retry Mode' : 'Progress'}
-                                    </div>
-                                    <div className="font-black text-slate-700 dark:text-slate-200">
-                                        Question {retryMode ? currentQuestion + 1 : currentQuestion + 1} of {retryMode ? wrongQuestionIndices.length : quiz.questions.length}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Power-ups Display */}
-                            {!hidePowerUps && powerUps && powerUps.length > 0 && (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Power-ups:</span>
-                                    {powerUps.map((powerUp, idx) => (
-                                        <button
-                                            key={idx}
-                                            onClick={() => onPowerUpUsed && onPowerUpUsed(powerUp.type)}
-                                            disabled={powerUp.quantity === 0}
-                                            className={`group relative flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r ${getPowerUpColor(powerUp.type)} text-white font-bold text-xs shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed transition-all`}
-                                        >
-                                            {getPowerUpIcon(powerUp.type)}
-                                            <span className="font-black">{powerUp.quantity}</span>
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                                {powerUp.type.charAt(0).toUpperCase() + powerUp.type.slice(1)}
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Progress Bar Track */}
-                        <div className="relative h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div
-                                className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out ${retryMode
-                                    ? 'bg-gradient-to-r from-orange-500 to-red-500'
-                                    : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'
-                                    }`}
-                                style={{ width: `${progressPercentage}%` }}
-                            >
-                                <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                            </div>
-                            {/* Milestone markers */}
-                            {[25, 50, 75].map((milestone) => (
-                                <div
-                                    key={milestone}
-                                    className="absolute top-0 h-full w-0.5 bg-slate-300 dark:bg-slate-600"
-                                    style={{ left: `${milestone}%` }}
-                                />
-                            ))}
-                        </div>
-
-                        {/* Progress Stats */}
-                        <div className="flex items-center justify-between mt-2 text-xs">
-                            <span className="font-semibold text-slate-500 dark:text-slate-400">
-                                {Math.round(progressPercentage)}% Complete
-                            </span>
-                            <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                                <TrendingUp className="w-3 h-3" />
-                                <span className="font-semibold">
-                                    {retryMode
-                                        ? `${wrongQuestionIndices.length - currentQuestion} to go`
-                                        : `${quiz.questions.length - currentQuestion - 1} remaining`}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Enhanced Question Card */}\r\n                <div className={`flex-1 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 relative flex flex-col group hover:shadow-indigo-500/10 transition-shadow ${shakeError ? 'animate-shake' : ''}`}>
-                    {/* Retry Mode Banner */}
-                    {retryMode && (
-                        <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white text-center py-3 px-4 text-sm font-black uppercase tracking-wider animate-in slide-in-from-top shadow-lg relative overflow-hidden">
-                            <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                            <div className="relative flex items-center justify-center gap-2">
-                                <Flame className="w-4 h-4 animate-bounce" />
-                                <span>⚠️ {wrongQuestionIndices.length} Wrong Answer{wrongQuestionIndices.length !== 1 ? 's' : ''} - Fix to Continue!</span>
-                                <Flame className="w-4 h-4 animate-bounce" />
-                            </div>
-                        </div>
-                    )}
 
                     {/* Question Content */}
-                    <div className="p-6 md:p-10 flex-1 overflow-y-auto custom-scrollbar">
-                        {/* Question Number Badge */}
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-wider mb-4">
-                            <Target className="w-3 h-3" />
-                            Question {currentQuestion + 1}
-                        </div>
-
-                        <h2 className="text-3xl md:text-4xl font-black text-slate-800 dark:text-white mb-8 leading-tight tracking-tight">
+                    <div className={`flex-1 overflow-y-auto px-6 lg:px-12 pb-12 flex flex-col pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
+                        
+                        <h2 className="text-2xl lg:text-[32px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight mb-8">
                             {q.question}
                         </h2>
 
-                        {/* Question Content Area */}
-                        <Suspense fallback={
-                            <div className="flex justify-center items-center h-48">
-                                <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                        {/* Image */}
+                        {q.imageUrl && (
+                            <img src={q.imageUrl} alt="Reference" className="w-full rounded-2xl mb-8 object-cover max-h-64 shadow-lg border border-gray-100 dark:border-gray-800" />
+                        )}
+
+                        {/* Code Snippet Preview */}
+                        {q.codeSnippet && (
+                            <div className="bg-[#F6F7F8] dark:bg-[#0d0d1a] border border-gray-100 dark:border-[#1f2937] rounded-2xl overflow-hidden shadow-[inset_0_2px_8px_rgba(0,0,0,0.05)] dark:shadow-inner mb-6">
+                                <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-[#1f2937] bg-white dark:bg-[#111827]">
+                                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                                </div>
+                                <pre className="p-6 font-mono text-sm lg:text-base text-indigo-600 dark:text-emerald-400 whitespace-pre-wrap font-medium overflow-x-auto leading-relaxed">
+                                    {q.codeSnippet}
+                                </pre>
                             </div>
-                        }>
-                            {q.isCompiler ? (
-                                <div className="h-[500px]">
+                        )}
+
+                        {/* PowerUps active indicator under question */}
+                        {!hidePowerUps && localPowerUps.some(p => p.quantity > 0) && (
+                            <div className="mt-6 flex gap-3 flex-wrap items-center">
+                                <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mr-2">Your Items</span>
+                                {localPowerUps.map(p => p.quantity > 0 && (
+                                    <button 
+                                        key={p.type} 
+                                        onClick={() => handleUseOwnedItem(p.type)}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r ${getPowerUpColor(p.type)} text-white font-bold text-sm shadow-md hover:scale-105 transition-transform`}
+                                        title={`Use ${p.type}`}
+                                    >
+                                        {getPowerUpIcon(p.type)} {p.quantity} 
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        
+                        {/* Feedback Banner inline */}
+                        {questionSubmitted && !delayedValidation && (
+                            <div className={`mt-8 p-6 rounded-2xl border transition-all animate-in fade-in slide-in-from-bottom-2 ${
+                                isCurrentAnswerCorrect 
+                                ? 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30' 
+                                : 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30'
+                            }`}>
+                                <h3 className={`flex items-center gap-2 text-lg font-black ${isCurrentAnswerCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                    {isCurrentAnswerCorrect ? <CheckCircle className="w-6 h-6"/> : <XCircle className="w-6 h-6"/>}
+                                    {isCurrentAnswerCorrect ? 'Excellent!' : 'Incorrect'}
+                                </h3>
+                                {!isCurrentAnswerCorrect && q.options && q.correctAnswer !== undefined && (
+                                    <p className="mt-2 font-medium text-gray-700 dark:text-gray-300">
+                                        The correct answer was: <span className="font-bold bg-white dark:bg-black/20 px-2 py-1 rounded ml-1">{q.options[q.correctAnswer]}</span>
+                                    </p>
+                                )}
+                                {q.explanation && (
+                                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                        <p className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Explanation</p>
+                                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{q.explanation}</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="flex-1 min-h-[40px]"></div> {/* Spacer */}
+
+                    </div>
+                </div>
+
+                {/* --- RIGHT SIDE: Answer Options --- */}
+                <div className="w-full lg:w-1/2 h-full flex flex-col bg-transparent lg:bg-white/40 dark:bg-[#0b0f19] relative">
+                    <div className="flex-1 overflow-y-auto p-6 lg:p-12 pb-32 flex flex-col justify-center gap-4 no-scrollbar">
+                        {q.isCompiler ? (
+                            <Suspense fallback={<div className="animate-spin w-8 h-8 border-4 border-indigo-500 rounded-full border-t-transparent mx-auto"></div>}>
+                                <div className="h-[400px] rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-xl bg-white dark:bg-black">
                                     <CompilerQuestion
                                         initialCode={q.compilerConfig?.initialCode}
                                         language={q.compilerConfig?.language || 'javascript'}
@@ -645,258 +721,208 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                         readOnly={isSubmitting || (questionSubmitted && !delayedValidation)}
                                     />
                                 </div>
-                            ) : (
-                                /* Enhanced Options (Text/MCQ) */
-                                <div className="grid grid-cols-1 gap-3">
-                                    {currentOptions.map((originalIndex, visualIndex) => {
-                                        const option = q.options![originalIndex];
-                                        const isSelected = answers[actualIndex] === originalIndex;
-                                        const isCorrectOption = originalIndex === q.correctAnswer;
-                                        const showCorrectHighlight = questionSubmitted && !delayedValidation && !isCurrentAnswerCorrect && isCorrectOption;
-                                        const showWrongHighlight = questionSubmitted && !delayedValidation && !isCurrentAnswerCorrect && isSelected;
-                                        const showSuccessHighlight = questionSubmitted && !delayedValidation && isCurrentAnswerCorrect && isSelected;
+                            </Suspense>
+                        ) : (
+                            currentOptions.map((originalIndex, visualIndex) => {
+                                // If user used a hint to hide this
+                                if (hiddenOptsForCurrent.includes(originalIndex)) return null;
 
-                                        return (
-                                            <button
-                                                key={originalIndex}
-                                                onClick={() => handleAnswer(originalIndex)}
-                                                disabled={isSubmitting || (questionSubmitted && !delayedValidation)}
-                                                className={`group relative p-5 rounded-2xl text-left transition-all duration-300 border-2 flex items-center gap-4 overflow-hidden
-                                                    ${showSuccessHighlight
-                                                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 border-green-400 text-white shadow-2xl shadow-green-500/30 scale-[1.02]'
-                                                        : showWrongHighlight
-                                                            ? 'bg-gradient-to-r from-red-500 to-rose-500 border-red-400 text-white shadow-2xl shadow-red-500/30 scale-[1.02]'
-                                                            : showCorrectHighlight
-                                                                ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500 text-green-700 dark:text-green-300 shadow-lg shadow-green-500/20 scale-[1.02] ring-2 ring-green-400'
-                                                                : isSelected
-                                                                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 border-indigo-500 text-white shadow-2xl shadow-indigo-500/30 scale-[1.02] translate-x-1'
-                                                                    : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-lg hover:scale-[1.01] hover:translate-x-1'
-                                                    }
-                                                    disabled:opacity-50 disabled:cursor-not-allowed
-                                                `}
-                                            >
-                                                {/* Animated Background */}
-                                                {(isSelected || showCorrectHighlight) && (
-                                                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 animate-shimmer" />
-                                                )}
+                                const option = q.options![originalIndex];
+                                const isSelected = answers[actualIndex] === originalIndex;
+                                const isCorrectOption = originalIndex === q.correctAnswer;
+                                const showCorrect = questionSubmitted && !delayedValidation && !isCurrentAnswerCorrect && isCorrectOption;
+                                const showWrong = questionSubmitted && !delayedValidation && !isCurrentAnswerCorrect && isSelected;
+                                const showSuccess = questionSubmitted && !delayedValidation && isCurrentAnswerCorrect && isSelected;
 
-                                                {/* Option Letter Badge */}
-                                                <div className={`relative z-10 w-10 h-10 rounded-xl flex items-center justify-center font-black text-base shadow-lg transition-all
-                                                    ${showSuccessHighlight
-                                                        ? 'bg-white text-green-600 shadow-white/50'
-                                                        : showWrongHighlight
-                                                            ? 'bg-white text-red-600 shadow-white/50'
-                                                            : showCorrectHighlight
-                                                                ? 'bg-green-500 text-white shadow-green-500/50'
-                                                                : isSelected
-                                                                    ? 'bg-white text-indigo-600 shadow-white/50'
-                                                                    : 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white group-hover:scale-110'
-                                                    }
-                                                `}>
-                                                    {String.fromCharCode(65 + visualIndex)}
-                                                </div>
+                                const letters = ['A', 'B', 'C', 'D', 'E'];
+                                const label = letters[visualIndex] || (visualIndex + 1);
 
-                                                {/* Option Text */}
-                                                <span className={`relative z-10 font-bold text-base flex-1 
-                                                    ${showSuccessHighlight || showWrongHighlight ? 'text-white'
-                                                        : showCorrectHighlight ? 'text-green-700 dark:text-green-300'
-                                                            : isSelected ? 'text-white'
-                                                                : 'text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
-                                                    }`}>
-                                                    {option}
-                                                    {showCorrectHighlight && (
-                                                        <span className="ml-2 text-xs font-black uppercase tracking-wide bg-green-500 text-white px-2 py-0.5 rounded-full">✓ Correct</span>
-                                                    )}
-                                                </span>
+                                // Dynamic classes based on state
+                                let baseClass = "group relative flex items-center p-5 lg:p-6 rounded-2xl cursor-pointer transition-all duration-300 w-full text-left";
+                                let stateClass = "bg-white dark:bg-[#1f2937] border-2 border-transparent lg:shadow-[0_4px_16px_rgba(0,0,0,0.03)] dark:border-[#374151] hover:border-indigo-400 lg:hover:border-transparent lg:hover:ring-2 lg:hover:ring-indigo-400 dark:hover:border-indigo-500 hover:shadow-lg hover:-translate-y-1";
+                                let textClass = "text-gray-800 dark:text-gray-200 font-medium";
+                                let badgeClass = "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 group-hover:text-indigo-600 dark:group-hover:text-indigo-400";
+                                
+                                if (showSuccess) {
+                                    stateClass = "bg-green-50/50 border-2 lg:border-none border-green-500 lg:ring-2 lg:ring-green-500 shadow-xl shadow-green-500/10 dark:bg-green-900/30 dark:border-green-500 scale-[1.02] z-10";
+                                    badgeClass = "bg-green-500 text-white";
+                                    textClass = "text-green-800 dark:text-green-200 font-bold";
+                                } else if (showWrong) {
+                                    stateClass = "bg-red-50/50 border-2 lg:border-none border-red-500 lg:ring-2 lg:ring-red-500 shadow-xl shadow-red-500/10 dark:bg-red-900/30 dark:border-red-500 scale-[1.02] z-10";
+                                    badgeClass = "bg-red-500 text-white";
+                                    textClass = "text-red-800 dark:text-red-200";
+                                } else if (showCorrect) {
+                                    stateClass = "bg-green-50/30 border-2 lg:border-none border-green-500/50 lg:ring-2 lg:ring-green-500/50 dark:bg-green-900/10 dark:border-green-500/50";
+                                    badgeClass = "bg-green-400 text-white";
+                                    textClass = "text-green-700 dark:text-green-300";
+                                } else if (isSelected) {
+                                    stateClass = "bg-indigo-50/80 border-2 lg:border-none border-indigo-600 lg:ring-2 lg:ring-indigo-600 shadow-xl shadow-indigo-600/10 dark:bg-indigo-900/40 dark:border-indigo-500 scale-[1.02] z-10";
+                                    badgeClass = "bg-indigo-600 text-white dark:bg-indigo-500";
+                                    textClass = "text-indigo-900 dark:text-indigo-100 font-bold";
+                                }
 
-                                                {/* Selection Indicator */}
-                                                {showSuccessHighlight && (
-                                                    <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm">
-                                                        <CheckCircle className="w-5 h-5 text-white" />
-                                                    </div>
-                                                )}
-                                                {showWrongHighlight && (
-                                                    <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm">
-                                                        <XCircle className="w-5 h-5 text-white" />
-                                                    </div>
-                                                )}
-                                                {showCorrectHighlight && (
-                                                    <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-green-500 shadow-lg">
-                                                        <CheckCircle className="w-5 h-5 text-white" />
-                                                    </div>
-                                                )}
-                                                {isSelected && !questionSubmitted && (
-                                                    <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm">
-                                                        <CheckCircle className="w-5 h-5 text-white" />
-                                                    </div>
-                                                )}
-
-                                                {/* Hover Arrow */}
-                                                {!isSelected && !showCorrectHighlight && !questionSubmitted && (
-                                                    <div className="relative z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center">
-                                                            <span className="text-indigo-600 dark:text-indigo-400 text-sm font-black">→</span>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </Suspense>
-
-                        {/* Feedback Banner (Normal Mode) */}
-                        {questionSubmitted && !delayedValidation && (
-                            <div className={`mt-6 p-4 rounded-xl border-l-4 animate-in fade-in slide-in-from-top-2 ${isCurrentAnswerCorrect
-                                ? 'bg-green-50 border-green-500 text-green-900 dark:bg-green-900/20 dark:border-green-500 dark:text-green-100'
-                                : 'bg-red-50 border-red-500 text-red-900 dark:bg-red-900/20 dark:border-red-500 dark:text-red-100'
-                                }`}>
-                                <h3 className="font-bold flex items-center gap-2 text-lg">
-                                    {isCurrentAnswerCorrect ? <CheckCircle className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
-                                    {isCurrentAnswerCorrect ? "Correct!" : "Incorrect"}
-                                </h3>
-                                {!isCurrentAnswerCorrect && (
-                                    <p className="mt-2 font-medium">
-                                        Correct Answer: <span className="font-bold">
-                                            {q.options && q.correctAnswer !== undefined ? q.options[q.correctAnswer] : 'Unknown'}
+                                return (
+                                    <button
+                                        key={originalIndex}
+                                        onClick={() => handleAnswer(originalIndex)}
+                                        disabled={isSubmitting || (questionSubmitted && !delayedValidation)}
+                                        className={`${baseClass} ${stateClass} disabled:opacity-75 disabled:cursor-default`}
+                                    >
+                                        <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center font-bold text-base lg:text-lg mr-4 lg:mr-6 transition-colors ${badgeClass}`}>
+                                            {showSuccess || showCorrect ? <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6" /> : showWrong ? <XCircle className="w-5 h-5 lg:w-6 lg:h-6"/> : label}
+                                        </div>
+                                        <span className={`flex-1 text-base lg:text-lg text-left leading-relaxed ${textClass}`}>
+                                            {option}
                                         </span>
-                                    </p>
-                                )}
-                                {q.explanation && (
-                                    <div className="mt-3 text-sm opacity-90 border-t border-current pt-2 opacity-80">
-                                        <span className="font-bold uppercase text-xs tracking-wider opacity-70 block mb-1">Explanation</span>
-                                        {q.explanation}
-                                    </div>
-                                )}
-                            </div>
+                                    </button>
+                                );
+                            })
                         )}
                     </div>
 
-                    {/* Enhanced Footer with Navigation */}
-                    <div className="p-6 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/50 border-t-2 border-slate-200 dark:border-slate-700 flex justify-between items-center gap-4">
-                        <button
-                            onClick={previousQuestion}
-                            disabled={currentQuestion === 0 || isSubmitting}
-                            className="group flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md border border-slate-200 dark:border-slate-700"
-                        >
-                            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                            <span>Previous</span>
-                        </button>
-
-                        {/* Navigation Dots */}
-                        <div className="hidden md:flex items-center gap-2">
-                            {(retryMode ? wrongQuestionIndices : Array.from({ length: Math.min(quiz.questions.length, 10) }, (_, i) => i)).slice(0, 10).map((_, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`w-2 h-2 rounded-full transition-all ${idx === currentQuestion
-                                        ? 'bg-indigo-600 dark:bg-indigo-400 w-8'
-                                        : idx < currentQuestion
-                                            ? 'bg-green-500 dark:bg-green-400'
-                                            : 'bg-slate-300 dark:bg-slate-600'
-                                        }`}
-                                />
-                            ))}
+                    {/* Bottom Action Footer Overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8 bg-gradient-to-t from-gray-50 via-gray-50 dark:from-[#0b0f19] dark:via-[#0b0f19] to-transparent pt-12 flex items-center justify-between z-10 w-full pointer-events-none">
+                        <div className="hidden sm:flex text-gray-500 dark:text-gray-500 font-medium items-center gap-2 bg-white/80 dark:bg-black/50 backdrop-blur-md px-4 py-2 rounded-xl pointer-events-auto border border-gray-200/50 dark:border-white/10">
+                            <span className="hidden md:inline px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">1-4</span>
+                            <span className="hidden md:inline px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">A-D</span> 
+                            to select, 
+                            <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">Enter ↵</span> to advance
                         </div>
-
-                        {isLastQuestion ? (
-                            <button
-                                onClick={handleQuizComplete}
-                                disabled={isSubmitting}
-                                className="group relative px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl font-black shadow-xl shadow-green-500/30 hover:shadow-2xl hover:shadow-green-500/40 active:scale-95 transition-all flex items-center gap-2 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        <span>Submitting...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span>{retryMode ? 'Submit Retries' : delayedValidation ? 'Submit All' : 'Finish Quiz'}</span>
-                                        <Target className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-                                    </>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 animate-shimmer" />
-                            </button>
-                        ) : (
-                            <button
-                                onClick={nextQuestion}
-                                disabled={isSubmitting}
-                                className="group px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-black shadow-xl shadow-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/40 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <span>{questionSubmitted && !delayedValidation ? 'Continue' : 'Next Question'}</span>
-                                <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>
-                            </button>
-                        )}
+                        
+                        <div className="flex w-full sm:w-auto gap-4 pointer-events-auto ml-auto">
+                            {!isLastQuestion && (
+                                <button
+                                    onClick={nextQuestion}
+                                    disabled={answers[actualIndex] === undefined || (quiz.reviewMode && !delayedValidation && !questionSubmitted)}
+                                    className="flex-1 sm:flex-none px-8 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 text-white font-black text-lg rounded-xl shadow-xl shadow-indigo-600/20 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    {questionSubmitted && !delayedValidation ? 'Continue' : 'Next Question'}
+                                    <span className="text-xl">→</span>
+                                </button>
+                            )}
+                            {isLastQuestion && (
+                                <button
+                                    onClick={handleQuizComplete}
+                                    disabled={answers[actualIndex] === undefined}
+                                    className="flex-1 sm:flex-none px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 text-white font-black text-lg rounded-xl shadow-xl shadow-green-600/30 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    {isSubmitting ? 'Submitting...' : 'Finish Quiz'}
+                                    <Target className="w-5 h-5"/>
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Custom Animations */}
-            <style>{`
-                @keyframes shake {
-                    0%, 100% { transform: translateX(0); }
-                    25% { transform: translateX(-8px); }
-                    75% { transform: translateX(8px); }
-                }
-                @keyframes shimmer {
-                    0% { transform: translateX(-100%); }
-                    100% { transform: translateX(100%); }
-                }
-                .animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-                .animate-shimmer { animation: shimmer 2s infinite; }
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 8px;
-                    height: 8px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgb(241 245 249);
-                    border-radius: 10px;
-                }
-                .dark .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgb(30 41 59);
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: linear-gradient(to bottom, rgb(99 102 241), rgb(139 92 246));
-                    border-radius: 10px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: linear-gradient(to bottom, rgb(79 70 229), rgb(124 58 237));
-                }
-            `}</style>
-            <div className={shakeError ? "fixed inset-0 pointer-events-none animate-shake" : ""} />
-            <div className={shakeError ? "fixed inset-0 pointer-events-none animate-shake" : ""} />
+            {/* --- SHOP OVERLAY (Feature 9) --- */}
+            {showShop && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-end bg-black/40 backdrop-blur-sm p-0 sm:p-6 transition-all animate-in fade-in">
+                    <div className="bg-white dark:bg-[#111827] w-full max-w-md h-full sm:h-auto sm:max-h-[90vh] sm:rounded-3xl shadow-2xl flex flex-col border border-gray-200 dark:border-gray-800 animate-in slide-in-from-right sm:slide-in-from-bottom-8 overflow-hidden">
+                        
+                        {/* Shop Header */}
+                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#0d0d1c]">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-yellow-100 dark:bg-yellow-500/20 rounded-lg">
+                                    <ShoppingBag className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black text-gray-900 dark:text-white leading-none">Item Shop</h2>
+                                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-1">Mid-Quiz Boosters</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowShop(false)} className="p-2 rounded-xl bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition shrink-0">
+                                <XCircle className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        {/* Balance */}
+                        <div className="p-6 pb-4 text-center">
+                            <div className="inline-flex items-center gap-3 bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 px-6 py-3 rounded-2xl shadow-inner">
+                                <Coins className="w-6 h-6 text-yellow-500" />
+                                <span className="text-3xl font-black text-yellow-600 dark:text-yellow-400">{localCoins}</span>
+                            </div>
+                        </div>
+
+                        {/* Shop Items List */}
+                        <div className="flex-1 overflow-y-auto p-6 pt-2 flex flex-col gap-4 bg-white dark:bg-transparent">
+                            {[
+                                { type: 'hint', name: '50/50 Hint', desc: 'Disables two wrong answers to boost your chances.', price: 10, icon: 'hint' },
+                                { type: 'skip', name: 'Skip Pass', desc: 'Automatically marks current question correct and advances.', price: 25, icon: 'skip' },
+                                { type: 'time', name: 'Time Boost', desc: 'Add 30 extra seconds to the clock!', price: 15, icon: 'time' }
+                            ].map(item => {
+                                const canAfford = localCoins >= item.price;
+                                // In shop component we use pw_hint, but the user state expects hint. 
+                                // The backend uses format like pw_hint for store.
+                                const actualItemIdMap: Record<string, string> = { hint: 'pw_hint', skip: 'pw_skip', time: 'pw_time' };
+                                const apiId = actualItemIdMap[item.type];
+
+                                return (
+                                    <div key={item.type} className="flex flex-row items-center gap-4 bg-gray-50 dark:bg-[#1f2937] p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm relative overflow-hidden group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md transition-all">
+                                        
+                                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br ${getPowerUpColor(item.icon)} shadow-lg shrink-0 text-white transform group-hover:scale-105 transition-transform`}>
+                                            {getPowerUpIcon(item.icon, "w-7 h-7")}
+                                        </div>
+                                        
+                                        <div className="flex-1">
+                                            <h3 className="font-bold text-gray-900 dark:text-white text-base leading-tight mb-0.5">{item.name}</h3>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 pr-2 leading-relaxed">{item.desc}</div>
+                                            
+                                            <div className="mt-3 flex items-center justify-between">
+                                                <span className={`font-black flex items-center gap-1.5 text-sm ${canAfford ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                                                    <Coins className="w-4 h-4"/> {item.price}
+                                                </span>
+                                                <button 
+                                                    onClick={() => {
+                                                        handleBuyItem(item.type, item.price, apiId);
+                                                        setShowShop(false);
+                                                    }}
+                                                    disabled={!canAfford}
+                                                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:text-gray-400 text-white font-bold text-sm shadow-md transition-all active:scale-95"
+                                                >
+                                                    Buy & Use
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
             {/* Resume Prompt Modal */}
             {showResumePrompt && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in duration-200">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+                    <div className="bg-white dark:bg-[#0f0f1e] text-gray-900 dark:text-white border border-gray-200 dark:border-white/[0.10] rounded-3xl shadow-2xl p-8 max-w-md w-full animate-in fade-in zoom-in duration-200">
                         <div className="flex items-center gap-4 mb-6">
-                            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                                <Clock className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                            <div className="p-3 bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-2xl text-indigo-600 dark:text-indigo-400">
+                                <Clock className="w-8 h-8" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Resume Quiz?</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    We found an unfinished attempt from {savedState ? new Date(savedState.lastUpdated).toLocaleDateString() : ''}
+                                <h3 className="text-xl font-black">Resume Quiz?</h3>
+                                <p className="text-sm text-gray-500 dark:text-slate-500 mt-0.5">
+                                    Unfinished attempt from {savedState ? new Date(savedState.lastUpdated).toLocaleDateString() : ''}
                                 </p>
                             </div>
                         </div>
 
-                        <p className="text-gray-600 dark:text-gray-300 mb-8">
-                            Would you like to continue where you left off or start over from the beginning?
+                        <p className="text-gray-600 dark:text-slate-400 mb-8 text-sm leading-relaxed">
+                            Continue where you left off, or start a fresh attempt from the beginning.
                         </p>
 
-                        <div className="flex gap-4">
+                        <div className="flex gap-3">
                             <button
                                 onClick={handleStartNew}
-                                className="flex-1 px-4 py-3 rounded-xl font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                className="flex-1 px-4 py-3 rounded-xl font-bold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-white/[0.05] border border-gray-200 dark:border-white/[0.08] hover:bg-gray-200 dark:hover:bg-white/[0.10] transition-all"
                             >
                                 Start Over
                             </button>
                             <button
                                 onClick={handleResume}
-                                className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-purple-500/25"
+                                className="flex-1 px-4 py-3 rounded-xl font-black text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/30"
                             >
                                 Resume
                             </button>
