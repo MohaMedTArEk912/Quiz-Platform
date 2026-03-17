@@ -326,3 +326,40 @@ export const adminChangeUserPassword = async (req, res) => {
         res.status(500).json({ message: 'Error changing user password', error: error.message });
     }
 };
+
+export const adminCreateUser = async (req, res) => {
+    try {
+        const { userId, name, email, password, role } = req.body;
+        const normalizedEmail = email.toLowerCase().trim();
+
+        // Check if user exists
+        const existingUser = await User.findOne({ email: normalizedEmail });
+        if (existingUser) {
+            return res.status(400).json({ message: 'User already exists' });
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const newUser = new User({
+            userId: userId || normalizedEmail.replace(/[^a-z0-9]/g, '_'),
+            name,
+            email: normalizedEmail,
+            password: hashedPassword,
+            role: role || 'user',
+            createdAt: new Date()
+        });
+
+        await newUser.save();
+
+        // Fetch enriched user for response
+        const enrichedUser = await getEnrichedUser(newUser.userId);
+        const { password: _pw, ...safeUser } = enrichedUser || newUser.toObject();
+
+        res.status(201).json({ user: safeUser });
+    } catch (error) {
+        console.error('Admin Create User Error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};

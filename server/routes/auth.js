@@ -2,6 +2,7 @@ import express from 'express';
 import * as authController from '../controllers/authController.js';
 
 import { validate, registerSchema, loginSchema } from '../middleware/validationMiddleware.js';
+import { verifyAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -13,5 +14,6 @@ router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 router.post('/change-password', authController.changePassword);
 router.post('/admin/change-user-password', authController.adminChangeUserPassword);
+router.post('/admin/create-user', verifyAdmin, authController.adminCreateUser);
 
 export default router;

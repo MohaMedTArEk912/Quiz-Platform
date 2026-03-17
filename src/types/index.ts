@@ -87,6 +87,7 @@ export interface UserData {
     name: string;
     email: string;
     role?: 'user' | 'admin';
+    password?: string;
     totalScore: number;
     totalTime: number; // in seconds
     totalAttempts: number;

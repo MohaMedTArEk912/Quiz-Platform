@@ -191,6 +191,19 @@ export const api = {
         return response.json();
     },
 
+    async adminCreateUser(userData: Partial<UserData>, adminId: string) {
+        const response = await fetchWithFallback('/admin/create-user', {
+            method: 'POST',
+            headers: getHeaders(adminId),
+            body: JSON.stringify(userData),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to create user');
+        }
+        return response.json();
+    },
+
     async importQuizzes(quizData: unknown, adminId: string) {
         const response = await fetchWithFallback('/quizzes/import', {
             method: 'POST',

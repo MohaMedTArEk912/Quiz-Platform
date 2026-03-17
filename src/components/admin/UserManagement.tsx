@@ -39,7 +39,7 @@ const RoadmapEditorModal: React.FC<{
             .then(p => setProgress({ completedModules: p.completedModules || [], unlockedModules: p.unlockedModules || [] }))
             .catch((_e) => onNotification('error', 'Failed to load progress'))
             .finally(() => setLoading(false));
-    }, [selectedTrack, user.userId]);
+    }, [selectedTrack, user.userId, currentUser.userId, onNotification]);
 
     const handleSave = async () => {
         if (!selectedTrack) return;
@@ -263,6 +263,144 @@ const RoadmapEditorModal: React.FC<{
     );
 };
 
+const CreateUserModal: React.FC<{
+    currentUser: UserData;
+    onClose: () => void;
+    onNotification: (type: 'success' | 'error', message: string) => void;
+    onRefresh: () => void;
+}> = ({ currentUser, onClose, onNotification, onRefresh }) => {
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [role, setRole] = useState<'user' | 'admin'>('user');
+    const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (!name || !email || !password) {
+            onNotification('error', 'Please fill in all fields');
+            return;
+        }
+
+        if (password.length < 6) {
+            onNotification('error', 'Password must be at least 6 characters');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await api.adminCreateUser({
+                name,
+                email: email.toLowerCase().trim(),
+                password,
+                role,
+                userId: email.toLowerCase().trim().replace(/[^a-z0-9]/g, '_')
+            }, currentUser.userId);
+
+            onNotification('success', 'Identity created successfully');
+            onRefresh();
+            onClose();
+        } catch (error) {
+            console.error('Create user error:', error);
+            onNotification('error', error instanceof Error ? error.message : 'Failed to create user');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Modal
+            isOpen={true}
+            onClose={onClose}
+            title="Create Identity"
+            description="Initialize a new agent profile"
+            maxWidth="max-w-lg"
+            icon={<Users className="w-6 h-6 text-indigo-500" />}
+            footer={
+                <>
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-colors hover:bg-gray-200 dark:hover:bg-white/10"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={isLoading}
+                        className="flex-[2] py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all transform hover:-translate-y-1 disabled:opacity-50"
+                    >
+                        {isLoading ? 'Processing...' : 'Create Identity'}
+                    </button>
+                </>
+            }
+        >
+            <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Agent Name</label>
+                    <input
+                        placeholder="e.g. Neo Anderson"
+                        value={name}
+                        onChange={e => setName(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-indigo-500/50 rounded-xl px-5 py-4 text-gray-900 dark:text-white font-bold outline-none transition-all placeholder:text-gray-400"
+                    />
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Email Identity</label>
+                    <input
+                        type="email"
+                        placeholder="e.g. neo@matrix.com"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-indigo-500/50 rounded-xl px-5 py-4 text-gray-900 dark:text-white font-bold outline-none transition-all placeholder:text-gray-400"
+                    />
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Access Key</label>
+                    <div className="relative">
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="Secure code (min. 6 chars)"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-indigo-500/50 rounded-xl px-5 py-4 text-gray-900 dark:text-white font-bold outline-none transition-all pr-14 placeholder:text-gray-400"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-indigo-500 transition-colors"
+                        >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Assignment Role</label>
+                    <div className="grid grid-cols-2 gap-3">
+                        {(['user', 'admin'] as const).map(r => (
+                            <button
+                                key={r}
+                                type="button"
+                                onClick={() => setRole(r)}
+                                className={`py-3 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${role === r
+                                    ? 'bg-indigo-500/10 border-2 border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                                    : 'bg-gray-100 dark:bg-white/5 border-2 border-transparent text-gray-500 dark:text-gray-400 grayscale hover:grayscale-0'
+                                    }`}
+                            >
+                                {r === 'admin' ? '🛡️ Administrator' : '👤 Standard Agent'}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </form>
+        </Modal>
+    );
+};
+
 const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, currentUser, onRefresh, onNotification }) => {
     const [editingUser, setEditingUser] = useState<EditableUser | null>(null);
     const [originalUser, setOriginalUser] = useState<EditableUser | null>(null);
@@ -271,6 +409,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
     const [searchTerm, setSearchTerm] = useState('');
     const [viewingAttempts, setViewingAttempts] = useState<UserData | null>(null);
     const [managingRoadmap, setManagingRoadmap] = useState<UserData | null>(null);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [giftingUser, setGiftingUser] = useState<UserData | null>(null);
     const [giftType, setGiftType] = useState<'coins' | 'xp' | 'shopitem'>('coins');
     const [giftAmount, setGiftAmount] = useState('');
@@ -403,6 +542,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                         className="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder:text-gray-500 font-bold text-sm uppercase tracking-tight"
                     />
                 </div>
+                <button
+                    onClick={() => setIsCreateOpen(true)}
+                    className="flex items-center justify-center gap-3 px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-3xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all hover:-translate-y-1 active:scale-95 group"
+                >
+                    <Users className="w-5 h-5 transition-transform group-hover:scale-110" />
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em]">Create Identity</span>
+                </button>
                 <div className="hidden lg:flex items-center gap-3 px-6 py-3 bg-indigo-500/10 rounded-3xl border border-white/10">
                     <Users className="w-5 h-5 text-indigo-500" />
                     <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] whitespace-nowrap">Total: {users.length} Users</span>
@@ -638,6 +784,16 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                     user={managingRoadmap}
                     currentUser={currentUser}
                     onClose={() => setManagingRoadmap(null)}
+                    onNotification={onNotification}
+                    onRefresh={onRefresh}
+                />
+            )}
+
+            {/* Create Identity Modal */}
+            {isCreateOpen && (
+                <CreateUserModal
+                    currentUser={currentUser}
+                    onClose={() => setIsCreateOpen(false)}
                     onNotification={onNotification}
                     onRefresh={onRefresh}
                 />
