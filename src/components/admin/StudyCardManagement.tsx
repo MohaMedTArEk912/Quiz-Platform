@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BookOpen, Download, Upload, Plus, MoreVertical, Edit2, Trash2, Code, ArrowLeft, ChevronDown } from 'lucide-react';
 import Modal from '../common/Modal';
 import type { StudyCard, UserData } from '../../types/index';
@@ -47,12 +47,7 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
     const cardUploadRef = useRef<HTMLInputElement>(null);
     const studyMenuRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        loadData();
-        loadModules();
-    }, [subjectId]);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const data = await api.getStudyCards(subjectId);
             setStudyCards(data);
@@ -60,9 +55,9 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
             console.error('Failed to load study cards', err);
             onNotification('error', 'Failed to load study cards');
         }
-    };
+    }, [subjectId, onNotification]);
 
-    const loadModules = async () => {
+    const loadModules = useCallback(async () => {
         if (!subjectId) { setModules([]); return; }
         try {
             const tracks = await api.getSkillTracks(subjectId);
@@ -76,7 +71,12 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
             console.warn('Failed to load modules for subject', err);
             setModules([]);
         }
-    };
+    }, [subjectId]);
+
+    useEffect(() => {
+        loadData();
+        loadModules();
+    }, [loadData, loadModules]);
 
     // Click outside handler for menus
     useEffect(() => {

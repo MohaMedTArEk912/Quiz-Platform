@@ -34,14 +34,12 @@ export const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onC
     const { socket, isUserOnline, checkUserOnline } = useSocket();
     const navigate = useNavigate();
     const [messages, setMessages] = useState<ChallengeMessage[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading] = useState(false);
     const [friendOnline, setFriendOnline] = useState(false);
     const [pendingChallengeMessageId, setPendingChallengeMessageId] = useState<string | null>(null);
 
     // Check friend's online status on mount and when isUserOnline cache changes
     useEffect(() => {
-        const cachedStatus = isUserOnline(friend.userId);
-        setFriendOnline(cachedStatus);
         checkUserOnline(friend.userId).then(status => {
             setFriendOnline(status);
         });
@@ -67,10 +65,6 @@ export const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onC
             socket.off('user_offline', handleUserOffline);
         };
     }, [socket, friend.userId]);
-
-    useEffect(() => {
-        setLoading(false);
-    }, [friend.userId]);
 
     // Listen for incoming messages
     useEffect(() => {

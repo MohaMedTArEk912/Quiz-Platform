@@ -43,6 +43,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     const [activeSection, setActiveSection] = useState<'identity' | 'config' | 'lessons' | 'deps'>('identity');
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setEditedNode(getInitialNode(node));
         setIsDirty(false);
     }, [node]);

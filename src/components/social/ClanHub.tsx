@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../lib/api';
 import type { Clan, UserData, ClanChatMessage } from '../../types';
 import { Users, Shield, Trophy, Search, LogOut, Star, UserPlus, Edit2, Check, X, MoreVertical, Trash2, ArrowUpCircle, ArrowDownCircle, Bell, Pin, Megaphone, MessageCircle } from 'lucide-react';
@@ -132,7 +132,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             socket.off('kicked_from_clan', handleKickedFromClan);
             socket.emit('leave_clan_chat', clan.clanId);
         };
-    }, [socket, clan?.clanId, showChat]); // Added showChat dependency to update read status live
+    }, [socket, clan?.clanId, showChat, showNotification, onUpdateUser]); // Added showChat dependency to update read status live
 
     const handleDeleteMessage = async (messageId: string) => {
         if (!socket || !clan) return;
@@ -164,16 +164,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
         }
     };
 
-    useEffect(() => {
-        if (user.clanId) {
-            loadClan(user.clanId);
-        } else {
-            setView('browse');
-            setLoading(false);
-        }
-    }, [user.clanId]);
-
-    const loadClan = async (clanId: string) => {
+    const loadClan = useCallback(async (clanId: string) => {
         try {
             const data = await api.getClan(clanId, user.userId);
             setClan(data);
@@ -183,7 +174,17 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             setError('Failed to load clan');
             setLoading(false);
         }
-    };
+    }, [user.userId]);
+
+    useEffect(() => {
+        if (user.clanId) {
+            loadClan(user.clanId);
+        } else {
+            setView('browse');
+            setLoading(false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user.clanId]);
 
     const handleSearch = async () => {
         if (!searchQuery.trim()) return;

@@ -30,7 +30,7 @@ const DashboardPage: React.FC = () => {
             }
         };
         loadLatestData();
-    }, []);
+    }, [refreshUser, refreshData]);
 
     if (!currentUser) return null;
 

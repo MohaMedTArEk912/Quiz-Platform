@@ -4,6 +4,7 @@ import VSGame from '../components/multiplayer/VSGame';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import type { QuizResult } from '../types';
+import type { AttemptData, UserData } from '../types';
 import { api } from '../lib/api';
 
 const VsGamePage: React.FC = () => {
@@ -25,7 +26,7 @@ const VsGamePage: React.FC = () => {
     console.log('VsGamePage Quiz Check:', { quizId, found: !!quiz, loadingData, loadingQuizzes });
 
     // Find full opponent details including avatar
-    const opponentUser = allUsers.find(u => u.userId === opponent.id) || {
+    const opponentUser: UserData = allUsers.find(u => u.userId === opponent.id) || {
         userId: opponent.id,
         name: opponent.name,
         email: '',
@@ -63,15 +64,21 @@ const VsGamePage: React.FC = () => {
         }
     };
 
+    const opponentForGame = {
+        id: opponentUser.userId,
+        name: opponentUser.name,
+        avatar: opponentUser.avatar,
+    };
+
     return (
         <VSGame
             quiz={quiz}
             currentUser={currentUser}
-            opponent={opponentUser as any} // Cast to any temporarily or match types if VSGame is updated
+            opponent={opponentForGame}
             roomId={roomId}
             onComplete={async (result: QuizResult) => {
                 try {
-                    const attempt = {
+                    const attempt: AttemptData = {
                         attemptId: crypto.randomUUID(),
                         userId: currentUser.userId,
                         userName: currentUser.name,
@@ -81,7 +88,7 @@ const VsGamePage: React.FC = () => {
                         score: result.score,
                         totalQuestions: result.totalQuestions,
                         percentage: result.percentage,
-                        timeTaken: result.timeTaken,
+                        timeTaken: result.timeTaken || 0,
                         answers: result.answers,
                         completedAt: new Date().toISOString(),
                         passed: result.passed,
@@ -89,7 +96,7 @@ const VsGamePage: React.FC = () => {
                     };
 
                     // Save attempt which now awards XP/Coins
-                    await api.saveAttempt(attempt as any);
+                    await api.saveAttempt(attempt);
 
                     // Refresh user data (XP/Coins/Level)
                     const { user } = await api.verifySession();

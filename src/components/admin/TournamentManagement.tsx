@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Trophy, MoreVertical, Download, Upload, Plus, Edit2, Trash2, BookOpen, X } from 'lucide-react';
 import Modal from '../common/Modal';
 import type { Tournament, Quiz, UserData, BadgeDefinition, ShopItem } from '../../types/index.ts';
@@ -23,20 +23,7 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
     const tournamentMenuRef = useRef<HTMLDivElement>(null);
     const quizUploadRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    // Click outside handler for menus
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (tournamentMenuRef.current && !tournamentMenuRef.current.contains(event.target as Node)) setShowTournamentMenu(false);
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const [tournamentsData, badgesData, shopItemsData] = await Promise.all([
                 api.getTournaments(),
@@ -50,7 +37,22 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
             console.error('Failed to load data', err);
             onNotification('error', 'Failed to load tournaments data');
         }
-    }
+    }, [onNotification]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    // Click outside handler for menus
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (tournamentMenuRef.current && !tournamentMenuRef.current.contains(event.target as Node)) setShowTournamentMenu(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    
 
     const handleDownloadExampleJson = () => {
         const exampleData = { name: "Example Tournament", description: "Tournament description", startsAt: new Date().toISOString(), endsAt: new Date(Date.now() + 86400000).toISOString(), status: "scheduled", quizIds: [] };

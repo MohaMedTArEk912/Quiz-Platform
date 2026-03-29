@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Zap, Plus, Edit2, Trash2, RefreshCw, Code2, Calendar, Sparkles } from 'lucide-react';
 import Modal from '../common/Modal';
 import type { UserData, Quiz, CompilerQuestion, ShopItem } from '../../types/index.ts';
@@ -20,13 +20,7 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
     const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'reschedule', item: any } | null>(null);
     const [isAutoScheduling, setIsAutoScheduling] = useState(false);
 
-    useEffect(() => {
-        if (activeTab === 'schedule') {
-            loadData();
-        }
-    }, [currentUser.userId, activeTab]);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const [challengesData, itemsData, questionsData] = await Promise.all([
                 api.getDailyChallengesAdmin(currentUser.userId),
@@ -40,7 +34,13 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
             console.error('Failed to load data', err);
             onNotification('error', 'Failed to load daily challenges data');
         }
-    }
+    }, [currentUser.userId, onNotification]);
+
+    useEffect(() => {
+        if (activeTab === 'schedule') {
+            loadData();
+        }
+    }, [activeTab, loadData]);
 
     const handleAutoScheduleWeek = async () => {
         if (compilerQuestions.length < 7) {

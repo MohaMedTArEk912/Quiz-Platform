@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { Quiz, UserData, QuizResult } from '../../types';
 import { useSocket } from '../../context/SocketContext';
 import QuizTaking from '../QuizTaking';
@@ -58,10 +58,35 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
     const [myProgress, setMyProgress] = useState(0);
     const [gameLogs, setGameLogs] = useState<string[]>([]);
     const logsEndRef = useRef<HTMLDivElement>(null);
-    const [isAhead, setIsAhead] = useState<boolean | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
     const [gameStartTime, setGameStartTime] = useState<number | null>(null);
     const [myTimeElapsed, setMyTimeElapsed] = useState(0);
+
+    const isAhead = useMemo(() => {
+        // Priority: 1) Correct answers, 2) Score, 3) Progress, 4) Time
+        if (myState.correctAnswers > opponentState.correctAnswers) {
+            return true;
+        }
+        if (myState.correctAnswers < opponentState.correctAnswers) {
+            return false;
+        }
+        if (myState.score > opponentState.score) {
+            return true;
+        }
+        if (myState.score < opponentState.score) {
+            return false;
+        }
+        if (myState.currentQuestion > opponentState.currentQuestion) {
+            return true;
+        }
+        if (myState.currentQuestion < opponentState.currentQuestion) {
+            return false;
+        }
+        if (myState.currentQuestion === 0 && opponentState.currentQuestion === 0) {
+            return null;
+        }
+        return myTimeElapsed <= opponentState.timeElapsed;
+    }, [myState, opponentState, myTimeElapsed]);
 
     // Auto-scroll logs
     useEffect(() => {
@@ -90,27 +115,6 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
             socket.off('reconnecting', handleReconnecting);
         };
     }, [socket]);
-
-    // Update ahead status whenever state changes
-    useEffect(() => {
-        // Priority: 1) Correct answers, 2) Score, 3) Progress, 4) Time
-        if (myState.correctAnswers > opponentState.correctAnswers) {
-            setIsAhead(true);
-        } else if (myState.correctAnswers < opponentState.correctAnswers) {
-            setIsAhead(false);
-        } else if (myState.score > opponentState.score) {
-            setIsAhead(true);
-        } else if (myState.score < opponentState.score) {
-            setIsAhead(false);
-        } else if (myState.currentQuestion > opponentState.currentQuestion) {
-            setIsAhead(true);
-        } else if (myState.currentQuestion < opponentState.currentQuestion) {
-            setIsAhead(false);
-        } else {
-            // Same progress - check time (faster is better)
-            setIsAhead(myTimeElapsed <= opponentState.timeElapsed);
-        }
-    }, [myState, opponentState, myTimeElapsed]);
 
     // Listen for updates and match ready
     useEffect(() => {
@@ -183,18 +187,15 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
                 const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
                 return () => clearTimeout(timer);
             } else {
-                setGameState('playing');
-                addLog("GO! 🚀");
+                const startTimer = setTimeout(() => {
+                    setGameState('playing');
+                    setGameStartTime(Date.now());
+                    addLog("GO! 🚀");
+                }, 0);
+                return () => clearTimeout(startTimer);
             }
         }
     }, [gameState, countdown]);
-
-    // Set game start time when playing starts
-    useEffect(() => {
-        if (gameState === 'playing' && !gameStartTime) {
-            setGameStartTime(Date.now());
-        }
-    }, [gameState, gameStartTime]);
 
     // Track time elapsed
     useEffect(() => {

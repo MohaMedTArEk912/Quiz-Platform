@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import dagre from 'dagre';
 import { api } from '../../lib/api';
 import type { SkillModule, SkillTrack, Quiz, BadgeNode } from '../../types';
@@ -145,9 +145,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     const { confirm, confirmState, handleCancel } = useConfirm();
 
     // --- Initialization ---
-    useEffect(() => { loadData(); }, [subjectId]);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             setLoading(true);
             // Fetch tracks, quizzes, and badges in parallel
@@ -209,7 +207,9 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
             console.error(error);
             onNotification('error', 'Failed to load graph');
         } finally { setLoading(false); }
-    };
+    }, [subjectId, onNotification]);
+
+    useEffect(() => { loadData(); }, [loadData]);
 
     /**
      * Migration Utility: Tree -> XY Graph

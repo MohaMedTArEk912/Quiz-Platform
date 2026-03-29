@@ -18,6 +18,7 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({ quiz, isOpen, onClose }
         : '';
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (!isOpen) setCopied(false);
     }, [isOpen]);
 

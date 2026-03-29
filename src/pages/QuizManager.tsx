@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, MoreVertical, Download, Upload, Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Quiz, Subject, UserData } from '../types';
@@ -83,11 +83,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
         setLocalQuizzes(quizzes);
     }, [quizzes]);
 
-    useEffect(() => {
-        loadSubjects();
-    }, [currentUser.userId]);
-
-    const loadSubjects = async () => {
+    const loadSubjects = useCallback(async () => {
         try {
             // api.getAllSubjects already extracts and returns the data array directly
             const subjects = await api.getAllSubjects(currentUser.userId);
@@ -102,7 +98,11 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
             // Don't leave subjects as undefined - set to empty array
             setSubjects([]);
         }
-    };
+    }, [currentUser.userId]);
+
+    useEffect(() => {
+        loadSubjects();
+    }, [loadSubjects]);
 
     // --- Subject Handlers ---
 

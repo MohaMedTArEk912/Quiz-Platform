@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 import {
     Users,
@@ -55,21 +55,37 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [statsCollapsed, setStatsCollapsed] = useState(false);
-    const [stats, setStats] = useState({
-        totalUsers: 0,
-        totalQuizzes: 0,
-        totalAttempts: 0,
-        avgScore: 0
-    });
     const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning', message: string } | null>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
 
 
     // --- Effects & Helpers ---
+    const stats = useMemo(() => {
+        const totalScore = attempts.reduce((acc, curr) => acc + curr.score, 0);
+        const avgScore = attempts.length > 0 ? Math.round(totalScore / attempts.length) : 0;
+        return {
+            totalUsers: users.length,
+            totalQuizzes: quizzes.length,
+            totalAttempts: attempts.length,
+            avgScore
+        };
+    }, [attempts, users.length, quizzes.length]);
+
+    const loadPendingReviews = useCallback(async () => {
+        try {
+            const reviews = await api.getPendingReviews();
+            setPendingReviews(reviews);
+        } catch (error) {
+            console.error('Failed to load pending reviews:', error);
+        }
+    }, []);
+
     useEffect(() => {
-        calculateStats();
-        loadPendingReviews();
-    }, [users, quizzes, attempts]);
+        const refreshTimer = setTimeout(() => {
+            loadPendingReviews();
+        }, 0);
+        return () => clearTimeout(refreshTimer);
+    }, [loadPendingReviews]);
 
     // Auto-collapse stats when scrolling down on Main tab
     useEffect(() => {
@@ -82,26 +98,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         el.addEventListener('scroll', onScroll);
         return () => el.removeEventListener('scroll', onScroll);
     }, [selectedTab]);
-
-    const calculateStats = () => {
-        const totalScore = attempts.reduce((acc, curr) => acc + curr.score, 0);
-        const avgScore = attempts.length > 0 ? Math.round(totalScore / attempts.length) : 0;
-        setStats({
-            totalUsers: users.length,
-            totalQuizzes: quizzes.length,
-            totalAttempts: attempts.length,
-            avgScore
-        });
-    };
-
-    const loadPendingReviews = async () => {
-        try {
-            const reviews = await api.getPendingReviews();
-            setPendingReviews(reviews);
-        } catch (error) {
-            console.error('Failed to load pending reviews:', error);
-        }
-    };
 
     const handleNotification = (type: 'success' | 'error' | 'warning', message: string) => {
         setNotification({ type, message });

@@ -8,13 +8,51 @@ import { syncClanXp } from '../utils/xpSync.js';
 
 import { checkAndUnlockBadges } from './badgeNodeController.js';
 
+const normalizeAttemptPayload = (attemptData, user) => {
+    const normalized = { ...attemptData };
+
+    if (!normalized.attemptId) {
+        normalized.attemptId = `${normalized.userId || 'guest'}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    if (typeof normalized.userName !== 'string' || normalized.userName.trim() === '') {
+        normalized.userName = user?.name || 'Unknown User';
+    }
+
+    if (typeof normalized.userEmail !== 'string' || normalized.userEmail.trim() === '') {
+        normalized.userEmail = user?.email || 'unknown@example.com';
+    }
+
+    normalized.timeTaken = Number.isFinite(normalized.timeTaken) ? normalized.timeTaken : 0;
+    normalized.totalQuestions = Number.isFinite(normalized.totalQuestions) ? normalized.totalQuestions : 0;
+    normalized.score = Number.isFinite(normalized.score) ? normalized.score : 0;
+    normalized.percentage = Number.isFinite(normalized.percentage) ? normalized.percentage : 0;
+
+    if (!normalized.answers || typeof normalized.answers !== 'object') {
+        normalized.answers = {};
+    }
+
+    if (!Array.isArray(normalized.powerUpsUsed)) {
+        normalized.powerUpsUsed = [];
+    }
+
+    return normalized;
+};
+
 export const saveAttempt = async (req, res) => {
   try {
-    const attemptData = req.body;
-    const { userId, powerUpsUsed = [] } = attemptData;
+        const attemptData = req.body || {};
+        const { userId } = attemptData;
+
+        if (!userId || !attemptData.quizId || !attemptData.quizTitle) {
+            return res.status(400).json({ message: 'Missing required attempt fields: userId, quizId, or quizTitle' });
+        }
 
     // Validate power-ups against user inventory if user exists
     const user = await User.findOne({ userId });
+        const normalizedAttempt = normalizeAttemptPayload(attemptData, user);
+        const powerUpsUsed = normalizedAttempt.powerUpsUsed || [];
+
     if (user && powerUpsUsed.length > 0) {
       const counts = new Map();
       (user.powerUps || []).forEach(p => counts.set(p.type, p.quantity || 0));
@@ -35,25 +73,40 @@ export const saveAttempt = async (req, res) => {
       await user.save();
     }
 
-    const newAttempt = new Attempt(attemptData);
-    await newAttempt.save();
+        let newAttempt;
+        try {
+            newAttempt = new Attempt(normalizedAttempt);
+            await newAttempt.save();
+        } catch (saveError) {
+            // Gracefully handle duplicate submission retries using the same attemptId.
+            if (saveError?.code === 11000 && saveError?.keyPattern?.attemptId) {
+                const existingAttempt = await Attempt.findOne({ attemptId: normalizedAttempt.attemptId }).lean();
+                if (existingAttempt) {
+                    return res.status(200).json({ ...existingAttempt, duplicate: true, newBadges: [] });
+                }
+            }
+            if (saveError?.name === 'ValidationError') {
+                return res.status(400).json({ message: 'Invalid attempt payload', error: saveError.message });
+            }
+            throw saveError;
+        }
 
     // UPDATE USER STATS & REWARDS
     if (user) {
         user.totalAttempts = (user.totalAttempts || 0) + 1;
-        user.totalScore = (user.totalScore || 0) + (attemptData.score || 0);
-        user.totalTime = (user.totalTime || 0) + (attemptData.timeTaken || 0);
+        user.totalScore = (user.totalScore || 0) + (normalizedAttempt.score || 0);
+        user.totalTime = (user.totalTime || 0) + (normalizedAttempt.timeTaken || 0);
 
         // Fetch quiz for rewards
-        const quiz = await Quiz.findOne({ id: attemptData.quizId }).lean();
+        const quiz = await Quiz.findOne({ id: normalizedAttempt.quizId }).lean();
         
         if (quiz) {
             // Coins logic
             const baseCoins = quiz.coinsReward || 10;
             // Award coins if passed, or maybe partial? 
             // For now, let's award base coins if passed, plus small amount for participation
-            if (attemptData.passed) {
-                const coinsEarned = baseCoins + Math.floor((attemptData.score / 10)); // Example bonus
+            if (normalizedAttempt.passed) {
+                const coinsEarned = baseCoins + Math.floor((normalizedAttempt.score / 10)); // Example bonus
                 user.coins = (user.coins || 0) + coinsEarned;
             } else {
                  user.coins = (user.coins || 0) + 2; // Participation coins
@@ -62,7 +115,7 @@ export const saveAttempt = async (req, res) => {
             // XP Logic
             const baseXp = quiz.xpReward || 50;
             let xpEarned = 0;
-             if (attemptData.passed) {
+             if (normalizedAttempt.passed) {
                 xpEarned = baseXp;
             } else {
                 xpEarned = 10; // Participation XP
@@ -88,8 +141,8 @@ export const saveAttempt = async (req, res) => {
 
         // Fire-and-forget: badge checks + roadmap progress in background
         Promise.all([
-            checkAndUnlockBadges(userId, attemptData),
-            attemptData.passed ? updateRoadmapProgress(userId, attemptData.quizId) : Promise.resolve()
+            checkAndUnlockBadges(userId, normalizedAttempt),
+            normalizedAttempt.passed ? updateRoadmapProgress(userId, normalizedAttempt.quizId) : Promise.resolve()
         ]).catch(err => console.error('Post-submission background processing error:', err));
 
         return; // Early return — response already sent

@@ -4,7 +4,7 @@
  * and provides real-time status information
  */
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { apiConfig, apiHealthStatus } from '../lib/apiConfig';
 import { getApiStatus } from '../lib/apiRetry';
 
@@ -96,7 +96,7 @@ export const useApiHealth = (intervalMs: number = apiConfig.healthCheckInterval)
   };
 
   // Run health checks
-  const runHealthChecks = async () => {
+  const runHealthChecks = useCallback(async () => {
     const primaryUrl = apiConfig.primary + '/health-check';
     const fallbackUrl = apiConfig.fallback + '/health-check';
 
@@ -122,22 +122,25 @@ export const useApiHealth = (intervalMs: number = apiConfig.healthCheckInterval)
       },
       isUsingFallback: !primaryResult.healthy && fallbackResult.healthy,
     });
-  };
+  }, []);
 
   // Initialize health checks
   useEffect(() => {
-    // Run initial health check
-    runHealthChecks();
+    // Run initial health check asynchronously to avoid sync state updates in effect body
+    const initialTimer = setTimeout(() => {
+      runHealthChecks();
+    }, 0);
 
     // Set up periodic health checks
     intervalIdRef.current = setInterval(runHealthChecks, intervalMs);
 
     return () => {
+      clearTimeout(initialTimer);
       if (intervalIdRef.current) {
         clearInterval(intervalIdRef.current);
       }
     };
-  }, [intervalMs]);
+  }, [intervalMs, runHealthChecks]);
 
   return {
     health,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -26,10 +26,8 @@ const Modal: React.FC<ModalProps> = ({
     bodyClassName
 }) => {
     // ... existing hook logic ... 
-    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        setMounted(true);
         if (isOpen) {
             document.body.style.overflow = 'hidden';
         } else {
@@ -40,7 +38,7 @@ const Modal: React.FC<ModalProps> = ({
         };
     }, [isOpen]);
 
-    if (!mounted || !isOpen) return null;
+    if (!isOpen || typeof document === 'undefined') return null;
 
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Sparkles, Edit, BookOpen, GraduationCap, Brain,
 } from 'lucide-react';
@@ -50,13 +50,7 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
     const [isLoading, setIsLoading] = useState(true);
 
     // Load Data
-    useEffect(() => {
-        if (currentUser?.userId) {
-            loadRoads();
-        }
-    }, [currentUser?.userId]);
-
-    const loadRoads = async () => {
+    const loadRoads = useCallback(async () => {
         setIsLoading(true);
         try {
             const subjects = await api.getAllSubjects(currentUser.userId);
@@ -67,9 +61,9 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [currentUser.userId, onNotification]);
 
-    const loadQuizzes = async () => {
+    const loadQuizzes = useCallback(async () => {
         try {
             const quizArray = await api.getQuizzes();
             setAllQuizzes(quizArray);
@@ -80,7 +74,13 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
             console.error(e);
             onNotification('error', 'Failed to load quizzes');
         }
-    };
+    }, [selectedRoad, onNotification]);
+
+    useEffect(() => {
+        if (currentUser?.userId) {
+            loadRoads();
+        }
+    }, [currentUser?.userId, loadRoads]);
 
     const handleAssignQuiz = async (quiz: Quiz, assign: boolean) => {
         if (!selectedRoad) return;
@@ -149,7 +149,7 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
         if (activeTab === 'quizzes') {
             loadQuizzes();
         }
-    }, [activeTab, selectedRoad]);
+    }, [activeTab, selectedRoad, loadQuizzes]);
 
     // Handlers
     const handleSelectRoad = (road: Subject) => {

@@ -17,6 +17,7 @@ const StackEditModal: React.FC<StackEditModalProps> = ({ isOpen, subject, onClos
 
     useEffect(() => {
         if (subject) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setEditForm({ ...subject });
         }
     }, [subject]);

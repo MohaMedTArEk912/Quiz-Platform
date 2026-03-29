@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../../lib/api';
 import type { CompilerQuestion } from '../../types';
 import Modal from '../common/Modal';
@@ -48,7 +48,7 @@ const CompilerQuestionManagement: React.FC<CompilerQuestionManagementProps> = ({
     /**
      * Fetch all compiler questions from the API
      */
-    const loadQuestions = async () => {
+    const loadQuestions = useCallback(async () => {
         try {
             setLoading(true);
             const data = await api.getCompilerQuestionsAdmin(adminId);
@@ -59,11 +59,11 @@ const CompilerQuestionManagement: React.FC<CompilerQuestionManagementProps> = ({
         } finally {
             setLoading(false);
         }
-    };
+    }, [adminId]);
 
     useEffect(() => {
         loadQuestions();
-    }, [adminId]);
+    }, [loadQuestions]);
 
     // Close menu on outside click
     useEffect(() => {

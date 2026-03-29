@@ -194,7 +194,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     }, [currentQuestion, questionOrder, retryMode, wrongQuestionIndices]);
 
 
-    const resetQuestionState = (targetIndex = currentQuestion) => {
+    const resetQuestionState = useCallback((targetIndex = currentQuestion) => {
         setShakeError(false);
         if (!quiz.reviewMode) {
             setQuestionSubmitted(false);
@@ -205,7 +205,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             setQuestionSubmitted(hasAnswer && (submittedQuestions[actualIdx] || false));
             setIsCurrentAnswerCorrect(hasAnswer && (questionCorrectness[actualIdx] || false));
         }
-    };
+    }, [currentQuestion, quiz.reviewMode, getActualQuestionIndex, answers, submittedQuestions, questionCorrectness]);
 
 
     const isLastQuestion = retryMode
@@ -316,7 +316,13 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         } else {
             handleQuizComplete();
         }
-    }, [isSubmitting, getActualQuestionIndex, quiz.reviewMode, delayedValidation, answers, isLastQuestion, handleQuizComplete, currentQuestion]);
+    }, [isSubmitting, getActualQuestionIndex, quiz.reviewMode, delayedValidation, answers, isLastQuestion, handleQuizComplete, currentQuestion, resetQuestionState]);
+
+    const previousQuestion = useCallback(() => {
+        if (isSubmitting || currentQuestion <= 0) return;
+        setCurrentQuestion(c => c - 1);
+        resetQuestionState(currentQuestion - 1);
+    }, [isSubmitting, currentQuestion, resetQuestionState]);
 
     const handleAnswer = useCallback((answer: string | number) => {
         if (isSubmitting) return;
@@ -394,6 +400,23 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 return;
             }
 
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                previousQuestion();
+                return;
+            }
+
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                if (quiz.reviewMode && !delayedValidation && answers[actualIndex] === undefined) {
+                    setShakeError(true);
+                    setTimeout(() => setShakeError(false), 400);
+                } else {
+                    nextQuestion();
+                }
+                return;
+            }
+
             // Keyboard option selection (1-4 or A-D/a-d)
             if (q && q.options && !q.isCompiler && (!questionSubmitted || delayedValidation)) {
                 const currentOptions = optionsOrder[actualIndex] || [];
@@ -417,7 +440,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [showResumePrompt, isSubmitting, showShop, getActualQuestionIndex, quiz.questions, quiz.reviewMode, delayedValidation, answers, questionSubmitted, nextQuestion, optionsOrder, hiddenOptions, handleAnswer]);
+    }, [showResumePrompt, isSubmitting, showShop, getActualQuestionIndex, quiz.questions, quiz.reviewMode, delayedValidation, answers, questionSubmitted, nextQuestion, previousQuestion, optionsOrder, hiddenOptions, handleAnswer]);
 
 
     // --- Power-up Application Logic ---
@@ -751,7 +774,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 const label = letters[visualIndex] || (visualIndex + 1);
 
                                 // Dynamic classes based on state
-                                let baseClass = "group relative flex items-center p-4 sm:p-5 lg:p-6 rounded-[1.25rem] cursor-pointer transition-all duration-300 w-full text-left border-2 shadow-sm font-semibold mb-1";
+                                const baseClass = "group relative flex items-center p-4 sm:p-5 lg:p-6 rounded-[1.25rem] cursor-pointer transition-all duration-300 w-full text-left border-2 shadow-sm font-semibold mb-1";
                                 let stateClass = "bg-white dark:bg-[#1f2937] border-gray-100 dark:border-[#374151] hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]";
                                 let textClass = "text-gray-800 dark:text-gray-200";
                                 let badgeClass = "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 group-hover:text-indigo-600 dark:group-hover:text-indigo-400";
@@ -800,11 +823,20 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 <span className="hidden md:inline px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">1-4</span>
                                 <span className="hidden md:inline px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">A-D</span> 
                                 to select, 
+                                <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">←</span> back,
                                 <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">Enter ↵</span> to advance
                             </div>
                         )}
                         
                         <div className="flex w-full sm:w-auto gap-4 pointer-events-auto ml-auto">
+                            <button
+                                onClick={previousQuestion}
+                                disabled={currentQuestion === 0 || isSubmitting}
+                                className="flex-1 sm:flex-none px-6 py-4 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:text-gray-500 text-gray-800 dark:text-gray-100 font-black text-lg rounded-xl border border-gray-300 dark:border-gray-700 shadow-md transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <span className="text-xl">←</span>
+                                Previous
+                            </button>
                             {!isLastQuestion && (
                                 <button
                                     onClick={nextQuestion}

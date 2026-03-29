@@ -21,6 +21,7 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
 
     useEffect(() => {
         if (quiz) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setEditingQuiz({ ...quiz, questions: quiz.questions || [] });
             setActiveModalTab('general');
             setEditingQuestion(null);

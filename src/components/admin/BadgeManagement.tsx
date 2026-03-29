@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../lib/api';
 import type { BadgeNode } from '../../types';
 import { Plus, Edit2, Trash2, Award, Download, Upload, MoreVertical } from 'lucide-react';
@@ -23,18 +23,7 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const menuRef = React.useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        loadData();
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setShowMenu(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             setLoading(true);
             const badgesData = await api.getBadgeNodes();
@@ -45,7 +34,18 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
         } finally {
             setLoading(false);
         }
-    };
+    }, [onNotification]);
+
+    useEffect(() => {
+        loadData();
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setShowMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [loadData]);
 
     const handleDownloadSample = () => {
         const sample = SAMPLE_BADGE;
