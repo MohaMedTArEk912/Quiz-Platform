@@ -39,3 +39,4 @@ docs/
 !PRODUCTION_READINESS.md
 public\quizzes
 .env.corrupt
+scripts/
