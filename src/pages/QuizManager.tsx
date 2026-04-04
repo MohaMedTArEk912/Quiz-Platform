@@ -47,6 +47,19 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
         }
     }, [selectedSubjectId]);
 
+    useEffect(() => {
+        if (selectedSubjectId) return;
+
+        if (
+            selectedStackId &&
+            selectedStackId !== 'uncategorized' &&
+            !subjects.some(subject => subject._id === selectedStackId)
+        ) {
+            setSelectedStackId(null);
+            setViewMode('stacks');
+        }
+    }, [selectedSubjectId, selectedStackId, subjects]);
+
     // Modal States
     const [subjectToEdit, setSubjectToEdit] = useState<Subject | null>(null);
     const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null);

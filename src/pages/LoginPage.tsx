@@ -19,6 +19,7 @@ const LoginPage: React.FC = () => {
                     const { email, name, sub } = JSON.parse(googleAuthData);
                     sessionStorage.removeItem('googleAuthData');
                     await googleLogin({ email, name, googleId: sub });
+                    sessionStorage.removeItem('suppressRedirectAfterLogin');
                     
                     // Wait a tick to ensure session storage is fully written
                     await new Promise(resolve => setTimeout(resolve, 100));
@@ -42,6 +43,7 @@ const LoginPage: React.FC = () => {
 
     const handleLogin = async (email: string, password: string) => {
         await login(email, password);
+        sessionStorage.removeItem('suppressRedirectAfterLogin');
         const session = sessionStorage.getItem('userSession');
         const isAdmin = session ? JSON.parse(session).isAdmin : false;
         const redirect = sessionStorage.getItem('redirectAfterLogin');
@@ -107,6 +109,7 @@ const LoginPage: React.FC = () => {
                 try {
                     const { email, name, sub } = event.data.profile;
                     await googleLogin({ email, name, googleId: sub });
+                    sessionStorage.removeItem('suppressRedirectAfterLogin');
                     
                     // Wait a tick to ensure session storage is fully written
                     await new Promise(resolve => setTimeout(resolve, 100));

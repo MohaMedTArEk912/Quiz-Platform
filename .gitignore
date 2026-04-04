@@ -40,3 +40,4 @@ docs/
 public\quizzes
 .env.corrupt
 scripts/
+uploads/

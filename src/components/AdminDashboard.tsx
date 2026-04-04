@@ -105,10 +105,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
 
     // Wrapper for refresh that also reloads pending reviews
-    const handleRefresh = () => {
-        onRefresh();
+    const handleRefresh = useCallback(async () => {
+        const currentTab = selectedTab;
+
+        await Promise.resolve(onRefresh());
+        setSelectedTab(currentTab);
         loadPendingReviews();
-    };
+    }, [loadPendingReviews, onRefresh, selectedTab]);
 
     // --- Navigation Configuration ---
     const navItems = [

@@ -9,6 +9,12 @@ export const ProtectedRoute: React.FC<{ children: ReactNode }> = ({ children }) 
 
     if (isLoading) return <PageLoader />;
     if (!currentUser) {
+        const suppressRedirect = sessionStorage.getItem('suppressRedirectAfterLogin');
+        if (suppressRedirect) {
+            sessionStorage.removeItem('suppressRedirectAfterLogin');
+            return <Navigate to="/login" replace />;
+        }
+
         // Save the path the user was trying to access so we can redirect back after login
         const intendedPath = location.pathname + location.search;
         if (intendedPath !== '/' && intendedPath !== '/login') {

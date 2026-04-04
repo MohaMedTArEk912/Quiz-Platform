@@ -124,6 +124,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const logout = () => {
+        sessionStorage.setItem('suppressRedirectAfterLogin', 'true');
+        sessionStorage.removeItem('redirectAfterLogin');
+        sessionStorage.removeItem('googleAuthData');
         setCurrentUser(null);
         setIsAdmin(false);
         setToken(null);

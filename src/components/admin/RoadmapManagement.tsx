@@ -142,6 +142,32 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         }
     }, [userProgress?.completedSubModules]);
 
+    const selectedNode = useMemo(
+        () => modules.find(module => module.moduleId === selectedNodeId) || null,
+        [modules, selectedNodeId]
+    );
+
+    useEffect(() => {
+        if (!selectedNodeId) return;
+
+        if (!selectedNode) {
+            setIsInspectorOpen(false);
+        }
+    }, [selectedNode, selectedNodeId]);
+
+    useEffect(() => {
+        if (!isModuleDetailsOpen || !selectedModuleForDetails) return;
+
+        const refreshedModule = modules.find(module => module.moduleId === selectedModuleForDetails.moduleId) || null;
+        if (refreshedModule) {
+            setSelectedModuleForDetails(refreshedModule);
+            return;
+        }
+
+        setIsModuleDetailsOpen(false);
+        setSelectedModuleForDetails(null);
+    }, [modules, isModuleDetailsOpen, selectedModuleForDetails?.moduleId]);
+
     const { confirm, confirmState, handleCancel } = useConfirm();
 
     // --- Initialization ---
@@ -254,6 +280,56 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
 
         return normalizedMods;
     };
+
+    const persistRoadmap = useCallback(async (
+        nextTrack: Partial<SkillTrack> | undefined,
+        nextModules: SkillModule[],
+        successMessage: string
+    ) => {
+        if (!subjectId) {
+            throw new Error('Select a subject before saving a roadmap.');
+        }
+
+        setSaving(true);
+
+        try {
+            const baseTrack: SkillTrack = track || {
+                trackId: '',
+                title: 'Learning Path',
+                description: '',
+                icon: '🗺️',
+                subjectId,
+                modules: []
+            };
+
+            const payload: SkillTrack = {
+                ...baseTrack,
+                ...nextTrack,
+                subjectId,
+                title: nextTrack?.title || baseTrack.title || 'Learning Path',
+                icon: nextTrack?.icon || baseTrack.icon || '🗺️',
+                modules: nextModules
+            };
+
+            const savedTrack = payload.trackId
+                ? await api.updateSkillTrack(payload.trackId, payload, adminId)
+                : await api.createSkillTrack({
+                    ...payload,
+                    trackId: `track_${Date.now()}`
+                }, adminId);
+
+            setTrack(savedTrack);
+            setModules(migrateTreeToGraph(savedTrack.modules || nextModules));
+            onNotification('success', successMessage);
+
+            return savedTrack;
+        } catch (error) {
+            console.error('Roadmap persistence error:', error);
+            throw error;
+        } finally {
+            setSaving(false);
+        }
+    }, [adminId, onNotification, subjectId, track]);
 
     const computeStatus = (module: SkillModule) => {
         let status = module.status || 'locked';
@@ -376,7 +452,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                                 {visibleModules.map((item) => {
                                     const { module } = item;
                                     const { status, isCompleted, isLocked } = computeStatus(module);
-                                    const moduleNumber = (module.level ?? 0) + 1;
+                                    const moduleNumber = module.level || (item.row * 2 + item.col + 1);
 
                                     const isOptional = module.type === 'optional';
                                     const isAchievement = module.type === 'achievement';
@@ -538,7 +614,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                             {sketchLayout.map((item) => {
                                 const { module } = item;
                                 const { status, isCompleted } = computeStatus(module);
-                                const moduleNumber = (module.level ?? 0) + 1;
+                                const moduleNumber = module.level || (item.row * 2 + item.col + 1);
 
                                 // In user preview mode, skip locked modules
                                 if (viewMode === 'user' && computeStatus(module).isLocked && readOnly) {
@@ -668,46 +744,24 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     };
 
     const handleSave = async () => {
-        if (!subjectId) return;
-        setSaving(true);
         try {
-            const payload = { ...track, modules, subjectId } as SkillTrack;
-
-            if (track && track.trackId && track.trackId !== '') {
-                await api.updateSkillTrack(track.trackId, payload, adminId);
-            } else {
-                const newTrackId = `track_${Date.now()}`;
-                await api.createSkillTrack({
-                    ...payload,
-                    trackId: newTrackId,
-                    title: track?.title || 'Learning Path',
-                    icon: track?.icon || '🗺️'
-                } as SkillTrack, adminId);
-            }
-            onNotification('success', 'Roadmap saved successfully');
-            loadData();
+            await persistRoadmap(undefined, modules, 'Roadmap saved successfully');
         } catch (error: any) {
             console.error("Save Error:", error);
             onNotification('error', `Save Failed: ${error.message || 'Unknown error'}`);
         }
-        finally { setSaving(false); }
     };
 
-    const handleJsonImport = (data: { track?: Partial<SkillTrack>, modules: SkillModule[] }) => {
+    const handleJsonImport = async (data: { track?: Partial<SkillTrack>, modules: SkillModule[] }) => {
         const layoutedModules = applyAutoLayout(data.modules);
-        setModules(layoutedModules);
-        if (data.track) {
-            setTrack((prev: SkillTrack | null) => {
-                const base = prev || {
-                    trackId: '',
-                    title: 'Imported Roadmap',
-                    subjectId: subjectId || '',
-                    modules: []
-                };
-                return { ...base, ...data.track } as SkillTrack;
-            });
-        }
-        onNotification('success', 'Roadmap imported with auto-layout');
+        const importedTrack: Partial<SkillTrack> = {
+            ...(track || {}),
+            ...(data.track || {}),
+            title: data.track?.title || track?.title || 'Imported Roadmap',
+            icon: data.track?.icon || track?.icon || '🗺️'
+        };
+
+        await persistRoadmap(importedTrack, layoutedModules, 'Roadmap imported and saved successfully');
         setIsImportModalOpen(false);
     };
 
@@ -887,9 +941,9 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
             }
 
             {/* Inspector Panel */}
-            {selectedNodeId && !readOnly && (
+            {selectedNodeId && !readOnly && selectedNode && (
                 <InspectorPanel
-                    node={modules.find(m => m.moduleId === selectedNodeId)!}
+                    node={selectedNode}
                     isOpen={isInspectorOpen}
                     onClose={() => setIsInspectorOpen(false)}
                     onUpdate={handleUpdateNode}

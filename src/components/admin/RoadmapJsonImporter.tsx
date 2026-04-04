@@ -7,7 +7,7 @@ import type { SkillTrack, SkillModule } from '../../types';
 interface RoadmapJsonImporterProps {
     isOpen: boolean;
     onClose: () => void;
-    onImport: (data: { track?: Partial<SkillTrack>, modules: SkillModule[] }) => void;
+    onImport: (data: { track?: Partial<SkillTrack>, modules: SkillModule[] }) => Promise<void> | void;
 }
 
 const SAMPLE_JSON = {
@@ -111,6 +111,8 @@ export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen
     const [jsonInput, setJsonInput] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
+    const [importing, setImporting] = useState(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Reset state when opening
@@ -119,9 +121,18 @@ export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen
             setJsonInput('');
             setError(null);
             setSuccessMsg(null);
+            setImporting(false);
             setMode('upload');
         }
     }, [isOpen]);
+
+    useEffect(() => {
+        if (isOpen && mode === 'editor') {
+            requestAnimationFrame(() => {
+                textareaRef.current?.focus();
+            });
+        }
+    }, [isOpen, mode]);
 
     // --- Actions ---
 
@@ -158,7 +169,7 @@ export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen
         e.target.value = '';
     };
 
-    const processImport = () => {
+    const processImport = async () => {
         try {
             if (!jsonInput.trim()) {
                 setError('Please provide JSON content either by uploading a file or writing code.');
@@ -179,19 +190,24 @@ export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen
                 }
             }
 
-            onImport({
+            setError(null);
+            setImporting(true);
+
+            await Promise.resolve(onImport({
                 track: {
                     title: parsed.title,
                     description: parsed.description,
                     icon: parsed.icon
                 },
                 modules: parsed.modules
-            });
+            }));
 
             onClose();
 
         } catch (err: any) {
             setError(err.message || 'Invalid JSON format');
+        } finally {
+            setImporting(false);
         }
     };
 
@@ -215,7 +231,10 @@ export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen
                             Sample JSON
                         </button>
                         <button
-                            onClick={() => { setJsonInput(JSON.stringify(SAMPLE_JSON, null, 2)); setMode('editor'); }}
+                            onClick={() => {
+                                setJsonInput(JSON.stringify(SAMPLE_JSON, null, 2));
+                                setMode('editor');
+                            }}
                             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-indigo-400 hover:text-indigo-300 hover:bg-white/5 transition-all"
                         >
                             <Code className="w-4 h-4" />
@@ -233,9 +252,9 @@ export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen
                         <button
                             onClick={processImport}
                             className="px-8 py-3 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={!jsonInput && mode === 'editor'}
+                            disabled={importing || (!jsonInput && mode === 'editor')}
                         >
-                            Import Changes
+                            {importing ? 'Importing...' : 'Import Changes'}
                         </button>
                     </div>
                 </div>
@@ -326,14 +345,16 @@ export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen
                 {mode === 'editor' && (
                     <div className="h-full flex flex-col animate-in fade-in duration-300">
                         <textarea
+                            ref={textareaRef}
                             value={jsonInput}
                             onChange={(e) => {
                                 setJsonInput(e.target.value);
                                 if (error) setError(null);
                             }}
                             placeholder='{&#10;  "title": "My Roadmap",&#10;  "modules": [...]&#10;}'
-                            className="flex-1 w-full bg-[#05070a] p-6 font-mono text-sm leading-relaxed text-gray-300 outline-none resize-none selection:bg-indigo-500/30 placeholder-gray-800"
+                            className="flex-1 w-full min-h-0 bg-[#0b0e17] p-6 font-mono text-sm leading-6 text-slate-100 outline-none resize-none selection:bg-indigo-500/30 placeholder:text-slate-500/50 focus:ring-2 focus:ring-inset focus:ring-indigo-500/30"
                             spellCheck={false}
+                            rows={18}
                         />
                         <div className="px-6 py-2 bg-[#0B0E1A] border-t border-white/5 text-xs text-gray-600 font-mono flex justify-between">
                             <span>JSON Editor</span>

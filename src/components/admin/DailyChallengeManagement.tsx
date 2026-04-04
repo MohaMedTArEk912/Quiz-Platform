@@ -111,6 +111,7 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
             }
 
             onNotification('success', `Scheduled ${scheduledCount} days successfully!`);
+            setConfirmAction(null);
             loadData();
         } catch (error) {
             console.error(error);
@@ -150,6 +151,7 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                 onNotification('success', 'Challenge updated');
             }
             setEditingChallenge(null);
+            setConfirmAction(null);
             loadData();
         } catch (error) {
             console.error('Save challenge error:', error);
@@ -176,6 +178,7 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                 const newPayload = { ...rest, date: todayStr };
 
                 await api.updateDailyChallenge(id, newPayload, currentUser.userId);
+                setEditingChallenge(null);
                 loadData();
                 onNotification('success', 'Challenge rescheduled to today');
             }

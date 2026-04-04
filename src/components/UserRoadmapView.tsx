@@ -228,7 +228,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
 
                             {displayModules.map((module) => {
                                 const { isLocked, isCompleted, progressPercent } = computeStatus(module);
-                                const moduleNumber = (module.level ?? 0) + 1;
+                                const moduleNumber = module.level || (sortedModules.indexOf(module) + 1);
 
                                 // Specific Styles
                                 const containerClasses = isLocked

@@ -22,7 +22,7 @@ const moduleSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   level: { type: Number, default: 0 },
   // Support various node types - add more as needed
-  type: { type: String, enum: ['core', 'optional', 'achievement', 'project', 'quiz', 'milestone'], default: 'core' },
+  type: { type: String, enum: ['core', 'optional', 'achievement', 'project', 'quiz', 'milestone', 'exam'], default: 'core' },
   status: { type: String, enum: ['locked', 'available', 'in_progress', 'completed', 'skipped'], default: 'locked' },
   xpReward: { type: Number, default: 100 },
   coordinates: {

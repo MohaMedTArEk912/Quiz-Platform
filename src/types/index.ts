@@ -217,14 +217,15 @@ export interface ShopItem {
 }
 
 // --- Graph & Roadmap Types ---
-export type NodeType = "core" | "optional" | "achievement" | "milestone" | "project" | "quiz";
+export type NodeType = "core" | "optional" | "achievement" | "milestone" | "project" | "quiz" | "exam";
 export const NodeType = {
     CORE: "core" as NodeType,
     OPTIONAL: "optional" as NodeType,
     ACHIEVEMENT: "achievement" as NodeType,
     MILESTONE: "milestone" as NodeType,
     PROJECT: "project" as NodeType,
-    QUIZ: "quiz" as NodeType
+    QUIZ: "quiz" as NodeType,
+    EXAM: "exam" as NodeType
 };
 
 export type NodeState = "locked" | "available" | "in_progress" | "completed" | "hidden";
@@ -275,7 +276,7 @@ export interface SkillModule {
     resources?: Resource[];
 
     // Graph Properties
-    type: NodeType | 'core' | 'optional' | 'achievement' | 'milestone'; // Backward compat
+    type: NodeType | 'core' | 'optional' | 'achievement' | 'milestone' | 'exam'; // Backward compat
     status?: NodeState | 'locked' | 'available' | 'in-progress' | 'completed'; // Backward compat
     xpReward?: number;
     icon?: string;
