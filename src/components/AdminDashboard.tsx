@@ -412,7 +412,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </div>
                     )}
 
-                    <div ref={mainScrollRef} className="flex-1 overflow-y-auto p-3 sm:p-6 pt-2 custom-scrollbar">
+                    <div
+                        ref={mainScrollRef}
+                        className={`flex-1 min-h-0 p-3 sm:p-6 pt-2 overflow-y-auto custom-scrollbar`}
+                    >
                         {/* Dynamic Content Rendering */}
                         {selectedTab === 'main' && (
                             <div className="space-y-8">

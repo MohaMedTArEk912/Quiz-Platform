@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../lib/api';
 import type { Clan, UserData, ClanChatMessage } from '../../types';
-import { Users, Shield, Trophy, Search, LogOut, Star, UserPlus, Edit2, Check, X, MoreVertical, Trash2, ArrowUpCircle, ArrowDownCircle, Bell, Pin, Megaphone, MessageCircle } from 'lucide-react';
+import { Users, Shield, Trophy, Search, LogOut, Star, UserPlus, Edit2, Check, X, MoreVertical, Trash2, ArrowUpCircle, ArrowDownCircle, Bell, Pin, Megaphone, MessageCircle, Lock } from 'lucide-react';
 import Avatar from '../Avatar';
 import { ChatWindow } from '../chat/ChatWindow';
 import { useNotification } from '../../context/NotificationContext';
@@ -182,14 +182,17 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
         } else {
             setView('browse');
             setLoading(false);
+            // Fetch all clans initially
+            handleSearch('');
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user.clanId]);
 
-    const handleSearch = async () => {
-        if (!searchQuery.trim()) return;
+    const handleSearch = async (queryOverride?: string) => {
+        const queryToUse = queryOverride !== undefined ? queryOverride : searchQuery;
+        // Don't block empty searches so we can fetch all clans
         try {
-            const results = await api.searchClans(searchQuery, user.userId);
+            const results = await api.searchClans(queryToUse, user.userId);
             setSearchResults(results);
         } catch (err) {
             setError('Search failed');
@@ -223,8 +226,9 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
         try {
             await api.joinClan(clanId, user.userId);
             onUpdateUser();
+            showNotification('success', 'Request sent successfully (or joined if public)!');
         } catch (err: any) {
-            setError(err.message);
+            showNotification('error', err.message || 'Failed to join / send request to clan');
         }
     };
 
@@ -339,70 +343,83 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
 
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
-    if (loading) return <div className="p-8 text-center">Loading Clan...</div>;
+    if (loading) return (
+        <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-violet-500 mx-auto mb-4"></div>
+                <p className="text-gray-500 dark:text-gray-400 font-bold text-sm">Loading Clan...</p>
+            </div>
+        </div>
+    );
 
     // View: My Clan
     if (user.clanId && clan) {
         const isLeader = clan.members.some(m => m.userId === user.userId && m.role === 'leader') || clan.leaderId === user.userId;
 
         return (
-            <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-6 relative">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+            <div className="space-y-6 relative">
+                <div className="bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-white/5 shadow-sm overflow-hidden">
                     {/* Clan Header */}
-                    <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-8 text-white relative">
-                        <div className="absolute top-4 right-4 flex gap-2">
+                    <div className="relative bg-gradient-to-r from-violet-600 to-indigo-600 p-8 text-white overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
+                        <div className="absolute top-4 right-4 flex gap-2 z-10">
                             {isLeader && (
-                                <button onClick={() => setShowEdit(true)} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm transition-colors text-white/80 hover:text-white" title="Edit Clan">
+                                <button onClick={() => setShowEdit(true)} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur-sm transition-colors text-white/80 hover:text-white" title="Edit Clan">
                                     <Edit2 className="w-5 h-5" />
                                 </button>
                             )}
-                            <button onClick={handleLeave} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm transition-colors text-white/80 hover:text-white" title="Leave Clan">
+                            <button onClick={handleLeave} className="p-2.5 bg-white/10 hover:bg-red-500/50 rounded-xl backdrop-blur-sm transition-colors text-white/80 hover:text-white" title="Leave Clan">
                                 <LogOut className="w-5 h-5" />
                             </button>
                         </div>
-                        <div className="flex flex-col md:flex-row items-center gap-6">
-                            <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-inner border border-white/30">
-                                <Shield className="w-12 h-12 text-white" />
+                        <div className="relative flex flex-col md:flex-row items-center gap-6">
+                            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-inner border border-white/30">
+                                <Shield className="w-10 h-10 text-white" />
                             </div>
                             <div className="text-center md:text-left">
-                                <h1 className="text-4xl font-black mb-2 flex items-center gap-3 justify-center md:justify-start">
+                                <h1 className="text-3xl font-black mb-2 flex items-center gap-3 justify-center md:justify-start uppercase tracking-tight">
                                     [{clan.tag}] {clan.name}
                                 </h1>
-                                <p className="text-white/80 max-w-xl text-lg">{clan.description || 'No description provided.'}</p>
-                                <div className="flex flex-wrap gap-4 mt-4 justify-center md:justify-start">
-                                    <div className="px-3 py-1 bg-black/20 rounded-full text-sm font-semibold flex items-center gap-2">
-                                        <Trophy className="w-4 h-4 text-yellow-300" />
+                                <p className="text-white/70 max-w-xl text-sm font-medium">{clan.description || 'No description provided.'}</p>
+                                <div className="flex flex-wrap gap-2 mt-4 justify-center md:justify-start">
+                                    <span className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5">
+                                        <Trophy className="w-3.5 h-3.5 text-yellow-300" />
                                         Lvl {clan.level}
-                                    </div>
-                                    <div className="px-3 py-1 bg-black/20 rounded-full text-sm font-semibold flex items-center gap-2">
-                                        <Star className="w-4 h-4 text-blue-300" />
+                                    </span>
+                                    <span className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5">
+                                        <Star className="w-3.5 h-3.5 text-blue-300" />
                                         {clan.totalXP.toLocaleString()} XP
-                                    </div>
-                                    <div className="px-3 py-1 bg-black/20 rounded-full text-sm font-semibold flex items-center gap-2">
-                                        <Users className="w-4 h-4 text-green-300" />
+                                    </span>
+                                    <span className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5">
+                                        <Users className="w-3.5 h-3.5 text-green-300" />
                                         {clan.members.length} Members
-                                    </div>
+                                    </span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Content */}
-                    <div className="p-6">
+                    <div className="p-6 md:p-8">
                         {/* Announcements Section */}
-                        <div className="mb-8">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                    <Megaphone className="w-6 h-6 text-orange-500" />
-                                    Announcements
-                                </h2>
+                        <div className="mb-10">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center">
+                                        <Megaphone className="w-5 h-5 text-orange-500" />
+                                    </div>
+                                    <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                                        Announcements
+                                    </h2>
+                                </div>
                                 {(isLeader || clan.members.find(m => m.userId === user.userId)?.role === 'elder') && (
                                     <button
                                         onClick={() => {
                                             setAnnouncementContent('');
                                             setShowAnnouncementModal(true);
                                         }}
-                                        className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-bold text-sm transition-colors shadow-sm hover:shadow-md"
+                                        className="flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-violet-500/20"
                                     >
                                         <Megaphone className="w-4 h-4" />
                                         Post New
@@ -528,12 +545,14 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                         </div>
 
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <Users className="w-6 h-6 text-violet-500" />
-                                Clan Members
-                            </h2>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-violet-500/10 rounded-xl flex items-center justify-center">
+                                    <Users className="w-5 h-5 text-violet-500" />
+                                </div>
+                                <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Clan Members</h2>
+                            </div>
                             {isLeader && (
-                                <button onClick={() => setShowInvite(true)} className="flex items-center gap-2 px-4 py-2 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-lg font-bold hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors">
+                                <button onClick={() => setShowInvite(true)} className="flex items-center gap-2 px-4 py-2 bg-violet-500/10 border border-violet-500/30 text-violet-500 rounded-xl font-bold text-sm hover:bg-violet-500/20 transition-all">
                                     <UserPlus className="w-4 h-4" />
                                     Invite
                                 </button>
@@ -542,8 +561,8 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
 
                         {/* Join Requests */}
                         {(isLeader || clan.members.find(m => m.userId === user.userId)?.role === 'elder') && clan.activeJoinRequests && clan.activeJoinRequests.length > 0 && (
-                            <div className="mb-8 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-2xl p-6">
-                                <h3 className="text-lg font-bold text-orange-900 dark:text-orange-200 mb-4 flex items-center gap-2">
+                            <div className="mb-8 bg-orange-500/5 border border-orange-500/20 rounded-2xl p-6">
+                                <h3 className="text-lg font-black text-orange-600 dark:text-orange-400 mb-4 flex items-center gap-2 uppercase tracking-tight">
                                     <span className="relative flex h-3 w-3">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
@@ -578,7 +597,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {clan.members.map((member) => (
-                                <div key={member.userId} className="relative flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 group">
+                                <div key={member.userId} className="relative flex items-center gap-4 p-4 rounded-2xl bg-white/60 dark:bg-white/5 border border-white/20 dark:border-white/5 group hover:border-violet-500/20 transition-all">
                                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center font-bold text-lg text-gray-600 dark:text-gray-300 overflow-hidden">
                                         {member.avatar ? (
                                             <Avatar config={member.avatar} size="md" className="w-full h-full" />
@@ -702,8 +721,8 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                 {/* Edit Modal */}
                 {
                     showEdit && (
-                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 w-full max-w-lg shadow-2xl border border-white/10">
                                 <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Edit Clan</h2>
                                 <form onSubmit={handleUpdateClan} className="space-y-4">
                                     <div>
@@ -733,8 +752,8 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
 
                 {/* Announcement Modal */}
                 {showAnnouncementModal && (
-                    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200">
+                    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+                        <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/10">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
@@ -809,8 +828,8 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                 {/* Invite Modal */}
                 {
                     showInvite && (
-                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl h-[80vh] flex flex-col">
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 w-full max-w-lg shadow-2xl border border-white/10 h-[80vh] flex flex-col">
                                 <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Invite Members</h2>
                                 <div className="flex gap-2 mb-4">
                                     <input
@@ -852,56 +871,70 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
 
     // View: Browse / Setup
     return (
-        <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-8">
-            <div className="text-center space-y-4">
-                <h1 className="text-4xl font-black text-gray-900 dark:text-white">Clan Hub</h1>
-                <p className="text-xl text-gray-600 dark:text-gray-400">Join forces with other players, compete in clan wars, and earn exclusive rewards.</p>
-
-                <div className="flex justify-center gap-4 mt-6">
-                    <button
-                        onClick={() => setView('browse')}
-                        className={`px-6 py-3 rounded-xl font-bold transition-all ${view === 'browse' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}
-                    >
-                        Find a Clan
-                    </button>
-                    <button
-                        onClick={() => setView('create')}
-                        className={`px-6 py-3 rounded-xl font-bold transition-all ${view === 'create' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}
-                    >
-                        Create New Clan
-                    </button>
+        <div className="space-y-8">
+            {/* Hero Header */}
+            <div className="text-center space-y-4 mb-4">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-violet-500 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+                        <Shield className="w-6 h-6 text-white" />
+                    </div>
                 </div>
+                <h1 className="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Clan Hub</h1>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-bold max-w-md mx-auto">Join forces with other players, compete in clan wars, and earn exclusive rewards.</p>
+            </div>
+
+            {/* Tab Switcher - matching UserRoads pill nav */}
+            <div className="flex items-center gap-1 p-1 bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-2xl max-w-md mx-auto">
+                {([
+                    { id: 'browse', label: 'Find a Clan', icon: Search },
+                    { id: 'create', label: 'Create New Clan', icon: Shield }
+                ] as const).map(({ id, label, icon: Icon }) => (
+                    <button
+                        key={id}
+                        onClick={() => {
+                            setView(id as 'browse' | 'create');
+                            if (id === 'browse') handleSearch('');
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${view === id
+                            ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20'
+                            : 'text-gray-500 hover:bg-white/50 dark:hover:bg-white/10'
+                            }`}
+                    >
+                        <Icon className="w-4 h-4" />
+                        {label}
+                    </button>
+                ))}
             </div>
 
             {error && (
-                <div className="p-4 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl text-center font-medium animate-in fade-in slide-in-from-top-2">
+                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-center font-bold text-sm">
                     {error}
                 </div>
             )}
 
             {view === 'browse' && (
-                <div className="space-y-6">
+                <div className="space-y-8">
                     {/* Pending Invites */}
                     {user.clanInvites && user.clanInvites.length > 0 && (
-                        <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl p-6 shadow-xl shadow-violet-500/20 text-white relative overflow-hidden mb-6 animate-in slide-in-from-top-5 duration-500">
+                        <div className="relative overflow-hidden bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-6 shadow-xl">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                            <h3 className="text-xl font-bold mb-6 flex items-center gap-3 relative z-10">
-                                <div className="bg-white/20 p-2 rounded-lg">
+                            <h3 className="text-xl font-black mb-6 flex items-center gap-3 relative z-10 text-white">
+                                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
                                     <Bell className="w-5 h-5 animate-pulse" />
                                 </div>
                                 Clan Invitations
-                                <span className="bg-white text-violet-600 text-xs font-black px-2 py-0.5 rounded-full shadow-sm">{user.clanInvites.length}</span>
+                                <span className="bg-white text-violet-600 text-xs font-black px-2.5 py-1 rounded-full shadow-sm">{user.clanInvites.length}</span>
                             </h3>
                             <div className="space-y-3 relative z-10">
                                 {user.clanInvites.map((invite) => (
-                                    <div key={invite.clanId} className="bg-black/20 backdrop-blur-md border border-white/10 p-4 rounded-xl flex items-center justify-between group hover:bg-black/30 transition-colors">
+                                    <div key={invite.clanId} className="bg-black/20 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center justify-between group hover:bg-black/30 transition-colors text-white">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-gradient-to-br from-white/10 to-transparent rounded-lg flex items-center justify-center border border-white/10">
-                                                <Shield className="w-5 h-5" />
+                                            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
+                                                <Shield className="w-6 h-6" />
                                             </div>
                                             <div>
                                                 <div className="font-bold text-lg leading-tight">{invite.clanName}</div>
-                                                <div className="text-white/60 text-xs mt-0.5">Invited by a clan member</div>
+                                                <div className="text-white/60 text-xs mt-0.5 font-medium">Invited by a clan member</div>
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
@@ -909,10 +942,10 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                 onClick={async () => {
                                                     try {
                                                         await api.respondToClanInvite(invite.clanId, true, user.userId);
-                                                        onUpdateUser(); // Refresh user to update state
+                                                        onUpdateUser();
                                                     } catch (e: any) { setError(e.message); }
                                                 }}
-                                                className="px-4 py-2 bg-white text-violet-600 rounded-lg font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-black/10"
+                                                className="px-4 py-2 bg-white text-violet-600 rounded-xl font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg"
                                             >
                                                 Accept
                                             </button>
@@ -923,7 +956,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                         onUpdateUser();
                                                     } catch (e: any) { setError(e.message); }
                                                 }}
-                                                className="px-4 py-2 bg-black/20 text-white hover:bg-black/30 rounded-lg font-bold text-sm transition-all"
+                                                className="px-4 py-2 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 rounded-xl font-bold text-sm transition-all"
                                             >
                                                 Decline
                                             </button>
@@ -934,79 +967,107 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                         </div>
                     )}
 
-                    <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    {/* Search Bar - matching UserRoads style */}
+                    <div className="relative group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-violet-500 transition-colors" />
                         <input
                             type="text"
                             placeholder="Search clans by name or tag..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            className="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-violet-500 focus:outline-none text-lg transition-colors"
+                            className="w-full pl-12 pr-28 py-4 bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all font-bold text-sm"
                         />
                         <button
-                            onClick={handleSearch}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-violet-600 text-white rounded-lg font-semibold hover:bg-violet-700 transition"
+                            onClick={() => handleSearch()}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 px-5 py-2 bg-violet-500 text-white rounded-xl font-bold text-sm hover:bg-violet-600 transition-colors shadow-lg shadow-violet-500/20"
                         >
                             Search
                         </button>
                     </div>
 
+                    {/* Clan Listings */}
                     {searchResults.length > 0 ? (
-                        <div className="grid gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {searchResults.map((clan) => (
-                                <div key={clan.clanId} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row items-center justify-between gap-4">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center">
-                                            <Shield className="w-8 h-8 text-violet-500" />
+                                <div key={clan.clanId} className="group relative bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2rem] border border-white/20 dark:border-white/5 p-6 hover:border-violet-500/30 transition-all shadow-sm hover:shadow-2xl overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-28 h-28 bg-violet-500/5 rounded-bl-full group-hover:bg-violet-500/10 transition-colors" />
+
+                                    <div className="relative flex items-start gap-4 mb-4">
+                                        <div className="w-14 h-14 bg-white dark:bg-white/10 rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                                            <Shield className="w-7 h-7 text-violet-500" />
                                         </div>
-                                        <div>
-                                            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="text-lg font-black text-gray-900 dark:text-white group-hover:text-violet-500 transition-colors truncate">
                                                 [{clan.tag}] {clan.name}
                                             </h3>
-                                            <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-1">{clan.description}</p>
-                                            <div className="flex gap-4 mt-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                                                <span>Lvl {clan.level}</span>
-                                                <span>{clan.totalXP} XP</span>
-                                            </div>
+                                            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium line-clamp-2 mt-1">{clan.description || 'No description provided.'}</p>
                                         </div>
                                     </div>
+
+                                    <div className="flex items-center gap-2 mb-5 flex-wrap">
+                                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-violet-500/10 text-violet-500 flex items-center gap-1">
+                                            <Trophy className="w-3 h-3" /> Lvl {clan.level}
+                                        </span>
+                                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-500 flex items-center gap-1">
+                                            <Star className="w-3 h-3" /> {clan.totalXP?.toLocaleString() || 0} XP
+                                        </span>
+                                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 flex items-center gap-1">
+                                            <Users className="w-3 h-3" /> {clan.members?.length || '?'} Members
+                                        </span>
+                                        {!clan.isPublic && (
+                                            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-orange-500/10 text-orange-500 flex items-center gap-1">
+                                                <Lock className="w-3 h-3" /> Private
+                                            </span>
+                                        )}
+                                    </div>
+
                                     <button
                                         onClick={() => handleJoin(clan.clanId)}
-                                        className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-bold hover:scale-105 transition-transform flex items-center gap-2"
+                                        className="w-full py-3 bg-violet-500 text-white rounded-xl font-bold text-sm hover:bg-violet-600 transition-all shadow-lg shadow-violet-500/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
                                     >
-                                        <UserPlus className="w-4 h-4" /> Join
+                                        <UserPlus className="w-4 h-4" />
+                                        {clan.isPublic ? 'Join Clan' : 'Request to Join'}
                                     </button>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-12 text-gray-400">
-                            <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>Search for a clan to join.</p>
+                        <div className="text-center py-20 bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-white/10">
+                            <Shield className="w-12 h-12 mx-auto mb-4 opacity-20 text-gray-400" />
+                            <h3 className="text-xl font-black text-gray-400 uppercase mb-2">No clans found</h3>
+                            <p className="text-gray-500 font-medium text-sm">Try a different search or create your own clan!</p>
                         </div>
                     )}
                 </div>
             )}
 
             {view === 'create' && (
-                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 max-w-2xl mx-auto">
-                    <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Create Your Clan</h2>
+                <div className="bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-white/5 p-8 max-w-2xl mx-auto shadow-sm">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-10 h-10 bg-violet-500 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+                            <Shield className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Create Your Clan</h2>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm font-bold">Build your own team and recruit members</p>
+                        </div>
+                    </div>
                     <form onSubmit={handleCreate} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-bold text-gray-500 dark:text-gray-400 mb-2">Clan Name</label>
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Clan Name</label>
                             <input
                                 type="text"
                                 required
                                 value={createForm.name}
                                 onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
-                                className="w-full p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                                className="w-full p-4 bg-white/60 dark:bg-white/5 border border-white/20 dark:border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all font-bold text-sm"
                                 placeholder="e.g. The Night's Watch"
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-bold text-gray-500 dark:text-gray-400 mb-2">Clan Tag</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Clan Tag</label>
                                 <input
                                     type="text"
                                     required
@@ -1014,16 +1075,16 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                     minLength={2}
                                     value={createForm.tag}
                                     onChange={e => setCreateForm({ ...createForm, tag: e.target.value.toUpperCase() })}
-                                    className="w-full p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:outline-none font-mono uppercase"
+                                    className="w-full p-4 bg-white/60 dark:bg-white/5 border border-white/20 dark:border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all font-bold text-sm font-mono uppercase"
                                     placeholder="NIGHT"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-500 dark:text-gray-400 mb-2">Privacy</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Privacy</label>
                                 <select
                                     value={createForm.isPublic ? 'public' : 'private'}
                                     onChange={e => setCreateForm({ ...createForm, isPublic: e.target.value === 'public' })}
-                                    className="w-full p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                                    className="w-full p-4 bg-white/60 dark:bg-white/5 border border-white/20 dark:border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all font-bold text-sm"
                                 >
                                     <option value="public">Public (Anyone can join)</option>
                                     <option value="private">Private (Invite only)</option>
@@ -1031,18 +1092,18 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-gray-500 dark:text-gray-400 mb-2">Description</label>
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Description</label>
                             <textarea
                                 value={createForm.description}
                                 onChange={e => setCreateForm({ ...createForm, description: e.target.value })}
                                 rows={3}
-                                className="w-full p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:outline-none resize-none"
+                                className="w-full p-4 bg-white/60 dark:bg-white/5 border border-white/20 dark:border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all font-bold text-sm resize-none"
                                 placeholder="Tell us what your clan is about..."
                             />
                         </div>
                         <button
                             type="submit"
-                            className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-violet-500/25 transition-all"
+                            className="w-full py-4 bg-violet-500 text-white rounded-2xl font-bold text-lg hover:bg-violet-600 transition-all shadow-lg shadow-violet-500/20 hover:scale-[1.02] active:scale-[0.98]"
                         >
                             Create Clan (Free)
                         </button>

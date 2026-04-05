@@ -5,7 +5,8 @@ import type { SkillModule, SkillTrack, Quiz, BadgeNode } from '../../types';
 import { NodeType, NodeState } from '../../types';
 import {
     Save, Zap, Star, Loader2, FileJson, Download,
-    Plus, Eye, Check, BrainCircuit, Lock as LockIcon
+    Plus, Eye, Check, BrainCircuit, Lock as LockIcon, RotateCcw,
+    Sparkles, Trophy, BookOpen, Target
 } from 'lucide-react';
 import { InspectorPanel } from './InspectorPanel';
 import { RoadmapJsonImporter } from './RoadmapJsonImporter';
@@ -14,9 +15,11 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 
 interface RoadmapManagementProps {
     adminId: string;
-    onNotification: (type: 'success' | 'error', message: string) => void;
+    onNotification: (type: 'success' | 'error' | 'warning', message: string) => void;
     subjectId?: string;
     readOnly?: boolean;
+    onDirtyChange?: (isDirty: boolean) => void;
+    onRegisterLeaveGuard?: (guard: (() => Promise<boolean>) | null) => void;
     userProgress?: {
         completedModules: string[];
         unlockedModules: string[];
@@ -31,6 +34,11 @@ const NODE_WIDTH = 280;
 const NODE_HEIGHT = 140;
 const LEVEL_SPACING = 180;
 const NODE_SPACING = 100;
+
+interface RoadmapDraftState {
+    track: SkillTrack | null;
+    modules: SkillModule[];
+}
 
 
 /**
@@ -101,15 +109,68 @@ const applyAutoLayout = (modules: SkillModule[]): SkillModule[] => {
     });
 };
 
+const cloneDraftState = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+const createEmptyTrackDraft = (subjectId?: string): SkillTrack => ({
+    trackId: '',
+    title: 'Learning Path',
+    description: '',
+    icon: '🗺️',
+    subjectId,
+    modules: []
+});
+
+const normalizeModulesForSnapshot = (modules: SkillModule[]) =>
+    modules.map(module => ({
+        ...module,
+        description: module.description || '',
+        type: module.type || NodeType.CORE,
+        status: module.status || NodeState.LOCKED,
+        xpReward: module.xpReward || 100,
+        coordinates: module.coordinates || { x: 0, y: 0 },
+        prerequisites: module.prerequisites || [],
+        quizIds: module.quizIds || (module.quizId ? [module.quizId] : []),
+        subModules: (module.subModules || []).map(subModule => ({
+            ...subModule,
+            state: subModule.state || 'locked',
+            xp: subModule.xp || 0
+        }))
+    }));
+
+const createRoadmapSnapshot = (
+    track: SkillTrack | null,
+    modules: SkillModule[],
+    subjectId?: string
+) => JSON.stringify({
+    track: {
+        trackId: track?.trackId || '',
+        title: track?.title || '',
+        description: track?.description || '',
+        icon: track?.icon || '🗺️',
+        subjectId: subjectId || track?.subjectId || ''
+    },
+    modules: normalizeModulesForSnapshot(modules)
+});
+
 /**
  * Helper: Resolve Node Appearance
  */
 
 
-const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotification, subjectId, readOnly = false, userProgress, onSubModuleComplete }) => {
+const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
+    adminId,
+    onNotification,
+    subjectId,
+    readOnly = false,
+    onDirtyChange,
+    onRegisterLeaveGuard,
+    userProgress,
+    onSubModuleComplete
+}) => {
     // Data state
     const [track, setTrack] = useState<SkillTrack | null>(null);
     const [modules, setModules] = useState<SkillModule[]>([]);
+    const [savedDraft, setSavedDraft] = useState<RoadmapDraftState | null>(null);
 
     // UI state
     const [loading, setLoading] = useState(true);
@@ -134,6 +195,24 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     // Optimistic UI state for sub-module completion (local state for instant feedback)
     const [localCompletedSubModules, setLocalCompletedSubModules] = useState<string[]>([]);
     const [savingSubModuleId, setSavingSubModuleId] = useState<string | null>(null);
+
+    const currentSnapshot = useMemo(
+        () => createRoadmapSnapshot(track, modules, subjectId),
+        [track, modules, subjectId]
+    );
+    const savedSnapshot = useMemo(
+        () => savedDraft ? createRoadmapSnapshot(savedDraft.track, savedDraft.modules, subjectId) : '',
+        [savedDraft, subjectId]
+    );
+    const isDirty = !readOnly && savedDraft !== null && currentSnapshot !== savedSnapshot;
+    const totalLessonCount = useMemo(
+        () => modules.reduce((sum, module) => sum + (module.subModules?.length || 0), 0),
+        [modules]
+    );
+    const linkedQuizCount = useMemo(
+        () => modules.reduce((sum, module) => sum + (module.quizIds?.length || (module.quizId ? 1 : 0)), 0),
+        [modules]
+    );
 
     // Sync local state with props when userProgress changes
     React.useEffect(() => {
@@ -170,6 +249,17 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
 
     const { confirm, confirmState, handleCancel } = useConfirm();
 
+    useEffect(() => {
+        onDirtyChange?.(isDirty);
+    }, [isDirty, onDirtyChange]);
+
+    const rememberSavedDraft = useCallback((nextTrack: SkillTrack | null, nextModules: SkillModule[]) => {
+        setSavedDraft(cloneDraftState({
+            track: nextTrack,
+            modules: nextModules
+        }));
+    }, []);
+
     // --- Initialization ---
     const loadData = useCallback(async () => {
         try {
@@ -189,6 +279,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                 setTrack(existingTrack);
                 const migratedModules = migrateTreeToGraph(existingTrack.modules);
                 setModules(migratedModules);
+                rememberSavedDraft(existingTrack, migratedModules);
             } else {
                 // Genesis Node - Sample module with sub-modules
                 const root: SkillModule = {
@@ -228,12 +319,13 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                 };
                 setModules([root]);
                 setTrack(null);
+                rememberSavedDraft(null, [root]);
             }
         } catch (error) {
             console.error(error);
             onNotification('error', 'Failed to load graph');
         } finally { setLoading(false); }
-    }, [subjectId, onNotification]);
+    }, [subjectId, onNotification, rememberSavedDraft]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
@@ -293,14 +385,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         setSaving(true);
 
         try {
-            const baseTrack: SkillTrack = track || {
-                trackId: '',
-                title: 'Learning Path',
-                description: '',
-                icon: '🗺️',
-                subjectId,
-                modules: []
-            };
+            const baseTrack: SkillTrack = track || createEmptyTrackDraft(subjectId);
 
             const payload: SkillTrack = {
                 ...baseTrack,
@@ -318,8 +403,10 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
                     trackId: `track_${Date.now()}`
                 }, adminId);
 
+            const savedModules = migrateTreeToGraph(savedTrack.modules || nextModules);
             setTrack(savedTrack);
-            setModules(migrateTreeToGraph(savedTrack.modules || nextModules));
+            setModules(savedModules);
+            rememberSavedDraft(savedTrack, savedModules);
             onNotification('success', successMessage);
 
             return savedTrack;
@@ -329,7 +416,73 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         } finally {
             setSaving(false);
         }
-    }, [adminId, onNotification, subjectId, track]);
+    }, [adminId, onNotification, rememberSavedDraft, subjectId, track]);
+
+    const handleTrackFieldChange = useCallback((field: 'title' | 'description' | 'icon', value: string) => {
+        setTrack(prev => ({
+            ...(prev || createEmptyTrackDraft(subjectId)),
+            [field]: value,
+            subjectId: subjectId || prev?.subjectId
+        }));
+    }, [subjectId]);
+
+    const handleDiscardChanges = useCallback(async () => {
+        if (!isDirty || !savedDraft) return;
+
+        const shouldDiscard = await confirm({
+            title: 'Discard unsaved changes?',
+            message: 'This will reset the roadmap editor back to the last saved version.',
+            confirmText: 'Discard',
+            cancelText: 'Keep editing',
+            type: 'warning'
+        });
+
+        if (!shouldDiscard) return;
+
+        const restoredDraft = cloneDraftState(savedDraft);
+        setTrack(restoredDraft.track);
+        setModules(restoredDraft.modules);
+        setSelectedNodeId(null);
+        setIsInspectorOpen(false);
+        onNotification('warning', 'Unsaved roadmap changes were discarded.');
+    }, [confirm, isDirty, onNotification, savedDraft]);
+
+    const confirmCloseWithUnsavedChanges = useCallback(async () => {
+        if (!isDirty) return true;
+
+        const shouldLeave = await confirm({
+            title: 'Leave without saving?',
+            message: 'You have unsaved roadmap changes. Leaving now will discard them.',
+            confirmText: 'Leave without saving',
+            cancelText: 'Stay',
+            type: 'warning'
+        });
+
+        if (shouldLeave) {
+            onNotification('warning', 'Roadmap closed without saving. Your latest edits were discarded.');
+        }
+
+        return shouldLeave;
+    }, [confirm, isDirty, onNotification]);
+
+    useEffect(() => {
+        if (!onRegisterLeaveGuard || readOnly) return;
+
+        onRegisterLeaveGuard(confirmCloseWithUnsavedChanges);
+        return () => onRegisterLeaveGuard(null);
+    }, [confirmCloseWithUnsavedChanges, onRegisterLeaveGuard, readOnly]);
+
+    useEffect(() => {
+        if (readOnly || !isDirty) return;
+
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+            event.returnValue = '';
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty, readOnly]);
 
     const computeStatus = (module: SkillModule) => {
         let status = module.status || 'locked';
@@ -375,308 +528,306 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     const renderSketch = () => {
         if (sketchLayout.length === 0) {
             return (
-                <div className="flex flex-1 items-center justify-center text-gray-500 text-sm">No modules yet.</div>
-            );
-        }
-
-        // User view - Infinite Canvas with grab-to-pan
-        if (readOnly) {
-            const visibleModules = sketchLayout.filter(item => {
-                const { isLocked } = computeStatus(item.module);
-                return !(viewMode === 'user' && isLocked);
-            });
-
-            const boxWidth = NODE_WIDTH + 40;
-            const boxHeight = NODE_HEIGHT + 30;
-            const svgWidth = 920;
-            const svgHeight = Math.max(...visibleModules.map(n => n.y)) + boxHeight + 80;
-
-            const connectors = visibleModules.slice(0, -1).map((node, idx) => {
-                const next = visibleModules[idx + 1];
-                const startX = node.x + boxWidth / 2;
-                const startY = node.y + boxHeight;
-                const endX = next.x + boxWidth / 2;
-                const endY = next.y;
-
-                const midY = (startY + endY) / 2;
-                return { startX, startY, midY, endX, endY };
-            });
-
-            return (
-                <div className="relative flex-1 overflow-auto">
-                    <div className="w-full min-h-full py-8 px-4" style={{ minHeight: svgHeight }}>
-                        <div className="relative mx-auto" style={{ width: svgWidth, minHeight: svgHeight }}>
-                            <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ pointerEvents: 'none' }}>
-                                    <defs>
-                                        <linearGradient id="userSketchCore" x1="0%" y1="0%" x2="0%" y2="100%">
-                                            <stop offset="0%" stopColor="#6366f1" />
-                                            <stop offset="100%" stopColor="#8b5cf6" />
-                                        </linearGradient>
-                                    </defs>
-                                    {connectors.map((c, idx) => (
-                                        <g key={`c-${idx}`}>
-                                            {/* Pipe/pipe shadow for depth */}
-                                            <path
-                                                d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
-                                                fill="none"
-                                                stroke="#1e293b"
-                                                strokeWidth={8}
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                opacity={0.6}
-                                            />
-                                            {/* Main pipe - bright and solid */}
-                                            <path
-                                                d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
-                                                fill="none"
-                                                stroke="url(#userSketchCore)"
-                                                strokeWidth={6}
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                opacity={0.8}
-                                            />
-                                            {/* Highlight for 3D effect */}
-                                            <path
-                                                d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
-                                                fill="none"
-                                                stroke="#a78bfa"
-                                                strokeWidth={2}
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                opacity={0.4}
-                                            />
-                                        </g>
-                                    ))}
-                                </svg>
-
-                                {visibleModules.map((item) => {
-                                    const { module } = item;
-                                    const { status, isCompleted, isLocked } = computeStatus(module);
-                                    const moduleNumber = module.level || (item.row * 2 + item.col + 1);
-
-                                    const isOptional = module.type === 'optional';
-                                    const isAchievement = module.type === 'achievement';
-
-                                    const borderClass = isLocked
-                                        ? 'border-slate-600/40'
-                                        : isOptional ? 'border-emerald-500/40'
-                                            : isAchievement ? 'border-amber-500/40'
-                                                : 'border-indigo-500/40';
-
-                                    const numberColorClass = isLocked
-                                        ? 'text-slate-500'
-                                        : isOptional ? 'text-emerald-400'
-                                            : isAchievement ? 'text-amber-400'
-                                                : 'text-indigo-400';
-
-                                    // Handle click - only allow for unlocked modules
-                                    const handleModuleClick = () => {
-                                        if (isLocked) {
-                                            onNotification('error', '🔒 Complete previous modules to unlock this one');
-                                            return;
-                                        }
-                                        setSelectedModuleForDetails(module);
-                                        setIsModuleDetailsOpen(true);
-                                    };
-
-                                    return (
-                                        <div
-                                            key={module.moduleId}
-                                            className="absolute"
-                                            style={{ left: item.x, top: item.y, width: boxWidth, height: boxHeight, pointerEvents: 'auto' }}
-                                        >
-                                            <div
-                                                className={`h-full w-full rounded-xl border bg-gradient-to-br ${isLocked
-                                                    ? 'from-gray-200 to-gray-300 dark:from-slate-950 dark:to-slate-900 opacity-60 cursor-not-allowed'
-                                                    : 'from-white to-gray-50 dark:from-slate-900 dark:to-slate-800 cursor-pointer hover:shadow-xl'
-                                                    } flex flex-col transition-all duration-300 ${borderClass} shadow-lg`}
-                                                onClick={handleModuleClick}
-                                                role="button"
-                                                aria-disabled={isLocked}
-                                                tabIndex={isLocked ? -1 : 0}
-                                            >
-                                                <div className={`px-6 py-4 flex items-center justify-between border-b border-gray-200 dark:border-slate-700/50`}>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-2 h-2 rounded-full ${isLocked ? 'bg-gray-400 dark:bg-slate-600'
-                                                            : isOptional ? 'bg-emerald-500'
-                                                                : isAchievement ? 'bg-amber-500'
-                                                                    : 'bg-indigo-500'
-                                                            }`} />
-                                                        <span className={`text-xs font-semibold uppercase tracking-wider ${isLocked ? 'text-gray-400 dark:text-slate-600' : 'text-gray-500 dark:text-slate-400'}`}>
-                                                            {module.type || 'core'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-xs font-semibold">
-                                                        {isLocked && <LockIcon className="w-4 h-4 text-gray-400 dark:text-slate-500" />}
-                                                        {isCompleted && <Check className="w-4 h-4 text-emerald-500" />}
-                                                        <span className={numberColorClass}>#{moduleNumber}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex-1 px-6 py-4 flex flex-col gap-2.5">
-                                                    <h4 className={`font-semibold text-sm leading-tight line-clamp-2 ${isLocked ? 'text-gray-500 dark:text-slate-500' : 'text-gray-900 dark:text-white'}`}>
-                                                        {module.title}
-                                                    </h4>
-                                                    <p className={`text-xs leading-relaxed line-clamp-2 ${isLocked ? 'text-gray-400 dark:text-slate-600' : 'text-gray-600 dark:text-slate-400'}`}>
-                                                        {isLocked ? 'Complete previous modules to unlock' : (module.description || 'Keep going to unlock the next milestone.')}
-                                                    </p>
-                                                </div>
-
-                                                <div className="px-6 py-3 border-t border-gray-200 dark:border-slate-700/50 flex items-center justify-between bg-gray-50 dark:bg-slate-900/50">
-                                                    <span className="text-xs text-gray-500 dark:text-slate-500 uppercase tracking-wider font-medium">Level {moduleNumber}</span>
-                                                    <span className={`text-xs font-semibold uppercase tracking-wider ${isLocked ? 'text-gray-400 dark:text-slate-600'
-                                                        : isCompleted ? 'text-emerald-500'
-                                                            : 'text-indigo-600 dark:text-indigo-400'
-                                                        }`}>
-                                                        {isLocked ? '🔒 Locked' : status}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                        </div>
-                    </div>
+                <div className="flex flex-1 items-center justify-center text-sm text-gray-500 dark:text-slate-400">
+                    No modules yet.
                 </div>
             );
         }
 
-        // Admin view - Infinite Canvas with grab-to-pan and editing
-        const boxWidth = NODE_WIDTH + 40;
-        const boxHeight = NODE_HEIGHT + 30;
-        const svgWidth = 920;
-        const svgHeight = Math.max(...sketchLayout.map(n => n.y)) + boxHeight + 80;
+        const getModuleTheme = (module: SkillModule) => {
+            switch (module.type) {
+                case NodeType.OPTIONAL:
+                    return {
+                        Icon: Sparkles,
+                        primary: '#10b981',
+                        secondary: '#22d3ee',
+                        text: '#047857',
+                        darkText: '#6ee7b7',
+                        surface: 'rgba(16, 185, 129, 0.12)',
+                        outline: 'rgba(16, 185, 129, 0.28)',
+                        shadow: '0 28px 60px -36px rgba(16, 185, 129, 0.5)'
+                    };
+                case NodeType.ACHIEVEMENT:
+                    return {
+                        Icon: Trophy,
+                        primary: '#f59e0b',
+                        secondary: '#fb7185',
+                        text: '#b45309',
+                        darkText: '#fcd34d',
+                        surface: 'rgba(245, 158, 11, 0.12)',
+                        outline: 'rgba(245, 158, 11, 0.28)',
+                        shadow: '0 28px 60px -36px rgba(245, 158, 11, 0.45)'
+                    };
+                case NodeType.QUIZ:
+                case NodeType.EXAM:
+                    return {
+                        Icon: Target,
+                        primary: '#ef4444',
+                        secondary: '#fb7185',
+                        text: '#b91c1c',
+                        darkText: '#fda4af',
+                        surface: 'rgba(239, 68, 68, 0.12)',
+                        outline: 'rgba(239, 68, 68, 0.26)',
+                        shadow: '0 28px 60px -36px rgba(239, 68, 68, 0.45)'
+                    };
+                default:
+                    return {
+                        Icon: Zap,
+                        primary: '#6366f1',
+                        secondary: '#38bdf8',
+                        text: '#4338ca',
+                        darkText: '#a5b4fc',
+                        surface: 'rgba(99, 102, 241, 0.12)',
+                        outline: 'rgba(99, 102, 241, 0.26)',
+                        shadow: '0 28px 60px -36px rgba(79, 70, 229, 0.5)'
+                    };
+            }
+        };
 
-        const connectors = sketchLayout.slice(0, -1).map((node, idx) => {
-            const next = sketchLayout[idx + 1];
-            const startX = node.x + boxWidth / 2;
-            const startY = node.y + boxHeight;
-            const endX = next.x + boxWidth / 2;
-            const endY = next.y;
+        const timelineItems = readOnly
+            ? sketchLayout.filter(item => {
+                const { isLocked } = computeStatus(item.module);
+                return !(viewMode === 'user' && isLocked);
+            })
+            : sketchLayout;
 
-            const midY = (startY + endY) / 2;
-            return { startX, startY, midY, endX, endY };
+        if (timelineItems.length === 0) {
+            return (
+                <div className="flex flex-1 items-center justify-center text-sm text-gray-500 dark:text-slate-400">
+                    No unlocked modules yet.
+                </div>
+            );
+        }
+
+        const cardWidth = NODE_WIDTH + 40;
+        const cardHeight = NODE_HEIGHT + 48;
+        const maxX = Math.max(...timelineItems.map(item => item.x));
+        const maxY = Math.max(...timelineItems.map(item => item.y));
+        const svgWidth = Math.max(760, maxX + cardWidth + 96);
+        const svgHeight = Math.max(460, maxY + cardHeight + 120);
+        const isEditingCanvas = !readOnly && viewMode === 'admin';
+
+        const connectors = timelineItems.slice(0, -1).map((node, idx) => {
+            const next = timelineItems[idx + 1];
+            const startX = node.x + cardWidth / 2;
+            const startY = node.y + cardHeight - 10;
+            const endX = next.x + cardWidth / 2;
+            const endY = next.y + 10;
+            const curveOffset = Math.max(56, Math.abs(endY - startY) * 0.32);
+
+            return {
+                id: `${node.module.moduleId}-${next.module.moduleId}`,
+                d: `M ${startX} ${startY} C ${startX} ${startY + curveOffset}, ${endX} ${endY - curveOffset}, ${endX} ${endY}`,
+                startX,
+                startY,
+                endX,
+                endY,
+                color: getModuleTheme(next.module).primary
+            };
         });
 
+        const canvasBackground = {
+            backgroundImage: `
+                radial-gradient(circle at top, rgba(99, 102, 241, 0.16), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.12), transparent 24%),
+                linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0.08))
+            `
+        };
+
+        const gridPattern = {
+            backgroundImage: `
+                linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px)
+            `,
+            backgroundSize: '36px 36px'
+        };
+
         return (
-            <div className="relative flex-1 overflow-auto">
-                <div className="w-full min-h-full py-8 px-4" style={{ minHeight: svgHeight }}>
-                    <div
-                        className="relative mx-auto"
-                        style={{ width: svgWidth, minHeight: svgHeight }}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
-                    >
-                        <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ pointerEvents: 'none' }}>
-                                <defs>
-                                    <linearGradient id="sketchCore" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stopColor="#6366f1" />
-                                        <stop offset="100%" stopColor="#8b5cf6" />
-                                    </linearGradient>
-                                </defs>
-                                {connectors.map((c, idx) => (
-                                    <g key={`c-${idx}`}>
-                                        {/* Pipe/pipe shadow for depth */}
+            <div className="relative w-full bg-white dark:bg-[#090d18] rounded-3xl mt-4 border border-gray-200 dark:border-white/5" style={{ ...canvasBackground, minHeight: Math.max(600, svgHeight) }}>
+                <div className="pointer-events-none absolute inset-0 opacity-40 rounded-3xl" style={gridPattern} />
+                <div className="w-full min-h-full px-3 py-6 sm:px-4 sm:py-8">
+                    <div className="mx-auto flex w-full justify-center">
+                        <div
+                            className="relative w-full mx-auto"
+                            style={{ minWidth: svgWidth, minHeight: svgHeight }}
+                            onMouseMove={isEditingCanvas ? handleMouseMove : undefined}
+                            onMouseUp={isEditingCanvas ? handleMouseUp : undefined}
+                            onMouseLeave={isEditingCanvas ? handleMouseUp : undefined}
+                        >
+                            <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
+                                {connectors.map(connector => (
+                                    <g key={connector.id}>
                                         <path
-                                            d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
+                                            d={connector.d}
                                             fill="none"
-                                            stroke="#1e293b"
-                                            strokeWidth={8}
+                                            stroke={connector.color}
+                                            strokeWidth={3}
                                             strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            opacity={0.6}
+                                            opacity={0.28}
+                                            strokeDasharray={isEditingCanvas ? '10 10' : undefined}
                                         />
-                                        {/* Main pipe - bright and solid */}
-                                        <path
-                                            d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
-                                            fill="none"
-                                            stroke="url(#sketchCore)"
-                                            strokeWidth={6}
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            opacity={0.8}
-                                        />
-                                        {/* Highlight for 3D effect */}
-                                        <path
-                                            d={`M ${c.startX} ${c.startY} L ${c.startX} ${c.midY} L ${c.endX} ${c.midY} L ${c.endX} ${c.endY}`}
-                                            fill="none"
-                                            stroke="#a78bfa"
-                                            strokeWidth={2}
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            opacity={0.4}
-                                        />
+                                        <circle cx={connector.startX} cy={connector.startY} r={4} fill={connector.color} opacity={0.28} />
+                                        <circle cx={connector.endX} cy={connector.endY} r={4} fill={connector.color} opacity={0.36} />
                                     </g>
                                 ))}
                             </svg>
 
-                            {sketchLayout.map((item) => {
+                            {timelineItems.map((item) => {
                                 const { module } = item;
-                                const { status, isCompleted } = computeStatus(module);
-                                const moduleNumber = module.level || (item.row * 2 + item.col + 1);
+                                const { status, isCompleted, isLocked } = computeStatus(module);
+                                const moduleNumber = typeof module.level === 'number'
+                                    ? module.level + 1
+                                    : (item.row * 2 + item.col + 1);
+                                const lessonCount = module.subModules?.length || 0;
+                                const quizCount = module.quizIds?.length || (module.quizId ? 1 : 0);
+                                const xpReward = module.xpReward || 0;
+                                const theme = getModuleTheme(module);
+                                const ThemeIcon = theme.Icon;
+                                const cardDescription = isLocked
+                                    ? 'Complete the required modules to unlock this step.'
+                                    : (module.description || 'Add a short description for this module.');
+                                const statusLabel = isLocked
+                                    ? 'Locked'
+                                    : isCompleted
+                                        ? 'Completed'
+                                        : status === 'available'
+                                            ? 'Ready'
+                                            : status;
+                                const statusClass = isLocked
+                                    ? 'border-gray-300 bg-gray-100 text-gray-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'
+                                    : isCompleted
+                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-300'
+                                        : 'border-white/10 bg-white/70 text-gray-700 dark:bg-white/5 dark:text-slate-200';
 
-                                // In user preview mode, skip locked modules
-                                if (viewMode === 'user' && computeStatus(module).isLocked && readOnly) {
-                                    return null;
-                                }
+                                const handleModuleClick = () => {
+                                    if (readOnly) {
+                                        if (isLocked) {
+                                            onNotification('error', 'Complete previous modules to unlock this one');
+                                            return;
+                                        }
+                                        setSelectedModuleForDetails(module);
+                                        setIsModuleDetailsOpen(true);
+                                        return;
+                                    }
 
-                                // Define color classes based on module type
-                                const isOptional = module.type === 'optional';
-                                const isAchievement = module.type === 'achievement';
-
-                                const borderClass = isOptional ? 'border-emerald-500/40' :
-                                    isAchievement ? 'border-amber-500/40' :
-                                        'border-indigo-500/40';
-
-                                const numberColorClass = isOptional ? 'text-emerald-400' :
-                                    isAchievement ? 'text-amber-400' :
-                                        'text-indigo-400';
+                                    if (!draggedModuleId && viewMode === 'admin') {
+                                        setSelectedNodeId(module.moduleId);
+                                        setIsInspectorOpen(true);
+                                    }
+                                };
 
                                 return (
                                     <div
                                         key={module.moduleId}
-                                        className="absolute group"
-                                        style={{ left: item.x, top: item.y, width: boxWidth, height: boxHeight, pointerEvents: 'auto' }}
+                                        className="absolute"
+                                        style={{ left: item.x, top: item.y, width: cardWidth, height: cardHeight, pointerEvents: 'auto' }}
                                     >
                                         <div
-                                            className={`h-full w-full rounded-xl border bg-gradient-to-br from-white to-gray-50 dark:from-slate-900 dark:to-slate-800 flex flex-col transition-all duration-300 ${borderClass} shadow-lg hover:shadow-xl ${!readOnly && viewMode === 'admin' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${selectedNodeId === module.moduleId ? 'ring-2 ring-indigo-500' : ''} ${draggedModuleId === module.moduleId ? 'opacity-75' : ''}`}
-                                            onMouseDown={(e) => {
-                                                if (!readOnly && viewMode === 'admin') {
-                                                    handleModuleMouseDown(module.moduleId, e);
+                                            className={`relative flex h-full w-full overflow-hidden rounded-[28px] border bg-white/95 dark:bg-[#0f172a]/94 transition-all duration-200 ${
+                                                isEditingCanvas ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+                                            } ${isLocked ? 'opacity-75' : ''} ${draggedModuleId === module.moduleId ? 'opacity-70' : ''}`}
+                                            style={{
+                                                borderColor: selectedNodeId === module.moduleId ? theme.primary : theme.outline,
+                                                boxShadow: selectedNodeId === module.moduleId
+                                                    ? `0 0 0 1px ${theme.primary}, ${theme.shadow}`
+                                                    : theme.shadow
+                                            }}
+                                            onMouseDown={(event) => {
+                                                if (isEditingCanvas) {
+                                                    handleModuleMouseDown(module.moduleId, event);
                                                 }
                                             }}
-                                            onClick={() => {
-                                                if (!readOnly && viewMode === 'admin' && !draggedModuleId) {
-                                                    setSelectedNodeId(module.moduleId);
-                                                    setIsInspectorOpen(true);
-                                                }
-                                            }}
+                                            onClick={handleModuleClick}
+                                            role="button"
+                                            aria-disabled={readOnly && isLocked}
+                                            tabIndex={readOnly && isLocked ? -1 : 0}
                                         >
-                                            <div className={`px-6 py-4 flex items-center justify-between border-b border-gray-200 dark:border-slate-700/50`}>
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-2 h-2 rounded-full ${isOptional ? 'bg-emerald-500' : isAchievement ? 'bg-amber-500' : 'bg-indigo-500'}`} />
-                                                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{module.type || 'core'}</span>
-                                                </div>
-                                                <div className="flex items-center gap-2 text-xs font-semibold">
-                                                    {isCompleted && <Check className="w-4 h-4 text-emerald-500" />}
-                                                    <span className={numberColorClass}>#{moduleNumber}</span>
-                                                </div>
+                                            <div
+                                                className="absolute inset-x-0 top-0 h-1.5"
+                                                style={{ background: `linear-gradient(90deg, ${theme.primary}, ${theme.secondary})` }}
+                                            />
+                                            <div
+                                                className="pointer-events-none absolute -right-4 top-3 text-5xl font-black tracking-tight text-gray-200/60 dark:text-white/5"
+                                                aria-hidden="true"
+                                            >
+                                                {String(moduleNumber).padStart(2, '0')}
                                             </div>
 
-                                            <div className="flex-1 px-6 py-4 flex flex-col gap-2.5">
-                                                <h4 className="text-gray-900 dark:text-white font-semibold text-sm leading-tight line-clamp-2">{module.title}</h4>
-                                                <p className="text-xs text-gray-600 dark:text-slate-400 leading-relaxed line-clamp-2">{module.description || 'Keep going to unlock the next milestone.'}</p>
-                                            </div>
+                                            <div className="flex h-full w-full flex-col p-4 sm:p-5">
+                                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                                                        <div
+                                                            className="flex h-10 w-10 flex-none items-center justify-center rounded-2xl border"
+                                                            style={{ backgroundColor: theme.surface, borderColor: theme.outline, color: theme.primary }}
+                                                        >
+                                                            {module.icon ? (
+                                                                <span className="text-lg">{module.icon}</span>
+                                                            ) : (
+                                                                <ThemeIcon size={18} />
+                                                            )}
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div
+                                                                className="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em]"
+                                                                style={{
+                                                                    backgroundColor: theme.surface,
+                                                                    borderColor: theme.outline,
+                                                                    color: theme.darkText
+                                                                }}
+                                                            >
+                                                                {module.type || 'core'}
+                                                            </div>
+                                                            <div className="mt-2 text-xs font-medium uppercase tracking-[0.2em] text-gray-400 dark:text-slate-500">
+                                                                Module {String(moduleNumber).padStart(2, '0')}
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                                            <div className="px-6 py-3 border-t border-gray-200 dark:border-slate-700/50 flex items-center justify-between bg-gray-50 dark:bg-slate-900/50">
-                                                <span className="text-xs text-gray-500 dark:text-slate-500 uppercase tracking-wider font-medium">Level {moduleNumber}</span>
-                                                <span className={`text-xs font-semibold uppercase tracking-wider ${isCompleted ? 'text-emerald-500' : 'text-gray-500 dark:text-slate-500'}`}>{status}</span>
+                                                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                                                        {isCompleted && <Check className="h-4 w-4 text-emerald-500" />}
+                                                        {isLocked && <LockIcon className="h-4 w-4 text-gray-400 dark:text-slate-500" />}
+                                                        <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${statusClass}`}>
+                                                            {statusLabel}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-4 min-w-0 space-y-2.5">
+                                                    <h4 className="line-clamp-2 text-base font-semibold leading-snug text-gray-900 dark:text-white">
+                                                        {module.title}
+                                                    </h4>
+                                                    <p className={`line-clamp-3 text-sm leading-6 ${isLocked ? 'text-gray-400 dark:text-slate-500' : 'text-gray-600 dark:text-slate-300'}`}>
+                                                        {cardDescription}
+                                                    </p>
+                                                </div>
+
+                                                <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
+                                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+                                                        <BookOpen size={13} />
+                                                        {lessonCount} lesson{lessonCount === 1 ? '' : 's'}
+                                                    </span>
+                                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+                                                        <Target size={13} />
+                                                        {quizCount} quiz{quizCount === 1 ? '' : 'zes'}
+                                                    </span>
+                                                    <span
+                                                        className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium"
+                                                        style={{
+                                                            backgroundColor: theme.surface,
+                                                            borderColor: theme.outline,
+                                                            color: theme.darkText
+                                                        }}
+                                                    >
+                                                        <Star size={13} />
+                                                        {xpReward} XP
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 );
                             })}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -743,14 +894,14 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         setIsInspectorOpen(true);
     };
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
         try {
             await persistRoadmap(undefined, modules, 'Roadmap saved successfully');
         } catch (error: any) {
             console.error("Save Error:", error);
             onNotification('error', `Save Failed: ${error.message || 'Unknown error'}`);
         }
-    };
+    }, [modules, onNotification, persistRoadmap]);
 
     const handleJsonImport = async (data: { track?: Partial<SkillTrack>, modules: SkillModule[] }) => {
         const layoutedModules = applyAutoLayout(data.modules);
@@ -764,6 +915,23 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         await persistRoadmap(importedTrack, layoutedModules, 'Roadmap imported and saved successfully');
         setIsImportModalOpen(false);
     };
+
+    useEffect(() => {
+        if (readOnly) return;
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            const isSaveShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's';
+            if (!isSaveShortcut) return;
+
+            event.preventDefault();
+            if (!saving) {
+                void handleSave();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleSave, readOnly, saving]);
 
     const handleExportRoadmap = () => {
         const exportData = {
@@ -899,77 +1067,142 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
     if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-indigo-500" /></div>;
 
     return (
-        <div className="flex flex-col h-[calc(100vh-160px)] relative bg-gray-100 dark:bg-[#0B0E1A] rounded-3xl border border-gray-200 dark:border-white/5 overflow-hidden">
+        <div className="relative flex flex-col flex-1">
+            <div className="border border-gray-200 dark:border-white/10 rounded-3xl bg-white/95 dark:bg-[#111522] px-5 py-4">
+                <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_320px]">
+                    <div className="min-w-0">
+                        {!readOnly ? (
+                            <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/80 dark:bg-[#0B0E1A] p-4">
+                                <div className="grid gap-4">
+                                    <div className="grid gap-3 lg:grid-cols-[88px_minmax(0,1fr)]">
+                                        <input
+                                            type="text"
+                                            value={track?.icon || '🗺️'}
+                                            onChange={(event) => handleTrackFieldChange('icon', event.target.value)}
+                                            className="h-16 w-full rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] px-4 text-center text-2xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                                            maxLength={2}
+                                            aria-label="Roadmap icon"
+                                        />
+                                        <div className="grid gap-3">
+                                            <input
+                                                type="text"
+                                                value={track?.title || ''}
+                                                onChange={(event) => handleTrackFieldChange('title', event.target.value)}
+                                                placeholder="Roadmap title"
+                                                className="h-12 w-full rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] px-4 text-lg font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                                            />
+                                            <textarea
+                                                value={track?.description || ''}
+                                                onChange={(event) => handleTrackFieldChange('description', event.target.value)}
+                                                placeholder="Short roadmap description"
+                                                className="h-16 w-full resize-none rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] px-4 py-3 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                                            />
+                                        </div>
+                                    </div>
 
-            {/* --- Enhanced Toolbar --- */}
-            {!readOnly && (
-                <div className="absolute left-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-6 font-sans pointer-events-none">
-                    <div className="pointer-events-auto flex flex-col gap-6">
-                        {/* Creation Tools */}
-                        <div className="bg-white dark:bg-[#1a1a2e]/90 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 p-3 shadow-2xl flex flex-col gap-3 w-16 items-center">
-                            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-wider mb-1">Add</div>
+                                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                        <button onClick={() => handleCreateNode(NodeType.CORE)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:border-indigo-300 dark:hover:border-indigo-500/40">
+                                            <Zap size={15} />
+                                            Add Core
+                                        </button>
+                                        <button onClick={() => handleCreateNode(NodeType.OPTIONAL)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:border-emerald-300 dark:hover:border-emerald-500/40">
+                                            <Plus size={15} />
+                                            Add Optional
+                                        </button>
+                                        <button onClick={() => handleCreateNode(NodeType.ACHIEVEMENT)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:border-amber-300 dark:hover:border-amber-500/40">
+                                            <Star size={15} />
+                                            Add Achievement
+                                        </button>
+                                        <button onClick={handleRedesign} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                            <BrainCircuit size={15} />
+                                            Auto Layout
+                                        </button>
+                                        <button onClick={() => setIsImportModalOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                            <FileJson size={15} />
+                                            Import
+                                        </button>
+                                        <button onClick={handleExportRoadmap} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                            <Download size={15} />
+                                            Export
+                                        </button>
+                                        <button onClick={() => setViewMode(prev => prev === 'admin' ? 'user' : 'admin')} className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ${viewMode === 'user' ? 'bg-cyan-500 text-white' : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] text-gray-800 dark:text-gray-100'}`}>
+                                            <Eye size={15} />
+                                            {viewMode === 'user' ? 'Preview On' : 'Preview'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/80 dark:bg-[#0B0E1A] p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] text-2xl">
+                                        {track?.icon || '🗺️'}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{track?.title || 'Learning Path'}</h2>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">{track?.description || 'Track progress and lessons in one place.'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
-                            <button onClick={() => handleCreateNode(NodeType.CORE)} title="Add Core Module" className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white flex items-center justify-center transition-all shadow-sm">
-                                <Zap size={20} />
-                            </button>
+                    <div className="min-w-0">
+                        <div className="flex h-full flex-col gap-4 rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#0B0E1A] p-4">
+                            <div className="grid grid-cols-3 gap-3 text-center">
+                                <div className="rounded-xl bg-white dark:bg-[#161c2b] px-3 py-3">
+                                    <div className="text-lg font-bold text-gray-900 dark:text-white">{modules.length}</div>
+                                    <div className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Modules</div>
+                                </div>
+                                <div className="rounded-xl bg-white dark:bg-[#161c2b] px-3 py-3">
+                                    <div className="text-lg font-bold text-gray-900 dark:text-white">{totalLessonCount}</div>
+                                    <div className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Lessons</div>
+                                </div>
+                                <div className="rounded-xl bg-white dark:bg-[#161c2b] px-3 py-3">
+                                    <div className="text-lg font-bold text-gray-900 dark:text-white">{linkedQuizCount}</div>
+                                    <div className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Quizzes</div>
+                                </div>
+                            </div>
 
-                            <button onClick={() => handleCreateNode(NodeType.OPTIONAL)} title="Add Optional" className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white flex items-center justify-center transition-all shadow-sm">
-                                <Plus size={20} />
-                            </button>
-
-                            <button onClick={() => handleCreateNode(NodeType.ACHIEVEMENT)} title="Add Achievement" className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white flex items-center justify-center transition-all shadow-sm">
-                                <Star size={20} />
-                            </button>
-                        </div>
-
-                        {/* Utility Tools */}
-                        <div className="bg-white dark:bg-[#1a1a2e]/90 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 p-3 shadow-2xl flex flex-col gap-3 w-16 items-center">
-                            <div className="text-[10px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-wider mb-1">Tools</div>
-
-                            <button onClick={handleRedesign} title="Redesign Layout" className="w-12 h-12 rounded-xl hover:bg-pink-500/20 text-pink-600 dark:text-pink-400 hover:text-pink-500 dark:hover:text-pink-300 flex items-center justify-center transition-all bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/5">
-                                <BrainCircuit size={20} />
-                            </button>
-
-                            <button onClick={() => setViewMode(v => v === 'admin' ? 'user' : 'admin')} title="Toggle Preview" className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${viewMode === 'user' ? 'bg-cyan-500 text-white shadow-cyan-500/20 shadow-lg' : 'hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}>
-                                <Eye size={20} />
-                            </button>
-
-                            <button onClick={() => setIsImportModalOpen(true)} title="Import JSON" className="w-12 h-12 rounded-xl hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center justify-center transition-all">
-                                <FileJson size={20} />
-                            </button>
-
-                            <button onClick={handleExportRoadmap} title="Export JSON" className="w-12 h-12 rounded-xl hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center justify-center transition-all">
-                                <Download size={20} />
-                            </button>
-
-                            <div className="h-[1px] w-10 bg-gray-300 dark:bg-white/10 my-1" />
-
-                            <button onClick={handleSave} disabled={saving} title="Save Changes" className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-lg ${saving ? 'text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-white/5' : 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-500 hover:text-white shadow-green-500/20'}`}>
-                                {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                            </button>
+                            {!readOnly && (
+                                <div className="flex flex-1 flex-col justify-between rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] p-4">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <div className={`text-sm font-semibold ${isDirty ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                                {isDirty ? 'Unsaved changes' : 'All changes saved'}
+                                            </div>
+                                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                {isDirty ? 'Save before leaving this screen to keep the latest roadmap edits.' : 'Use Ctrl/Cmd+S any time to save quickly.'}
+                                            </p>
+                                        </div>
+                                        {saving && <Loader2 className="mt-0.5 h-4 w-4 animate-spin text-indigo-500" />}
+                                    </div>
+                                    <div className="mt-4 grid grid-cols-2 gap-2">
+                                        <button
+                                            onClick={() => void handleDiscardChanges()}
+                                            disabled={!isDirty || saving}
+                                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            <RotateCcw size={16} />
+                                            Discard
+                                        </button>
+                                        <button
+                                            onClick={() => void handleSave()}
+                                            disabled={saving || !isDirty}
+                                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={16} />}
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
 
-            {/* View Mode Indicator */}
-            {viewMode === 'user' && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-cyan-500/20 backdrop-blur-md rounded-full px-4 py-1.5 border border-cyan-500/30">
-                    <span className="text-xs font-medium text-cyan-400">👤 User Preview Mode</span>
-                </div>
-            )}
-
-            {/* View Mode Indicator */}
-            {viewMode === 'user' && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-cyan-500/20 backdrop-blur-md rounded-full px-4 py-1.5 border border-cyan-500/30">
-                    <span className="text-xs font-medium text-cyan-400">👤 User Preview Mode</span>
-                </div>
-            )}
-
-            {/* --- Sketch View --- */}
-            {
-                renderSketch()
-            }
+            {renderSketch()}
 
             {/* Inspector Panel */}
             {selectedNodeId && !readOnly && selectedNode && (

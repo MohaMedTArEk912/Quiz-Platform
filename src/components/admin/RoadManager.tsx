@@ -45,6 +45,8 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
 
     // Tab State for Detail View
     const [activeTab, setActiveTab] = useState<'overview' | 'resources' | 'quizzes' | 'roadmap' | 'study'>('overview');
+    const [roadmapDirty, setRoadmapDirty] = useState(false);
+    const [roadmapLeaveGuard, setRoadmapLeaveGuard] = useState<(() => Promise<boolean>) | null>(null);
 
     // Loading State
     const [isLoading, setIsLoading] = useState(true);
@@ -156,13 +158,41 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
         setSelectedRoad(road);
         setView('detail');
         setActiveTab('overview');
+        setRoadmapDirty(false);
     };
 
-    const handleBack = () => {
+    const tryLeaveRoadmapEditor = useCallback(async () => {
+        if (activeTab !== 'roadmap' || !roadmapLeaveGuard) return true;
+        return roadmapLeaveGuard();
+    }, [activeTab, roadmapLeaveGuard]);
+
+    const handleRoadmapTabChange = useCallback(async (nextTab: 'overview' | 'resources' | 'quizzes' | 'roadmap' | 'study') => {
+        if (nextTab === activeTab) return;
+
+        if (activeTab === 'roadmap' && nextTab !== 'roadmap') {
+            const canLeave = await tryLeaveRoadmapEditor();
+            if (!canLeave) return;
+            setRoadmapDirty(false);
+            setRoadmapLeaveGuard(null);
+        }
+
+        setActiveTab(nextTab);
+    }, [activeTab, tryLeaveRoadmapEditor]);
+
+    const handleBack = async () => {
+        const canLeave = await tryLeaveRoadmapEditor();
+        if (!canLeave) return;
+
         setSelectedRoad(null);
         setView('list');
+        setRoadmapDirty(false);
+        setRoadmapLeaveGuard(null);
         loadRoads(); // Refresh on back
     };
+
+    const handleRoadmapLeaveGuardChange = useCallback((guard: (() => Promise<boolean>) | null) => {
+        setRoadmapLeaveGuard(() => guard);
+    }, []);
 
     // --- CRUD Handlers ---
 
@@ -232,7 +262,7 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
     };
 
     return (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
             <RoadHeader
                 view={view}
                 selectedRoad={selectedRoad}
@@ -250,16 +280,18 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
 
             {/* List View */}
             {view === 'list' && (
-                <RoadList
-                    isLoading={isLoading}
-                    roads={roads}
-                    onSelectRoad={handleSelectRoad}
-                />
+                <div className="flex flex-1 flex-col custom-scrollbar">
+                    <RoadList
+                        isLoading={isLoading}
+                        roads={roads}
+                        onSelectRoad={handleSelectRoad}
+                    />
+                </div>
             )}
 
             {/* Detail View */}
             {view === 'detail' && selectedRoad && (
-                <div className="space-y-4">
+                <div className="flex flex-col">
                     {/* Tabs */}
                     <div className="flex gap-2 mb-6 overflow-x-auto pb-2 p-1 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/5 w-max max-w-full">
                         {[
@@ -271,7 +303,7 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                         ].map(tab => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id as any)}
+                                onClick={() => void handleRoadmapTabChange(tab.id as any)}
                                 className={`px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all duration-300 relative overflow-hidden ${activeTab === tab.id
                                     ? 'bg-white dark:bg-[#1e1e2d] text-indigo-600 dark:text-indigo-400 shadow-lg shadow-indigo-500/10 ring-1 ring-black/5 dark:ring-white/10'
                                     : 'hover:bg-white/50 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
@@ -279,12 +311,19 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                             >
                                 <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'animate-bounce-subtle' : ''}`} />
                                 {tab.label}
+                                {tab.id === 'roadmap' && roadmapDirty && (
+                                    <span className="ml-1 inline-block h-2 w-2 rounded-full bg-amber-500" />
+                                )}
                             </button>
                         ))}
                     </div>
 
                     {/* Tab Content */}
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className={`animate-in fade-in slide-in-from-bottom-4 duration-300 ${
+                        activeTab === 'roadmap'
+                            ? 'flex flex-col'
+                            : 'flex flex-col'
+                    }`}>
                         {activeTab === 'overview' && (
                             <RoadOverview road={selectedRoad} />
                         )}
@@ -315,11 +354,15 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                         )}
 
                         {activeTab === 'roadmap' && (
-                            <RoadmapManagement
-                                adminId={currentUser.userId}
-                                onNotification={onNotification}
-                                subjectId={selectedRoad._id}
-                            />
+                            <div className="flex flex-col">
+                                <RoadmapManagement
+                                    adminId={currentUser.userId}
+                                    onNotification={onNotification}
+                                    subjectId={selectedRoad._id}
+                                    onDirtyChange={setRoadmapDirty}
+                                    onRegisterLeaveGuard={handleRoadmapLeaveGuardChange}
+                                />
+                            </div>
                         )}
 
                         {activeTab === 'quizzes' && (

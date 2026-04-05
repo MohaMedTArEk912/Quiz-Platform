@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-    X, Hash, BookOpen, Layers,
-    Video, Star, Shield, Trash2, Copy, ChevronDown,
-    Plus, GripVertical, Check, BrainCircuit, Award
+    X, Hash, Layers, Video, Trash2, Copy, ChevronDown,
+    Plus, Check, BrainCircuit, Award, Link2
 } from 'lucide-react';
 import type { SkillModule, SubModule, Quiz, BadgeNode } from '../../types';
 import { NodeType, NodeState } from '../../types';
@@ -35,119 +34,47 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         return (quiz.id || quiz._id || '').trim();
     };
 
-    const getInitialNode = (node: SkillModule): SkillModule => {
-        const initialNode = { ...node };
+    const getInitialNode = (value: SkillModule): SkillModule => {
+        const initialNode = { ...value };
         if ((!initialNode.quizIds || initialNode.quizIds.length === 0) && initialNode.quizId) {
             initialNode.quizIds = [initialNode.quizId];
         }
         return initialNode;
     };
 
-    const [editedNode, setEditedNode] = useState<SkillModule | null>(() => (node ? getInitialNode(node) : null));
-    const [isDirty, setIsDirty] = useState(false);
-    const [activeSection, setActiveSection] = useState<'identity' | 'config' | 'lessons' | 'deps'>('identity');
+    const currentNode = useMemo(() => (node ? getInitialNode(node) : null), [node]);
     const [selectedQuizIds, setSelectedQuizIds] = useState<string[]>([]);
     const [quizSearch, setQuizSearch] = useState('');
-    const currentNode = editedNode;
 
     useEffect(() => {
-        if (!node) {
-            setEditedNode(null);
-            setIsDirty(false);
-            setSelectedQuizIds([]);
-            setQuizSearch('');
-            return;
-        }
-
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setEditedNode(getInitialNode(node));
-        setIsDirty(false);
         setSelectedQuizIds([]);
         setQuizSearch('');
-    }, [node]);
+    }, [node?.moduleId]);
 
-    // Calculate globally used quiz IDs (excluding current node)
+    const linkedQuizIds = (currentNode?.quizIds || []).map(id => getQuizKey(id)).filter(Boolean);
+
     const globallyUsedQuizIds = useMemo(() => {
-        if (!node) return new Set<string>();
+        if (!currentNode) return new Set<string>();
 
         const used = new Set<string>();
-        allNodes.forEach(n => {
-            if (n.moduleId === node.moduleId) return;
+        allNodes.forEach(item => {
+            if (item.moduleId === currentNode.moduleId) return;
 
-            if (n.quizIds) n.quizIds.forEach(id => {
-                const normalized = getQuizKey(id);
-                if (normalized) used.add(normalized);
-            });
-            if (n.quizId) {
-                const normalized = getQuizKey(n.quizId);
+            if (item.quizIds) {
+                item.quizIds.forEach(id => {
+                    const normalized = getQuizKey(id);
+                    if (normalized) used.add(normalized);
+                });
+            }
+
+            if (item.quizId) {
+                const normalized = getQuizKey(item.quizId);
                 if (normalized) used.add(normalized);
             }
         });
         return used;
-    }, [allNodes, node?.moduleId]);
+    }, [allNodes, currentNode]);
 
-    const handleChange = (field: keyof SkillModule, value: any) => {
-        if (!editedNode) return;
-
-        const updated = { ...editedNode, [field]: value };
-        setEditedNode(updated);
-        setIsDirty(true);
-    };
-
-    const handlePrerequisiteToggle = (prereqId: string) => {
-        if (!editedNode) return;
-
-        const currentPrereqs = editedNode.prerequisites || [];
-        const isSelected = currentPrereqs.includes(prereqId);
-
-        let newPrereqs;
-        if (isSelected) {
-            newPrereqs = currentPrereqs.filter(id => id !== prereqId);
-        } else {
-            newPrereqs = [...currentPrereqs, prereqId];
-        }
-
-        handleChange('prerequisites', newPrereqs);
-    };
-
-    // --- Sub-Module Management ---
-    const handleAddSubModule = () => {
-        if (!currentNode) return;
-
-        const newSub: SubModule = {
-            id: `sub_${Date.now()}`,
-            title: 'New Lesson',
-            state: 'locked',
-            xp: 25
-        };
-        const updatedSubs = [...(currentNode.subModules || []), newSub];
-        handleChange('subModules', updatedSubs);
-    };
-
-    const handleUpdateSubModule = (subId: string, field: keyof SubModule, value: any) => {
-        if (!currentNode) return;
-
-        const updatedSubs = (currentNode.subModules || []).map(sub =>
-            sub.id === subId ? { ...sub, [field]: value } : sub
-        );
-        handleChange('subModules', updatedSubs);
-    };
-
-    const handleDeleteSubModule = (subId: string) => {
-        if (!currentNode) return;
-
-        const updatedSubs = (currentNode.subModules || []).filter(sub => sub.id !== subId);
-        handleChange('subModules', updatedSubs);
-    };
-
-    const handleSave = () => {
-        if (!editedNode) return;
-
-        onUpdate(editedNode);
-        setIsDirty(false);
-    };
-
-    const linkedQuizIds = (currentNode?.quizIds || []).map(id => getQuizKey(id)).filter(Boolean);
     const selectableQuizzes = availableQuizzes
         .map(quiz => ({ quiz, quizKey: getQuizKey(quiz) }))
         .filter(({ quizKey }) => Boolean(quizKey) && !linkedQuizIds.includes(quizKey) && !globallyUsedQuizIds.has(quizKey))
@@ -156,6 +83,54 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             const haystack = `${quiz.title || ''} ${quiz.category || ''} ${quiz.description || ''}`.toLowerCase();
             return haystack.includes(quizSearch.trim().toLowerCase());
         });
+
+    const updateNode = useCallback((updates: Partial<SkillModule>) => {
+        if (!currentNode) return;
+        onUpdate({ ...currentNode, ...updates });
+    }, [currentNode, onUpdate]);
+
+    const handleChange = (field: keyof SkillModule, value: unknown) => {
+        updateNode({ [field]: value } as Partial<SkillModule>);
+    };
+
+    const handlePrerequisiteToggle = (prereqId: string) => {
+        if (!currentNode) return;
+
+        const currentPrereqs = currentNode.prerequisites || [];
+        const isSelected = currentPrereqs.includes(prereqId);
+        const prerequisites = isSelected
+            ? currentPrereqs.filter(id => id !== prereqId)
+            : [...currentPrereqs, prereqId];
+
+        handleChange('prerequisites', prerequisites);
+    };
+
+    const handleAddSubModule = () => {
+        if (!currentNode) return;
+
+        const newSubModule: SubModule = {
+            id: `sub_${Date.now()}`,
+            title: 'New Lesson',
+            state: 'locked',
+            xp: 25
+        };
+
+        handleChange('subModules', [...(currentNode.subModules || []), newSubModule]);
+    };
+
+    const handleUpdateSubModule = (subModuleId: string, field: keyof SubModule, value: unknown) => {
+        if (!currentNode) return;
+
+        const updatedSubModules = (currentNode.subModules || []).map(subModule =>
+            subModule.id === subModuleId ? { ...subModule, [field]: value } : subModule
+        );
+        handleChange('subModules', updatedSubModules);
+    };
+
+    const handleDeleteSubModule = (subModuleId: string) => {
+        if (!currentNode) return;
+        handleChange('subModules', (currentNode.subModules || []).filter(subModule => subModule.id !== subModuleId));
+    };
 
     const handleAddSelectedQuizzes = () => {
         if (!currentNode || selectedQuizIds.length === 0) return;
@@ -169,544 +144,428 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         setSelectedQuizIds([]);
     };
 
-    if (!isOpen || !node || !currentNode) return null;
+    if (!isOpen || !currentNode) return null;
 
     const subModules = currentNode.subModules || [];
-    const totalSubXP = subModules.reduce((sum, s) => sum + s.xp, 0);
+    const totalSubXP = subModules.reduce((sum, subModule) => sum + subModule.xp, 0);
+    const moduleTypeClass = currentNode.type === NodeType.CORE
+        ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300'
+        : currentNode.type === NodeType.ACHIEVEMENT
+            ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
+            : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300';
 
     return (
-
-        <div className={`fixed top-[64px] right-0 h-[calc(100vh-64px)] w-[420px] bg-white dark:bg-[#0f0f18] border-l border-gray-200 dark:border-white/10 shadow-2xl z-[50] transform transition-transform duration-300 ease-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-            {/* Header */}
-            <div className="h-16 flex items-center justify-between px-5 border-b border-gray-200 dark:border-white/10 bg-gradient-to-r from-white to-gray-50 dark:from-[#1a1a2e] dark:to-[#13131f]">
-                <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-xl ${currentNode.type === NodeType.CORE ? 'bg-indigo-500/20 text-indigo-400' :
-                        currentNode.type === NodeType.ACHIEVEMENT ? 'bg-amber-500/20 text-amber-400' :
-                            currentNode.type === NodeType.OPTIONAL ? 'bg-emerald-500/20 text-emerald-400' :
-                                'bg-slate-500/20 text-slate-400'
-                        }`}>
-                        {currentNode.type === NodeType.ACHIEVEMENT ? <Star size={18} /> : <Hash size={18} />}
+        <div className={`fixed top-[64px] right-0 z-[50] flex h-[calc(100vh-64px)] w-[420px] transform flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-200 dark:border-white/10 dark:bg-[#101522] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-white/10 dark:bg-[#0d1220]">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-2">
+                        <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${moduleTypeClass}`}>
+                            <Hash size={12} />
+                            {currentNode.type || 'core'}
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Module Inspector</h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{currentNode.moduleId}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 className="text-sm font-bold text-gray-900 dark:text-white">Module Editor</h3>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-500 font-mono">{currentNode.moduleId}</p>
-                    </div>
-                </div>
-                <button
-                    onClick={onClose}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                >
-                    <X size={20} />
-                </button>
-            </div>
-
-            {/* Tab Navigation */}
-            <div className="flex border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-[#0a0a12]">
-                {[
-                    { id: 'identity', label: 'Identity', icon: BookOpen },
-                    { id: 'config', label: 'Config', icon: Shield },
-                    { id: 'lessons', label: 'Lessons', icon: Layers },
-                    { id: 'deps', label: 'Links', icon: Hash }
-                ].map(tab => (
                     <button
-                        key={tab.id}
-                        onClick={() => setActiveSection(tab.id as any)}
-                        className={`flex-1 py-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${activeSection === tab.id
-                            ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-500 bg-indigo-50 dark:bg-indigo-500/5'
-                            : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                            }`}
+                        onClick={onClose}
+                        className="rounded-xl p-2 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
                     >
-                        <tab.icon size={14} />
-                        {tab.label}
+                        <X size={18} />
                     </button>
-                ))}
+                </div>
             </div>
 
-            {/* Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 min-h-0 bg-white dark:bg-transparent">
-
-                {/* Identity Section */}
-                {activeSection === 'identity' && (
-                    <div className="space-y-5">
+            <div className="flex-1 space-y-5 overflow-y-auto p-5">
+                <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-[#0b0f1a]">
+                    <div className="flex items-center justify-between gap-3">
                         <div>
-                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Module Title</label>
-                            <input
-                                type="text"
-                                value={currentNode.title}
-                                onChange={(e) => handleChange('title', e.target.value)}
-                                className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all"
-                                placeholder="e.g. Variables & Data Types"
-                            />
+                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Basics</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Edit the main module details.</p>
                         </div>
+                        <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-600 shadow-sm dark:bg-[#161c2b] dark:text-gray-300">
+                            Level {currentNode.level + 1}
+                        </div>
+                    </div>
 
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Module Type</label>
+                    <div>
+                        <label className="mb-2 block text-xs font-semibold text-gray-600 dark:text-gray-400">Title</label>
+                        <input
+                            type="text"
+                            value={currentNode.title}
+                            onChange={(event) => handleChange('title', event.target.value)}
+                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-white/10 dark:bg-[#161c2b] dark:text-white"
+                            placeholder="Module title"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="mb-2 block text-xs font-semibold text-gray-600 dark:text-gray-400">Description</label>
+                        <textarea
+                            value={currentNode.description || ''}
+                            onChange={(event) => handleChange('description', event.target.value)}
+                            className="h-24 w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-white/10 dark:bg-[#161c2b] dark:text-white"
+                            placeholder="What should learners get from this module?"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="col-span-2">
+                            <label className="mb-2 block text-xs font-semibold text-gray-600 dark:text-gray-400">Type</label>
                             <div className="grid grid-cols-3 gap-2">
-                                <button
-                                    onClick={() => handleChange('type', NodeType.CORE)}
-                                    className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${
-                                        currentNode.type === NodeType.CORE
-                                            ? 'bg-indigo-100 dark:bg-indigo-500/20 border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                                            : 'bg-gray-100 dark:bg-[#0a0a12] border-gray-300 dark:border-white/10 text-gray-500 hover:border-gray-400 dark:hover:border-white/20'
-                                    }`}
-                                >
-                                    CORE
-                                </button>
-                                <button
-                                    onClick={() => handleChange('type', NodeType.OPTIONAL)}
-                                    className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${
-                                        currentNode.type === NodeType.OPTIONAL
-                                            ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                                            : 'bg-gray-100 dark:bg-[#0a0a12] border-gray-300 dark:border-white/10 text-gray-500 hover:border-gray-400 dark:hover:border-white/20'
-                                    }`}
-                                >
-                                    OPTIONAL
-                                </button>
-                                <button
-                                    onClick={() => handleChange('type', NodeType.ACHIEVEMENT)}
-                                    className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${
-                                        currentNode.type === NodeType.ACHIEVEMENT
-                                            ? 'bg-amber-100 dark:bg-amber-500/20 border-amber-500 text-amber-600 dark:text-amber-400'
-                                            : 'bg-gray-100 dark:bg-[#0a0a12] border-gray-300 dark:border-white/10 text-gray-500 hover:border-gray-400 dark:hover:border-white/20'
-                                    }`}
-                                >
-                                    ACHIEVEMENT
-                                </button>
+                                {[NodeType.CORE, NodeType.OPTIONAL, NodeType.ACHIEVEMENT].map(type => {
+                                    const isActive = currentNode.type === type;
+                                    return (
+                                        <button
+                                            key={type}
+                                            type="button"
+                                            onClick={() => handleChange('type', type)}
+                                            className={`rounded-xl border px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${isActive
+                                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300'
+                                                : 'border-gray-200 bg-white text-gray-600 dark:border-white/10 dark:bg-[#161c2b] dark:text-gray-300'
+                                            }`}
+                                        >
+                                            {type}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Description</label>
-                            <textarea
-                                value={currentNode.description || ''}
-                                onChange={(e) => handleChange('description', e.target.value)}
-                                className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all h-24 resize-none"
-                                placeholder="Brief description of what this module covers..."
+                            <label className="mb-2 block text-xs font-semibold text-gray-600 dark:text-gray-400">Status</label>
+                            <div className="relative">
+                                <select
+                                    value={currentNode.status || NodeState.LOCKED}
+                                    onChange={(event) => handleChange('status', event.target.value)}
+                                    className="w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-white/10 dark:bg-[#161c2b] dark:text-white"
+                                >
+                                    {Object.values(NodeState).map(state => (
+                                        <option key={state} value={state}>
+                                            {state.replace('_', ' ')}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-xs font-semibold text-gray-600 dark:text-gray-400">XP Reward</label>
+                            <input
+                                type="number"
+                                value={currentNode.xpReward || 100}
+                                onChange={(event) => handleChange('xpReward', parseInt(event.target.value, 10) || 0)}
+                                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-white/10 dark:bg-[#161c2b] dark:text-white"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-xs font-semibold text-gray-600 dark:text-gray-400">Level</label>
+                            <input
+                                type="number"
+                                min={0}
+                                value={currentNode.level || 0}
+                                onChange={(event) => handleChange('level', parseInt(event.target.value, 10) || 0)}
+                                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-white/10 dark:bg-[#161c2b] dark:text-white"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-xs font-semibold text-gray-600 dark:text-gray-400">X Position</label>
+                            <input
+                                type="number"
+                                value={currentNode.coordinates?.x || 0}
+                                onChange={(event) => handleChange('coordinates', { ...currentNode.coordinates, x: parseInt(event.target.value, 10) || 0 })}
+                                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-white/10 dark:bg-[#161c2b] dark:text-white"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-xs font-semibold text-gray-600 dark:text-gray-400">Y Position</label>
+                            <input
+                                type="number"
+                                value={currentNode.coordinates?.y || 0}
+                                onChange={(event) => handleChange('coordinates', { ...currentNode.coordinates, y: parseInt(event.target.value, 10) || 0 })}
+                                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-white/10 dark:bg-[#161c2b] dark:text-white"
                             />
                         </div>
                     </div>
-                )}
+                </section>
 
-                {/* Config Section */}
-                {activeSection === 'config' && (
-                    <div className="space-y-5">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Base XP Reward</label>
-                                <div className="relative">
-                                    <input
-                                        type="number"
-                                        value={currentNode.xpReward || 100}
-                                        onChange={(e) => handleChange('xpReward', parseInt(e.target.value))}
-                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl pl-4 pr-10 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-amber-500 transition-all"
-                                    />
-                                    <div className="absolute right-3 top-3 text-amber-500">
-                                        <Star size={16} />
-                                    </div>
-                                </div>
-                                {subModules.length > 0 && (
-                                    <p className="text-[10px] text-gray-500 mt-1">
-                                        + {totalSubXP} XP from {subModules.length} lessons
-                                    </p>
-                                )}
-                            </div>
+                <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-[#0b0f1a]">
+                    <div>
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Resources and Rewards</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Attach video guidance, quizzes, and completion rewards.</p>
+                    </div>
 
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Status</label>
-                                <div className="relative">
-                                    <select
-                                        value={currentNode.status || NodeState.LOCKED}
-                                        onChange={(e) => handleChange('status', e.target.value)}
-                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl pl-4 pr-10 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
-                                        style={{ colorScheme: 'light dark' }}
-                                    >
-                                        {Object.values(NodeState).map(state => (
-                                            <option key={state} value={state} className="bg-white dark:bg-[#0a0a12] text-gray-900 dark:text-white">
-                                                {state.replace('_', ' ').toUpperCase()}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
-                                        <ChevronDown size={16} />
-                                    </div>
-                                </div>
-                            </div>
+                    <div>
+                        <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                            <Video size={14} /> Video URL
+                        </label>
+                        <input
+                            type="text"
+                            value={currentNode.videoUrl || ''}
+                            onChange={(event) => handleChange('videoUrl', event.target.value)}
+                            placeholder="https://..."
+                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-white/10 dark:bg-[#161c2b] dark:text-white"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                            <Award size={14} /> Reward Badge
+                        </label>
+                        <div className="relative">
+                            <select
+                                value={currentNode.badgeId || ''}
+                                onChange={(event) => handleChange('badgeId', event.target.value)}
+                                className="w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-white/10 dark:bg-[#161c2b] dark:text-white"
+                            >
+                                <option value="">No badge</option>
+                                {availableBadges.map(badge => (
+                                    <option key={badge.badgeId} value={badge.badgeId}>{badge.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                         </div>
+                    </div>
 
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Level (Hierarchy)</label>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => handleChange('level', Math.max(0, (currentNode.level || 0) - 1))}
-                                    className="px-3 py-2 bg-gray-100 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/5 transition-all"
-                                >
-                                    −
-                                </button>
-                                <input
-                                    type="number"
-                                    value={currentNode.level || 0}
-                                    onChange={(e) => handleChange('level', parseInt(e.target.value) || 0)}
-                                    className="flex-1 bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm text-center focus:outline-none focus:border-indigo-500 transition-all"
-                                    min={0}
-                                />
-                                <button
-                                    onClick={() => handleChange('level', (currentNode.level || 0) + 1)}
-                                    className="px-3 py-2 bg-gray-100 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/5 transition-all"
-                                >
-                                    +
-                                </button>
-                            </div>
-                            <p className="text-[10px] text-gray-500 mt-1">Controls module position in roadmap</p>
+                    <div>
+                        <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                            <BrainCircuit size={14} /> Linked Quizzes
                         </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">Pixel-Perfect Position</label>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="text-[10px] text-gray-600 dark:text-gray-500 uppercase mb-1 block">X Coordinate</label>
-                                    <input
-                                        type="number"
-                                        value={currentNode.coordinates?.x || 0}
-                                        onChange={(e) => handleChange('coordinates', { ...currentNode.coordinates, x: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
-                                    />
+                        <div className="space-y-2">
+                            {linkedQuizIds.length === 0 && (
+                                <div className="rounded-xl border border-dashed border-gray-300 px-4 py-3 text-xs text-gray-500 dark:border-white/10 dark:text-gray-400">
+                                    No quizzes linked yet.
                                 </div>
-                                <div>
-                                    <label className="text-[10px] text-gray-600 dark:text-gray-500 uppercase mb-1 block">Y Coordinate</label>
-                                    <input
-                                        type="number"
-                                        value={currentNode.coordinates?.y || 0}
-                                        onChange={(e) => handleChange('coordinates', { ...currentNode.coordinates, y: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
-                                    />
-                                </div>
-                            </div>
-                            <p className="text-[10px] text-gray-500 mt-1.5">Manual positioning in pixels</p>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
-                                <Video size={14} /> Video URL
-                            </label>
-                            <input
-                                type="text"
-                                value={currentNode.videoUrl || ''}
-                                onChange={(e) => handleChange('videoUrl', e.target.value)}
-                                placeholder="https://youtube.com/..."
-                                className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
-                                    <BrainCircuit size={14} /> Linked Quizzes
-                                </label>
-
-                                {/* Selected Quizzes List */}
-                                <div className="space-y-2 mb-3">
-                                    {linkedQuizIds.map(qId => {
-                                        const quiz = availableQuizzes.find(q => getQuizKey(q) === qId);
-                                        return (
-                                            <div key={qId} className="flex items-center justify-between gap-3 bg-indigo-50 dark:bg-indigo-500/10 p-3 rounded-xl border border-indigo-200 dark:border-indigo-500/20 text-xs group shadow-sm">
-                                                <div className="min-w-0 flex-1">
-                                                    <span className="font-semibold text-indigo-700 dark:text-indigo-200 text-sm leading-snug break-words block" title={quiz?.title}>
-                                                        {quiz?.title || 'Unknown Quiz'}
-                                                    </span>
-                                                    <span className="text-[10px] text-indigo-500/80 dark:text-indigo-300/70 uppercase tracking-wider block mt-1">
-                                                        Already linked
-                                                    </span>
-                                                </div>
-                                                <span className="px-2 py-1 rounded-lg bg-white/70 dark:bg-black/20 text-[10px] font-bold text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 whitespace-nowrap">
-                                                    Linked
-                                                </span>
-                                                <button
-                                                    onClick={() => {
-                                                        const newIds = (currentNode.quizIds || []).filter(id => id !== qId);
-                                                        handleChange('quizIds', newIds);
-                                                    }}
-                                                    className="p-1 hover:bg-red-100 dark:hover:bg-red-500/20 text-indigo-600 dark:text-indigo-400 group-hover:text-red-600 dark:group-hover:text-red-400 rounded-lg transition-colors"
-                                                >
-                                                    <X size={12} />
-                                                </button>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                <div className="space-y-3">
-                                    <input
-                                        type="text"
-                                        value={quizSearch}
-                                        onChange={(e) => setQuizSearch(e.target.value)}
-                                        placeholder="Search unlinked quizzes..."
-                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all"
-                                    />
-
-                                    {selectableQuizzes.length === 0 ? (
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#0a0a12] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3">
-                                            No unlinked quizzes available for this module.
+                            )}
+                            {linkedQuizIds.map(quizId => {
+                                const quiz = availableQuizzes.find(item => getQuizKey(item) === quizId);
+                                return (
+                                    <div key={quizId} className="flex items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-white px-3 py-3 shadow-sm dark:border-indigo-500/20 dark:bg-[#161c2b]">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="truncate text-sm font-semibold text-gray-900 dark:text-white">{quiz?.title || quizId}</div>
+                                            <div className="text-[11px] text-gray-500 dark:text-gray-400">Linked to this module</div>
                                         </div>
-                                    ) : (
-                                        <div className="max-h-64 overflow-y-auto space-y-2 rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#0a0a12] p-2 shadow-inner">
-                                            {selectableQuizzes.map(({ quiz: q, quizKey }) => {
-                                                const isSelected = selectedQuizIds.includes(quizKey);
-                                                return (
-                                                    <button
-                                                        key={quizKey}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setSelectedQuizIds(prev =>
-                                                                prev.includes(quizKey)
-                                                                    ? prev.filter(id => id !== quizKey)
-                                                                    : [...prev, quizKey]
-                                                            );
-                                                        }}
-                                                        className={`w-full flex items-start gap-3 px-3 py-3 rounded-xl text-left transition-all border ${isSelected
-                                                            ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-700 dark:text-indigo-200 shadow-sm'
-                                                            : 'bg-white dark:bg-transparent border-transparent hover:bg-indigo-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-200'
-                                                            }`}
-                                                    >
-                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300 dark:border-gray-600'}`}>
-                                                            {isSelected && <Check size={11} className="text-white" />}
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="text-sm font-semibold leading-snug break-words">{q.title}</div>
-                                                            <div className="text-[10px] text-gray-500 dark:text-gray-500 leading-snug mt-1 break-words">{q.category || 'Uncategorized'}</div>
-                                                        </div>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="text-[10px] text-gray-500 dark:text-gray-500 uppercase tracking-wider font-semibold">
-                                            {selectedQuizIds.length} selected
-                                        </span>
                                         <button
                                             type="button"
-                                            onClick={handleAddSelectedQuizzes}
-                                            disabled={selectedQuizIds.length === 0}
-                                            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed text-white text-xs font-bold transition-all flex items-center gap-2"
+                                            onClick={() => handleChange('quizIds', linkedQuizIds.filter(id => id !== quizId))}
+                                            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
                                         >
-                                            <Plus size={14} /> Add Selected
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="mt-3 space-y-3">
+                            <input
+                                type="text"
+                                value={quizSearch}
+                                onChange={(event) => setQuizSearch(event.target.value)}
+                                placeholder="Search quizzes to link"
+                                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-white/10 dark:bg-[#161c2b] dark:text-white"
+                            />
+
+                            <div className="max-h-56 space-y-2 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-2 dark:border-white/10 dark:bg-[#161c2b]">
+                                {selectableQuizzes.length === 0 ? (
+                                    <div className="px-3 py-4 text-xs text-gray-500 dark:text-gray-400">No unlinked quizzes match this search.</div>
+                                ) : selectableQuizzes.map(({ quiz, quizKey }) => {
+                                    const isSelected = selectedQuizIds.includes(quizKey);
+                                    return (
+                                        <button
+                                            key={quizKey}
+                                            type="button"
+                                            onClick={() => setSelectedQuizIds(previous => previous.includes(quizKey)
+                                                ? previous.filter(id => id !== quizKey)
+                                                : [...previous, quizKey]
+                                            )}
+                                            className={`flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${isSelected
+                                                ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200'
+                                                : 'border-transparent bg-transparent text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/5'
+                                            }`}
+                                        >
+                                            <div className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded border ${isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                                                {isSelected && <Check size={11} className="text-white" />}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="text-sm font-semibold">{quiz.title}</div>
+                                                <div className="text-[11px] text-gray-500 dark:text-gray-400">{quiz.category || 'Uncategorized'}</div>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                    {selectedQuizIds.length} selected
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={handleAddSelectedQuizzes}
+                                    disabled={selectedQuizIds.length === 0}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <Plus size={14} />
+                                    Add Selected
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-[#0b0f1a]">
+                    <div className="flex items-center justify-between gap-3">
+                        <div>
+                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Lessons</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Break the module into smaller checkpoints.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleAddSubModule}
+                            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 dark:border-white/10 dark:bg-[#161c2b] dark:text-gray-200"
+                        >
+                            <Plus size={14} />
+                            Add Lesson
+                        </button>
+                    </div>
+
+                    {subModules.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-gray-300 px-4 py-4 text-sm text-gray-500 dark:border-white/10 dark:text-gray-400">
+                            No lessons yet.
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {subModules.map(subModule => (
+                                <div key={subModule.id} className="rounded-xl border border-gray-200 bg-white p-3 dark:border-white/10 dark:bg-[#161c2b]">
+                                    <div className="flex items-start gap-3">
+                                        <div className="mt-1 text-gray-400 dark:text-gray-500">
+                                            <Layers size={14} />
+                                        </div>
+                                        <div className="flex-1 space-y-2">
+                                            <input
+                                                type="text"
+                                                value={subModule.title}
+                                                onChange={(event) => handleUpdateSubModule(subModule.id, 'title', event.target.value)}
+                                                className="w-full border-0 bg-transparent text-sm font-medium text-gray-900 focus:outline-none dark:text-white"
+                                                placeholder="Lesson title"
+                                            />
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <input
+                                                    type="number"
+                                                    value={subModule.xp}
+                                                    onChange={(event) => handleUpdateSubModule(subModule.id, 'xp', parseInt(event.target.value, 10) || 0)}
+                                                    className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 focus:outline-none dark:border-white/10 dark:bg-[#0b0f1a] dark:text-gray-200"
+                                                />
+                                                <select
+                                                    value={subModule.state}
+                                                    onChange={(event) => handleUpdateSubModule(subModule.id, 'state', event.target.value)}
+                                                    className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 focus:outline-none dark:border-white/10 dark:bg-[#0b0f1a] dark:text-gray-200"
+                                                >
+                                                    <option value="locked">Locked</option>
+                                                    <option value="available">Available</option>
+                                                    <option value="completed">Completed</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteSubModule(subModule.id)}
+                                            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                                        >
+                                            <Trash2 size={14} />
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
-                                    <Award size={14} /> Reward Badge
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        value={currentNode.badgeId || ''}
-                                        onChange={(e) => handleChange('badgeId', e.target.value)}
-                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
-                                    >
-                                        <option value="">-- No Badge --</option>
-                                        {availableBadges.map(b => (
-                                            <option key={b.badgeId} value={b.badgeId}>
-                                                {b.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
-                                        <ChevronDown size={14} />
-                                    </div>
-                                </div>
-                            </div>
+                            ))}
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Lessons (Sub-modules) Section */}
-                {activeSection === 'lessons' && (
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h4 className="text-sm font-bold text-gray-900 dark:text-white">Lessons</h4>
-                                <p className="text-[10px] text-gray-600 dark:text-gray-500">Topics within this module</p>
-                            </div>
-                            <button
-                                onClick={handleAddSubModule}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 dark:bg-indigo-500/20 hover:bg-indigo-200 dark:hover:bg-indigo-500/30 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-medium transition-colors"
-                            >
-                                <Plus size={14} /> Add Lesson
-                            </button>
+                    {subModules.length > 0 && (
+                        <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-300 px-3 py-2 text-xs text-gray-500 dark:border-white/10 dark:text-gray-400">
+                            <span>{subModules.length} lesson(s)</span>
+                            <span>{totalSubXP} lesson XP</span>
                         </div>
+                    )}
+                </section>
 
-                        {subModules.length === 0 ? (
-                            <div className="text-center py-8 text-gray-600 dark:text-gray-500">
-                                <Layers className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">No lessons yet</p>
-                                <p className="text-xs">Add lessons to break this module into smaller topics</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                {subModules.map((sub) => (
-                                    <div
-                                        key={sub.id}
-                                        className="bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl p-3 group hover:border-gray-400 dark:hover:border-white/20 transition-colors"
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            <div className="mt-1 text-gray-400 dark:text-gray-600 cursor-grab">
-                                                <GripVertical size={14} />
-                                            </div>
-                                            <div className="flex-1 space-y-2">
-                                                <input
-                                                    type="text"
-                                                    value={sub.title}
-                                                    onChange={(e) => handleUpdateSubModule(sub.id, 'title', e.target.value)}
-                                                    className="w-full bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none"
-                                                    placeholder="Lesson title..."
-                                                />
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex items-center gap-1">
-                                                        <Star className="w-3 h-3 text-amber-500" />
-                                                        <input
-                                                            type="number"
-                                                            value={sub.xp}
-                                                            onChange={(e) => handleUpdateSubModule(sub.id, 'xp', parseInt(e.target.value))}
-                                                            className="w-12 bg-transparent text-xs text-gray-600 dark:text-gray-400 focus:outline-none"
-                                                        />
-                                                        <span className="text-[10px] text-gray-600 dark:text-gray-500">XP</span>
-                                                    </div>
-                                                    <select
-                                                        value={sub.state}
-                                                        onChange={(e) => handleUpdateSubModule(sub.id, 'state', e.target.value)}
-                                                        className="bg-transparent text-xs text-gray-600 dark:text-gray-400 focus:outline-none cursor-pointer"
-                                                        style={{ colorScheme: 'light dark' }}
-                                                    >
-                                                        <option value="locked" className="bg-white dark:bg-[#0a0a12] text-gray-900 dark:text-white">🔒 Locked</option>
-                                                        <option value="available" className="bg-white dark:bg-[#0a0a12] text-gray-900 dark:text-white">⚪ Available</option>
-                                                        <option value="completed" className="bg-white dark:bg-[#0a0a12] text-gray-900 dark:text-white">✓ Completed</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => handleDeleteSubModule(sub.id)}
-                                                className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg text-red-600 dark:text-red-400 transition-all"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {subModules.length > 0 && (
-                            <div className="pt-3 border-t border-gray-200 dark:border-white/5 flex items-center justify-between text-xs text-gray-600 dark:text-gray-500">
-                                <span>Total: {subModules.length} lessons</span>
-                                <span className="text-amber-600 dark:text-amber-400 font-medium">{totalSubXP} XP</span>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Dependencies Section */}
-                {activeSection === 'deps' && (
-                    <div className="space-y-4">
+                <section className="space-y-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-[#0b0f1a]">
+                    <div className="flex items-center gap-2">
+                        <Link2 size={14} className="text-gray-500 dark:text-gray-400" />
                         <div>
-                            <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Prerequisites</h4>
-                            <p className="text-[10px] text-gray-600 dark:text-gray-500">Modules that must be completed before this one</p>
+                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Prerequisites</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Choose which modules must be completed first.</p>
                         </div>
+                    </div>
 
-                        <div className="bg-gray-50 dark:bg-[#0a0a12] rounded-xl border border-gray-300 dark:border-white/10 overflow-hidden">
-                            {allNodes.filter(n => n.moduleId !== node.moduleId).length === 0 ? (
-                                <div className="text-center py-8 text-gray-600 dark:text-gray-500">
-                                    <p className="text-sm">No other modules</p>
-                                </div>
-                            ) : (
-                                <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                                    {allNodes.filter(n => n.moduleId !== node.moduleId).map(potentialPrereq => {
-                                        const isSelected = (currentNode.prerequisites || []).includes(potentialPrereq.moduleId);
-                                        return (
-                                            <label
-                                                key={potentialPrereq.moduleId}
-                                                className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer group transition-colors border-b border-gray-200 dark:border-white/5 last:border-0"
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    handlePrerequisiteToggle(potentialPrereq.moduleId);
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${isSelected
-                                                        ? 'bg-indigo-500 border-indigo-500'
-                                                        : 'border-gray-400 dark:border-gray-600 group-hover:border-indigo-400 dark:group-hover:border-indigo-500/50'
-                                                        }`}>
-                                                        {isSelected && <Check size={12} className="text-white" />}
-                                                    </div>
-                                                    <div>
-                                                        <span className={`text-sm ${isSelected ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-600 dark:text-gray-400'}`}>
-                                                            {potentialPrereq.title}
-                                                        </span>
-                                                        <p className="text-[10px] text-gray-500 dark:text-gray-600 font-mono">{potentialPrereq.moduleId}</p>
-                                                    </div>
-                                                </div>
-                                                <span className={`text-[10px] uppercase font-bold ${potentialPrereq.type === 'core' ? 'text-indigo-600 dark:text-indigo-500' :
-                                                    potentialPrereq.type === 'optional' ? 'text-emerald-600 dark:text-emerald-500' : 'text-amber-600 dark:text-amber-500'
-                                                    }`}>
-                                                    {potentialPrereq.type}
-                                                </span>
-                                            </label>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-
-                        {(currentNode.prerequisites || []).length > 0 && (
-                            <div className="bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-xl p-3">
-                                <p className="text-[11px] text-indigo-700 dark:text-indigo-300">
-                                    <strong>{(currentNode.prerequisites || []).length}</strong> prerequisite(s) selected.
-                                    Lines will connect from those modules to this one.
-                                </p>
-                            </div>
+                    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-white/10 dark:bg-[#161c2b]">
+                        {allNodes.filter(item => item.moduleId !== currentNode.moduleId).length === 0 ? (
+                            <div className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">No other modules available yet.</div>
+                        ) : (
+                            allNodes.filter(item => item.moduleId !== currentNode.moduleId).map(item => {
+                                const isSelected = (currentNode.prerequisites || []).includes(item.moduleId);
+                                return (
+                                    <label
+                                        key={item.moduleId}
+                                        className="flex cursor-pointer items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0 dark:border-white/5"
+                                        onClick={(event) => {
+                                            event.preventDefault();
+                                            handlePrerequisiteToggle(item.moduleId);
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`flex h-5 w-5 items-center justify-center rounded border ${isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                                                {isSelected && <Check size={11} className="text-white" />}
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900 dark:text-white">{item.title}</div>
+                                                <div className="text-[11px] text-gray-500 dark:text-gray-400">{item.moduleId}</div>
+                                            </div>
+                                        </div>
+                                        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{item.type}</span>
+                                    </label>
+                                );
+                            })
                         )}
                     </div>
-                )}
-
-                {/* Actions */}
-                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
-                    <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-500 uppercase mb-3">Actions</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                        <button
-                            onClick={() => onDuplicate(node)}
-                            className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-[#1a1a2e] hover:bg-gray-200 dark:hover:bg-[#252540] text-gray-700 dark:text-gray-300 py-2.5 rounded-xl border border-gray-300 dark:border-white/10 transition-colors text-sm font-medium"
-                        >
-                            <Copy size={16} /> Duplicate
-                        </button>
-                        <button
-                            onClick={() => onDelete(node.moduleId)}
-                            className="flex items-center justify-center gap-2 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 py-2.5 rounded-xl border border-red-200 dark:border-red-500/20 transition-colors text-sm font-medium"
-                        >
-                            <Trash2 size={16} /> Delete
-                        </button>
-                    </div>
-                </div>
+                </section>
             </div>
 
-            {/* Footer Buttons */}
-            <div className="p-5 bg-gray-50 dark:bg-[#0f0f18] border-t border-gray-200 dark:border-white/10 flex gap-3 flex-none mt-auto">
-                <button
-                    onClick={onClose}
-                    className="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 text-sm font-medium transition-colors"
-                >
-                    Cancel
-                </button>
-                <button
-                    onClick={handleSave}
-                    disabled={!isDirty}
-                    className={`flex-1 px-4 py-3 rounded-xl text-sm font-bold transition-all ${isDirty
-                        ? 'bg-indigo-500 hover:bg-indigo-400 text-white shadow-lg shadow-indigo-500/25'
-                        : 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-400 dark:text-indigo-300 cursor-not-allowed'
-                        }`}
-                >
-                    {isDirty ? 'Save Changes' : 'No Changes'}
-                </button>
+            <div className="border-t border-gray-200 bg-gray-50 px-5 py-4 dark:border-white/10 dark:bg-[#0d1220]">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Changes apply instantly in the roadmap editor. Use <span className="font-semibold text-gray-700 dark:text-gray-200">Save Roadmap</span> to persist them.
+                </p>
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                    <button
+                        type="button"
+                        onClick={() => onDuplicate(currentNode)}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 dark:border-white/10 dark:bg-[#161c2b] dark:text-gray-200"
+                    >
+                        <Copy size={15} />
+                        Copy
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onDelete(currentNode.moduleId)}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-semibold text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400"
+                    >
+                        <Trash2 size={15} />
+                        Delete
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-3 py-2.5 text-sm font-semibold text-white"
+                    >
+                        <X size={15} />
+                        Close
+                    </button>
+                </div>
             </div>
         </div>
     );

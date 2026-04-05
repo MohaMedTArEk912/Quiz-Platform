@@ -38,6 +38,7 @@ import Navbar from './Navbar.tsx';
 import UserRoadmapView from './UserRoadmapView';
 import { useNotification } from '../context/NotificationContext';
 import { api } from '../lib/api';
+import { getQuizIconOption } from '../utils/quizIcons';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
     'BookOpen': <BookOpen className="w-8 h-8" />,
@@ -702,8 +703,11 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
 
                                                 <div className={`relative h-full bg-white dark:bg-[#11111a] rounded-[2.5rem] border border-gray-200 dark:border-white/5 p-8 flex flex-col ${locked ? 'opacity-50 blur-sm' : 'group-hover:-translate-y-2'} transition-all duration-300`}>
                                                     <div className="flex justify-between items-start mb-6">
-                                                        <div className={`text-5xl ${locked ? '' : 'group-hover:scale-110'} transition-transform duration-500`}>
-                                                            {quiz.icon || '🎯'}
+                                                        <div className={`text-5xl text-indigo-500 ${locked ? '' : 'group-hover:scale-110'} transition-transform duration-500`}>
+                                                            {(() => {
+                                                                const IconComponent = getQuizIconOption(quiz.icon).Icon;
+                                                                return <IconComponent className="w-12 h-12" />;
+                                                            })()}
                                                         </div>
                                                         {locked ? (
                                                             <div className="bg-red-500/10 text-red-500 p-2 rounded-xl">
@@ -804,8 +808,11 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
 
                                                 <div className={`relative h-full bg-white dark:bg-[#11111a] rounded-[2.5rem] border border-gray-200 dark:border-white/5 p-8 flex flex-col ${locked ? 'opacity-50 blur-sm' : 'group-hover:-translate-y-2'} transition-all duration-300`}>
                                                     <div className="flex justify-between items-start mb-6">
-                                                        <div className={`text-5xl ${locked ? '' : 'group-hover:scale-110'} transition-transform duration-500`}>
-                                                            {quiz.icon || '📋'}
+                                                        <div className={`text-5xl text-orange-500 ${locked ? '' : 'group-hover:scale-110'} transition-transform duration-500`}>
+                                                            {(() => {
+                                                                const IconComponent = getQuizIconOption(quiz.icon).Icon;
+                                                                return <IconComponent className="w-12 h-12" />;
+                                                            })()}
                                                         </div>
                                                         {locked ? (
                                                             <div className="bg-red-500/10 text-red-500 p-2 rounded-xl">
