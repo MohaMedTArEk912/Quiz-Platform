@@ -1,6 +1,7 @@
 import React from 'react';
 import { Download, Edit2, Trash2, Share2 } from 'lucide-react';
 import type { Quiz } from '../../types';
+import { getQuizIconOption } from '../../utils/quizIcons';
 
 interface QuizCardProps {
     quiz: Quiz;
@@ -11,6 +12,8 @@ interface QuizCardProps {
 }
 
 const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, onShare }) => {
+    const quizIcon = getQuizIconOption(quiz.icon);
+    const QuizIcon = quizIcon.Icon;
     const quizSetLabel = (() => {
         const text = `${quiz.id || ''} ${quiz.title || ''} ${quiz.description || ''}`.toLowerCase();
 
@@ -23,9 +26,16 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, o
     return (
         <div className="bg-white dark:bg-black/20 p-6 rounded-3xl border border-gray-200 dark:border-white/5 hover:border-purple-500/30 transition-all group shadow-sm">
             <div className="flex justify-between items-start mb-4">
-                <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{quiz.title}</h3>
+                <div className="flex items-start gap-3 min-w-0 pr-3">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/20 shrink-0">
+                        <QuizIcon className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors truncate">
+                            {quiz.title}
+                        </h3>
                     <p className="text-sm text-gray-500">{quiz.questions?.length || 0} Questions • {quiz.timeLimit === 0 ? 'Unlimited' : `${quiz.timeLimit}m`}</p>
+                    </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                     <div className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-white/5 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">{quiz.category}</div>

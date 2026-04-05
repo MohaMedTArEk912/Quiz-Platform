@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Sparkles, Check } from 'lucide-react';
 import Modal from '../common/Modal';
 import QuestionEditor from './QuestionEditor';
 import type { Quiz, Question, Subject } from '../../types';
 import { DIFFICULTY_LEVELS } from '../../constants/quizDefaults';
+import { QUIZ_ICON_OPTIONS, getQuizIconOption, DEFAULT_QUIZ_ICON } from '../../utils/quizIcons';
 
 interface QuizEditorModalProps {
     isOpen: boolean;
@@ -22,7 +23,7 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
     useEffect(() => {
         if (quiz) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
-            setEditingQuiz({ ...quiz, questions: quiz.questions || [] });
+            setEditingQuiz({ ...quiz, icon: quiz.icon || DEFAULT_QUIZ_ICON, questions: quiz.questions || [] });
             setActiveModalTab('general');
             setEditingQuestion(null);
         }
@@ -148,6 +149,33 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
                         <div className="space-y-1">
                             <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Category</label>
                             <input type="text" placeholder="Category" value={editingQuiz.category} onChange={e => setEditingQuiz({ ...editingQuiz, category: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1 flex items-center gap-2">
+                                <Sparkles className="w-3.5 h-3.5 text-purple-500" /> Icon
+                            </label>
+                            <div className="grid grid-cols-4 gap-2">
+                                {QUIZ_ICON_OPTIONS.map(option => {
+                                    const Icon = option.Icon;
+                                    const isSelected = getQuizIconOption(editingQuiz.icon).key === option.key;
+
+                                    return (
+                                        <button
+                                            key={option.key}
+                                            type="button"
+                                            onClick={() => setEditingQuiz({ ...editingQuiz, icon: option.key })}
+                                            className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border px-3 py-3 transition-all ${isSelected
+                                                ? 'bg-purple-500/10 border-purple-500 text-purple-600 dark:text-purple-300 shadow-lg shadow-purple-500/10'
+                                                : 'bg-gray-50 dark:bg-black/40 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-purple-300 hover:text-purple-600 dark:hover:text-purple-300'
+                                                }`}
+                                        >
+                                            <Icon className="w-5 h-5" />
+                                            <span className="text-[10px] font-bold uppercase tracking-wider">{option.label}</span>
+                                            {isSelected && <Check className="w-3.5 h-3.5" />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                         <div className="space-y-1">
                             <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Subject (Stack)</label>
