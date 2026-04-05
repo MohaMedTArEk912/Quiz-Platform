@@ -37,7 +37,7 @@ interface AdminDashboardProps {
     users: UserData[];
     quizzes: Quiz[];
     attempts: AttemptData[];
-    onRefresh: () => void;
+    onRefresh: () => void | Promise<void>;
     onLogout: () => void;
 }
 

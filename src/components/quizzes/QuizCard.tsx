@@ -11,6 +11,15 @@ interface QuizCardProps {
 }
 
 const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, onShare }) => {
+    const quizSetLabel = (() => {
+        const text = `${quiz.id || ''} ${quiz.title || ''} ${quiz.description || ''}`.toLowerCase();
+
+        if (quiz.quizType === 'exam' || /\bexam\b|final/.test(text)) return 'Exam';
+        if (/home\s*work|homework/.test(text)) return 'Homework';
+        if (/end\s*of\s*class|endoclass|after\s*session|\bafs\b/.test(text)) return 'Session';
+        return 'Session';
+    })();
+
     return (
         <div className="bg-white dark:bg-black/20 p-6 rounded-3xl border border-gray-200 dark:border-white/5 hover:border-purple-500/30 transition-all group shadow-sm">
             <div className="flex justify-between items-start mb-4">
@@ -18,7 +27,10 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, o
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{quiz.title}</h3>
                     <p className="text-sm text-gray-500">{quiz.questions?.length || 0} Questions • {quiz.timeLimit === 0 ? 'Unlimited' : `${quiz.timeLimit}m`}</p>
                 </div>
-                <div className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-white/5 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">{quiz.category}</div>
+                <div className="flex flex-col items-end gap-2">
+                    <div className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-white/5 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">{quiz.category}</div>
+                    <div className="px-3 py-1 rounded-lg bg-purple-100 dark:bg-purple-500/10 text-[10px] font-black text-purple-700 dark:text-purple-300 uppercase tracking-wider">{quizSetLabel}</div>
+                </div>
             </div>
             <div className="flex gap-2 flex-wrap">
                 <button onClick={() => onShare(quiz)} className="flex-1 py-2 bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-500/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 min-w-[80px]">

@@ -9,7 +9,7 @@ interface ReviewManagementProps {
     users: UserData[];
     quizzes: Quiz[];
     pendingReviews: AttemptData[];
-    onRefresh: () => void;
+    onRefresh: () => void | Promise<void>;
     onNotification: (type: 'success' | 'error', message: string) => void;
 }
 
@@ -36,7 +36,7 @@ const ReviewManagement: React.FC<ReviewManagementProps> = ({ currentUser, users,
             setReviewFeedback({});
             setReviewScores({});
             onNotification('success', 'Review submitted successfully');
-            onRefresh();
+            await Promise.resolve(onRefresh());
         } catch (error) {
             console.error('Submit review error:', error);
             onNotification('error', 'Failed to submit review');

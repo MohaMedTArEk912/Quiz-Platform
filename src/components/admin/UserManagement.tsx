@@ -11,7 +11,7 @@ interface UserManagementProps {
     users: UserData[];
     attempts: AttemptData[];
     currentUser: UserData;
-    onRefresh: () => void;
+    onRefresh: () => void | Promise<void>;
     onNotification: (type: 'success' | 'error', message: string) => void;
 }
 
@@ -20,7 +20,7 @@ const RoadmapEditorModal: React.FC<{
     currentUser: UserData;
     onClose: () => void;
     onNotification: (type: 'success' | 'error', message: string) => void;
-    onRefresh?: () => void;
+    onRefresh?: () => void | Promise<void>;
 }> = ({ user, currentUser, onClose, onNotification, onRefresh }) => {
     const [tracks, setTracks] = useState<any[]>([]);
     const [selectedTrack, setSelectedTrack] = useState<string>('');
@@ -129,14 +129,10 @@ const RoadmapEditorModal: React.FC<{
             // Force a full data refresh to ensure the UI updates with latest skill track progress
             onNotification('success', 'Module marked complete! Quizzes completed, user stats updated, and next modules unlocked!');
 
-            // Small delay to ensure database is updated before refresh
-            setTimeout(() => {
-                // Call onRefresh to update the user list
-                if (onRefresh) {
-                    onRefresh();
-                }
-                onClose();
-            }, 500);
+            if (onRefresh) {
+                await Promise.resolve(onRefresh());
+            }
+            onClose();
         } catch (e) {
             console.error('Error saving progress:', e);
             onNotification('error', 'Failed to save: ' + (e instanceof Error ? e.message : String(e)));
@@ -267,7 +263,7 @@ const CreateUserModal: React.FC<{
     currentUser: UserData;
     onClose: () => void;
     onNotification: (type: 'success' | 'error', message: string) => void;
-    onRefresh: () => void;
+    onRefresh: () => void | Promise<void>;
 }> = ({ currentUser, onClose, onNotification, onRefresh }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -300,7 +296,7 @@ const CreateUserModal: React.FC<{
             }, currentUser.userId);
 
             onNotification('success', 'Identity created successfully');
-            onRefresh();
+            await Promise.resolve(onRefresh());
             onClose();
         } catch (error) {
             console.error('Create user error:', error);
@@ -458,7 +454,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
             setEditingUser(null);
             setOriginalUser(null);
             onNotification('success', 'User updated successfully');
-            onRefresh();
+            await Promise.resolve(onRefresh());
         } catch (error) {
             console.error('Update error:', error);
             const msg = error instanceof Error ? error.message : 'Failed to update user';
@@ -506,7 +502,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
             setGiftingUser(null);
             setGiftAmount('');
             setSelectedShopItem('');
-            onRefresh();
+            await Promise.resolve(onRefresh());
         } catch (error) {
             console.error('Gift error:', error);
             onNotification('error', 'Failed to send gift');
@@ -519,7 +515,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
         try {
             await api.deleteUser(userId, currentUser.userId);
             onNotification('success', 'User deleted successfully');
-            onRefresh();
+            await Promise.resolve(onRefresh());
         } catch (error) {
             console.error('Delete user error:', error);
             onNotification('error', 'Failed to delete user');

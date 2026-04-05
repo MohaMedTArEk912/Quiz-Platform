@@ -21,7 +21,7 @@ import ShareQuizModal from '../components/quizzes/ShareQuizModal';
 interface QuizManagerProps {
     quizzes: Quiz[];
     currentUser: UserData;
-    onRefresh: () => void;
+    onRefresh: () => void | Promise<void>;
     onNotification: (type: 'success' | 'error' | 'warning', message: string) => void;
     selectedSubjectId?: string;
 }
@@ -37,7 +37,25 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
     const [viewMode, setViewMode] = useState<'stacks' | 'list'>('stacks');
     const [selectedStackId, setSelectedStackId] = useState<string | null>(null);
     const [activeHeaderMenu, setActiveHeaderMenu] = useState(false);
-    const [quizTypeFilter, setQuizTypeFilter] = useState<'all' | 'quiz' | 'exam'>('all');
+    const [quizTypeFilter, setQuizTypeFilter] = useState<'all' | 'session' | 'homework' | 'exam'>('all');
+
+    const getQuizSet = (quiz: Quiz) => {
+        const text = `${quiz.id || ''} ${quiz.title || ''} ${quiz.description || ''}`.toLowerCase();
+
+        if (quiz.quizType === 'exam' || /\bexam\b|final/.test(text)) {
+            return 'exam';
+        }
+
+        if (/home\s*work|homework/.test(text)) {
+            return 'homework';
+        }
+
+        if (/end\s*of\s*class|endoclass|after\s*session|\bafs\b/.test(text)) {
+            return 'session';
+        }
+
+        return 'session';
+    };
 
     // Handle initial subject selection
     useEffect(() => {
@@ -69,6 +87,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
 
     // Import State
     const [importTargetStackId, setImportTargetStackId] = useState<string | null>(null);
+    const [isImporting, setIsImporting] = useState(false);
 
     // Hooks
     const quizzesBySubject = useQuizzesBySubject(localQuizzes);
@@ -81,7 +100,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
     // Apply quiz type filter
     const filteredQuizzes = baseFilteredQuizzes.filter(quiz => {
         if (quizTypeFilter === 'all') return true;
-        return (quiz.quizType || 'quiz') === quizTypeFilter;
+        return getQuizSet(quiz) === quizTypeFilter;
     });
 
     // Debug logging
@@ -186,7 +205,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                 onNotification('success', 'Quiz created successfully');
             }
             setEditingQuiz(null);
-            onRefresh();
+            await Promise.resolve(onRefresh());
         } catch (error) {
             console.error('Save quiz error:', error);
             onNotification('error', 'Failed to save quiz. Please check all fields.');
@@ -199,7 +218,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
             await api.deleteQuiz(deleteQuizConfirmation.id, currentUser.userId);
             setLocalQuizzes(prev => prev.filter(q => q.id !== deleteQuizConfirmation.id));
             onNotification('success', 'Quiz deleted successfully');
-            onRefresh();
+            await Promise.resolve(onRefresh());
         } catch (error) {
             console.error('Delete error:', error);
             onNotification('error', 'Failed to delete quiz');
@@ -268,6 +287,10 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
         const files = event.target.files;
         if (!files || files.length === 0) return;
 
+        const effectiveTargetStackId =
+            importTargetStackId ||
+            (viewMode === 'list' && selectedStackId !== 'uncategorized' ? selectedStackId : null);
+
         const readFileContent = (file: File): Promise<any> => {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -285,6 +308,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
         };
 
         try {
+            setIsImporting(true);
             const fileList = Array.from(files);
             const allQuizzes: any[] = [];
             let parseErrors = 0;
@@ -313,11 +337,26 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                 return;
             }
 
-            if (importTargetStackId) {
-                allQuizzes.forEach(q => q.subjectId = importTargetStackId);
+            if (effectiveTargetStackId) {
+                allQuizzes.forEach(q => {
+                    q.subjectId = effectiveTargetStackId;
+                });
             }
 
             const result = await api.importQuizzes(allQuizzes, currentUser.userId);
+
+            // Optimistically upsert imported quizzes so the current view updates immediately.
+            setLocalQuizzes(prev => {
+                const map = new Map(prev.map(q => [q.id, q]));
+                for (const imported of allQuizzes) {
+                    if (!imported || !imported.id || !imported.title) continue;
+                    map.set(imported.id, {
+                        ...(map.get(imported.id) || {}),
+                        ...imported
+                    } as Quiz);
+                }
+                return Array.from(map.values());
+            });
 
             if (parseErrors > 0) {
                 onNotification('warning', `${result.message}. Note: ${parseErrors} files failed to parse.`);
@@ -325,11 +364,15 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                 onNotification('success', result.message || 'Quizzes imported successfully');
             }
             setImportTargetStackId(null);
-            onRefresh();
+
+            // Then refresh canonical data to keep local and server state fully aligned.
+            await Promise.resolve(onRefresh());
+            await loadSubjects();
         } catch (error) {
             console.error('Import error:', error);
             onNotification('error', 'Failed to import quizzes.');
         } finally {
+            setIsImporting(false);
             event.target.value = '';
         }
     };
@@ -389,13 +432,14 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                                     <Download className="w-4 h-4 text-gray-400" /> Sample JSON
                                 </button>
                                 <label className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer">
-                                    <Upload className="w-4 h-4 text-emerald-500" /> Import JSON
+                                    <Upload className="w-4 h-4 text-emerald-500" /> {isImporting ? 'Importing...' : 'Import JSON'}
                                     <input
                                         ref={fileInputRef}
                                         type="file"
                                         accept=".json"
                                         multiple
                                         className="hidden"
+                                        disabled={isImporting}
                                         onChange={(e) => { handleImportQuiz(e); setActiveHeaderMenu(false); }}
                                     />
                                 </label>
@@ -433,14 +477,24 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                         All Quizzes
                     </button>
                     <button
-                        onClick={() => setQuizTypeFilter('quiz')}
+                        onClick={() => setQuizTypeFilter('session')}
                         className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
-                            quizTypeFilter === 'quiz'
+                            quizTypeFilter === 'session'
                                 ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
                                 : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
                         }`}
                     >
-                        Regular Quizzes
+                        Session
+                    </button>
+                    <button
+                        onClick={() => setQuizTypeFilter('homework')}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                            quizTypeFilter === 'homework'
+                                ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/30'
+                                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
+                        }`}
+                    >
+                        Homework
                     </button>
                     <button
                         onClick={() => setQuizTypeFilter('exam')}

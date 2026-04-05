@@ -4,7 +4,7 @@ import { api } from '../../lib/api';
 import type { SkillModule, SkillTrack, Quiz, BadgeNode } from '../../types';
 import { NodeType, NodeState } from '../../types';
 import {
-    Save, Zap, Star, Loader2, FileJson,
+    Save, Zap, Star, Loader2, FileJson, Download,
     Plus, Eye, Check, BrainCircuit, Lock as LockIcon
 } from 'lucide-react';
 import { InspectorPanel } from './InspectorPanel';
@@ -765,6 +765,33 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
         setIsImportModalOpen(false);
     };
 
+    const handleExportRoadmap = () => {
+        const exportData = {
+            title: track?.title || 'Learning Path',
+            description: track?.description || '',
+            icon: track?.icon || '🗺️',
+            modules
+        };
+
+        const fileName = `${(track?.title || subjectId || 'roadmap')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'roadmap'}.json`;
+
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        onNotification('success', 'Current roadmap exported successfully');
+    };
+
     const handleRedesign = () => {
         // Reorganize modules: sort by level, reassign levels sequentially with 2-column layout
         const sortedModules = [...modules].sort((a, b) => (a.level || 0) - (b.level || 0));
@@ -909,6 +936,10 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({ adminId, onNotifi
 
                             <button onClick={() => setIsImportModalOpen(true)} title="Import JSON" className="w-12 h-12 rounded-xl hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center justify-center transition-all">
                                 <FileJson size={20} />
+                            </button>
+
+                            <button onClick={handleExportRoadmap} title="Export JSON" className="w-12 h-12 rounded-xl hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center justify-center transition-all">
+                                <Download size={20} />
                             </button>
 
                             <div className="h-[1px] w-10 bg-gray-300 dark:bg-white/10 my-1" />

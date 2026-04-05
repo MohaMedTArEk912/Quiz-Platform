@@ -11,14 +11,18 @@ const sanitizeQuestions = (questions, quizId = 'unknown') => {
     return questions;
   }
 
-  return questions.map((question, index) => {
+  return questions.map((rawQuestion, index) => {
+    const question = (rawQuestion && typeof rawQuestion === 'object') ? rawQuestion : {};
+
     // Sanitize question text (preserve line breaks, remove excessive whitespace)
-    if (question.question) {
+    if (typeof question.question === 'string') {
       question.question = question.question
         .split('\n')
         .map(line => line.trim())
         .join('\n')
         .trim();
+    } else if (question.question !== undefined && question.question !== null) {
+      question.question = String(question.question).trim();
     }
 
     // Validate image URL if provided
@@ -36,9 +40,14 @@ const sanitizeQuestions = (questions, quizId = 'unknown') => {
     }
 
     // Ensure required fields
-    if (!question.id) question.id = index + 1;
-    if (!question.part) question.part = 'A';
-    if (!question.points) question.points = 10;
+    if (!Number.isFinite(question.id)) question.id = index + 1;
+    if (!question.part || typeof question.part !== 'string') question.part = 'A';
+    if (!Number.isFinite(question.points)) question.points = 10;
+
+    // Normalize options to strings when present
+    if (question.options && Array.isArray(question.options)) {
+      question.options = question.options.map(opt => (typeof opt === 'string' ? opt : String(opt)));
+    }
 
     // Auto-detect non-shuffleable patterns
     if (question.options && Array.isArray(question.options) && question.shuffleOptions !== false) {
@@ -154,17 +163,17 @@ export const importQuizzes = async (req, res) => {
          continue;
       }
       
-      // Validate and sanitize questions before import
-      if (quiz.questions && Array.isArray(quiz.questions)) {
-        quiz.questions = sanitizeQuestions(quiz.questions, quiz.id);
-      }
-
-      // Remove _id to avoid CastError if it's not a valid ObjectId
-      if (quiz._id) {
-        delete quiz._id;
-      }
-      
       try {
+        // Validate and sanitize questions before import
+        if (quiz.questions && Array.isArray(quiz.questions)) {
+          quiz.questions = sanitizeQuestions(quiz.questions, quiz.id);
+        }
+
+        // Remove _id to avoid CastError if it's not a valid ObjectId
+        if (quiz._id) {
+          delete quiz._id;
+        }
+
         const updated = await Quiz.findOneAndUpdate(
           { id: quiz.id },
           quiz,

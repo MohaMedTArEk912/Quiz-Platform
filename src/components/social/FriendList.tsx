@@ -9,7 +9,7 @@ import { DirectChat } from './DirectChat';
 interface FriendListProps {
     currentUser: UserData;
     allUsers: UserData[];
-    onRefresh: () => void;
+    onRefresh: () => void | Promise<void>;
     onChallenge?: (friendId: string, socket: unknown) => void;
     onAsyncChallenge?: (friendId: string) => void;
     onStartChallenge?: (challenge: ChallengeData) => void;
@@ -84,7 +84,7 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
     const respond = async (fromId: string, action: 'accept' | 'reject') => {
         try {
             await api.respondToFriendRequest(fromId, action);
-            onRefresh();
+            await Promise.resolve(onRefresh());
         } catch (error) {
             console.error(error);
         }

@@ -30,6 +30,11 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     availableQuizzes = [],
     availableBadges = []
 }) => {
+    const getQuizKey = (quiz: Pick<Quiz, 'id'> & { _id?: string } | string) => {
+        if (typeof quiz === 'string') return quiz;
+        return (quiz.id || quiz._id || '').trim();
+    };
+
     const getInitialNode = (node: SkillModule): SkillModule => {
         const initialNode = { ...node };
         if ((!initialNode.quizIds || initialNode.quizIds.length === 0) && initialNode.quizId) {
@@ -41,18 +46,24 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     const [editedNode, setEditedNode] = useState<SkillModule | null>(() => (node ? getInitialNode(node) : null));
     const [isDirty, setIsDirty] = useState(false);
     const [activeSection, setActiveSection] = useState<'identity' | 'config' | 'lessons' | 'deps'>('identity');
+    const [selectedQuizIds, setSelectedQuizIds] = useState<string[]>([]);
+    const [quizSearch, setQuizSearch] = useState('');
     const currentNode = editedNode;
 
     useEffect(() => {
         if (!node) {
             setEditedNode(null);
             setIsDirty(false);
+            setSelectedQuizIds([]);
+            setQuizSearch('');
             return;
         }
 
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setEditedNode(getInitialNode(node));
         setIsDirty(false);
+        setSelectedQuizIds([]);
+        setQuizSearch('');
     }, [node]);
 
     // Calculate globally used quiz IDs (excluding current node)
@@ -63,8 +74,14 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         allNodes.forEach(n => {
             if (n.moduleId === node.moduleId) return;
 
-            if (n.quizIds) n.quizIds.forEach(id => used.add(id));
-            if (n.quizId) used.add(n.quizId);
+            if (n.quizIds) n.quizIds.forEach(id => {
+                const normalized = getQuizKey(id);
+                if (normalized) used.add(normalized);
+            });
+            if (n.quizId) {
+                const normalized = getQuizKey(n.quizId);
+                if (normalized) used.add(normalized);
+            }
         });
         return used;
     }, [allNodes, node?.moduleId]);
@@ -128,6 +145,28 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
         onUpdate(editedNode);
         setIsDirty(false);
+    };
+
+    const linkedQuizIds = (currentNode?.quizIds || []).map(id => getQuizKey(id)).filter(Boolean);
+    const selectableQuizzes = availableQuizzes
+        .map(quiz => ({ quiz, quizKey: getQuizKey(quiz) }))
+        .filter(({ quizKey }) => Boolean(quizKey) && !linkedQuizIds.includes(quizKey) && !globallyUsedQuizIds.has(quizKey))
+        .filter(({ quiz }) => {
+            if (!quizSearch.trim()) return true;
+            const haystack = `${quiz.title || ''} ${quiz.category || ''} ${quiz.description || ''}`.toLowerCase();
+            return haystack.includes(quizSearch.trim().toLowerCase());
+        });
+
+    const handleAddSelectedQuizzes = () => {
+        if (!currentNode || selectedQuizIds.length === 0) return;
+
+        const uniqueIds = Array.from(new Set([
+            ...linkedQuizIds,
+            ...selectedQuizIds.filter(id => !linkedQuizIds.includes(id))
+        ]));
+
+        handleChange('quizIds', uniqueIds);
+        setSelectedQuizIds([]);
     };
 
     if (!isOpen || !node || !currentNode) return null;
@@ -366,12 +405,20 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
                                 {/* Selected Quizzes List */}
                                 <div className="space-y-2 mb-3">
-                                    {(currentNode.quizIds || []).map(qId => {
-                                        const quiz = availableQuizzes.find(q => q.id === qId);
+                                    {linkedQuizIds.map(qId => {
+                                        const quiz = availableQuizzes.find(q => getQuizKey(q) === qId);
                                         return (
-                                            <div key={qId} className="flex items-center justify-between bg-indigo-50 dark:bg-indigo-500/10 p-2.5 rounded-xl border border-indigo-200 dark:border-indigo-500/20 text-xs group">
-                                                <span className="font-medium text-indigo-600 dark:text-indigo-200 truncate flex-1 pr-2" title={quiz?.title}>
-                                                    {quiz?.title || 'Unknown Quiz'}
+                                            <div key={qId} className="flex items-center justify-between gap-3 bg-indigo-50 dark:bg-indigo-500/10 p-3 rounded-xl border border-indigo-200 dark:border-indigo-500/20 text-xs group shadow-sm">
+                                                <div className="min-w-0 flex-1">
+                                                    <span className="font-semibold text-indigo-700 dark:text-indigo-200 text-sm leading-snug break-words block" title={quiz?.title}>
+                                                        {quiz?.title || 'Unknown Quiz'}
+                                                    </span>
+                                                    <span className="text-[10px] text-indigo-500/80 dark:text-indigo-300/70 uppercase tracking-wider block mt-1">
+                                                        Already linked
+                                                    </span>
+                                                </div>
+                                                <span className="px-2 py-1 rounded-lg bg-white/70 dark:bg-black/20 text-[10px] font-bold text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 whitespace-nowrap">
+                                                    Linked
                                                 </span>
                                                 <button
                                                     onClick={() => {
@@ -387,35 +434,64 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                     })}
                                 </div>
 
-                                <div className="relative">
-                                    <select
-                                        value=""
-                                        onChange={(e) => {
-                                            const newId = e.target.value;
-                                            if (newId) {
-                                                const currentIds = currentNode.quizIds || [];
-                                                if (!currentIds.includes(newId)) {
-                                                    handleChange('quizIds', [...currentIds, newId]);
-                                                }
-                                            }
-                                        }}
-                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
-                                    >
-                                        <option value="">+ Link Quiz...</option>
-                                        {availableQuizzes
-                                            .filter(q =>
-                                                !(currentNode.quizIds || []).includes(q.id) &&
-                                                !globallyUsedQuizIds.has(q.id)
-                                            )
-                                            .map(q => (
+                                <div className="space-y-3">
+                                    <input
+                                        type="text"
+                                        value={quizSearch}
+                                        onChange={(e) => setQuizSearch(e.target.value)}
+                                        placeholder="Search unlinked quizzes..."
+                                        className="w-full bg-gray-50 dark:bg-[#0a0a12] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all"
+                                    />
 
-                                                <option key={q.id} value={q.id}>
-                                                    {q.title}
-                                                </option>
-                                            ))}
-                                    </select>
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
-                                        <Plus size={14} />
+                                    {selectableQuizzes.length === 0 ? (
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#0a0a12] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3">
+                                            No unlinked quizzes available for this module.
+                                        </div>
+                                    ) : (
+                                        <div className="max-h-64 overflow-y-auto space-y-2 rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#0a0a12] p-2 shadow-inner">
+                                            {selectableQuizzes.map(({ quiz: q, quizKey }) => {
+                                                const isSelected = selectedQuizIds.includes(quizKey);
+                                                return (
+                                                    <button
+                                                        key={quizKey}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedQuizIds(prev =>
+                                                                prev.includes(quizKey)
+                                                                    ? prev.filter(id => id !== quizKey)
+                                                                    : [...prev, quizKey]
+                                                            );
+                                                        }}
+                                                        className={`w-full flex items-start gap-3 px-3 py-3 rounded-xl text-left transition-all border ${isSelected
+                                                            ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-700 dark:text-indigo-200 shadow-sm'
+                                                            : 'bg-white dark:bg-transparent border-transparent hover:bg-indigo-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-200'
+                                                            }`}
+                                                    >
+                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                                                            {isSelected && <Check size={11} className="text-white" />}
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="text-sm font-semibold leading-snug break-words">{q.title}</div>
+                                                            <div className="text-[10px] text-gray-500 dark:text-gray-500 leading-snug mt-1 break-words">{q.category || 'Uncategorized'}</div>
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="text-[10px] text-gray-500 dark:text-gray-500 uppercase tracking-wider font-semibold">
+                                            {selectedQuizIds.length} selected
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={handleAddSelectedQuizzes}
+                                            disabled={selectedQuizIds.length === 0}
+                                            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed text-white text-xs font-bold transition-all flex items-center gap-2"
+                                        >
+                                            <Plus size={14} /> Add Selected
+                                        </button>
                                     </div>
                                 </div>
                             </div>

@@ -7,7 +7,7 @@ import { api } from '../../lib/api.ts';
 interface TournamentManagementProps {
     currentUser: UserData;
     quizzes: Quiz[];
-    onRefresh: () => void;
+    onRefresh: () => void | Promise<void>;
     onNotification: (type: 'success' | 'error', message: string) => void;
 }
 
@@ -110,7 +110,7 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
                 }) : null);
 
                 // Notify parent to refresh quizzes list so names resolve
-                onRefresh();
+                await Promise.resolve(onRefresh());
 
                 onNotification('success', 'Tournament Quiz Created & Linked');
             } catch (error) {

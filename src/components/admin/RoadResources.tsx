@@ -13,7 +13,7 @@ interface RoadResourcesProps {
     subject: Subject;
     adminId: string;
     onNotification: (type: 'success' | 'error' | 'warning', message: string) => void;
-    onRefresh: () => void;
+    onRefresh: () => void | Promise<void>;
 }
 
 const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotification, onRefresh }) => {
@@ -62,7 +62,7 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
             const res = await api.updateSubject(subject._id, formData, adminId);
             if (res.success) {
                 onNotification('success', `Uploaded ${files.length} file(s)`);
-                onRefresh();
+                await Promise.resolve(onRefresh());
             }
         } catch (error: any) {
             onNotification('error', 'Upload failed: ' + error.message);
@@ -94,7 +94,7 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
         try {
             await api.deleteMaterial(subject._id, materialId, adminId);
             onNotification('success', 'Resource deleted');
-            onRefresh();
+            await Promise.resolve(onRefresh());
         } catch (e: any) {
             onNotification('error', 'Delete failed: ' + e.message);
         }
@@ -156,6 +156,7 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
                 onNotification('success', 'Quiz published successfully!');
                 setGenResult(null);
                 setIsPublishModalOpen(false);
+                await Promise.resolve(onRefresh());
             }
         } catch (e: any) {
             onNotification('error', 'Publish failed: ' + e.message);
