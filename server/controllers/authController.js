@@ -2,14 +2,12 @@ import { User } from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { getEnrichedUser } from '../services/userService.js';
+import { resolveJwtSecret } from '../utils/jwtSecret.js';
 
 
 // Helper: Generate JWT
 const generateToken = (userId, role) => {
-  if (!process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET is not configured');
-  }
-  return jwt.sign({ userId, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ userId, role }, resolveJwtSecret(), { expiresIn: '7d' });
 };
 
 // Helper function to calculate login streak
@@ -38,6 +36,20 @@ const calculateStreak = (lastLoginDate, currentStreak) => {
     // Missed days - reset streak
     return 1;
   }
+};
+
+const resolveLoginEmail = (email) => {
+  const normalizedEmail = String(email || '').toLowerCase().trim();
+  if (!normalizedEmail) return normalizedEmail;
+
+  const [localPart, domainPart] = normalizedEmail.split('@');
+  if (!localPart || !domainPart) return normalizedEmail;
+
+  if (domainPart === 'quizplatform') {
+    return `${localPart}@quizplatform.local`;
+  }
+
+  return normalizedEmail;
 };
 
 export const register = async (req, res) => {
@@ -80,8 +92,12 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const normalizedEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: normalizedEmail });
+    const normalizedEmail = resolveLoginEmail(email);
+    const loginCandidates = normalizedEmail === email.toLowerCase().trim()
+      ? [normalizedEmail]
+      : [normalizedEmail, email.toLowerCase().trim()];
+
+    const user = await User.findOne({ email: { $in: loginCandidates } });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -195,12 +211,7 @@ export const verifySession = async (req, res) => {
 
     if (!token) return res.status(401).json({ valid: false, message: 'No token provided' });
 
-    if (!process.env.JWT_SECRET) {
-      console.error('CRITICAL: JWT_SECRET is not defined');
-      return res.status(500).json({ valid: false, message: 'Server configuration error' });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, resolveJwtSecret());
     const user = await User.findOne({ userId: decoded.userId });
 
     if (!user) return res.status(404).json({ valid: false });

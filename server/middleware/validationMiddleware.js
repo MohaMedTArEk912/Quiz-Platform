@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+const emailLike = z.string().trim().min(3).refine((value) => {
+  const parts = value.split('@');
+  return parts.length === 2 && parts[0].length > 0 && parts[1].length > 0 && !/\s/.test(value);
+}, { message: 'Invalid email address' });
+
 export const validate = (schema) => (req, res, next) => {
   try {
     const validData = schema.parse(req.body);
@@ -7,9 +12,15 @@ export const validate = (schema) => (req, res, next) => {
     next();
   } catch (error) {
     if (error instanceof z.ZodError) {
+      const issues = Array.isArray(error.issues)
+        ? error.issues
+        : Array.isArray(error.errors)
+          ? error.errors
+          : [];
+
       return res.status(400).json({ 
         message: 'Validation Error', 
-        errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message })) 
+        errors: issues.map(e => ({ field: Array.isArray(e.path) ? e.path.join('.') : '', message: e.message || 'Invalid value' })) 
       });
     }
     res.status(500).json({ message: 'Internal Server Error' });
@@ -25,6 +36,6 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email(),
+  email: emailLike,
   password: z.string()
 });

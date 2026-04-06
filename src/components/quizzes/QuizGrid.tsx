@@ -13,9 +13,11 @@ interface QuizGridProps {
 }
 
 const QuizGrid: React.FC<QuizGridProps> = ({ quizzes, onExport, onEdit, onDelete, onShare, onCreateFirstQuiz }) => {
+    const safeQuizzes = Array.isArray(quizzes) ? quizzes : [];
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-right-4 duration-300">
-            {quizzes.map(quiz => (
+            {safeQuizzes.map(quiz => (
                 <QuizCard
                     key={quiz.id || quiz._id} // Handle potential _id if present in data
                     quiz={quiz}
@@ -25,7 +27,7 @@ const QuizGrid: React.FC<QuizGridProps> = ({ quizzes, onExport, onEdit, onDelete
                     onShare={onShare}
                 />
             ))}
-            {quizzes.length === 0 && (
+            {safeQuizzes.length === 0 && (
                 <EmptyState
                     message="No quizzes found in this collection"
                     actionLabel="Create First Quiz"

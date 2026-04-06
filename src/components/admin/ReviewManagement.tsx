@@ -22,6 +22,8 @@ const ReviewManagement: React.FC<ReviewManagementProps> = ({ currentUser, users,
         return quizzes.find(q => q.id === attempt.quizId || q._id === attempt.quizId);
     };
 
+    const reviewQuestions = reviewingAttempt ? (Array.isArray(getQuizForAttempt(reviewingAttempt)?.questions) ? getQuizForAttempt(reviewingAttempt)!.questions : []) : [];
+
     const handleReviewSubmit = async () => {
         if (!reviewingAttempt) return;
         const additionalPoints = Object.values(reviewScores).reduce((sum, score) => sum + score, 0);
@@ -102,7 +104,7 @@ const ReviewManagement: React.FC<ReviewManagementProps> = ({ currentUser, users,
                     </div>
 
                     <div className="grid grid-cols-1 gap-4">
-                        {getQuizForAttempt(reviewingAttempt)?.questions.map((q, idx) => {
+                        {reviewQuestions.map((q, idx) => {
                             if (q.type !== 'text') return null;
                             const ans = reviewingAttempt.answers[q.id];
 

@@ -13,6 +13,7 @@ interface QuizResultsProps {
 
 const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes, onRetake }) => {
     const [showReview, setShowReview] = React.useState(false);
+    const safeQuestions = Array.isArray(quiz.questions) ? quiz.questions : [];
 
     useEffect(() => {
         if (result.passed) {
@@ -234,7 +235,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                         {/* --- REVIEW SECTION CONTENT --- */}
                         {showReview && (
                             <div className="flex flex-col gap-4 mt-4 animate-in slide-in-from-top-4 fade-in duration-300">
-                                {quiz.questions.map((q, idx) => {
+                                {safeQuestions.map((q, idx) => {
                                     const ansData = (result.answers as any)[idx];
                                     const isCorrect = ansData?.isCorrect;
                                     const userAnswer = ansData?.selected;

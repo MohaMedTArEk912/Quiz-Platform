@@ -74,9 +74,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const loadPendingReviews = useCallback(async () => {
         try {
             const reviews = await api.getPendingReviews();
-            setPendingReviews(reviews);
+            setPendingReviews(Array.isArray(reviews) ? reviews : []);
         } catch (error) {
             console.error('Failed to load pending reviews:', error);
+            setPendingReviews([]);
         }
     }, []);
 

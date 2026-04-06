@@ -1,4 +1,37 @@
 import { Quiz } from '../models/Quiz.js';
+import { readdir, readFile } from 'fs/promises';
+import path from 'path';
+
+const loadStaticQuizzes = async () => {
+  const quizzesDir = path.join(process.cwd(), 'public', 'quizzes');
+
+  try {
+    const entries = await readdir(quizzesDir, { withFileTypes: true });
+    const jsonFiles = entries.filter((entry) => entry.isFile() && entry.name.endsWith('.json'));
+
+    const quizzes = [];
+    for (const entry of jsonFiles) {
+      try {
+        const filePath = path.join(quizzesDir, entry.name);
+        const contents = await readFile(filePath, 'utf8');
+        const parsed = JSON.parse(contents);
+
+        if (Array.isArray(parsed)) {
+          quizzes.push(...parsed);
+        } else if (parsed && typeof parsed === 'object') {
+          quizzes.push(parsed);
+        }
+      } catch (fileError) {
+        console.warn(`⚠️ Failed to load fallback quiz file ${entry.name}:`, fileError.message);
+      }
+    }
+
+    return quizzes;
+  } catch (error) {
+    console.warn('⚠️ Static quiz fallback is unavailable:', error.message);
+    return [];
+  }
+};
 
 /**
  * Sanitize and validate quiz questions
@@ -77,7 +110,14 @@ const sanitizeQuestions = (questions, quizId = 'unknown') => {
 export const getQuizzes = async (req, res) => {
   try {
     // Fetch all quizzes including questions to show accurate question counts
-    const quizzes = await Quiz.find({}).lean();
+    let quizzes = await Quiz.find({}).lean();
+
+    if (!Array.isArray(quizzes) || quizzes.length === 0) {
+      const fallbackQuizzes = await loadStaticQuizzes();
+      if (fallbackQuizzes.length > 0) {
+        quizzes = fallbackQuizzes;
+      }
+    }
     
     // Sort quizzes by extracted number for proper "Session 1, Session 2, ... Session 10" ordering
     quizzes.sort((a, b) => {
@@ -101,12 +141,27 @@ export const getQuizzes = async (req, res) => {
 
     const normalized = quizzes.map((quiz) => ({
       ...quiz,
+      questions: Array.isArray(quiz.questions) ? quiz.questions : [],
       id: quiz.id || quiz._id?.toString()
     }));
     
     res.json(normalized);
   } catch (error) {
     console.error('❌ Error fetching quizzes:', error);
+    try {
+      const fallbackQuizzes = await loadStaticQuizzes();
+      if (fallbackQuizzes.length > 0) {
+        const normalizedFallback = fallbackQuizzes.map((quiz) => ({
+          ...quiz,
+          questions: Array.isArray(quiz.questions) ? quiz.questions : [],
+          id: quiz.id || quiz._id?.toString()
+        }));
+        return res.json(normalizedFallback);
+      }
+    } catch (fallbackError) {
+      console.error('❌ Fallback quiz load failed:', fallbackError);
+    }
+
     res.status(500).json({ 
       message: 'Server error', 
       error: error.message,

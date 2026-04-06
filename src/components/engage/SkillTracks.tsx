@@ -31,7 +31,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
     const load = async () => {
       try {
         const loadedTracks = await api.getSkillTracks();
-        setTracks(loadedTracks);
+        setTracks(Array.isArray(loadedTracks) ? loadedTracks : []);
 
         // Load badge trees for each track
         const trees = await api.getBadgeTrees({ type: 'track', isActive: true });
@@ -42,7 +42,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
           if (tree.trackId) {
             // Fetch badge details for each node
             const nodesWithBadges = await Promise.all(
-              tree.nodes.map(async (node: any) => {
+              (Array.isArray(tree.nodes) ? tree.nodes : []).map(async (node: any) => {
                 try {
                   const badge = await api.getBadgeNode(node.badgeId);
                   return { ...node, badge };
@@ -108,10 +108,11 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
     const userTrack = user.skillTracks?.find(t => t.trackId === track.trackId);
     const completedModules = userTrack?.completedModules || [];
     const badgeTree = badgeTrees[track.trackId];
+    const modules = Array.isArray(track.modules) ? track.modules : [];
 
-    return track.modules.map((module, index) => {
+    return modules.map((module, index) => {
       const isCompleted = completedModules.includes(module.moduleId);
-      const isLocked = index > 0 && !completedModules.includes(track.modules[index - 1].moduleId);
+      const isLocked = index > 0 && !completedModules.includes(modules[index - 1].moduleId);
 
       // Get badges for this module
       const moduleBadges: BadgeNode[] = [];
@@ -140,7 +141,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
   };
 
   // Extract unique categories
-  const categories = ['All', ...new Set(tracks.map(t => t.category || 'General'))];
+  const categories = ['All', ...new Set((Array.isArray(tracks) ? tracks : []).map(t => t.category || 'General'))];
 
   // Filter tracks based on search, category and status
   const filteredTracks = tracks.filter(track => {

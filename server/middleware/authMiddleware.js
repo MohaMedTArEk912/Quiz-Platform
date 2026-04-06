@@ -1,6 +1,7 @@
 import { User } from '../models/User.js';
 
 import jwt from 'jsonwebtoken';
+import { resolveJwtSecret } from '../utils/jwtSecret.js';
 
 // Middleware to verify any authenticated user
 export const verifyUser = async (req, res, next) => {
@@ -15,12 +16,7 @@ export const verifyUser = async (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
     
-    if (!process.env.JWT_SECRET) {
-      console.error('CRITICAL: JWT_SECRET is not defined');
-      return res.status(500).json({ message: 'Server configuration error' });
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, resolveJwtSecret());
     
     const user = await User.findOne({ userId: decoded.userId });
     if (!user) {
@@ -49,13 +45,8 @@ export const verifyAdmin = async (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
     
-    if (!process.env.JWT_SECRET) {
-      console.error('CRITICAL: JWT_SECRET is not defined');
-      return res.status(500).json({ message: 'Server configuration error' });
-    }
-    
     console.log('🔍 Verifying JWT token...');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, resolveJwtSecret());
 
     console.log(`👤 Looking up user: ${decoded.userId}`);
     const adminUser = await User.findOne({ userId: decoded.userId });

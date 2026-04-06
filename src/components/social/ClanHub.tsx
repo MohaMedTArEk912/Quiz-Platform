@@ -41,6 +41,8 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
     const [lastViewed, setLastViewed] = useState<number>(0);
     const [unreadCount, setUnreadCount] = useState(0);
 
+    const clanInvites = Array.isArray(user.clanInvites) ? user.clanInvites : [];
+
     // Announcement Modal State
     const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
     const [announcementContent, setAnnouncementContent] = useState('');
@@ -915,7 +917,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             {view === 'browse' && (
                 <div className="space-y-8">
                     {/* Pending Invites */}
-                    {user.clanInvites && user.clanInvites.length > 0 && (
+                    {clanInvites.length > 0 && (
                         <div className="relative overflow-hidden bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-6 shadow-xl">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                             <h3 className="text-xl font-black mb-6 flex items-center gap-3 relative z-10 text-white">
@@ -923,10 +925,10 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                     <Bell className="w-5 h-5 animate-pulse" />
                                 </div>
                                 Clan Invitations
-                                <span className="bg-white text-violet-600 text-xs font-black px-2.5 py-1 rounded-full shadow-sm">{user.clanInvites.length}</span>
+                                <span className="bg-white text-violet-600 text-xs font-black px-2.5 py-1 rounded-full shadow-sm">{clanInvites.length}</span>
                             </h3>
                             <div className="space-y-3 relative z-10">
-                                {user.clanInvites.map((invite) => (
+                                {clanInvites.map((invite) => (
                                     <div key={invite.clanId} className="bg-black/20 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center justify-between group hover:bg-black/30 transition-colors text-white">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
