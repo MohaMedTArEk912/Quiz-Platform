@@ -1,8 +1,8 @@
 {
   "version": 2,
   "framework": "vite",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "buildCommand": "npm --prefix client run build",
+  "outputDirectory": "client/dist",
   "ignoreCommand": "git diff HEAD^ HEAD --quiet -- . ':!server' ':!*.md'",
   "functions": {
     "api/[...path].js": {
