@@ -10,7 +10,7 @@ RUN npm ci --silent
 # Copy source and build frontend
 COPY . .
 # Build client inside builder
-RUN npm --prefix client ci --silent && npm --prefix client run build
+RUN npm --prefix client install --silent && npm --prefix client run build
 
 # Runner
 FROM node:20-alpine AS runner
