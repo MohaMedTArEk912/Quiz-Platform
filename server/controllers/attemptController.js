@@ -73,6 +73,11 @@ export const saveAttempt = async (req, res) => {
       await user.save();
     }
 
+        // Fetch quiz for rewards and passing score check
+        const quiz = await Quiz.findOne({ id: normalizedAttempt.quizId }).lean();
+        const passingThreshold = quiz?.passingScore ?? 70;
+        normalizedAttempt.passed = normalizedAttempt.percentage >= passingThreshold;
+
         let newAttempt;
         try {
             newAttempt = new Attempt(normalizedAttempt);
@@ -96,9 +101,6 @@ export const saveAttempt = async (req, res) => {
         user.totalAttempts = (user.totalAttempts || 0) + 1;
         user.totalScore = (user.totalScore || 0) + (normalizedAttempt.score || 0);
         user.totalTime = (user.totalTime || 0) + (normalizedAttempt.timeTaken || 0);
-
-        // Fetch quiz for rewards
-        const quiz = await Quiz.findOne({ id: normalizedAttempt.quizId }).lean();
         
         if (quiz) {
             // Coins logic
@@ -187,8 +189,8 @@ export const submitReview = async (req, res) => {
         const quiz = await Quiz.findOne({ id: attempt.quizId });
         if (quiz) {
              const totalPoints = quiz.questions.reduce((sum, q) => sum + q.points, 0);
-             attempt.percentage = Math.round((attempt.score / totalPoints) * 100);
-             attempt.passed = attempt.percentage >= quiz.passingScore;
+             attempt.percentage = totalPoints > 0 ? Math.round((attempt.score / totalPoints) * 100) : 0;
+             attempt.passed = attempt.percentage >= (quiz.passingScore ?? 70);
         }
         
         await attempt.save();

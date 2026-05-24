@@ -15,7 +15,8 @@ const attemptSchema = new mongoose.Schema({
   reviewStatus: { type: String, enum: ['completed', 'pending', 'reviewed'], default: 'completed' },
   feedback: { type: Object, default: {} }, // Map of questionId/index to feedback
   completedAt: { type: Date, default: Date.now },
-  powerUpsUsed: { type: [String], default: [] }
+  powerUpsUsed: { type: [String], default: [] },
+  passed: { type: Boolean, default: false }
 });
 
 // Indexes for quick filtering and sorting

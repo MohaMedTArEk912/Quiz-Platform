@@ -650,8 +650,8 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Serve Static Files from the frontend build
-const distPath = path.join(projectRoot, 'dist');
+// Serve Static Files from the frontend build (client/dist after monorepo split)
+const distPath = path.join(projectRoot, 'client', 'dist');
 app.use(express.static(distPath, {
   setHeaders: (res, filePath) => {
     const ext = path.extname(filePath);

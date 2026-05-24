@@ -19,6 +19,7 @@ interface QuizTakingProps {
     mustAnswerCorrectly?: boolean;
     countUpTimer?: boolean;
     delayedValidation?: boolean;
+    onUserUpdate?: (updates: Partial<UserData>) => void;
 }
 
 type SavedQuizState = {
@@ -42,7 +43,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     embedded,
     mustAnswerCorrectly,
     countUpTimer = false,
-    delayedValidation = false
+    delayedValidation = false,
+    onUserUpdate
 }) => {
     // --- STATE MANAGEMENT ---
     const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -63,9 +65,9 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
     useEffect(() => {
         const checkMobile = () => {
-            const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            const isSmallWidth = window.innerWidth < 768;
             const isSmallHeight = window.innerHeight < 500;
-            setIsMobileDevice(isTouch || isSmallHeight);
+            setIsMobileDevice(isSmallWidth || isSmallHeight);
         };
         checkMobile();
         window.addEventListener('resize', checkMobile);
@@ -123,7 +125,13 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     }, [quiz.questions, generateShuffledIndices]);
 
     // Update local states if props change
-    useEffect(() => { setLocalPowerUps(powerUps || []); }, [powerUps]);
+    useEffect(() => {
+        const mapped = powerUps?.map(p => ({
+            ...p,
+            type: p.type === 'time_freeze' ? 'time' : p.type
+        })) || [];
+        setLocalPowerUps(mapped);
+    }, [powerUps]);
     useEffect(() => { setLocalCoins(user.coins || 0); }, [user.coins]);
 
     // --- LOGIC: Restore Saved State ---
@@ -196,7 +204,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
     const resetQuestionState = useCallback((targetIndex = currentQuestion) => {
         setShakeError(false);
-        if (!quiz.reviewMode) {
+        const isReviewMode = quiz.reviewMode !== false;
+        if (!isReviewMode) {
             setQuestionSubmitted(false);
             setIsCurrentAnswerCorrect(false);
         } else {
@@ -295,7 +304,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             percentage,
             timeTaken: duration,
             answers: detailedAnswers,
-            passed: percentage >= quiz.passingScore,
+            passed: percentage >= (quiz.passingScore ?? 70),
             reviewStatus: 'completed',
             powerUpsUsed: []
         });
@@ -305,7 +314,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     const nextQuestion = useCallback(() => {
         if (isSubmitting) return;
         const actualIdx = getActualQuestionIndex();
-        if (quiz.reviewMode && !delayedValidation && answers[actualIdx] === undefined) {
+        const isReviewMode = quiz.reviewMode !== false;
+        if (isReviewMode && !delayedValidation && answers[actualIdx] === undefined) {
             setShakeError(true);
             setTimeout(() => setShakeError(false), 400);
             return; 
@@ -324,7 +334,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         resetQuestionState(currentQuestion - 1);
     }, [isSubmitting, currentQuestion, resetQuestionState]);
 
-    const handleAnswer = useCallback((answer: string | number) => {
+    const handleAnswer = useCallback((answer: string | number, isKeyboard = false) => {
         if (isSubmitting) return;
 
         const actualIndex = getActualQuestionIndex();
@@ -345,6 +355,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         setAnswers(newAnswers);
 
         if (!delayedValidation && quiz.reviewMode !== false) {
+            if (isKeyboard) {
+                // If keyboard selection in review mode, DO NOT submit/grade immediately.
+                return;
+            }
             const isCorrect = q.type === 'text' ? false : answer === q.correctAnswer;
             setIsCurrentAnswerCorrect(isCorrect);
             setQuestionSubmitted(true);
@@ -379,6 +393,43 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     }, [isSubmitting, getActualQuestionIndex, quiz.questions, mustAnswerCorrectly, delayedValidation, answers, quiz.reviewMode, onProgress, checkComplexAnswer, nextQuestion]);
 
 
+    const submitQuestion = useCallback(() => {
+        const actualIndex = getActualQuestionIndex();
+        const q = quiz.questions[actualIndex];
+        const answer = answers[actualIndex];
+        if (answer === undefined) return;
+
+        const isCorrect = q.type === 'text' ? false : answer === q.correctAnswer;
+        setIsCurrentAnswerCorrect(isCorrect);
+        setQuestionSubmitted(true);
+        setSubmittedQuestions(prev => ({ ...prev, [actualIndex]: true }));
+        setQuestionCorrectness(prev => ({ ...prev, [actualIndex]: isCorrect }));
+
+        if (onProgress) {
+            let currentScore = 0;
+            let answered = 0;
+            let correctCount = 0;
+            quiz.questions.forEach((qObj, idx) => {
+                const isCurrent = idx === actualIndex;
+                const currentAns = isCurrent ? answer : answers[idx];
+                const isAnsSubmitted = isCurrent ? true : submittedQuestions[idx];
+                if (currentAns !== undefined && qObj.type !== 'text') {
+                    if (isAnsSubmitted) {
+                        answered++;
+                        const isCorrect = checkComplexAnswer(qObj, currentAns);
+                        if (isCorrect) {
+                            currentScore += qObj.points;
+                            correctCount++;
+                        }
+                    }
+                }
+            });
+            const progressIndex = delayedValidation ? correctCount : answered;
+            onProgress(currentScore, progressIndex);
+        }
+    }, [answers, getActualQuestionIndex, quiz.questions, submittedQuestions, onProgress, checkComplexAnswer, delayedValidation]);
+
+
     // --- Keyboard Shortcuts ---
     useEffect(() => {
         if (showResumePrompt || isSubmitting || showShop) return;
@@ -387,15 +438,27 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             const actualIndex = getActualQuestionIndex();
             const q = quiz.questions[actualIndex];
             
-            // Allow Enter to advance
+            // Allow Enter to advance or submit
             if (e.key === 'Enter') {
                 e.preventDefault();
-                // Prevent advancing if required to answer
-                if (quiz.reviewMode && !delayedValidation && answers[actualIndex] === undefined) {
-                    setShakeError(true);
-                    setTimeout(() => setShakeError(false), 400);
+                const isReviewMode = quiz.reviewMode !== false;
+                if (isReviewMode && !delayedValidation) {
+                    const currentAns = answers[actualIndex];
+                    if (currentAns === undefined) {
+                        setShakeError(true);
+                        setTimeout(() => setShakeError(false), 400);
+                    } else if (!questionSubmitted) {
+                        submitQuestion();
+                    } else {
+                        nextQuestion();
+                    }
                 } else {
-                    nextQuestion();
+                    if (answers[actualIndex] === undefined) {
+                        setShakeError(true);
+                        setTimeout(() => setShakeError(false), 400);
+                    } else {
+                        nextQuestion();
+                    }
                 }
                 return;
             }
@@ -408,7 +471,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
             if (e.key === 'ArrowRight') {
                 e.preventDefault();
-                if (quiz.reviewMode && !delayedValidation && answers[actualIndex] === undefined) {
+                const isReviewMode = quiz.reviewMode !== false;
+                if (isReviewMode && !delayedValidation && answers[actualIndex] === undefined) {
                     setShakeError(true);
                     setTimeout(() => setShakeError(false), 400);
                 } else {
@@ -417,22 +481,28 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 return;
             }
 
-            // Keyboard option selection (1-4 or A-D/a-d)
+            // Keyboard option selection (1-N or A-N) dynamically based on number of options
             if (q && q.options && !q.isCompiler && (!questionSubmitted || delayedValidation)) {
                 const currentOptions = optionsOrder[actualIndex] || [];
                 let selectedVisualIndex = -1;
 
-                if (['1', '2', '3', '4', '5'].includes(e.key)) {
-                    selectedVisualIndex = parseInt(e.key) - 1;
-                } else if (['a', 'b', 'c', 'd', 'e'].includes(e.key.toLowerCase())) {
-                    selectedVisualIndex = e.key.toLowerCase().charCodeAt(0) - 97;
+                if (e.key.length === 1 && e.key >= '1' && e.key <= '9') {
+                    const numIndex = parseInt(e.key) - 1;
+                    if (numIndex >= 0 && numIndex < currentOptions.length) {
+                        selectedVisualIndex = numIndex;
+                    }
+                } else if (e.key.length === 1 && /^[a-z]$/i.test(e.key)) {
+                    const letterIndex = e.key.toLowerCase().charCodeAt(0) - 97;
+                    if (letterIndex >= 0 && letterIndex < currentOptions.length) {
+                        selectedVisualIndex = letterIndex;
+                    }
                 }
 
                 if (selectedVisualIndex >= 0 && selectedVisualIndex < currentOptions.length) {
                     const originalIndex = currentOptions[selectedVisualIndex];
                     const hiddenOpts = hiddenOptions[actualIndex] || [];
                     if (!hiddenOpts.includes(originalIndex)) {
-                        handleAnswer(originalIndex);
+                        handleAnswer(originalIndex, true);
                     }
                 }
             }
@@ -440,7 +510,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [showResumePrompt, isSubmitting, showShop, getActualQuestionIndex, quiz.questions, quiz.reviewMode, delayedValidation, answers, questionSubmitted, nextQuestion, previousQuestion, optionsOrder, hiddenOptions, handleAnswer]);
+    }, [showResumePrompt, isSubmitting, showShop, getActualQuestionIndex, quiz.questions, quiz.reviewMode, delayedValidation, answers, questionSubmitted, nextQuestion, previousQuestion, optionsOrder, hiddenOptions, handleAnswer, submitQuestion]);
 
 
     // --- Power-up Application Logic ---
@@ -498,12 +568,26 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         }
     };
 
-    const handleBuyItem = async (type: string, cost: number, itemId: string) => {
+    const handleBuyItem = async (_type: string, cost: number, itemId: string) => {
         if (localCoins < cost) return;
         setLocalCoins(prev => prev - cost);
         try {
-            await api.purchaseItem(itemId, user.userId);
-            applyPowerUp(type);
+            const res = await api.purchaseItem(itemId, user.userId);
+            
+            const mappedPowerUps = res.powerUps?.map((p: { type: string; quantity: number }) => ({
+                ...p,
+                type: p.type === 'time_freeze' ? 'time' : p.type
+            })) || [];
+            setLocalPowerUps(mappedPowerUps);
+            
+            if (onUserUpdate) {
+                onUserUpdate({
+                    coins: res.coins,
+                    inventory: res.inventory,
+                    powerUps: res.powerUps,
+                    unlockedItems: res.unlockedItems
+                });
+            }
         } catch (e) {
             console.error("Purchase failed", e);
             setLocalCoins(prev => prev + cost); // Revert
@@ -535,8 +619,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
     const currentOptions = optionsOrder[actualIndex] || [];
     const progressPercentage = retryMode
-        ? ((currentQuestion + 1) / wrongQuestionIndices.length) * 100
-        : ((currentQuestion + 1) / quiz.questions.length) * 100;
+        ? (wrongQuestionIndices.length > 0 ? ((currentQuestion + 1) / wrongQuestionIndices.length) * 100 : 0)
+        : (quiz.questions.length > 0 ? ((currentQuestion + 1) / quiz.questions.length) * 100 : 0);
 
     const hiddenOptsForCurrent = hiddenOptions[actualIndex] || [];
 
@@ -564,7 +648,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     return (
         <div className={`w-full transition-colors flex flex-col font-sans relative ${embedded
             ? 'h-full bg-transparent'
-            : 'h-screen bg-white dark:bg-[#080812] overflow-hidden'
+            : 'h-screen bg-gradient-to-br from-[#e0e7ff] via-[#f3e8ff] to-[#fee2e2] dark:from-[#080812] dark:via-[#0b0b18] dark:to-[#080812] overflow-hidden'
             } text-gray-900 dark:text-gray-100`}>
             
             {!embedded && <AmbientBackground />}
@@ -594,8 +678,26 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 /* Hide scrollbar for cleaner look */
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                
+                @keyframes screen-glow-in {
+                    0% { opacity: 0; }
+                    100% { opacity: 1; }
+                }
+                .animate-glow-in {
+                    animation: screen-glow-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
             `}</style>
 
+            {/* Screen-wide Correct/Incorrect Glow Overlay */}
+            {questionSubmitted && !delayedValidation && (
+                <div 
+                    className={`fixed inset-0 pointer-events-none z-40 animate-glow-in ${
+                        isCurrentAnswerCorrect 
+                            ? 'bg-green-500/[0.02] dark:bg-green-500/[0.01] shadow-[inset_0_0_80px_rgba(34,197,94,0.15)] dark:shadow-[inset_0_0_120px_rgba(34,197,94,0.12)] border-[8px] border-green-500/10 dark:border-green-500/5' 
+                            : 'bg-red-500/[0.02] dark:bg-red-500/[0.01] shadow-[inset_0_0_80px_rgba(239,68,68,0.15)] dark:shadow-[inset_0_0_120px_rgba(239,68,68,0.12)] border-[8px] border-red-500/10 dark:border-red-500/5'
+                    }`}
+                />
+            )}
 
             {/* Power-up Screen Overlay Animation */}
             {activePowerUpAnimation && (
@@ -610,7 +712,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
             {/* --- TOP BAR (Full width) --- */}
             {!embedded && (
-                <header className="flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 bg-white dark:bg-[#0d0d1c]/80 border-b border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-20 shadow-sm">
+                <header className="flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 bg-[#e0e7ff]/60 dark:bg-[#0d0d1c]/80 border-b border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-20 shadow-sm">
                     <div className="flex items-center gap-3 sm:gap-4">
                         <button onClick={onBack} className="flex items-center gap-2 p-1.5 sm:p-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-gray-600 dark:text-slate-400 transition-all border border-gray-200 dark:border-white/10">
                             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -653,7 +755,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             {/* --- HORIZONTAL SPLIT LAYOUT --- */}
             <div className={`flex-1 flex flex-col landscape:flex-row lg:flex-row w-full ${embedded ? '' : 'z-10'} overflow-y-auto landscape:overflow-hidden lg:overflow-hidden`}>
                       {/* --- LEFT SIDE: Question Context --- */}
-                <div className="w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col bg-white/95 dark:bg-[#111827]/95 backdrop-blur-3xl border-r border-gray-200 dark:border-gray-800/50 relative z-20 sticky top-0 landscape:relative landscape:top-auto landscape:overflow-hidden shadow-xl landscape:shadow-2xl">
+                <div className="w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col bg-slate-100/80 dark:bg-[#111827]/95 backdrop-blur-3xl border-b landscape:border-b-0 landscape:border-r lg:border-r border-gray-200 dark:border-gray-800/50 dark:landscape:border-white/[0.08] dark:lg:border-white/[0.08] relative z-20 landscape:sticky landscape:top-0 lg:sticky lg:top-0 landscape:overflow-y-auto lg:overflow-y-auto no-scrollbar shadow-xl landscape:shadow-2xl">
                     
                     {/* Progress Header */}
                     <div className="flex items-center justify-between p-4 px-5 sm:p-6 landscape:p-2 landscape:px-5 pb-2">
@@ -672,7 +774,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     </div>
 
                     {/* Question Content */}
-                    <div className={`flex-none landscape:flex-1 landscape:overflow-y-auto px-5 sm:px-8 lg:px-12 pb-8 landscape:pb-4 flex flex-col pt-4 sm:pt-8 landscape:pt-3 lg:landscape:pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
+                    <div className={`flex-none landscape:flex-1 landscape:overflow-y-auto px-5 sm:px-8 lg:px-12 pb-24 landscape:pb-28 lg:landscape:pb-28 flex flex-col pt-4 sm:pt-8 landscape:pt-3 lg:landscape:pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
                         
                         <h2 className="text-xl sm:text-2xl lg:text-[32px] landscape:text-base lg:landscape:text-[32px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight mb-4 sm:mb-8 landscape:mb-2 lg:landscape:mb-8">
                             {q.question}
@@ -697,48 +799,40 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             </div>
                         )}
 
-                        {/* PowerUps active indicator under question */}
-                        {!hidePowerUps && localPowerUps.some(p => p.quantity > 0) && (
-                            <div className="mt-6 flex gap-3 flex-wrap items-center">
-                                <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mr-2">Your Items</span>
-                                {localPowerUps.map(p => p.quantity > 0 && (
-                                    <button 
-                                        key={p.type} 
-                                        onClick={() => handleUseOwnedItem(p.type)}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r ${getPowerUpColor(p.type)} text-white font-bold text-sm shadow-md hover:scale-105 transition-transform`}
-                                        title={`Use ${p.type}`}
-                                    >
-                                        {getPowerUpIcon(p.type)} {p.quantity} 
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                        
-                        {/* Feedback Banner inline */}
+                        {/* Explanation Card */}
                         {questionSubmitted && !delayedValidation && (
-                            <div className={`mt-8 p-6 rounded-2xl border transition-all animate-in fade-in slide-in-from-bottom-2 ${
+                            <div className={`mt-6 p-6 rounded-2xl border backdrop-blur-md transition-all animate-in fade-in slide-in-from-bottom-4 duration-300 ${
                                 isCurrentAnswerCorrect 
-                                ? 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30' 
-                                : 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30'
+                                ? 'bg-green-500/5 border-green-500/20 text-green-950 dark:text-green-100 shadow-lg shadow-green-500/5' 
+                                : 'bg-red-500/5 border-red-500/20 text-red-950 dark:text-red-100 shadow-lg shadow-red-500/5'
                             }`}>
-                                <h3 className={`flex items-center gap-2 text-lg font-black ${isCurrentAnswerCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                    {isCurrentAnswerCorrect ? <CheckCircle className="w-6 h-6"/> : <XCircle className="w-6 h-6"/>}
-                                    {isCurrentAnswerCorrect ? 'Excellent!' : 'Incorrect'}
-                                </h3>
-                                {!isCurrentAnswerCorrect && q.options && q.correctAnswer !== undefined && (
-                                    <p className="mt-2 font-medium text-gray-700 dark:text-gray-300">
-                                        The correct answer was: <span className="font-bold bg-white dark:bg-black/20 px-2 py-1 rounded ml-1">{q.options[q.correctAnswer]}</span>
-                                    </p>
-                                )}
-                                {q.explanation && (
-                                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                                        <p className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Explanation</p>
-                                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{q.explanation}</p>
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className={`p-2 rounded-xl ${isCurrentAnswerCorrect ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                        {isCurrentAnswerCorrect ? <CheckCircle className="w-5 h-5"/> : <XCircle className="w-5 h-5"/>}
+                                    </div>
+                                    <h4 className="text-lg font-black tracking-tight">
+                                        {isCurrentAnswerCorrect ? 'Excellent! Correct Answer' : 'Incorrect Answer'}
+                                    </h4>
+                                </div>
+
+                                {q.explanation ? (
+                                    <div className="pt-3 border-t border-gray-200/50 dark:border-white/5">
+                                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">
+                                            <Lightbulb className="w-3.5 h-3.5 text-yellow-500 animate-pulse"/>
+                                            <span>Explanation</span>
+                                        </div>
+                                        <p className="text-sm leading-relaxed opacity-90 font-medium">
+                                            {q.explanation}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="pt-3 border-t border-gray-200/50 dark:border-white/5 text-xs text-gray-400 italic">
+                                        No explanation provided for this question.
                                     </div>
                                 )}
                             </div>
                         )}
-
+                        
                         <div className="flex-1 min-h-[40px]"></div> {/* Spacer */}
 
                     </div>
@@ -746,7 +840,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
                 {/* --- RIGHT SIDE: Answer Options --- */}
                 <div className="w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col bg-transparent lg:bg-white/40 dark:bg-[#0b0f19] relative z-10">
-                    <div className="flex-1 landscape:overflow-y-auto p-5 sm:p-8 lg:p-12 pt-10 sm:pt-12 landscape:pt-6 pb-32 sm:pb-40 landscape:pb-32 flex flex-col justify-start lg:justify-center gap-3 sm:gap-4 no-scrollbar">
+                    <div className="flex-1 landscape:overflow-y-auto p-5 sm:p-8 lg:p-12 pt-10 sm:pt-12 landscape:pt-6 pb-24 landscape:pb-28 lg:landscape:pb-28 flex flex-col justify-start lg:justify-center gap-3 sm:gap-4 no-scrollbar">
                         {q.isCompiler ? (
                             <Suspense fallback={<div className="animate-spin w-8 h-8 border-4 border-indigo-500 rounded-full border-t-transparent mx-auto"></div>}>
                                 <div className="h-[400px] rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-xl bg-white dark:bg-black">
@@ -815,50 +909,54 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             })
                         )}
                     </div>
+                </div>
+            </div>
 
-                    {/* Bottom Action Footer Overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 p-6 landscape:p-4 lg:p-8 bg-gradient-to-t from-gray-50 via-gray-50 dark:from-[#0b0f19] dark:via-[#0b0f19] to-transparent pt-12 landscape:pt-8 lg:landscape:pt-12 flex items-center justify-between z-10 w-full pointer-events-none">
-                        {!isMobileDevice && (
-                            <div className="hidden lg:flex text-gray-500 dark:text-gray-500 font-medium items-center gap-2 bg-white/80 dark:bg-black/50 backdrop-blur-md px-4 py-2 rounded-xl pointer-events-auto border border-gray-200/50 dark:border-white/10">
-                                <span className="hidden md:inline px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">1-4</span>
-                                <span className="hidden md:inline px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">A-D</span> 
-                                to select, 
-                                <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">←</span> back,
-                                <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400 shadow-sm">Enter ↵</span> to advance
-                            </div>
+            {/* Bottom Action Footer Overlay */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-5 lg:p-5 bg-slate-100/85 dark:bg-[#0d0d1c]/90 border-t border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-30 w-full shadow-lg flex items-center justify-between pointer-events-auto">
+                {!isMobileDevice && (
+                    <div className="hidden lg:flex text-gray-500 dark:text-slate-400 font-medium items-center gap-2 bg-gray-50 dark:bg-white/[0.03] px-4 py-2.5 rounded-xl border border-gray-200/50 dark:border-white/5">
+                        {q && q.options && !q.isCompiler && (
+                            <>
+                                <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">1-{q.options.length}</span>
+                                <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">A-{String.fromCharCode(65 + q.options.length - 1)}</span> 
+                                <span className="text-xs">to select,</span> 
+                            </>
                         )}
-                        
-                        <div className="flex w-full sm:w-auto gap-4 pointer-events-auto ml-auto">
-                            <button
-                                onClick={previousQuestion}
-                                disabled={currentQuestion === 0 || isSubmitting}
-                                className="flex-1 sm:flex-none px-6 py-4 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:text-gray-500 text-gray-800 dark:text-gray-100 font-black text-lg rounded-xl border border-gray-300 dark:border-gray-700 shadow-md transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
-                            >
-                                <span className="text-xl">←</span>
-                                Previous
-                            </button>
-                            {!isLastQuestion && (
-                                <button
-                                    onClick={nextQuestion}
-                                    disabled={answers[actualIndex] === undefined || (quiz.reviewMode && !delayedValidation && !questionSubmitted)}
-                                    className="flex-1 sm:flex-none px-8 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 text-white font-black text-lg rounded-xl shadow-xl shadow-indigo-600/20 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
-                                >
-                                    {questionSubmitted && !delayedValidation ? 'Continue' : 'Next Question'}
-                                    <span className="text-xl">→</span>
-                                </button>
-                            )}
-                            {isLastQuestion && (
-                                <button
-                                    onClick={handleQuizComplete}
-                                    disabled={answers[actualIndex] === undefined}
-                                    className="flex-1 sm:flex-none px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 text-white font-black text-lg rounded-xl shadow-xl shadow-green-600/30 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
-                                >
-                                    {isSubmitting ? 'Submitting...' : 'Finish Quiz'}
-                                    <Target className="w-5 h-5"/>
-                                </button>
-                            )}
-                        </div>
+                        <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">←</span> <span className="text-xs">back,</span>
+                        <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">Enter ↵</span> <span className="text-xs">to advance</span>
                     </div>
+                )}
+                
+                <div className="flex w-full sm:w-auto gap-4 pointer-events-auto">
+                    <button
+                        onClick={previousQuestion}
+                        disabled={currentQuestion === 0 || isSubmitting}
+                        className="flex-1 sm:flex-none px-6 py-4 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:text-gray-500 text-gray-800 dark:text-gray-100 font-black text-lg rounded-xl border border-gray-300 dark:border-gray-700 shadow-md transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        <span className="text-xl">←</span>
+                        Previous
+                    </button>
+                    {!isLastQuestion && (
+                        <button
+                            onClick={nextQuestion}
+                            disabled={answers[actualIndex] === undefined || (quiz.reviewMode !== false && !delayedValidation && !questionSubmitted)}
+                            className="flex-1 sm:flex-none px-8 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 text-white font-black text-lg rounded-xl shadow-xl shadow-indigo-600/20 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            {questionSubmitted && !delayedValidation ? 'Continue' : 'Next Question'}
+                            <span className="text-xl">→</span>
+                        </button>
+                    )}
+                    {isLastQuestion && (
+                        <button
+                            onClick={handleQuizComplete}
+                            disabled={answers[actualIndex] === undefined}
+                            className="flex-1 sm:flex-none px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 text-white font-black text-lg rounded-xl shadow-xl shadow-green-600/30 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            {isSubmitting ? 'Submitting...' : 'Finish Quiz'}
+                            <Target className="w-5 h-5"/>
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -891,17 +989,44 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             </div>
                         </div>
 
+                        {/* Owned Inventory Quick Access inside Store */}
+                        {localPowerUps.some(p => p.quantity > 0) && (
+                            <div className="px-6 pb-4 border-b border-gray-100 dark:border-gray-800">
+                                <div className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 text-left">Your Inventory</div>
+                                <div className="flex gap-2 flex-wrap justify-start">
+                                    {localPowerUps.map(p => p.quantity > 0 && (
+                                        <button
+                                            key={p.type}
+                                            onClick={() => {
+                                                handleUseOwnedItem(p.type);
+                                                setShowShop(false);
+                                            }}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r ${getPowerUpColor(p.type)} text-white font-extrabold text-xs shadow-md hover:scale-105 transition-transform`}
+                                            title={`Use ${p.type}`}
+                                        >
+                                            {getPowerUpIcon(p.type, "w-3.5 h-3.5")}
+                                            <span className="capitalize">{p.type}</span>
+                                            <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{p.quantity}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Shop Items List */}
                         <div className="flex-1 overflow-y-auto p-6 pt-2 flex flex-col gap-4 bg-white dark:bg-transparent">
                             {[
-                                { type: 'hint', name: '50/50 Hint', desc: 'Disables two wrong answers to boost your chances.', price: 10, icon: 'hint' },
-                                { type: 'skip', name: 'Skip Pass', desc: 'Automatically marks current question correct and advances.', price: 25, icon: 'skip' },
-                                { type: 'time', name: 'Time Boost', desc: 'Add 30 extra seconds to the clock!', price: 15, icon: 'time' }
+                                { type: 'hint', name: '50/50 Hint', desc: 'Disables two wrong answers to boost your chances.', price: 75, icon: 'hint' },
+                                { type: 'skip', name: 'Skip Pass', desc: 'Automatically marks current question correct and advances.', price: 150, icon: 'skip' },
+                                { type: 'time', name: 'Time Boost', desc: 'Add 30 extra seconds to the clock!', price: 100, icon: 'time' }
                             ].map(item => {
+                                const ownedQuantity = localPowerUps.find(p => p.type === item.type)?.quantity || 0;
                                 const canAfford = localCoins >= item.price;
-                                // In shop component we use pw_hint, but the user state expects hint. 
-                                // The backend uses format like pw_hint for store.
-                                const actualItemIdMap: Record<string, string> = { hint: 'pw_hint', skip: 'pw_skip', time: 'pw_time' };
+                                const actualItemIdMap: Record<string, string> = { 
+                                    hint: 'smart-hint', 
+                                    skip: 'skip-question', 
+                                    time: 'time-freeze' 
+                                };
                                 const apiId = actualItemIdMap[item.type];
 
                                 return (
@@ -912,31 +1037,50 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                         </div>
                                         
                                         <div className="flex-1">
-                                            <h3 className="font-bold text-gray-900 dark:text-white text-base leading-tight mb-0.5">{item.name}</h3>
+                                            <div className="flex justify-between items-start">
+                                                <h3 className="font-bold text-gray-900 dark:text-white text-base leading-tight mb-0.5">{item.name}</h3>
+                                                {ownedQuantity > 0 && (
+                                                    <span className="px-2 py-0.5 rounded-lg bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 font-extrabold text-[10px] uppercase tracking-wider">
+                                                        Owned: {ownedQuantity}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="text-xs text-gray-500 dark:text-gray-400 pr-2 leading-relaxed">{item.desc}</div>
                                             
-                                            <div className="mt-3 flex items-center justify-between">
+                                            <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
                                                 <span className={`font-black flex items-center gap-1.5 text-sm ${canAfford ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400 dark:text-gray-500'}`}>
                                                     <Coins className="w-4 h-4"/> {item.price}
                                                 </span>
-                                                <button 
-                                                    onClick={() => {
-                                                        handleBuyItem(item.type, item.price, apiId);
-                                                        setShowShop(false);
-                                                    }}
-                                                    disabled={!canAfford}
-                                                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:text-gray-400 text-white font-bold text-sm shadow-md transition-all active:scale-95"
-                                                >
-                                                    Buy & Use
-                                                </button>
+                                                <div className="flex gap-2 ml-auto">
+                                                    {ownedQuantity > 0 && (
+                                                        <button 
+                                                            onClick={() => {
+                                                                handleUseOwnedItem(item.type);
+                                                                setShowShop(false);
+                                                            }}
+                                                            className="px-3 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1"
+                                                        >
+                                                            Use
+                                                        </button>
+                                                    )}
+                                                    <button 
+                                                        onClick={() => {
+                                                            handleBuyItem(item.type, item.price, apiId);
+                                                        }}
+                                                        disabled={!canAfford}
+                                                        className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:text-gray-400 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1"
+                                                    >
+                                                        Buy
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 );
                             })}
-                        </div>
                     </div>
                 </div>
+            </div>
             )}
 
 

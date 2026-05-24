@@ -27,12 +27,13 @@ const QuizTakingPage: React.FC = () => {
 
     const handlePowerUpUsed = (type: string) => {
         if (!currentUser) return;
+        const dbType = type === 'time' ? 'time_freeze' : type;
         const list = [...(currentUser.powerUps || [])];
-        const idx = list.findIndex(p => p.type === type);
+        const idx = list.findIndex(p => p.type === dbType);
         if (idx >= 0 && list[idx].quantity > 0) {
             list[idx] = { ...list[idx], quantity: list[idx].quantity - 1 };
             updateUser({ powerUps: list });
-            api.usePowerUp(type, currentUser.userId).catch(console.error);
+            api.usePowerUp(dbType, currentUser.userId).catch(console.error);
         }
     };
 
@@ -111,6 +112,11 @@ const QuizTakingPage: React.FC = () => {
 
     if (!quiz || !currentUser) return <div>Loading...</div>; // Or not found
 
+    const mappedPowerUps = currentUser.powerUps?.map(p => ({
+        ...p,
+        type: p.type === 'time_freeze' ? 'time' : p.type
+    })) || [];
+
     return (
         <>
             <QuizTaking
@@ -118,8 +124,9 @@ const QuizTakingPage: React.FC = () => {
                 user={userWithRank || currentUser}
                 onComplete={handleComplete}
                 onBack={() => navigate('/')}
-                powerUps={currentUser.powerUps}
+                powerUps={mappedPowerUps}
                 onPowerUpUsed={handlePowerUpUsed}
+                onUserUpdate={(updates) => updateUser(updates)}
             />
 
         </>

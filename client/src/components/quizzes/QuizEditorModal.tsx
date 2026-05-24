@@ -146,9 +146,42 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
                             <label className="text-xs text-indigo-600 dark:text-indigo-400 font-bold ml-1">XP Reward</label>
                             <input type="number" placeholder="XP" value={editingQuiz.xpReward ?? 50} onChange={e => setEditingQuiz({ ...editingQuiz, xpReward: parseInt(e.target.value) || 0 })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
                         </div>
-                        <div className="space-y-1">
-                            <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Category</label>
-                            <input type="text" placeholder="Category" value={editingQuiz.category} onChange={e => setEditingQuiz({ ...editingQuiz, category: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                            <div className="space-y-1">
+                                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Category</label>
+                                <input type="text" placeholder="Category" value={editingQuiz.category} onChange={e => setEditingQuiz({ ...editingQuiz, category: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Subject (Stack)</label>
+                                <select
+                                    value={editingQuiz.subjectId || ''}
+                                    onChange={e => setEditingQuiz({ ...editingQuiz, subjectId: e.target.value || undefined })}
+                                    className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                                >
+                                    <option value="">Uncategorized</option>
+                                    {subjects.map(s => (
+                                        <option key={s._id} value={s._id}>{s.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Difficulty</label>
+                                <select value={editingQuiz.difficulty} onChange={e => setEditingQuiz({ ...editingQuiz, difficulty: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50">
+                                    {DIFFICULTY_LEVELS.map(level => (
+                                        <option key={level} value={level}>{level}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Quiz Type</label>
+                                <select value={editingQuiz.quizType || 'quiz'} onChange={e => setEditingQuiz({ ...editingQuiz, quizType: e.target.value as 'quiz' | 'exam' })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50">
+                                    <option value="quiz">Regular Quiz</option>
+                                    <option value="exam">Exam</option>
+                                </select>
+                            </div>
                         </div>
                         <div className="space-y-1">
                             <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1 flex items-center gap-2">
@@ -176,34 +209,6 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
                                     );
                                 })}
                             </div>
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Subject (Stack)</label>
-                            <select
-                                value={editingQuiz.subjectId || ''}
-                                onChange={e => setEditingQuiz({ ...editingQuiz, subjectId: e.target.value || undefined })}
-                                className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                            >
-                                <option value="">Uncategorized</option>
-                                {subjects.map(s => (
-                                    <option key={s._id} value={s._id}>{s.title}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Difficulty</label>
-                            <select value={editingQuiz.difficulty} onChange={e => setEditingQuiz({ ...editingQuiz, difficulty: e.target.value })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50">
-                                {DIFFICULTY_LEVELS.map(level => (
-                                    <option key={level} value={level}>{level}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Quiz Type</label>
-                            <select value={editingQuiz.quizType || 'quiz'} onChange={e => setEditingQuiz({ ...editingQuiz, quizType: e.target.value as 'quiz' | 'exam' })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50">
-                                <option value="quiz">Regular Quiz</option>
-                                <option value="exam">Exam</option>
-                            </select>
                         </div>
                     </div>
                     <div className="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
