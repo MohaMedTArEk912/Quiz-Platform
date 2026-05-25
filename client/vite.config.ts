@@ -6,6 +6,7 @@ import viteCompression from 'vite-plugin-compression'
 
 // https://vite.dev/config/
 export default defineConfig({
+  envDir: '../',
   plugins: [
     react(),
     // Compression plugin for Brotli and Gzip
