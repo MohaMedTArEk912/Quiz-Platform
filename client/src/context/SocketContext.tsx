@@ -32,19 +32,24 @@ export const useSocket = () => {
 const resolveSocketConfig = () => {
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
     const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+    const isServerlessDomain = hostname.includes('vercel.app') || hostname.includes('netlify.app');
 
     const envUrl = import.meta.env.VITE_SOCKET_URL as string | undefined;
     const envPath = import.meta.env.VITE_SOCKET_PATH as string | undefined;
     const envEnabled = import.meta.env.VITE_ENABLE_SOCKET as string | undefined;
 
-    // Default to enabled in production/local unless explicitly disabled
-    const enabled = envEnabled !== 'false';
-    if (!enabled) {
+    // If explicitly disabled, respect that
+    if (envEnabled === 'false') {
+        return { enabled: false } as const;
+    }
+
+    // On serverless hosting without a dedicated external socket URL, disable socket by default to prevent failed connection spam
+    if (isServerlessDomain && !envUrl && envEnabled !== 'true') {
         return { enabled: false } as const;
     }
 
     // Default to current origin or configured URL
-    let url = envUrl ?? (isLocal ? 'http://localhost:5000' : window.location.origin);
+    const url = envUrl ?? (isLocal ? 'http://localhost:5000' : window.location.origin);
 
     // Default path is /socket.io/ (standard for most Node deployments)
     const path = envPath ?? '/socket.io/';

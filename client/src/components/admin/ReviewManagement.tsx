@@ -68,16 +68,16 @@ const ReviewManagement: React.FC<ReviewManagementProps> = ({ currentUser, users,
                                         return student?.avatar ? (
                                             <Avatar config={student.avatar} size="md" className="w-full h-full" />
                                         ) : (
-                                            <span className="font-black text-purple-600 text-lg">{reviewingAttempt.userName.charAt(0)}</span>
+                                            <span className="font-black text-purple-600 text-lg">{(reviewingAttempt.userName || 'S').charAt(0)}</span>
                                         );
                                     })()}
                                 </div>
                             </div>
                             <div>
                                 <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
-                                    Grading <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-500">{reviewingAttempt.userName}</span>
+                                    Grading <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-500">{reviewingAttempt.userName || 'Student'}</span>
                                 </h3>
-                                <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Quiz: {getQuizForAttempt(reviewingAttempt)?.title}</p>
+                                <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Quiz: {getQuizForAttempt(reviewingAttempt)?.title || 'Quiz'}</p>
                             </div>
                         </div>
 
@@ -106,7 +106,7 @@ const ReviewManagement: React.FC<ReviewManagementProps> = ({ currentUser, users,
                     <div className="grid grid-cols-1 gap-4">
                         {reviewQuestions.map((q, idx) => {
                             if (q.type !== 'text') return null;
-                            const ans = reviewingAttempt.answers[q.id];
+                            const ans = reviewingAttempt.answers?.[q.id];
 
                             return (
                                 <div key={q.id} className="bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/20 dark:border-white/5 space-y-5 shadow-sm hover:shadow-xl transition-shadow group">
@@ -134,7 +134,7 @@ const ReviewManagement: React.FC<ReviewManagementProps> = ({ currentUser, users,
                                         <div className="bg-gray-50/50 dark:bg-[#050505]/50 p-6 rounded-3xl text-gray-900 dark:text-gray-100 font-bold text-sm leading-relaxed border-2 border-indigo-500/5 shadow-inner group-hover:border-indigo-500/20 transition-all">
                                             {(() => {
                                                 if (typeof ans === 'object' && ans !== null) {
-                                                    return (ans as any).selected || JSON.stringify(ans);
+                                                    return ('selected' in ans && ans.selected !== undefined) ? String(ans.selected) : JSON.stringify(ans);
                                                 }
                                                 return ans || <span className="text-gray-400 italic">No answer provided by students.</span>;
                                             })()}
@@ -194,19 +194,19 @@ const ReviewManagement: React.FC<ReviewManagementProps> = ({ currentUser, users,
                                             return student?.avatar ? (
                                                 <Avatar config={student.avatar} size="sm" className="w-full h-full" />
                                             ) : (
-                                                attempt.userName.charAt(0)
+                                                (attempt.userName || 'S').charAt(0)
                                             );
                                         })()}
                                     </div>
                                 </div>
                                 <div>
                                     <h4 className="font-black text-gray-900 dark:text-white uppercase tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                        {attempt.userName}
+                                        {attempt.userName || 'Student'}
                                     </h4>
                                     <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
-                                        <span className="text-indigo-500">{attempt.quizTitle}</span>
+                                        <span className="text-indigo-500">{attempt.quizTitle || 'Quiz'}</span>
                                         <span className="w-1 h-1 rounded-full bg-gray-300" />
-                                        <span>{new Date(attempt.completedAt).toLocaleDateString()}</span>
+                                        <span>{attempt.completedAt ? new Date(attempt.completedAt).toLocaleDateString() : 'Recent'}</span>
                                     </div>
                                 </div>
                             </div>

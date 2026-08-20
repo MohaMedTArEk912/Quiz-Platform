@@ -68,10 +68,13 @@ const StudyCardComponent: React.FC = () => {
     : [];
 
   const searchFilteredCards = activeStack
-    ? filteredCards.filter(card =>
-      card.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      card.content.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    ? (Array.isArray(filteredCards) ? filteredCards : []).filter(card => {
+      if (!card) return false;
+      const q = (searchQuery || '').toLowerCase();
+      const title = (card.title || '').toLowerCase();
+      const content = (card.content || '').toLowerCase();
+      return title.includes(q) || content.includes(q);
+    })
     : [];
 
   const currentCard = searchFilteredCards[currentIndex];

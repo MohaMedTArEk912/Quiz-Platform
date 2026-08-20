@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import type { SkillModule, SkillTrack, UserData, BadgeTree, BadgeNode } from '../../types';
+import type { SkillModule, SkillTrack, UserData, BadgeTree, BadgeNode, Badge, BadgeTreeNode } from '../../types';
 import { api } from '../../lib/api';
 import { Target } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -37,12 +37,12 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
         const trees = await api.getBadgeTrees({ type: 'track', isActive: true });
         const treeMap: Record<string, BadgeTree> = {};
 
-        // Load all badge details for each tree
-        for (const tree of trees) {
+        const safeTrees = Array.isArray(trees) ? trees : [];
+        for (const tree of safeTrees) {
           if (tree.trackId) {
             // Fetch badge details for each node
             const nodesWithBadges = await Promise.all(
-              (Array.isArray(tree.nodes) ? tree.nodes : []).map(async (node: any) => {
+              (Array.isArray(tree.nodes) ? tree.nodes : []).map(async (node: BadgeTreeNode) => {
                 try {
                   const badge = await api.getBadgeNode(node.badgeId);
                   return { ...node, badge };
@@ -66,14 +66,16 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
   const complete = async (trackId: string, moduleId: string, moduleName: string) => {
     try {
       setCompletingId(moduleId);
-      const res = await api.completeSkillModule(trackId, moduleId, user.userId);
+      const res = await api.completeSkillModule(trackId, moduleId, user?.userId || '');
 
       // Update user skillTracks locally
-      onUserUpdate({ ...user, skillTracks: res.skillTracks });
+      if (user) {
+        onUserUpdate({ ...user, skillTracks: res.skillTracks });
+      }
 
       // Check if any new badges were unlocked
       if (res.newBadges && res.newBadges.length > 0) {
-        const badgeNames = res.newBadges.map((b: any) => b.name).join(', ');
+        const badgeNames = res.newBadges.map((b: Badge) => b.name).join(', ');
         setMessage(`${moduleName} completed! 🎉 Unlocked: ${badgeNames}`);
 
         // Extra celebration for badges
@@ -105,7 +107,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
   };
 
   const getModuleNodes = (track: SkillTrack): ModuleNode[] => {
-    const userTrack = user.skillTracks?.find(t => t.trackId === track.trackId);
+    const userTrack = user?.skillTracks?.find(t => t.trackId === track.trackId);
     const completedModules = userTrack?.completedModules || [];
     const badgeTree = badgeTrees[track.trackId];
     const modules = Array.isArray(track.modules) ? track.modules : [];
@@ -117,7 +119,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
       // Get badges for this module
       const moduleBadges: BadgeNode[] = [];
       if (badgeTree) {
-        badgeTree.nodes.forEach((node: any) => {
+        badgeTree.nodes.forEach((node: BadgeTreeNode) => {
           // Match badges to modules by position or tier
           // For now, distribute badges evenly across modules
           const badgeModuleIndex = node.position?.tier || 0;
@@ -137,7 +139,7 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
   };
 
   const getEarnedBadgeIds = (): string[] => {
-    return user.badges?.map(b => b.id) || [];
+    return user?.badges?.map(b => b.id) || [];
   };
 
   // Extract unique categories
@@ -151,8 +153,9 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
     }
 
     // Search filter
-    const matchesSearch = track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      track.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = (searchQuery || '').toLowerCase();
+    const matchesSearch = (track.title || '').toLowerCase().includes(q) ||
+      (track.description || '').toLowerCase().includes(q);
 
     if (!matchesSearch) return false;
 

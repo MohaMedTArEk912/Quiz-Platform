@@ -2,28 +2,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
-import viteCompression from 'vite-plugin-compression'
 
 // https://vite.dev/config/
 export default defineConfig({
   envDir: '../',
   plugins: [
     react(),
-    // Compression plugin for Brotli and Gzip
-    viteCompression({
-      verbose: true,
-      disable: false,
-      threshold: 10240, // Only compress files > 10KB
-      algorithm: 'gzip',
-      ext: '.gz',
-    }),
-    viteCompression({
-      verbose: true,
-      disable: false,
-      threshold: 10240,
-      algorithm: 'brotliCompress',
-      ext: '.br',
-    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
@@ -116,8 +100,9 @@ export default defineConfig({
   ],
 
   build: {
-    // Target modern browsers for smaller bundles
-    target: 'es2015',
+    // Target modern browsers for clean ES modules
+    target: 'es2020',
+    emptyOutDir: false,
 
     // Enable minification
     minify: 'terser',
@@ -133,7 +118,7 @@ export default defineConfig({
     },
 
     // Chunk size warnings
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 600,
 
     // CSS code splitting
     cssCodeSplit: true,
@@ -158,7 +143,7 @@ export default defineConfig({
           'socket': ['socket.io-client'],
 
           // PDF and document processing
-          'document-processing': ['jspdf', 'html2canvas', 'pdfjs-dist'],
+          'document-processing': ['jspdf', 'html2canvas'],
 
           // Auth
           'auth': ['@react-oauth/google'],
@@ -188,9 +173,6 @@ export default defineConfig({
       'react-router-dom',
       'axios',
       'lucide-react',
-    ],
-    exclude: [
-      '@monaco-editor/react', // Lazy load
     ],
   },
 

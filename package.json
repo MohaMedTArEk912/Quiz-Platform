@@ -9,6 +9,7 @@
     "server": "node --watch server/index.js",
     "start": "node server/index.js",
     "seed:admin": "node scripts/seedAdmin.js",
+    "seed:local": "node scripts/seedLocalDatabase.js",
     "prebuild": "node scripts/inject-version.js",
     "build": "npm --prefix client run build",
     "build:analyze": "ANALYZE=true npm --prefix client run build",

@@ -12,7 +12,8 @@ import {
     Activity,
     Route,
     Settings,
-    Menu
+    Menu,
+    type LucideIcon
 } from 'lucide-react';
 
 import type { UserData, Quiz, AttemptData } from '../types/index.ts';
@@ -32,6 +33,20 @@ import QuizManager from '../pages/QuizManager';
 import AdminSettings from './AdminSettings.tsx';
 
 // --- Types ---
+type AdminTab = 'main' | 'users' | 'quizzes' | 'road' | 'reviews' | 'daily' | 'tournaments' | 'badges';
+
+interface NavItem {
+    id: AdminTab;
+    label: string;
+    icon: LucideIcon;
+    badge?: number;
+}
+
+interface NavGroup {
+    title: string;
+    items: NavItem[];
+}
+
 interface AdminDashboardProps {
     currentUser: UserData;
     users: UserData[];
@@ -50,7 +65,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onLogout
 }) => {
     // --- State ---
-    const [selectedTab, setSelectedTab] = useState<'main' | 'users' | 'quizzes' | 'road' | 'reviews' | 'daily' | 'tournaments' | 'badges'>('main');
+    const [selectedTab, setSelectedTab] = useState<AdminTab>('main');
     const [pendingReviews, setPendingReviews] = useState<AttemptData[]>([]);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -61,15 +76,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     // --- Effects & Helpers ---
     const stats = useMemo(() => {
-        const totalScore = attempts.reduce((acc, curr) => acc + curr.score, 0);
-        const avgScore = attempts.length > 0 ? Math.round(totalScore / attempts.length) : 0;
+        const safeAttempts = Array.isArray(attempts) ? attempts : [];
+        const safeUsers = Array.isArray(users) ? users : [];
+        const safeQuizzes = Array.isArray(quizzes) ? quizzes : [];
+        const totalScore = safeAttempts.reduce((acc, curr) => acc + (curr?.score || 0), 0);
+        const avgScore = safeAttempts.length > 0 ? Math.round(totalScore / safeAttempts.length) : 0;
         return {
-            totalUsers: users.length,
-            totalQuizzes: quizzes.length,
-            totalAttempts: attempts.length,
+            totalUsers: safeUsers.length,
+            totalQuizzes: safeQuizzes.length,
+            totalAttempts: safeAttempts.length,
             avgScore
         };
-    }, [attempts, users.length, quizzes.length]);
+    }, [attempts, users, quizzes]);
 
     const loadPendingReviews = useCallback(async () => {
         try {
@@ -115,7 +133,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }, [loadPendingReviews, onRefresh, selectedTab]);
 
     // --- Navigation Configuration ---
-    const navItems = [
+    const navItems: NavGroup[] = [
         {
             title: 'Overview',
             items: [
@@ -184,7 +202,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                         <div className="flex items-center gap-3 pl-2">
                             <div className="hidden text-right sm:block">
-                                <div className="text-sm font-bold text-gray-900 dark:text-white">{currentUser.name}</div>
+                                <div className="text-sm font-bold text-gray-900 dark:text-white">{currentUser?.name || currentUser?.userId || 'Admin'}</div>
                                 <div className="text-xs text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 font-bold">Administrator</div>
                             </div>
                             <button
@@ -195,10 +213,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 p-0.5 shadow-lg shadow-purple-500/20 transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500/60 cursor-pointer"
                             >
                                 <div className="w-full h-full rounded-[10px] bg-white dark:bg-[#0a0a0b] flex items-center justify-center overflow-hidden">
-                                    {currentUser.avatar ? (
+                                    {currentUser?.avatar ? (
                                         <Avatar config={currentUser.avatar} size="md" className="w-full h-full" />
                                     ) : (
-                                        <span className="font-bold text-purple-600 dark:text-purple-400">{currentUser.name.charAt(0)}</span>
+                                        <span className="font-bold text-purple-600 dark:text-purple-400">{(currentUser?.name || currentUser?.userId || 'A').charAt(0)}</span>
                                     )}
                                 </div>
                             </button>
@@ -246,7 +264,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         return (
                                             <button
                                                 key={item.id}
-                                                onClick={() => setSelectedTab(item.id as any)}
+                                                onClick={() => setSelectedTab(item.id)}
                                                 className={`w-full flex items-center justify-between px-4 py-2.5 rounded-2xl transition-all duration-300 font-bold group relative overflow-hidden ${isActive
                                                     ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25'
                                                     : 'text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-white/5'
@@ -291,7 +309,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             <button
                                                 key={item.id}
                                                 onClick={() => {
-                                                    setSelectedTab(item.id as any);
+                                                    setSelectedTab(item.id);
                                                     setIsSidebarOpen(false);
                                                 }}
                                                 className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-300 font-black uppercase tracking-widest text-[11px] ${isActive
@@ -472,11 +490,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Engagement Overview</h3>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                                             {(() => {
-                                                const total = attempts.length || 1;
-                                                const passed = attempts.filter(a => a.passed).length;
-                                                const passRate = Math.round((passed / total) * 100);
-                                                const avgTime = Math.round((attempts.reduce((acc, a) => acc + (a.timeTaken || 0), 0) / total) || 0);
-                                                const attemptsToday = attempts.filter(a => {
+                                                const safeAttempts = Array.isArray(attempts) ? attempts : [];
+                                                const total = safeAttempts.length || 1;
+                                                const passed = safeAttempts.filter(a => a?.passed).length;
+                                                const passRate = safeAttempts.length > 0 ? Math.round((passed / total) * 100) : 0;
+                                                const avgTime = Math.round((safeAttempts.reduce((acc, a) => acc + (a?.timeTaken || 0), 0) / total) || 0);
+                                                const attemptsToday = safeAttempts.filter(a => {
+                                                    if (!a?.completedAt) return false;
                                                     try {
                                                         const d = new Date(a.completedAt);
                                                         const now = new Date();
@@ -490,7 +510,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                     { label: 'Attempts Today', value: attemptsToday, color: 'from-amber-400 to-yellow-500', icon: BarChart3 },
                                                 ];
                                                 return items.map((s, i) => {
-                                                    const Icon = s.icon as any;
+                                                    const Icon = s.icon;
                                                     return (
                                                         <div key={i} className="relative overflow-hidden bg-white/60 dark:bg-[#0f1020]/60 backdrop-blur-xl p-4 rounded-xl border border-white/30 dark:border-white/10">
                                                             <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${s.color} opacity-[0.06] dark:opacity-[0.1] rounded-bl-full`} />
@@ -584,19 +604,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                         <div className="flex justify-between items-start mb-3">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-[10px] font-black text-indigo-500">
-                                                                    {a.userName.charAt(0).toUpperCase()}
+                                                                    {(a.userName || 'S').charAt(0).toUpperCase()}
                                                                 </div>
                                                                 <div>
-                                                                    <div className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight truncate max-w-[120px]">{a.userName}</div>
+                                                                    <div className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight truncate max-w-[120px]">{a.userName || 'Student'}</div>
                                                                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{formatDate(a.completedAt).split(',')[0]}</div>
                                                                 </div>
                                                             </div>
-                                                            <div className={`px-2 py-1 rounded-lg text-[10px] font-black ${a.percentage >= 60 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'
+                                                            <div className={`px-2 py-1 rounded-lg text-[10px] font-black ${(a.percentage || 0) >= 60 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'
                                                                 }`}>
-                                                                {a.percentage}%
+                                                                {a.percentage || 0}%
                                                             </div>
                                                         </div>
-                                                        <div className="text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-tight line-clamp-1">{a.quizTitle}</div>
+                                                        <div className="text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-tight line-clamp-1">{a.quizTitle || 'Quiz'}</div>
                                                     </div>
                                                 ))}
                                             </div>

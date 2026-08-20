@@ -126,7 +126,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
     const studyCards = Array.isArray(studyCardsProp) ? studyCardsProp : [];
 
     const activeSubject = subjects.find(s => s._id === selectedSubjectId);
-    const searchValue = searchTerm.toLowerCase();
+    const searchValue = (searchTerm || '').toLowerCase();
 
     const filteredQuizzes = quizzes.filter(quiz => {
         const title = typeof quiz.title === 'string' ? quiz.title : '';
@@ -164,7 +164,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
     const getQuizAttempts = (quizId: string) => attempts.filter(a => a.quizId === quizId);
     const getBestScore = (quizId: string) => {
         const qa = getQuizAttempts(quizId);
-        return qa.length === 0 ? null : Math.max(...qa.map(a => a.percentage));
+        return qa.length === 0 ? null : Math.max(...qa.map(a => a?.percentage ?? 0));
     };
     const hasAttempted = (quizId: string) => getQuizAttempts(quizId).length > 0;
 
@@ -209,7 +209,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
         }
 
         // Get user's progress for this specific track
-        const userProgress = user.skillTracks?.find((t: any) => t.trackId === skillTrack.trackId);
+        const userProgress = user?.skillTracks?.find((t: any) => t.trackId === skillTrack.trackId);
 
         if (!userProgress) {
             // If no progress yet, only lock quizzes in later modules; module-less quizzes already returned above

@@ -25,6 +25,22 @@
       "dest": "/api/index.js"
     },
     {
+      "src": "/assets/(.*)\\.js$",
+      "dest": "/assets/$1.js",
+      "headers": {
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/assets/(.*)\\.css$",
+      "dest": "/assets/$1.css",
+      "headers": {
+        "Content-Type": "text/css; charset=utf-8",
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
       "src": "/assets/(.*)",
       "dest": "/assets/$1",
       "headers": {

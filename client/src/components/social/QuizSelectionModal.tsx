@@ -15,10 +15,13 @@ const QuizSelectionModal: React.FC<QuizSelectionModalProps> = ({ quizzes, isOpen
 
     if (!isOpen) return null;
 
-    const filteredQuizzes = quizzes.filter(q =>
-        q.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        q.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredQuizzes = (Array.isArray(quizzes) ? quizzes : []).filter(q => {
+        if (!q) return false;
+        const term = (searchTerm || '').toLowerCase();
+        const title = (q.title || '').toLowerCase();
+        const category = (q.category || '').toLowerCase();
+        return title.includes(term) || category.includes(term);
+    });
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">

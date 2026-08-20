@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Edit2, Trash2, Users, Eye, EyeOff, Search, BarChart3, Mail, Trophy, Calendar, Map, Lock, Unlock, CheckCircle, Gift, ChevronDown } from 'lucide-react';
 import Modal from '../common/Modal';
 import Avatar from '../Avatar.tsx';
-import type { UserData, AttemptData } from '../../types/index.ts';
+import type { UserData, AttemptData, SkillTrack, SkillModule, Quiz, ShopItem } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 
 type EditableUser = UserData & { password?: string };
@@ -22,7 +22,7 @@ const RoadmapEditorModal: React.FC<{
     onNotification: (type: 'success' | 'error', message: string) => void;
     onRefresh?: () => void | Promise<void>;
 }> = ({ user, currentUser, onClose, onNotification, onRefresh }) => {
-    const [tracks, setTracks] = useState<any[]>([]);
+    const [tracks, setTracks] = useState<SkillTrack[]>([]);
     const [selectedTrack, setSelectedTrack] = useState<string>('');
     const [progress, setProgress] = useState<{ completedModules: string[], unlockedModules: string[] }>({ completedModules: [], unlockedModules: [] });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -37,7 +37,7 @@ const RoadmapEditorModal: React.FC<{
         setLoading(true);
         api.getUserRoadmapProgress(user.userId, selectedTrack, currentUser.userId)
             .then(p => setProgress({ completedModules: p.completedModules || [], unlockedModules: p.unlockedModules || [] }))
-            .catch((_e) => onNotification('error', 'Failed to load progress'))
+            .catch(() => onNotification('error', 'Failed to load progress'))
             .finally(() => setLoading(false));
     }, [selectedTrack, user.userId, currentUser.userId, onNotification]);
 
@@ -46,7 +46,7 @@ const RoadmapEditorModal: React.FC<{
         try {
             // First, get the track details to find which quizzes are in completed modules
             const allTracks = await api.getSkillTracks();
-            const currentTrack = allTracks.find((t: any) => t.trackId === selectedTrack);
+            const currentTrack = allTracks.find((t: SkillTrack) => t.trackId === selectedTrack);
 
             if (currentTrack) {
                 // Find modules that were just marked as completed (not in original progress)
@@ -60,13 +60,13 @@ const RoadmapEditorModal: React.FC<{
                 if (newlyCompletedModules.length > 0) {
                     // Get all quizzes for the newly completed modules
                     const quizzesToMark = currentTrack.modules
-                        .filter((m: any) => newlyCompletedModules.includes(m.moduleId))
-                        .flatMap((m: any) => m.quizIds || []);
+                        .filter((m: SkillModule) => newlyCompletedModules.includes(m.moduleId))
+                        .flatMap((m: SkillModule) => m.quizIds || []);
 
                     if (quizzesToMark.length > 0) {
                         // Get all available quizzes to get their full data
                         const allQuizzes = await api.getQuizzes();
-                        const quizzesToMarkFull = allQuizzes.filter((q: any) => quizzesToMark.includes(q.id || q._id));
+                        const quizzesToMarkFull = allQuizzes.filter((q: Quiz) => quizzesToMark.includes(q.id || q._id || ''));
 
                         // Create attempts for each quiz with 100% score
                         for (const quiz of quizzesToMarkFull) {
@@ -75,10 +75,10 @@ const RoadmapEditorModal: React.FC<{
                             const attempt = {
                                 attemptId: crypto.randomUUID(),
                                 userId: user.userId,
-                                userName: user.name,
-                                userEmail: user.email,
+                                userName: user.name || user.userId || 'User',
+                                userEmail: user.email || '',
                                 quizId: quizId,
-                                quizTitle: quiz.title,
+                                quizTitle: quiz.title || 'Quiz',
                                 score: quiz.questions.length,
                                 totalQuestions: quiz.questions.length,
                                 percentage: 100,
@@ -111,7 +111,7 @@ const RoadmapEditorModal: React.FC<{
 
                     // Auto-unlock next modules
                     newlyCompletedModules.forEach(completedModuleId => {
-                        const moduleIndex = currentTrack.modules.findIndex((m: any) => m.moduleId === completedModuleId);
+                        const moduleIndex = currentTrack.modules.findIndex((m: SkillModule) => m.moduleId === completedModuleId);
                         if (moduleIndex >= 0 && moduleIndex + 1 < currentTrack.modules.length) {
                             const nextModuleId = currentTrack.modules[moduleIndex + 1].moduleId;
                             // Add to unlocked modules if not already there
@@ -165,7 +165,7 @@ const RoadmapEditorModal: React.FC<{
             isOpen={true}
             onClose={onClose}
             title="Manage Roadmap"
-            description={user.name}
+            description={user?.name || user?.userId || 'User'}
             maxWidth="max-w-2xl"
             footer={
                 <button
@@ -211,7 +211,7 @@ const RoadmapEditorModal: React.FC<{
 
                 {track && (
                     <div className="space-y-2">
-                        {track.modules.map((m: any) => {
+                        {track.modules.map((m: SkillModule) => {
                             const isComp = progress.completedModules.includes(m.moduleId);
                             const isUnl = progress.unlockedModules.includes(m.moduleId) || isComp;
 
@@ -287,12 +287,13 @@ const CreateUserModal: React.FC<{
 
         setIsLoading(true);
         try {
+            const normalizedEmail = (email || '').toLowerCase().trim();
             await api.adminCreateUser({
-                name,
-                email: email.toLowerCase().trim(),
+                name: (name || '').trim(),
+                email: normalizedEmail,
                 password,
                 role,
-                userId: email.toLowerCase().trim().replace(/[^a-z0-9]/g, '_')
+                userId: normalizedEmail.replace(/[^a-z0-9]/g, '_')
             }, currentUser.userId);
 
             onNotification('success', 'Identity created successfully');
@@ -410,7 +411,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
     const [giftType, setGiftType] = useState<'coins' | 'xp' | 'shopitem'>('coins');
     const [giftAmount, setGiftAmount] = useState('');
     const [selectedShopItem, setSelectedShopItem] = useState('');
-    const [shopItems, setShopItems] = useState<any[]>([]);
+    const [shopItems, setShopItems] = useState<ShopItem[]>([]);
 
     // Fetch shop items when component mounts
     React.useEffect(() => {
@@ -426,14 +427,19 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
         fetchShopItems();
     }, []);
 
-    const filteredUsers = users.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredUsers = (Array.isArray(users) ? users : []).filter(user => {
+        if (!user) return false;
+        const term = (searchTerm || '').toLowerCase();
+        const name = (user.name || '').toLowerCase();
+        const email = (user.email || '').toLowerCase();
+        const userId = (user.userId || '').toLowerCase();
+        return name.includes(term) || email.includes(term) || userId.includes(term);
+    });
 
     const handleUpdateUser = async (user: EditableUser) => {
-        const normalizedEmail = user.email.toLowerCase().trim();
-        const trimmedName = user.name.trim();
+        if (!user) return;
+        const normalizedEmail = (user.email || '').toLowerCase().trim();
+        const trimmedName = (user.name || '').trim();
 
         try {
             if (user.name !== originalUser?.name || user.email !== originalUser?.email) {
@@ -474,7 +480,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
         }
 
         try {
-            const updates: any = {};
+            const updates: Partial<UserData> = {};
 
             if (giftType === 'coins') {
                 updates.coins = (user.coins || 0) + parseInt(giftAmount);
@@ -482,9 +488,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                 updates.totalScore = (user.totalScore || 0) + parseInt(giftAmount);
             } else if (giftType === 'shopitem') {
                 // Add to inventory
-                const inventory = Array.isArray(user.inventory) ? user.inventory : [];
-                const itemExists = inventory.some((item: any) =>
-                    (typeof item === 'string' ? item : item.itemId) === selectedShopItem
+                const inventory = Array.isArray(user.inventory) ? [...user.inventory] : [];
+                const itemExists = inventory.some((item) =>
+                    (typeof item === 'string' ? item : item?.itemId) === selectedShopItem
                 );
                 if (!itemExists) {
                     inventory.push({ itemId: selectedShopItem, quantity: 1 });
@@ -547,14 +553,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                 </button>
                 <div className="hidden lg:flex items-center gap-3 px-6 py-3 bg-indigo-500/10 rounded-3xl border border-white/10">
                     <Users className="w-5 h-5 text-indigo-500" />
-                    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] whitespace-nowrap">Total: {users.length} Users</span>
+                    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] whitespace-nowrap">Total: {(users || []).length} Users</span>
                 </div>
             </div>
 
             {/* User Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredUsers.map(user => {
-                    const userAttempts = attempts.filter(a => a.userId === user.userId);
+                    const userAttempts = (attempts || []).filter(a => a.userId === user.userId);
                     const avgScore = userAttempts.length > 0
                         ? Math.round(userAttempts.reduce((acc, a) => acc + (a.percentage || 0), 0) / userAttempts.length)
                         : 0;
@@ -573,15 +579,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                                         {user.avatar ? (
                                             <Avatar config={user.avatar} size="md" className="w-full h-full" />
                                         ) : (
-                                            <span className="font-black text-indigo-600 dark:text-indigo-400 text-xl">{user.name.charAt(0)}</span>
+                                            <span className="font-black text-indigo-600 dark:text-indigo-400 text-xl">{(user.name || user.userId || 'U').charAt(0)}</span>
                                         )}
                                     </div>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tighter text-lg leading-tight truncate group-hover:text-indigo-500 transition-colors">{user.name}</h3>
+                                    <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tighter text-lg leading-tight truncate group-hover:text-indigo-500 transition-colors">{user.name || user.userId || 'Unnamed User'}</h3>
                                     <div className="flex items-center gap-1.5 text-gray-400 mt-1">
                                         <Mail className="w-3.5 h-3.5" />
-                                        <span className="text-[10px] font-bold truncate opacity-75">{user.email}</span>
+                                        <span className="text-[10px] font-bold truncate opacity-75">{user.email || 'No email'}</span>
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-1">
