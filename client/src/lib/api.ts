@@ -8,6 +8,7 @@ import type {
     SkillTrack,
     Tournament,
     Clan,
+    ClanAnnouncement,
     DailyChallengeDef,
     StudyCard,
     BadgeNode,
@@ -26,6 +27,7 @@ export type {
     SkillTrack,
     Tournament,
     Clan,
+    ClanAnnouncement,
     DailyChallengeDef,
     StudyCard,
     BadgeNode,
@@ -129,15 +131,24 @@ export const api = {
     },
 
     async deleteUser(userId: string, adminId: string) {
+        if (!userId || userId === 'undefined') {
+            throw new Error('Valid User ID is required to delete a user');
+        }
         const response = await fetchWithFallback(`/users/${userId}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
         });
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Failed to delete user');
+            let errorMsg = 'Failed to delete user';
+            try {
+                const error = await response.json();
+                errorMsg = error.message || errorMsg;
+            } catch {
+                errorMsg = `Failed to delete user (${response.status})`;
+            }
+            throw new Error(errorMsg);
         }
-        return response.json();
+        return response.json().catch(() => ({ success: true }));
     },
 
     async saveAttempt(attemptData: AttemptData) {
@@ -555,7 +566,7 @@ export const api = {
         return response.json();
     },
 
-    async createClanAnnouncement(clanId: string, content: string, userId: string): Promise<any> {
+    async createClanAnnouncement(clanId: string, content: string, userId: string): Promise<ClanAnnouncement> {
         const response = await fetchWithFallback(`/clans/${clanId}/announcements`, {
             method: 'POST',
             headers: getHeaders(userId),
@@ -565,7 +576,7 @@ export const api = {
         return response.json();
     },
 
-    async deleteClanAnnouncement(clanId: string, announcementId: string, userId: string): Promise<any> {
+    async deleteClanAnnouncement(clanId: string, announcementId: string, userId: string): Promise<{ message: string }> {
         const response = await fetchWithFallback(`/clans/${clanId}/announcements/${announcementId}`, {
             method: 'DELETE',
             headers: getHeaders(userId)
@@ -574,7 +585,7 @@ export const api = {
         return response.json();
     },
 
-    async pinClanAnnouncement(clanId: string, announcementId: string, userId: string): Promise<any> {
+    async pinClanAnnouncement(clanId: string, announcementId: string, userId: string): Promise<ClanAnnouncement> {
         const response = await fetchWithFallback(`/clans/${clanId}/announcements/${announcementId}/pin`, {
             method: 'PUT',
             headers: getHeaders(userId)
@@ -1229,7 +1240,6 @@ export const api = {
         const headers = getHeaders(adminId);
         if (isFormData) {
             // Let the browser set Content-Type for FormData
-            // @ts-ignore
             delete headers['Content-Type'];
         }
 
@@ -1283,7 +1293,6 @@ export const api = {
 
     async createSubject(data: FormData, adminId: string) {
         const headers = getHeaders(adminId);
-        // @ts-ignore
         delete headers['Content-Type']; // Allow browser to set boundary
 
         const response = await fetchWithFallback('/subjects', {
@@ -1309,7 +1318,6 @@ export const api = {
 
     async updateSubject(id: string, data: FormData, adminId: string) {
         const headers = getHeaders(adminId);
-        // @ts-ignore
         delete headers['Content-Type']; // Allow browser to set boundary
 
         const response = await fetchWithFallback(`/subjects/${id}`, {

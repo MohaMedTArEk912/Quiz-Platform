@@ -516,7 +516,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
     };
 
     const confirmDeleteUser = async () => {
-        if (!deleteConfirmation) return;
+        if (!deleteConfirmation || !deleteConfirmation.id) return;
         const userId = deleteConfirmation.id;
         try {
             await api.deleteUser(userId, currentUser.userId);
@@ -524,7 +524,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
             await Promise.resolve(onRefresh());
         } catch (error) {
             console.error('Delete user error:', error);
-            onNotification('error', 'Failed to delete user');
+            onNotification('error', error instanceof Error ? error.message : 'Failed to delete user');
         } finally {
             setDeleteConfirmation(null);
         }
@@ -560,14 +560,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
             {/* User Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredUsers.map(user => {
-                    const userAttempts = (attempts || []).filter(a => a.userId === user.userId);
+                    const userId = user.userId || (user as { _id?: string })._id?.toString() || (user as { id?: string }).id || user.email || '';
+                    const userAttempts = (attempts || []).filter(a => a.userId === userId || a.userId === user.userId || (user.email && a.userEmail === user.email));
                     const avgScore = userAttempts.length > 0
                         ? Math.round(userAttempts.reduce((acc, a) => acc + (a.percentage || 0), 0) / userAttempts.length)
                         : 0;
 
                     return (
                         <div
-                            key={user.userId}
+                            key={userId || user.email}
                             className="bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl rounded-[2.5rem] p-6 border border-white/20 dark:border-white/5 hover:border-indigo-500/30 transition-all group shadow-sm hover:shadow-xl relative overflow-hidden flex flex-col"
                         >
                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-bl-full -mr-16 -mt-16 pointer-events-none group-hover:bg-indigo-500/10 transition-colors" />
@@ -579,12 +580,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                                         {user.avatar ? (
                                             <Avatar config={user.avatar} size="md" className="w-full h-full" />
                                         ) : (
-                                            <span className="font-black text-indigo-600 dark:text-indigo-400 text-xl">{(user.name || user.userId || 'U').charAt(0)}</span>
+                                            <span className="font-black text-indigo-600 dark:text-indigo-400 text-xl">{(user.name || userId || 'U').charAt(0)}</span>
                                         )}
                                     </div>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tighter text-lg leading-tight truncate group-hover:text-indigo-500 transition-colors">{user.name || user.userId || 'Unnamed User'}</h3>
+                                    <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tighter text-lg leading-tight truncate group-hover:text-indigo-500 transition-colors">{user.name || userId || 'Unnamed User'}</h3>
                                     <div className="flex items-center gap-1.5 text-gray-400 mt-1">
                                         <Mail className="w-3.5 h-3.5" />
                                         <span className="text-[10px] font-bold truncate opacity-75">{user.email || 'No email'}</span>
@@ -592,13 +593,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <button
-                                        onClick={() => { setOriginalUser({ ...user }); setEditingUser({ ...user, password: '' }); }}
+                                        onClick={() => { setOriginalUser({ ...user, userId }); setEditingUser({ ...user, userId, password: '' }); }}
                                         className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all hover:scale-110"
                                     >
                                         <Edit2 className="w-4 h-4" />
                                     </button>
                                     <button
-                                        onClick={() => setManagingRoadmap(user)}
+                                        onClick={() => setManagingRoadmap({ ...user, userId })}
                                         className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-xl transition-all hover:scale-110"
                                         title="Manage Roadmap"
                                     >
@@ -606,7 +607,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                                     </button>
                                     <button
                                         onClick={() => {
-                                            setGiftingUser(user);
+                                            setGiftingUser({ ...user, userId });
                                             setGiftType('coins');
                                             setGiftAmount('');
                                             setSelectedShopItem('');
@@ -617,7 +618,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                                         <Gift className="w-4 h-4" />
                                     </button>
                                     <button
-                                        onClick={() => setDeleteConfirmation({ isOpen: true, id: user.userId })}
+                                        onClick={() => setDeleteConfirmation({ isOpen: true, id: userId })}
                                         className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all hover:scale-110"
                                     >
                                         <Trash2 className="w-4 h-4" />

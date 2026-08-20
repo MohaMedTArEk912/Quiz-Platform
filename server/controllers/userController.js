@@ -41,15 +41,32 @@ export const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
     
+    if (!userId || userId === 'undefined') {
+      return res.status(400).json({ message: 'Valid userId is required' });
+    }
+
+    const query = {
+      $or: [
+        { userId },
+        { email: userId },
+        ...(userId.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: userId }] : [])
+      ]
+    };
+
     // Delete user
-    const deletedUser = await User.findOneAndDelete({ userId });
+    const deletedUser = await User.findOneAndDelete(query);
     
     if (!deletedUser) {
       return res.status(404).json({ message: 'User not found' });
     }
     
     // Also delete all attempts by this user
-    await Attempt.deleteMany({ userId });
+    await Attempt.deleteMany({
+      $or: [
+        { userId: deletedUser.userId },
+        { userEmail: deletedUser.email }
+      ]
+    });
     
     res.json({ message: 'User and associated attempts deleted successfully' });
   } catch (error) {
