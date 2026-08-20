@@ -8,6 +8,8 @@
     "client": "npm --prefix client run dev",
     "server": "node --watch server/index.js",
     "start": "node server/index.js",
+    "seed": "node scripts/seedDatabase.js",
+    "seed:all": "node scripts/seedDatabase.js",
     "seed:admin": "node scripts/seedAdmin.js",
     "seed:local": "node scripts/seedLocalDatabase.js",
     "prebuild": "node scripts/inject-version.js",
