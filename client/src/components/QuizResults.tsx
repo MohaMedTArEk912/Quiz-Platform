@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import type { Quiz, UserData, QuizResult } from '../types';
+import type { Quiz, UserData, QuizResult, DetailedAnswer } from '../types';
 import { RotateCcw, Clock, Target, CheckCircle, XCircle, ArrowLeft, Trophy, Flag, AlertTriangle, List } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -49,8 +49,8 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const correctCount = Object.values(result.answers).filter((a: any) =>
-        a && typeof a === 'object' && 'isCorrect' in a && a.isCorrect
+    const correctCount = Object.values(result.answers).filter((a): a is DetailedAnswer =>
+        Boolean(a && typeof a === 'object' && 'isCorrect' in a && a.isCorrect)
     ).length;
 
     const incorrectCount = result.totalQuestions - correctCount;
@@ -254,7 +254,11 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                                 className="w-full sm:w-1/2 group flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-all font-black text-gray-700 dark:text-gray-200 shadow-sm"
                             >
                                 <RotateCcw className="w-5 h-5 text-indigo-500 dark:text-indigo-400 group-hover:-rotate-180 transition-transform duration-700" />
-                                {result.poolProgress ? ((result.poolProgress.remainingCount || 0) > 0 ? 'Next Question Set' : 'Start Next Cycle') : 'Retake Quiz'}
+                                {result.poolProgress
+                                    ? ((result.poolProgress.remainingCount || 0) > 0
+                                        ? `Complete Remaining (${result.poolProgress.remainingCount} Left)`
+                                        : 'Start Next Cycle')
+                                    : 'Retake Quiz'}
                             </button>
                             <button
                                 onClick={onBackToQuizzes}
@@ -285,9 +289,10 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                         {showReview && (
                             <div className="flex flex-col gap-4 mt-4 animate-in slide-in-from-top-4 fade-in duration-300">
                                 {safeQuestions.map((q, idx) => {
-                                    const ansData = (result.answers as any)[idx];
-                                    const isCorrect = ansData?.isCorrect;
-                                    const userAnswer = ansData?.selected;
+                                    const ans = result.answers[idx];
+                                    const isDetailed = typeof ans === 'object' && ans !== null;
+                                    const isCorrect = isDetailed ? ans.isCorrect : (ans !== undefined && ans !== null && ans === q.correctAnswer);
+                                    const userAnswer = isDetailed ? ans.selected : ans;
                                     
                                     return (
                                         <div key={idx} className={`p-5 rounded-3xl border ${isCorrect ? 'bg-green-50/50 dark:bg-emerald-500/5 border-green-200 dark:border-emerald-500/20' : 'bg-red-50/50 dark:bg-fuchsia-500/5 border-red-200 dark:border-fuchsia-500/20'} transition-all hover:shadow-md`}>

@@ -3,6 +3,7 @@ import {
     Check, X, Layout, Video, GraduationCap, Target, Play
 } from 'lucide-react';
 import type { SkillModule, Quiz, AttemptData } from '../types';
+import { getQuizPoolStatus } from '../utils/poolUtils';
 
 interface UserRoadmapViewProps {
     modules: SkillModule[];
@@ -484,8 +485,10 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
 
                                                 {moduleQuizzes.map(quiz => {
                                                     const qId = quiz.id || quiz._id || '';
+                                                    const poolStatus = getQuizPoolStatus(quiz, attempts);
                                                     const bestAttempt = attempts.filter(a => a.quizId === qId).sort((a, b) => b.percentage - a.percentage)[0];
                                                     const isPassed = bestAttempt && bestAttempt.percentage >= MODULE_PASSING_THRESHOLD;
+                                                    const isPoolInProgress = poolStatus.isPool && poolStatus.hasStarted && !poolStatus.isFullyCompleted;
 
                                                     return (
                                                         <div
@@ -494,20 +497,39 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                                                 flex items-center gap-4 p-4 rounded-2xl border transition-all
                                                                 ${isPassed
                                                                     ? 'bg-emerald-500/5 border-emerald-500/10'
-                                                                    : 'bg-indigo-500/5 border-indigo-500/20'}
+                                                                    : isPoolInProgress
+                                                                        ? 'bg-blue-500/5 border-blue-500/20'
+                                                                        : 'bg-indigo-500/5 border-indigo-500/20'}
                                                             `}
                                                         >
                                                             <div className={`
                                                                 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0
-                                                                ${isPassed ? 'bg-emerald-500/10 text-emerald-500' : 'bg-indigo-500/10 text-indigo-500'}
+                                                                ${isPassed
+                                                                    ? 'bg-emerald-500/10 text-emerald-500'
+                                                                    : isPoolInProgress
+                                                                        ? 'bg-blue-500/10 text-blue-500'
+                                                                        : 'bg-indigo-500/10 text-indigo-500'}
                                                             `}>
                                                                 {isPassed ? <Target className="w-5 h-5" /> : <GraduationCap className="w-5 h-5" />}
                                                             </div>
 
-                                                            <div className="flex-1">
-                                                                <h4 className="font-bold text-gray-900 dark:text-white mb-0.5">{quiz.title}</h4>
+                                                            <div className="flex-1 min-w-0">
+                                                                <h4 className="font-bold text-gray-900 dark:text-white mb-0.5 truncate">{quiz.title}</h4>
                                                                 <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-gray-500 dark:text-gray-500">
-                                                                    <span>{quiz.questions?.length} Questions</span>
+                                                                    {poolStatus.isPool ? (
+                                                                        <>
+                                                                            <span className="font-semibold text-blue-600 dark:text-blue-400">
+                                                                                📦 {poolStatus.seenCount}/{poolStatus.totalQuestions} Qs ({poolStatus.percentage}%)
+                                                                            </span>
+                                                                            {poolStatus.remainingCount > 0 && (
+                                                                                <span className="text-orange-500 font-bold">
+                                                                                    {poolStatus.remainingCount} Remaining
+                                                                                </span>
+                                                                            )}
+                                                                        </>
+                                                                    ) : (
+                                                                        <span>{quiz.questions?.length} Questions</span>
+                                                                    )}
                                                                     {bestAttempt && (
                                                                         <>
                                                                             <span className={isPassed ? 'text-emerald-500' : 'text-orange-500'}>
@@ -526,13 +548,21 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                                             <button
                                                                 onClick={() => onStartQuiz && onStartQuiz(quiz)}
                                                                 className={`
-                                                                    px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2
+                                                                    px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 shrink-0
                                                                     ${isPassed
                                                                         ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20'
-                                                                        : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-500/20'}
+                                                                        : isPoolInProgress
+                                                                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 shadow-md shadow-indigo-500/20'
+                                                                            : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-500/20'}
                                                                 `}
                                                             >
-                                                                {isPassed ? 'Retake' : <><Play className="w-3 h-3 fill-current" /> Start</>}
+                                                                {isPassed ? (
+                                                                    'Retake'
+                                                                ) : isPoolInProgress ? (
+                                                                    <><Play className="w-3 h-3 fill-current" /> Complete Remaining ({poolStatus.remainingCount} Left)</>
+                                                                ) : (
+                                                                    <><Play className="w-3 h-3 fill-current" /> Start</>
+                                                                )}
                                                             </button>
                                                         </div>
                                                     );

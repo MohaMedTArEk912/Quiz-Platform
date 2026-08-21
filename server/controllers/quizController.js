@@ -379,11 +379,12 @@ export const getQuizSession = async (req, res) => {
     }
 
     // Authenticated user: track seen questions
-    let progress = await QuestionPoolProgress.findOne({ userId, quizId: quiz.id });
+    const quizIdentifiers = [quiz.id, quiz._id?.toString(), id].filter(Boolean);
+    let progress = await QuestionPoolProgress.findOne({ userId, quizId: { $in: quizIdentifiers } });
     if (!progress) {
       progress = new QuestionPoolProgress({
         userId,
-        quizId: quiz.id,
+        quizId: quiz.id || quiz._id?.toString() || id,
         seenQuestionIds: [],
         completedCycles: 0
       });
@@ -459,7 +460,8 @@ export const getPoolProgress = async (req, res) => {
       return res.status(404).json({ message: 'Quiz not found' });
     }
 
-    const progress = await QuestionPoolProgress.findOne({ userId, quizId: quiz.id }).lean();
+    const quizIdentifiers = [quiz.id, quiz._id?.toString(), id].filter(Boolean);
+    const progress = await QuestionPoolProgress.findOne({ userId, quizId: { $in: quizIdentifiers } }).lean();
     const totalPoolQuestions = quiz.questions?.length || 0;
     const seenCount = progress ? (progress.seenQuestionIds?.length || 0) : 0;
     const remainingCount = Math.max(0, totalPoolQuestions - seenCount);

@@ -125,6 +125,7 @@ export const saveAttempt = async (req, res) => {
           normalizedAttempt.poolProgress = {
             seenCount: justCompleted ? totalPoolCount : existingSeenSet.size,
             totalCount: totalPoolCount,
+            remainingCount: justCompleted ? 0 : Math.max(0, totalPoolCount - existingSeenSet.size),
             percentage: totalPoolCount > 0 ? (justCompleted ? 100 : Math.round((existingSeenSet.size / totalPoolCount) * 100)) : 0,
             cycle: poolProgressDoc.completedCycles || 0,
             justCompletedPool: justCompleted
