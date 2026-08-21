@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
 import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins } from 'lucide-react';
-import type { Quiz, UserData, QuizResult, AttemptAnswers } from '../types';
+import type { Quiz, UserData, QuizResult, AttemptAnswers, PoolProgressData } from '../types';
 import { api } from '../lib/api';
 import { AmbientBackground } from './AmbientBackground';
 
@@ -20,6 +20,7 @@ interface QuizTakingProps {
     countUpTimer?: boolean;
     delayedValidation?: boolean;
     onUserUpdate?: (updates: Partial<UserData>) => void;
+    poolProgress?: PoolProgressData;
 }
 
 type SavedQuizState = {
@@ -44,7 +45,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     mustAnswerCorrectly,
     countUpTimer = false,
     delayedValidation = false,
-    onUserUpdate
+    onUserUpdate,
+    poolProgress
 }) => {
     // --- STATE MANAGEMENT ---
     const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -717,10 +719,16 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         <button onClick={onBack} className="flex items-center gap-2 p-1.5 sm:p-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-gray-600 dark:text-slate-400 transition-all border border-gray-200 dark:border-white/10">
                             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
-                        <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
                             <span className="text-[10px] sm:text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate max-w-[120px] sm:max-w-xs px-2 sm:px-3 py-1 sm:py-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg border border-indigo-100 dark:border-indigo-500/20">
                                 {retryMode ? '⚠ Retry' : quiz.title}
                             </span>
+                            {poolProgress && (
+                                <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-500/20">
+                                    <span>📦</span> Bank: {poolProgress.seenCount}/{poolProgress.totalCount} ({poolProgress.percentage}%)
+                                    {poolProgress.cycle > 0 && <span className="opacity-75">• Cycle {poolProgress.cycle + 1}</span>}
+                                </span>
+                            )}
                         </div>
                     </div>
 

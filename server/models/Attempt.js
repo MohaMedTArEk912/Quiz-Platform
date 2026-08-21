@@ -16,7 +16,16 @@ const attemptSchema = new mongoose.Schema({
   feedback: { type: Object, default: {} }, // Map of questionId/index to feedback
   completedAt: { type: Date, default: Date.now },
   powerUpsUsed: { type: [String], default: [] },
-  passed: { type: Boolean, default: false }
+  passed: { type: Boolean, default: false },
+  isQuestionPool: { type: Boolean, default: false },
+  questionIds: { type: [mongoose.Schema.Types.Mixed], default: [] },
+  poolProgress: {
+    seenCount: { type: Number },
+    totalCount: { type: Number },
+    percentage: { type: Number },
+    cycle: { type: Number },
+    justCompletedPool: { type: Boolean, default: false }
+  }
 });
 
 // Indexes for quick filtering and sorting

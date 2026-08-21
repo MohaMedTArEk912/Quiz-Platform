@@ -13,7 +13,11 @@ import type {
     StudyCard,
     BadgeNode,
     BadgeTree,
-    BadgeTreeNode
+    BadgeTreeNode,
+    QuizSessionResponse,
+    PoolProgressData,
+    QuestionPoolProgress,
+    Subject
 } from '../types';
 import { fetchWithFallback } from './apiRetry';
 
@@ -23,6 +27,9 @@ export type {
     Quiz,
     BadgeDefinition,
     ChallengeData,
+    QuizSessionResponse,
+    PoolProgressData,
+    QuestionPoolProgress,
     ShopItem,
     SkillTrack,
     Tournament,
@@ -32,7 +39,8 @@ export type {
     StudyCard,
     BadgeNode,
     BadgeTree,
-    BadgeTreeNode
+    BadgeTreeNode,
+    Subject
 };
 
 const getStoredToken = () => {
@@ -185,6 +193,42 @@ export const api = {
                 console.error('Failed to read response body:', e);
             }
             throw new Error(errorMessage);
+        }
+        return response.json();
+    },
+
+    async getQuizSession(quizId: string, userId?: string): Promise<QuizSessionResponse> {
+        const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
+        const response = await fetchWithFallback(`/quizzes/${encodeURIComponent(quizId)}/session${query}`, {
+            headers: getHeaders(userId)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to load quiz session');
+        }
+        return response.json();
+    },
+
+    async getPoolProgress(quizId: string, userId: string): Promise<PoolProgressData> {
+        const response = await fetchWithFallback(`/quizzes/${encodeURIComponent(quizId)}/pool-progress?userId=${encodeURIComponent(userId)}`, {
+            headers: getHeaders(userId)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to load pool progress');
+        }
+        return response.json();
+    },
+
+    async resetPoolProgress(quizId: string, userId: string): Promise<{ message: string; quizId: string }> {
+        const response = await fetchWithFallback(`/quizzes/${encodeURIComponent(quizId)}/reset-pool-progress`, {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ userId })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to reset pool progress');
         }
         return response.json();
     },

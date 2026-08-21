@@ -10,7 +10,9 @@ export interface Quiz {
     coinsReward?: number;
     xpReward?: number;
     icon: string;
-    quizType?: 'quiz' | 'exam'; // Type: regular quiz or exam
+    quizType?: 'quiz' | 'exam' | 'pool'; // Type: regular quiz, exam, or question pool
+    isQuestionPool?: boolean;
+    questionsPerAttempt?: number;
     subjectId?: string;
     moduleId?: string;
     isTournamentOnly?: boolean;
@@ -142,6 +144,35 @@ export interface AvatarConfig {
     frame?: 'none' | 'gold' | 'diamond' | 'cyberpunk';
 }
 
+export interface PoolProgressData {
+    seenCount: number;
+    totalCount: number;
+    percentage: number;
+    cycle: number;
+    justCompletedPool?: boolean;
+    remainingCount?: number;
+}
+
+export interface QuestionPoolProgress {
+    userId: string;
+    quizId: string;
+    seenQuestionIds: (number | string)[];
+    completedCycles: number;
+    lastAttemptAt?: string;
+}
+
+export interface QuizSessionResponse {
+    quiz: Quiz;
+    isQuestionPool: boolean;
+    totalPoolQuestions: number;
+    seenCount?: number;
+    remainingCount?: number;
+    questionsInAttempt: number;
+    completedCycles?: number;
+    poolCompletionPercentage?: number;
+    justResetCycle?: boolean;
+}
+
 export interface AttemptData {
     id?: number;
     attemptId: string;
@@ -160,6 +191,10 @@ export interface AttemptData {
     completedAt: string;
     passed: boolean;
     powerUpsUsed?: string[];
+    isQuestionPool?: boolean;
+    questionIds?: (string | number)[];
+    poolProgress?: PoolProgressData;
+    attemptQuestions?: Question[];
 }
 
 export interface QuizResult {
@@ -171,6 +206,9 @@ export interface QuizResult {
     passed: boolean;
     reviewStatus?: 'completed' | 'pending' | 'reviewed';
     powerUpsUsed?: string[];
+    isQuestionPool?: boolean;
+    poolProgress?: PoolProgressData;
+    attemptQuestions?: Question[];
 }
 
 export interface ChallengeData {
@@ -500,6 +538,17 @@ export interface Clan {
     createdAt: string;
 }
 
+export interface SubjectQuestion {
+    id?: number | string;
+    question: string;
+    options?: string[];
+    correctAnswer?: number;
+    explanation?: string;
+    type?: string;
+    chapter?: string;
+    points?: number;
+}
+
 export interface Material {
     _id: string;
     title: string;
@@ -507,7 +556,7 @@ export interface Material {
     isProcessed: boolean;
     uploadedAt: string;
     summary?: string;
-    extractedQuestions?: any[];
+    extractedQuestions?: SubjectQuestion[];
     originalName?: string;
     currentName?: string;
     status?: 'unchanged' | 'renamed' | 'replaced';
@@ -522,7 +571,7 @@ export interface Subject {
     icon: string;
     materials: Material[];
     createdAt: string;
-    oldQuestions?: any[];
+    oldQuestions?: SubjectQuestion[];
 }
 
 export interface ClanAnnouncement {

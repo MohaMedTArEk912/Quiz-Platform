@@ -13,10 +13,12 @@ interface QuizResultsProps {
 
 const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes, onRetake }) => {
     const [showReview, setShowReview] = React.useState(false);
-    const safeQuestions = Array.isArray(quiz.questions) ? quiz.questions : [];
+    const safeQuestions = (result.attemptQuestions && result.attemptQuestions.length > 0) 
+        ? result.attemptQuestions 
+        : (Array.isArray(quiz.questions) ? quiz.questions : []);
 
     useEffect(() => {
-        if (result.passed) {
+        if (result.passed || result.poolProgress?.justCompletedPool) {
             const duration = 3 * 1000;
             const animationEnd = Date.now() + duration;
             const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
@@ -39,7 +41,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
 
             return () => clearInterval(interval);
         }
-    }, [result.passed]);
+    }, [result.passed, result.poolProgress?.justCompletedPool]);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -143,6 +145,53 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                     
                     <div className="max-w-xl w-full mx-auto flex flex-col gap-8 animate-in slide-in-from-right-8 duration-500 delay-150 fill-mode-both">
                         
+                        {/* Question Bank 100% Completion Milestone Celebration */}
+                        {result.poolProgress?.justCompletedPool && (
+                            <div className="w-full p-6 rounded-3xl bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-orange-500/20 border-2 border-yellow-400 dark:border-yellow-500/40 text-center animate-in zoom-in-95 duration-500 shadow-xl">
+                                <div className="text-4xl mb-2">🏆 🎉</div>
+                                <h3 className="text-xl font-black uppercase text-amber-800 dark:text-amber-300 tracking-wider">
+                                    Question Bank 100% Completed!
+                                </h3>
+                                <p className="text-sm text-gray-700 dark:text-gray-200 mt-1 font-medium leading-relaxed">
+                                    Incredible! You've mastered all <strong>{result.poolProgress.totalCount}</strong> unique questions in this bank! The question pool has completed Cycle {result.poolProgress.cycle} and has reset for your next attempt.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Question Bank Progress Card */}
+                        {result.poolProgress && (
+                            <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-200 dark:border-blue-500/20 rounded-3xl p-6 shadow-sm">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xl">📦</span>
+                                        <span className="text-xs font-black uppercase tracking-widest text-blue-700 dark:text-blue-300">Question Bank Progress</span>
+                                    </div>
+                                    <span className="text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                                        Cycle {result.poolProgress.cycle + 1}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-baseline mb-2">
+                                    <div className="text-3xl font-black text-blue-600 dark:text-blue-400">
+                                        {result.poolProgress.seenCount} <span className="text-sm font-bold opacity-60">/ {result.poolProgress.totalCount} Qs Completed</span>
+                                    </div>
+                                    <div className="text-lg font-black text-blue-600 dark:text-blue-400">
+                                        {result.poolProgress.percentage}%
+                                    </div>
+                                </div>
+                                <div className="w-full h-3 bg-blue-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 transition-all duration-1000"
+                                        style={{ width: `${result.poolProgress.percentage}%` }}
+                                    />
+                                </div>
+                                {result.poolProgress.remainingCount !== undefined && result.poolProgress.remainingCount > 0 && !result.poolProgress.justCompletedPool && (
+                                    <p className="text-xs text-blue-600/80 dark:text-blue-300/80 font-medium mt-2.5 flex items-center gap-1.5">
+                                        <span>✨</span> {result.poolProgress.remainingCount} fresh questions left to see in this cycle.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
                         <div>
                             <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-gray-800 dark:text-gray-200 border-b border-gray-200 dark:border-gray-800 pb-4">
                                 <Flag className="w-5 h-5 text-indigo-500" /> Performance Summary
@@ -205,7 +254,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                                 className="w-full sm:w-1/2 group flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-all font-black text-gray-700 dark:text-gray-200 shadow-sm"
                             >
                                 <RotateCcw className="w-5 h-5 text-indigo-500 dark:text-indigo-400 group-hover:-rotate-180 transition-transform duration-700" />
-                                Retake Quiz
+                                {result.poolProgress ? ((result.poolProgress.remainingCount || 0) > 0 ? 'Next Question Set' : 'Start Next Cycle') : 'Retake Quiz'}
                             </button>
                             <button
                                 onClick={onBackToQuizzes}

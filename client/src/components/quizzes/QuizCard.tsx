@@ -14,9 +14,11 @@ interface QuizCardProps {
 const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, onShare }) => {
     const quizIcon = getQuizIconOption(quiz.icon);
     const QuizIcon = quizIcon.Icon;
+    const isPool = Boolean(quiz.quizType === 'pool' || quiz.isQuestionPool);
     const quizSetLabel = (() => {
         const text = `${quiz.id || ''} ${quiz.title || ''} ${quiz.description || ''}`.toLowerCase();
 
+        if (isPool || /\b(pool|question bank|bank)\b/.test(text)) return 'Question Bank';
         if (quiz.quizType === 'exam' || /\bexam\b|final/.test(text)) return 'Exam';
         if (/home\s*work|homework/.test(text)) return 'Homework';
         if (/end\s*of\s*class|endoclass|after\s*session|\bafs\b/.test(text)) return 'Session';
@@ -34,12 +36,22 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, o
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors truncate">
                             {quiz.title}
                         </h3>
-                    <p className="text-sm text-gray-500">{quiz.questions?.length || 0} Questions • {quiz.timeLimit === 0 ? 'Unlimited' : `${quiz.timeLimit}m`}</p>
+                    <p className="text-sm text-gray-500">
+                        {isPool 
+                            ? `${quiz.questions?.length || 0} Pool Qs (${quiz.questionsPerAttempt || 10} / attempt)` 
+                            : `${quiz.questions?.length || 0} Questions`} • {quiz.timeLimit === 0 ? 'Unlimited' : `${quiz.timeLimit}m`}
+                    </p>
                     </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                     <div className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-white/5 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">{quiz.category}</div>
-                    <div className="px-3 py-1 rounded-lg bg-purple-100 dark:bg-purple-500/10 text-[10px] font-black text-purple-700 dark:text-purple-300 uppercase tracking-wider">{quizSetLabel}</div>
+                    <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                        isPool 
+                            ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300' 
+                            : 'bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300'
+                    }`}>
+                        {quizSetLabel}
+                    </div>
                 </div>
             </div>
             <div className="flex gap-2 flex-wrap">

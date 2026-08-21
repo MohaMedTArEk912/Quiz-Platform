@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import PageLoader from '../components/PageLoader';
 
 export const ProtectedRoute: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const { currentUser, isAdmin, isLoading } = useAuth();
+    const { currentUser, isLoading } = useAuth();
     const location = useLocation();
 
     if (isLoading) return <PageLoader />;
@@ -21,11 +21,6 @@ export const ProtectedRoute: React.FC<{ children: ReactNode }> = ({ children }) 
             sessionStorage.setItem('redirectAfterLogin', intendedPath);
         }
         return <Navigate to="/login" replace />;
-    }
-
-    // Redirect admins to admin dashboard if they try to access regular routes
-    if (isAdmin && window.location.pathname === '/') {
-        return <Navigate to="/admin" replace />;
     }
 
     return <>{children}</>;

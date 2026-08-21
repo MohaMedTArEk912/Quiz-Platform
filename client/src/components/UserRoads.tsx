@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AmbientBackground } from './AmbientBackground';
-import type { Quiz, UserData, AttemptData, Subject } from '../types/index.ts';
+import type { Quiz, UserData, AttemptData, Subject, SkillTrack, StudyCard, SkillModule } from '../types/index.ts';
 import { DIFFICULTY_COLORS } from '../constants/quizDefaults.ts';
 import {
     Search,
@@ -69,8 +69,8 @@ interface UserRoadsProps {
     subjects: Subject[];
     user: UserData;
     attempts: AttemptData[];
-    skillTracks: any[];
-    studyCards: any[];
+    skillTracks: SkillTrack[];
+    studyCards: StudyCard[];
     onSelectQuiz: (quiz: Quiz) => void;
     onViewProfile: () => void;
     onViewLeaderboard: () => void;
@@ -150,7 +150,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
     });
 
     // Filter quizzes by type
-    const regularQuizzes = filteredQuizzes.filter(q => (q.quizType || 'quiz') === 'quiz');
+    const regularQuizzes = filteredQuizzes.filter(q => q.quizType !== 'exam');
     const examQuizzes = filteredQuizzes.filter(q => q.quizType === 'exam');
 
 
@@ -173,7 +173,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
         const quizId = getQuizId(quiz);
 
         // Find the skill track for this subject (check subjectId first, then trackId)
-        const skillTrack = skillTracks.find((track: any) =>
+        const skillTrack = skillTracks.find(track =>
             track.subjectId === selectedSubjectId ||
             track.trackId === selectedSubjectId
         );
@@ -184,15 +184,15 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
             return false;
         }
 
-        const moduleWithThisQuiz = skillTrack.modules.find((module: any) => {
+        const moduleWithThisQuiz = skillTrack.modules.find(module => {
             if (!module.quizIds || module.quizIds.length === 0) return false;
             // Check multiple ID formats to be safe
-            return module.quizIds.some((qId: string) =>
+            return module.quizIds.some(qId =>
                 qId === quizId ||
                 qId === quiz.id ||
                 qId === quiz._id ||
-                quiz.id?.includes(qId) ||
-                qId?.includes(quiz.id || '')
+                (quiz.id && quiz.id.includes(qId)) ||
+                (quiz.id && qId.includes(quiz.id))
             );
         });
 
@@ -201,7 +201,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
             return false;
         }
 
-        const moduleId = moduleWithThisQuiz.moduleId || moduleWithThisQuiz.id || moduleWithThisQuiz.title || moduleWithThisQuiz.name;
+        const moduleId = moduleWithThisQuiz.moduleId || moduleWithThisQuiz.title;
 
         if (!moduleId) {
             // Module is missing an identifier; avoid locking the quiz
@@ -209,12 +209,12 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
         }
 
         // Get user's progress for this specific track
-        const userProgress = user?.skillTracks?.find((t: any) => t.trackId === skillTrack.trackId);
+        const userProgress = user?.skillTracks?.find(t => t.trackId === skillTrack.trackId);
 
         if (!userProgress) {
             // If no progress yet, only lock quizzes in later modules; module-less quizzes already returned above
             const firstModule = skillTrack.modules[0];
-            const firstModuleId = firstModule?.moduleId || firstModule?.id || firstModule?.title || firstModule?.name;
+            const firstModuleId = firstModule?.moduleId || firstModule?.title;
             return moduleId !== firstModuleId;
         }
 
@@ -265,18 +265,18 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
         filteredQuizzes[0];
 
     const activeTrackDefinition = selectedSubjectId
-        ? skillTracks.find((track: any) => track.subjectId === selectedSubjectId || track.trackId === selectedSubjectId)
+        ? skillTracks.find(track => track.subjectId === selectedSubjectId || track.trackId === selectedSubjectId)
         : null;
     const userTrackProgress = activeTrackDefinition
-        ? user.skillTracks?.find((p: any) => p.trackId === activeTrackDefinition.trackId)
+        ? user.skillTracks?.find(p => p.trackId === activeTrackDefinition.trackId)
         : undefined;
     const completedModules = new Set(userTrackProgress?.completedModules || []);
-    const moduleMilestones: Milestone[] = (activeTrackDefinition?.modules || []).map((module: any, index: number) => {
-        const title = module.title || module.name || `Module ${index + 1}`;
-        const moduleId = module.moduleId || module.id || title;
+    const moduleMilestones: Milestone[] = (activeTrackDefinition?.modules || []).map((module: SkillModule, index: number) => {
+        const title = module.title || `Module ${index + 1}`;
+        const moduleId = module.moduleId || title;
         const isDone = completedModules.has(moduleId);
-        const prevModule = activeTrackDefinition?.modules?.[index - 1] as any;
-        const prevModuleId = prevModule?.moduleId || prevModule?.id || null;
+        const prevModule = activeTrackDefinition?.modules?.[index - 1];
+        const prevModuleId = prevModule?.moduleId || null;
         const prevDone = index === 0 ? true : (prevModuleId ? completedModules.has(prevModuleId) : true);
         const status: 'done' | 'current' | 'locked' = isDone ? 'done' : prevDone ? 'current' : 'locked';
         return { title, status, index };
@@ -667,8 +667,8 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                         attempts={attempts}
                                         onStartQuiz={onSelectQuiz}
                                         userProgress={(() => {
-                                            const def = skillTracks.find((t: any) => t.subjectId === selectedSubjectId || t.trackId === selectedSubjectId);
-                                            return def ? user.skillTracks?.find((p: any) => p.trackId === def.trackId) : undefined;
+                                            const def = skillTracks.find(t => t.subjectId === selectedSubjectId || t.trackId === selectedSubjectId);
+                                            return def ? user.skillTracks?.find(p => p.trackId === def.trackId) : undefined;
                                         })()}
                                         onSubModuleComplete={async (moduleId: string, subModuleId: string) => {
                                             if (!activeTrackDefinition?.trackId) return;
@@ -732,9 +732,15 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                             <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${getDifficultyBadgeBg(quiz.difficulty)}`}>
                                                                 {quiz.difficulty}
                                                             </span>
-                                                            <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/10">
-                                                                {quiz.questions?.length || 0} Qs
-                                                            </span>
+                                                            {(quiz.quizType === 'pool' || quiz.isQuestionPool) ? (
+                                                                <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center gap-1">
+                                                                    <span>📦</span> {quiz.questions?.length || 0} Pool ({quiz.questionsPerAttempt || 10}/att)
+                                                                </span>
+                                                            ) : (
+                                                                <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/10">
+                                                                    {quiz.questions?.length || 0} Qs
+                                                                </span>
+                                                            )}
                                                         </div>
 
                                                         {!locked && attempted && (
@@ -898,15 +904,15 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                             {activeTab === 'study-cards' && (
                                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
                                     {(() => {
-                                        const cardsForRoad = (studyCards || []).filter((c: any) => c.subjectId === selectedSubjectId);
-                                        const moduleMap: Record<string, any[]> = {};
+                                        const cardsForRoad = (studyCards || []).filter(c => c.subjectId === selectedSubjectId);
+                                        const moduleMap: Record<string, StudyCard[]> = {};
                                         for (const c of cardsForRoad) {
                                             const key = c.moduleId || 'general';
                                             if (!moduleMap[key]) moduleMap[key] = [];
                                             moduleMap[key].push(c);
                                         }
 
-                                        const renderStacks = (cards: any[]) => {
+                                        const renderStacks = (cards: StudyCard[]) => {
                                             const stacks = Array.from(new Set(cards.map(c => c.category || 'Uncategorized')));
                                             return (
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -944,9 +950,9 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                             moduleOrder.map(moduleId => {
                                                 const isGeneral = moduleId === 'general';
                                                 const moduleTitle = isGeneral ? 'General' : (() => {
-                                                    const allTracks = (skillTracksProp || []).filter((t: any) => t.subjectId === selectedSubjectId);
+                                                    const allTracks = (skillTracks || []).filter(t => t.subjectId === selectedSubjectId);
                                                     for (const t of allTracks) {
-                                                        const m = (t.modules || []).find((mm: any) => mm.moduleId === moduleId);
+                                                        const m = (t.modules || []).find(mm => mm.moduleId === moduleId);
                                                         if (m) return m.title;
                                                     }
                                                     return 'Module';

@@ -1,4 +1,5 @@
 import { Quiz } from '../models/Quiz.js';
+import { QuestionPoolProgress } from '../models/QuestionPoolProgress.js';
 import { readdir, readFile } from 'fs/promises';
 import path from 'path';
 
@@ -304,5 +305,211 @@ export const deleteQuiz = async (req, res) => {
     res.json({ message: 'Quiz deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting quiz', error: error.message });
+  }
+};
+
+/**
+ * Get a tailored quiz session for taking a quiz.
+ * If the quiz is a Question Pool / Bank, returns a non-repeating subset of questions
+ * chosen from the questions the user hasn't seen yet in their current cycle.
+ */
+export const getQuizSession = async (req, res) => {
+  try {
+    let { id } = req.params;
+    if (!id && req.params && typeof req.params[0] === 'string') {
+      id = decodeURIComponent(req.params[0].replace(/^\/+/, ''));
+    }
+    const userId = req.query.userId || req.headers['x-user-id'] || req.user?.userId;
+
+    let quiz = await Quiz.findOne({ id }).lean();
+    if (!quiz) {
+      quiz = await Quiz.findById(id).lean().catch(() => null);
+    }
+
+    if (!quiz) {
+      // Check fallback static quizzes
+      const fallbackQuizzes = await loadStaticQuizzes();
+      quiz = fallbackQuizzes.find(q => q.id === id || q._id === id);
+    }
+
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    const isPool = Boolean(
+      quiz.isQuestionPool ||
+      quiz.quizType === 'pool' ||
+      (quiz.questionsPerAttempt && quiz.questionsPerAttempt < (quiz.questions?.length || 0))
+    );
+
+    if (!isPool || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+      return res.json({
+        quiz: {
+          ...quiz,
+          id: quiz.id || quiz._id?.toString(),
+          questions: Array.isArray(quiz.questions) ? quiz.questions : []
+        },
+        isQuestionPool: false,
+        totalPoolQuestions: quiz.questions?.length || 0,
+        questionsInAttempt: quiz.questions?.length || 0
+      });
+    }
+
+    const totalPoolSize = quiz.questions.length;
+    const batchSize = Math.max(1, Math.min(quiz.questionsPerAttempt || 10, totalPoolSize));
+
+    // If no userId (guest mode), return a random batch
+    if (!userId) {
+      const shuffled = [...quiz.questions].sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, batchSize);
+      return res.json({
+        quiz: {
+          ...quiz,
+          id: quiz.id || quiz._id?.toString(),
+          questions: selected
+        },
+        isQuestionPool: true,
+        totalPoolQuestions: totalPoolSize,
+        seenCount: 0,
+        remainingCount: totalPoolSize,
+        questionsInAttempt: selected.length,
+        completedCycles: 0,
+        poolCompletionPercentage: 0
+      });
+    }
+
+    // Authenticated user: track seen questions
+    let progress = await QuestionPoolProgress.findOne({ userId, quizId: quiz.id });
+    if (!progress) {
+      progress = new QuestionPoolProgress({
+        userId,
+        quizId: quiz.id,
+        seenQuestionIds: [],
+        completedCycles: 0
+      });
+      await progress.save();
+    }
+
+    const seenSet = new Set((progress.seenQuestionIds || []).map(qId => String(qId)));
+
+    // Filter questions not seen in the current cycle
+    let unseenQuestions = quiz.questions.filter((q, idx) => {
+      const qKey = q.id !== undefined && q.id !== null ? String(q.id) : String(idx);
+      return !seenSet.has(qKey);
+    });
+
+    let completedCycleNow = false;
+
+    // If all questions have been seen (100% pool reached), reset for next cycle
+    if (unseenQuestions.length === 0) {
+      progress.completedCycles = (progress.completedCycles || 0) + 1;
+      progress.seenQuestionIds = [];
+      await progress.save();
+      seenSet.clear();
+      unseenQuestions = [...quiz.questions];
+      completedCycleNow = true;
+    }
+
+    // Shuffle unseen questions to select a random batch
+    const shuffledUnseen = [...unseenQuestions].sort(() => 0.5 - Math.random());
+    // If unseenQuestions has fewer items than batchSize (e.g. last 5 questions), serve all remaining
+    const selectedQuestions = shuffledUnseen.slice(0, batchSize);
+
+    res.json({
+      quiz: {
+        ...quiz,
+        id: quiz.id || quiz._id?.toString(),
+        questions: selectedQuestions
+      },
+      isQuestionPool: true,
+      totalPoolQuestions: totalPoolSize,
+      seenCount: seenSet.size,
+      remainingCount: unseenQuestions.length,
+      questionsInAttempt: selectedQuestions.length,
+      completedCycles: progress.completedCycles || 0,
+      poolCompletionPercentage: totalPoolSize > 0 ? Math.round((seenSet.size / totalPoolSize) * 100) : 0,
+      justResetCycle: completedCycleNow
+    });
+  } catch (error) {
+    console.error('❌ Error getting quiz session:', error);
+    res.status(500).json({ message: 'Error getting quiz session', error: error.message });
+  }
+};
+
+/**
+ * Get question pool progress for a user on a specific quiz
+ */
+export const getPoolProgress = async (req, res) => {
+  try {
+    let { id } = req.params;
+    if (!id && req.params && typeof req.params[0] === 'string') {
+      id = decodeURIComponent(req.params[0].replace(/^\/+/, ''));
+    }
+    const userId = req.query.userId || req.headers['x-user-id'] || req.user?.userId;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'userId is required' });
+    }
+
+    let quiz = await Quiz.findOne({ id }).lean();
+    if (!quiz) {
+      quiz = await Quiz.findById(id).lean().catch(() => null);
+    }
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    const progress = await QuestionPoolProgress.findOne({ userId, quizId: quiz.id }).lean();
+    const totalPoolQuestions = quiz.questions?.length || 0;
+    const seenCount = progress ? (progress.seenQuestionIds?.length || 0) : 0;
+    const remainingCount = Math.max(0, totalPoolQuestions - seenCount);
+    const completedCycles = progress ? (progress.completedCycles || 0) : 0;
+    const percentage = totalPoolQuestions > 0 ? Math.round((seenCount / totalPoolQuestions) * 100) : 0;
+
+    res.json({
+      quizId: quiz.id,
+      totalPoolQuestions,
+      seenCount,
+      remainingCount,
+      completedCycles,
+      percentage
+    });
+  } catch (error) {
+    console.error('❌ Error getting pool progress:', error);
+    res.status(500).json({ message: 'Error getting pool progress', error: error.message });
+  }
+};
+
+/**
+ * Manually reset a user's question pool progress for a quiz
+ */
+export const resetPoolProgress = async (req, res) => {
+  try {
+    let { id } = req.params;
+    if (!id && req.params && typeof req.params[0] === 'string') {
+      id = decodeURIComponent(req.params[0].replace(/^\/+/, ''));
+    }
+    const userId = req.body?.userId || req.query?.userId || req.headers['x-user-id'] || req.user?.userId;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'userId is required' });
+    }
+
+    let quiz = await Quiz.findOne({ id }).lean();
+    if (!quiz) {
+      quiz = await Quiz.findById(id).lean().catch(() => null);
+    }
+    const targetQuizId = quiz ? quiz.id : id;
+
+    await QuestionPoolProgress.findOneAndUpdate(
+      { userId, quizId: targetQuizId },
+      { seenQuestionIds: [] },
+      { upsert: true }
+    );
+
+    res.json({ message: 'Question pool progress reset successfully', quizId: targetQuizId });
+  } catch (error) {
+    console.error('❌ Error resetting pool progress:', error);
+    res.status(500).json({ message: 'Error resetting pool progress', error: error.message });
   }
 };

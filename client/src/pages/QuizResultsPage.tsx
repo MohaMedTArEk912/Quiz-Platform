@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Navigate } from 'react-router-dom';
 import QuizResults from '../components/QuizResults';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import type { QuizResult } from '../types';
 
 const QuizResultsPage: React.FC = () => {
     const { state } = useLocation();
@@ -14,14 +15,20 @@ const QuizResultsPage: React.FC = () => {
         return <Navigate to="/" replace />;
     }
 
-    const { result, quizId } = state;
+    const { result, quizId, attemptQuestions, poolProgress } = state;
     const quiz = availableQuizzes.find(q => q.id === quizId || q._id === quizId);
 
     if (!currentUser || !quiz) return <Navigate to="/" replace />;
 
+    const finalResult: QuizResult = {
+        ...result,
+        attemptQuestions: attemptQuestions || result.attemptQuestions,
+        poolProgress: poolProgress || result.poolProgress
+    };
+
     return (
         <QuizResults
-            result={result}
+            result={finalResult}
             quiz={quiz}
             user={userWithRank || currentUser}
             onBackToQuizzes={() => navigate('/')}

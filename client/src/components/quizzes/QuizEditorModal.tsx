@@ -177,9 +177,22 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Quiz Type</label>
-                                <select value={editingQuiz.quizType || 'quiz'} onChange={e => setEditingQuiz({ ...editingQuiz, quizType: e.target.value as 'quiz' | 'exam' })} className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50">
+                                <select 
+                                    value={editingQuiz.quizType || (editingQuiz.isQuestionPool ? 'pool' : 'quiz')} 
+                                    onChange={e => {
+                                        const val = e.target.value as 'quiz' | 'exam' | 'pool';
+                                        setEditingQuiz({ 
+                                            ...editingQuiz, 
+                                            quizType: val,
+                                            isQuestionPool: val === 'pool',
+                                            questionsPerAttempt: editingQuiz.questionsPerAttempt || 10
+                                        });
+                                    }} 
+                                    className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                                >
                                     <option value="quiz">Regular Quiz</option>
                                     <option value="exam">Exam</option>
+                                    <option value="pool">Question Bank / Pool</option>
                                 </select>
                             </div>
                         </div>
@@ -211,6 +224,38 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
                             </div>
                         </div>
                     </div>
+
+                    {(editingQuiz.quizType === 'pool' || editingQuiz.isQuestionPool) && (
+                        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl border border-blue-200 dark:border-blue-800 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-base">📦</span>
+                                    <span className="text-sm font-black uppercase text-blue-900 dark:text-blue-100 tracking-wider">Question Bank Settings</span>
+                                </div>
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                                    Pool Mode
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs text-blue-900 dark:text-blue-200 font-bold ml-1">Questions Per Attempt</label>
+                                    <input 
+                                        type="number" 
+                                        min="1" 
+                                        max={Math.max(1, editingQuiz.questions?.length || 100)}
+                                        value={editingQuiz.questionsPerAttempt || 10} 
+                                        onChange={e => setEditingQuiz({ ...editingQuiz, questionsPerAttempt: Math.max(1, parseInt(e.target.value) || 1) })} 
+                                        className="w-full bg-white dark:bg-black/50 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                    />
+                                </div>
+                                <div className="flex flex-col justify-center text-xs text-blue-800 dark:text-blue-300 font-medium">
+                                    <span>Pool contains <strong>{editingQuiz.questions?.length || 0}</strong> total questions.</span>
+                                    <span className="opacity-80">Takes ~{Math.ceil((editingQuiz.questions?.length || 1) / (editingQuiz.questionsPerAttempt || 10))} attempts to finish 100% of the bank without repeats.</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
                         <input
                             type="checkbox"

@@ -37,10 +37,14 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
     const [viewMode, setViewMode] = useState<'stacks' | 'list'>('stacks');
     const [selectedStackId, setSelectedStackId] = useState<string | null>(null);
     const [activeHeaderMenu, setActiveHeaderMenu] = useState(false);
-    const [quizTypeFilter, setQuizTypeFilter] = useState<'all' | 'session' | 'homework' | 'exam'>('all');
+    const [quizTypeFilter, setQuizTypeFilter] = useState<'all' | 'session' | 'homework' | 'exam' | 'pool'>('all');
 
     const getQuizSet = (quiz: Quiz) => {
         const text = `${quiz.id || ''} ${quiz.title || ''} ${quiz.description || ''}`.toLowerCase();
+
+        if (quiz.quizType === 'pool' || quiz.isQuestionPool || /\b(pool|question bank|bank)\b/.test(text)) {
+            return 'pool';
+        }
 
         if (quiz.quizType === 'exam' || /\bexam\b|final/.test(text)) {
             return 'exam';
@@ -166,6 +170,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
             onNotification('success', 'Stack deleted successfully');
             setSubjectToDelete(null);
         } catch (error) {
+            console.error('Delete subject error:', error);
             onNotification('error', 'Failed to delete stack');
         }
     };
@@ -188,10 +193,12 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                 id: Number(q.id)
             }));
 
-            const finalQuiz = {
+            const finalQuiz: Quiz = {
                 ...quizToSave,
                 questions: validatedQuestions,
-                quizType: quizToSave.quizType || 'quiz',
+                quizType: quizToSave.quizType || (quizToSave.isQuestionPool ? 'pool' : 'quiz'),
+                isQuestionPool: quizToSave.isQuestionPool || quizToSave.quizType === 'pool',
+                questionsPerAttempt: quizToSave.questionsPerAttempt || 10,
                 id: quizToSave.id || crypto.randomUUID()
             };
 
@@ -291,14 +298,14 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
             importTargetStackId ||
             (viewMode === 'list' && selectedStackId !== 'uncategorized' ? selectedStackId : null);
 
-        const readFileContent = (file: File): Promise<any> => {
+        const readFileContent = (file: File): Promise<unknown> => {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
                         const json = JSON.parse(e.target?.result as string);
                         resolve(json);
-                    } catch (error) {
+                    } catch {
                         reject(new Error(`Invalid JSON in file ${file.name}`));
                     }
                 };
@@ -310,7 +317,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
         try {
             setIsImporting(true);
             const fileList = Array.from(files);
-            const allQuizzes: any[] = [];
+            const allQuizzes: Partial<Quiz>[] = [];
             let parseErrors = 0;
 
             const results = await Promise.allSettled(fileList.map(readFileContent));
@@ -319,9 +326,9 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                 if (result.status === 'fulfilled') {
                     const content = result.value;
                     if (Array.isArray(content)) {
-                        allQuizzes.push(...content);
-                    } else if (content && typeof content === 'object') {
-                        allQuizzes.push(content);
+                        allQuizzes.push(...(content as Partial<Quiz>[]));
+                    } else if (content && typeof content === 'object' && content !== null) {
+                        allQuizzes.push(content as Partial<Quiz>);
                     }
                 } else {
                     console.error(result.reason);
@@ -505,6 +512,16 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                         }`}
                     >
                         Exams
+                    </button>
+                    <button
+                        onClick={() => setQuizTypeFilter('pool')}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-1.5 ${
+                            quizTypeFilter === 'pool'
+                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
+                        }`}
+                    >
+                        <span>📦</span> Question Banks
                     </button>
                 </div>
             )}

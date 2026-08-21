@@ -41,7 +41,10 @@ const quizSchema = new mongoose.Schema({
   coinsReward: { type: Number, default: 10 },
   xpReward: { type: Number, default: 50 },
   icon: { type: String, default: '📝' },
-  quizType: { type: String, enum: ['quiz', 'exam'], default: 'quiz' }, // Type: regular quiz or exam
+  quizType: { type: String, enum: ['quiz', 'exam', 'pool'], default: 'quiz' }, // Type: regular quiz, exam, or question pool
+  isQuestionPool: { type: Boolean, default: false }, // If true, questions are served dynamically in non-repeating batches
+  questionsPerAttempt: { type: Number, default: 10 }, // Number of questions served per attempt in pool mode
+  shuffleQuestions: { type: Boolean, default: true },
   subjectId: { type: String }, // Link to standard Subject model
   isTournamentOnly: { type: Boolean, default: false },
   linkedTrackId: { type: String }, // Links this quiz to a specific skill track
@@ -54,6 +57,7 @@ const quizSchema = new mongoose.Schema({
 quizSchema.index({ category: 1 });
 quizSchema.index({ difficulty: 1 });
 quizSchema.index({ quizType: 1 });
+quizSchema.index({ isQuestionPool: 1 });
 quizSchema.index({ subjectId: 1 });
 
 export const Quiz = mongoose.model('Quiz', quizSchema);

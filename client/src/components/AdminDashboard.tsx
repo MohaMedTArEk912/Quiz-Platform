@@ -13,8 +13,11 @@ import {
     Route,
     Settings,
     Menu,
+    Home,
+    ArrowRight,
     type LucideIcon
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 import type { UserData, Quiz, AttemptData } from '../types/index.ts';
 import { api } from '../lib/api.ts';
@@ -64,15 +67,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onRefresh,
     onLogout
 }) => {
+    const navigate = useNavigate();
+
     // --- State ---
     const [selectedTab, setSelectedTab] = useState<AdminTab>('main');
     const [pendingReviews, setPendingReviews] = useState<AttemptData[]>([]);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [statsCollapsed, setStatsCollapsed] = useState(false);
     const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning', message: string } | null>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
-
 
     // --- Effects & Helpers ---
     const stats = useMemo(() => {
@@ -105,18 +108,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         }, 0);
         return () => clearTimeout(refreshTimer);
     }, [loadPendingReviews]);
-
-    // Auto-collapse stats when scrolling down on Main tab
-    useEffect(() => {
-        const el = mainScrollRef.current;
-        if (!el) return;
-        const onScroll = () => {
-            if (selectedTab !== 'main') return;
-            setStatsCollapsed(el.scrollTop > 80);
-        };
-        el.addEventListener('scroll', onScroll);
-        return () => el.removeEventListener('scroll', onScroll);
-    }, [selectedTab]);
 
     const handleNotification = (type: 'success' | 'error' | 'warning', message: string) => {
         setNotification({ type, message });
@@ -155,7 +146,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     // --- Render Content ---
     return (
-        <div className="flex flex-col h-screen bg-gray-50 dark:bg-[#050505] font-['Outfit'] overflow-hidden relative selection:bg-purple-500/30">
+        <div className="flex flex-col h-screen bg-gray-50 dark:bg-[#050505] font-sans overflow-hidden relative selection:bg-purple-500/30">
             {/* Ambient Background Glows */}
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                 <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-purple-500/20 dark:bg-purple-900/20 rounded-full blur-[120px] mix-blend-multiply dark:mix-blend-screen animate-pulse-slow" />
@@ -164,53 +155,69 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* Custom Admin Header */}
             <div className="z-40 bg-white/70 dark:bg-[#0a0a0b]/70 backdrop-blur-2xl border-b border-gray-200/50 dark:border-white/10 sticky top-0 shadow-sm dark:shadow-purple-900/10">
-                <div className="w-full px-4 sm:px-6 py-4 flex items-center justify-between">
+                <div className="w-full px-4 sm:px-6 py-3.5 flex items-center justify-between">
                     <div className="flex items-center gap-3 sm:gap-4">
                         {/* Mobile Menu Button */}
                         <button
                             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+                            className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
                             aria-label="Toggle menu"
                         >
                             <Menu className="w-6 h-6" />
                         </button>
 
-                        <div className="bg-gradient-to-br from-purple-600 to-indigo-600 p-2 sm:p-2.5 rounded-xl text-white shadow-lg shadow-purple-500/30 ring-1 ring-white/20">
-                            <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white tracking-tight drop-shadow-sm">
-                                <span className="hidden sm:inline">Admin </span><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-500 dark:from-purple-400 dark:to-indigo-400">Dashboard</span>
-                            </h1>
-                            {/* Mobile: Show current tab */}
-                            <div className="md:hidden text-xs text-gray-500 dark:text-gray-400 font-medium capitalize">
-                                {selectedTab === 'main' && 'Dashboard'}
-                                {selectedTab === 'users' && 'User Management'}
-                                {selectedTab === 'badges' && 'Badge Management'}
-                                {selectedTab === 'daily' && 'Daily Challenges'}
-                                {selectedTab === 'tournaments' && 'Tournaments'}
-                                {selectedTab === 'reviews' && 'Reviews'}
-
-                                {selectedTab === 'road' && 'Roads'}
+                        <button
+                            type="button"
+                            onClick={() => setSelectedTab('main')}
+                            className="flex items-center gap-3 group text-left cursor-pointer"
+                            title="Go to Admin Overview"
+                        >
+                            <div className="bg-gradient-to-br from-purple-600 to-indigo-600 p-2 sm:p-2.5 rounded-xl text-white shadow-lg shadow-purple-500/30 ring-1 ring-white/20 group-hover:scale-105 transition-transform">
+                                <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
                             </div>
-                        </div>
+                            <div>
+                                <h1 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white tracking-tight drop-shadow-sm">
+                                    <span className="hidden sm:inline">Admin </span><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-500 dark:from-purple-400 dark:to-indigo-400">Dashboard</span>
+                                </h1>
+                                {/* Mobile: Show current tab */}
+                                <div className="md:hidden text-xs text-gray-500 dark:text-gray-400 font-medium capitalize">
+                                    {selectedTab === 'main' && 'Dashboard'}
+                                    {selectedTab === 'users' && 'User Management'}
+                                    {selectedTab === 'badges' && 'Badge Management'}
+                                    {selectedTab === 'daily' && 'Daily Challenges'}
+                                    {selectedTab === 'tournaments' && 'Tournaments'}
+                                    {selectedTab === 'reviews' && 'Reviews'}
+                                    {selectedTab === 'road' && 'Roads'}
+                                </div>
+                            </div>
+                        </button>
                     </div>
 
-                    <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        {/* Easy Navigation to Home / Student Dashboard */}
+                        <button
+                            type="button"
+                            onClick={() => navigate('/')}
+                            className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold text-xs sm:text-sm border border-purple-500/20 transition-all hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
+                            title="Go to Student / Home View"
+                        >
+                            <Home className="w-4 h-4" />
+                            <span className="hidden sm:inline">Student View</span>
+                        </button>
 
                         <ThemeToggle />
 
-                        <div className="flex items-center gap-3 pl-2">
-                            <div className="hidden text-right sm:block">
-                                <div className="text-sm font-bold text-gray-900 dark:text-white">{currentUser?.name || currentUser?.userId || 'Admin'}</div>
-                                <div className="text-xs text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 font-bold">Administrator</div>
+                        <div className="flex items-center gap-2 sm:gap-3 pl-1 sm:pl-2">
+                            <div className="hidden text-right lg:block">
+                                <div className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{currentUser?.name || currentUser?.userId || 'Admin'}</div>
+                                <div className="text-[11px] text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 font-black tracking-wider uppercase">Administrator</div>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setSelectedTab('main')}
                                 aria-label="Go to Main Dashboard"
-                                title="Go to Main"
-                                className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 p-0.5 shadow-lg shadow-purple-500/20 transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500/60 cursor-pointer"
+                                title="Go to Main Overview"
+                                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 p-0.5 shadow-lg shadow-purple-500/20 transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500/60 cursor-pointer"
                             >
                                 <div className="w-full h-full rounded-[10px] bg-white dark:bg-[#0a0a0b] flex items-center justify-center overflow-hidden">
                                     {currentUser?.avatar ? (
@@ -222,14 +229,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </button>
                             <button
                                 onClick={() => setIsSettingsOpen(true)}
-                                className="p-2.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-xl transition-all hover:scale-105 active:scale-95"
+                                className="p-2 sm:p-2.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-xl transition-all hover:scale-105 active:scale-95 cursor-pointer"
                                 title="Settings"
                             >
                                 <Settings className="w-5 h-5" />
                             </button>
                             <button
                                 onClick={onLogout}
-                                className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all hover:scale-105 active:scale-95"
+                                className="p-2 sm:p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all hover:scale-105 active:scale-95 cursor-pointer"
                                 title="Logout"
                             >
                                 <LogOut className="w-5 h-5" />
@@ -265,7 +272,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             <button
                                                 key={item.id}
                                                 onClick={() => setSelectedTab(item.id)}
-                                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-2xl transition-all duration-300 font-bold group relative overflow-hidden ${isActive
+                                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-2xl transition-all duration-300 font-bold group relative overflow-hidden cursor-pointer ${isActive
                                                     ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25'
                                                     : 'text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-white/5'
                                                     }`}
@@ -291,11 +298,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
                         ))}
                     </div>
+
+                    {/* Bottom Return to Home */}
+                    <div className="p-4 border-t border-gray-200/50 dark:border-white/5 mt-auto">
+                        <button
+                            type="button"
+                            onClick={() => navigate('/')}
+                            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-gradient-to-r from-purple-500/10 to-indigo-500/10 hover:from-purple-500/20 hover:to-indigo-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 transition-all font-black text-xs uppercase tracking-wider group cursor-pointer"
+                            title="Switch to Student / Home View"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-1.5 rounded-xl bg-purple-500/20 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform">
+                                    <Home className="w-4 h-4" />
+                                </div>
+                                <span>Home App</span>
+                            </div>
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Sidebar - Mobile Drawer */}
-                <div className={`md:hidden fixed inset-y-0 left-0 w-72 bg-white/90 dark:bg-[#0a0a0b]/90 backdrop-blur-2xl border-r border-white/10 flex-col py-6 z-[95] transform transition-all duration-500 ease-out shadow-2xl ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                    <div className="flex-1 overflow-y-auto px-5 space-y-8">
+                <div className={`md:hidden fixed inset-y-0 left-0 w-72 bg-white/95 dark:bg-[#0a0a0b]/95 backdrop-blur-2xl border-r border-white/10 flex flex-col py-6 z-[95] transform transition-all duration-500 ease-out shadow-2xl ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                    <div className="flex-1 overflow-y-auto px-5 space-y-8 custom-scrollbar">
                         {navItems.map((group, idx) => (
                             <div key={idx} className="space-y-2">
                                 <h3 className="px-3 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em] mb-4">
@@ -312,7 +337,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                     setSelectedTab(item.id);
                                                     setIsSidebarOpen(false);
                                                 }}
-                                                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-300 font-black uppercase tracking-widest text-[11px] ${isActive
+                                                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-300 font-black uppercase tracking-widest text-[11px] cursor-pointer ${isActive
                                                     ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/30'
                                                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
                                                     }`}
@@ -334,6 +359,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
                         ))}
                     </div>
+
+                    {/* Bottom Return to Home (Mobile) */}
+                    <div className="p-5 border-t border-gray-200/50 dark:border-white/10 mt-auto">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsSidebarOpen(false);
+                                navigate('/');
+                            }}
+                            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-gradient-to-r from-purple-500/10 to-indigo-500/10 hover:from-purple-500/20 hover:to-indigo-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 transition-all font-black text-xs uppercase tracking-wider group cursor-pointer"
+                            title="Switch to Student / Home View"
+                        >
+                            <div className="flex items-center gap-3">
+                                <Home className="w-4 h-4" />
+                                <span>Home App</span>
+                            </div>
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Main Content */}
@@ -351,93 +395,78 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </div>
                     )}
 
-                    {/* Header Stats shown only on Main tab */}
-                    {selectedTab === 'main' && (
-                        <div className={`p-4 sm:p-6 pb-0 transition-all duration-300 ${statsCollapsed ? 'max-h-0 opacity-0 -mt-2' : 'max-h-[1000px] opacity-100'}`}>
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
-                                {[
-                                    {
-                                        label: 'Total Users',
-                                        shortLabel: 'Users',
-                                        value: stats.totalUsers,
-                                        icon: Users,
-                                        color: 'from-blue-500 to-violet-500',
-                                        bg: 'bg-blue-500/10',
-                                        iconColor: 'text-blue-600 dark:text-blue-400'
-                                    },
-                                    {
-                                        label: 'Total Quizzes',
-                                        shortLabel: 'Quizzes',
-                                        value: stats.totalQuizzes,
-                                        icon: BookOpen,
-                                        color: 'from-emerald-500 to-teal-500',
-                                        bg: 'bg-emerald-500/10',
-                                        iconColor: 'text-emerald-600 dark:text-emerald-400'
-                                    },
-                                    {
-                                        label: 'Total Attempts',
-                                        shortLabel: 'Attempts',
-                                        value: stats.totalAttempts,
-                                        icon: Activity,
-                                        color: 'from-orange-500 to-red-500',
-                                        bg: 'bg-orange-500/10',
-                                        iconColor: 'text-orange-600 dark:text-orange-400'
-                                    },
-                                    {
-                                        label: 'Avg Score',
-                                        shortLabel: 'Avg Score',
-                                        value: `${stats.avgScore}%`,
-                                        icon: Trophy,
-                                        color: 'from-amber-400 to-yellow-500',
-                                        bg: 'bg-yellow-500/10',
-                                        iconColor: 'text-amber-600 dark:text-amber-400'
-                                    }
-                                ].map((stat, i) => {
-                                    const Icon = stat.icon;
-                                    return (
-                                        <div key={i} className="relative overflow-hidden bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/40 dark:border-white/5 shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 group hover:-translate-y-1 hover:border-white/60 dark:hover:border-white/20">
-                                            <div className={`absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br ${stat.color} opacity-[0.03] dark:opacity-[0.08] rounded-bl-full pointer-events-none transition-opacity group-hover:opacity-10`} />
-
-                                            <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
-                                                <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${stat.bg} shadow-inner`}>
-                                                    <Icon className={`w-4 h-4 sm:w-6 sm:h-6 ${stat.iconColor}`} />
-                                                </div>
-                                            </div>
-
-                                            <div className="relative z-10">
-                                                <div className="text-gray-500 dark:text-gray-400 font-bold text-[10px] sm:text-xs uppercase tracking-wider mb-1 opacity-70">
-                                                    <span className="hidden sm:inline">{stat.label}</span>
-                                                    <span className="sm:hidden">{stat.shortLabel}</span>
-                                                </div>
-                                                <div className="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-gray-900 group-hover:to-gray-600 dark:group-hover:from-white dark:group-hover:to-gray-300 transition-all">
-                                                    {stat.value}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                            {/* Collapse control */}
-                            <div className="flex justify-end -mt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setStatsCollapsed(!statsCollapsed)}
-                                    className="text-xs font-bold px-3 py-1 rounded-lg bg-white/60 dark:bg-white/10 border border-white/40 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-white/20"
-                                    aria-expanded={!statsCollapsed}
-                                >
-                                    {statsCollapsed ? 'Show Stats' : 'Hide Stats'}
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
                     <div
                         ref={mainScrollRef}
-                        className={`flex-1 min-h-0 p-3 sm:p-6 pt-2 overflow-y-auto custom-scrollbar`}
+                        className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto custom-scrollbar"
                     >
                         {/* Dynamic Content Rendering */}
                         {selectedTab === 'main' && (
-                            <div className="space-y-8">
+                            <div className="space-y-6 sm:space-y-8">
+                                {/* Top Stats Overview Cards */}
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                                    {[
+                                        {
+                                            label: 'Total Users',
+                                            shortLabel: 'Users',
+                                            value: stats.totalUsers,
+                                            icon: Users,
+                                            color: 'from-blue-500 to-violet-500',
+                                            bg: 'bg-blue-500/10',
+                                            iconColor: 'text-blue-600 dark:text-blue-400'
+                                        },
+                                        {
+                                            label: 'Total Quizzes',
+                                            shortLabel: 'Quizzes',
+                                            value: stats.totalQuizzes,
+                                            icon: BookOpen,
+                                            color: 'from-emerald-500 to-teal-500',
+                                            bg: 'bg-emerald-500/10',
+                                            iconColor: 'text-emerald-600 dark:text-emerald-400'
+                                        },
+                                        {
+                                            label: 'Total Attempts',
+                                            shortLabel: 'Attempts',
+                                            value: stats.totalAttempts,
+                                            icon: Activity,
+                                            color: 'from-orange-500 to-red-500',
+                                            bg: 'bg-orange-500/10',
+                                            iconColor: 'text-orange-600 dark:text-orange-400'
+                                        },
+                                        {
+                                            label: 'Avg Score',
+                                            shortLabel: 'Avg Score',
+                                            value: `${stats.avgScore}%`,
+                                            icon: Trophy,
+                                            color: 'from-amber-400 to-yellow-500',
+                                            bg: 'bg-yellow-500/10',
+                                            iconColor: 'text-amber-600 dark:text-amber-400'
+                                        }
+                                    ].map((stat, i) => {
+                                        const Icon = stat.icon;
+                                        return (
+                                            <div key={i} className="relative overflow-hidden bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/40 dark:border-white/5 shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 group hover:-translate-y-1 hover:border-white/60 dark:hover:border-white/20">
+                                                <div className={`absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br ${stat.color} opacity-[0.03] dark:opacity-[0.08] rounded-bl-full pointer-events-none transition-opacity group-hover:opacity-10`} />
+
+                                                <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
+                                                    <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${stat.bg} shadow-inner`}>
+                                                        <Icon className={`w-4 h-4 sm:w-6 sm:h-6 ${stat.iconColor}`} />
+                                                    </div>
+                                                </div>
+
+                                                <div className="relative z-10">
+                                                    <div className="text-gray-500 dark:text-gray-400 font-bold text-[10px] sm:text-xs uppercase tracking-wider mb-1 opacity-70">
+                                                        <span className="hidden sm:inline">{stat.label}</span>
+                                                        <span className="sm:hidden">{stat.shortLabel}</span>
+                                                    </div>
+                                                    <div className="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-gray-900 group-hover:to-gray-600 dark:group-hover:from-white dark:group-hover:to-gray-300 transition-all">
+                                                        {stat.value}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
                                 {/* Quick Actions */}
                                 <div className="bg-white/60 dark:bg-[#13141f]/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm">
                                     <div className="flex items-center justify-between mb-4">

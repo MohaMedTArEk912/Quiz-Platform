@@ -5,6 +5,7 @@
   --color-background-dark: #111827;
   --color-text-light: #111827;
   --color-text-dark: #f3f4f6;
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 @variant dark (&:where(.dark, .dark *));
@@ -14,6 +15,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Chrome/Safari Autofill Fix - Ensure it doesn't turn white in dark mode */

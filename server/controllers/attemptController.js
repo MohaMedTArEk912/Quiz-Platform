@@ -1,6 +1,7 @@
 import { Attempt } from '../models/Attempt.js';
 import { User } from '../models/User.js';
 import { Quiz } from '../models/Quiz.js';
+import { QuestionPoolProgress } from '../models/QuestionPoolProgress.js';
 import { SkillTrack } from '../models/SkillTrack.js';
 import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
 import { updateSkillTrackProgress } from '../services/progressService.js';
@@ -77,6 +78,58 @@ export const saveAttempt = async (req, res) => {
         const quiz = await Quiz.findOne({ id: normalizedAttempt.quizId }).lean();
         const passingThreshold = quiz?.passingScore ?? 70;
         normalizedAttempt.passed = normalizedAttempt.percentage >= passingThreshold;
+
+        // Check if quiz is in Question Pool mode and update seen question progress
+        const isPool = Boolean(
+          quiz && (
+            quiz.isQuestionPool ||
+            quiz.quizType === 'pool' ||
+            (quiz.questionsPerAttempt && quiz.questionsPerAttempt < (quiz.questions?.length || 0))
+          )
+        );
+
+        if (isPool && userId) {
+          normalizedAttempt.isQuestionPool = true;
+          let poolProgressDoc = await QuestionPoolProgress.findOne({ userId, quizId: normalizedAttempt.quizId });
+          if (!poolProgressDoc) {
+            poolProgressDoc = new QuestionPoolProgress({
+              userId,
+              quizId: normalizedAttempt.quizId,
+              seenQuestionIds: [],
+              completedCycles: 0
+            });
+          }
+
+          let takenQuestionIds = normalizedAttempt.questionIds || [];
+          if (!Array.isArray(takenQuestionIds) || takenQuestionIds.length === 0) {
+            takenQuestionIds = Object.keys(normalizedAttempt.answers || {});
+          }
+
+          const existingSeenSet = new Set((poolProgressDoc.seenQuestionIds || []).map(id => String(id)));
+          takenQuestionIds.forEach(id => existingSeenSet.add(String(id)));
+
+          const totalPoolCount = quiz.questions?.length || 0;
+          let justCompleted = false;
+
+          // If user has seen all questions in the pool (100% completion milestone)
+          if (totalPoolCount > 0 && existingSeenSet.size >= totalPoolCount) {
+            justCompleted = true;
+            poolProgressDoc.completedCycles = (poolProgressDoc.completedCycles || 0) + 1;
+            poolProgressDoc.seenQuestionIds = []; // reset for fresh next cycle
+          } else {
+            poolProgressDoc.seenQuestionIds = Array.from(existingSeenSet);
+          }
+          poolProgressDoc.lastAttemptAt = new Date();
+          await poolProgressDoc.save();
+
+          normalizedAttempt.poolProgress = {
+            seenCount: justCompleted ? totalPoolCount : existingSeenSet.size,
+            totalCount: totalPoolCount,
+            percentage: totalPoolCount > 0 ? (justCompleted ? 100 : Math.round((existingSeenSet.size / totalPoolCount) * 100)) : 0,
+            cycle: poolProgressDoc.completedCycles || 0,
+            justCompletedPool: justCompleted
+          };
+        }
 
         let newAttempt;
         try {

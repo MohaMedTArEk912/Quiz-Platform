@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode, useMemo, useCallback } from 'react';
 import { api } from '../lib/api';
-import type { Quiz, UserData, AttemptData, BadgeDefinition, ChallengeData } from '../lib/api';
+import type { Quiz, UserData, AttemptData, BadgeDefinition, ChallengeData, Subject, SkillTrack, StudyCard } from '../lib/api';
 import { useAuth } from './AuthContext';
 
 interface DataContextType {
@@ -9,9 +9,9 @@ interface DataContextType {
     allAttempts: AttemptData[];
     allBadges: BadgeDefinition[];
     challenges: ChallengeData[];
-    subjects: any[];
-    skillTracks: any[];
-    studyCards: any[];
+    subjects: Subject[];
+    skillTracks: SkillTrack[];
+    studyCards: StudyCard[];
     loadingData: boolean;
     loadingQuizzes: boolean;
     refreshData: () => Promise<void>;
@@ -36,9 +36,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [allAttempts, setAllAttempts] = useState<AttemptData[]>([]);
     const [allBadges, setAllBadges] = useState<BadgeDefinition[]>([]);
     const [challenges, setChallenges] = useState<ChallengeData[]>([]);
-    const [subjects, setSubjects] = useState<any[]>([]);
-    const [skillTracks, setSkillTracks] = useState<any[]>([]);
-    const [studyCards, setStudyCards] = useState<any[]>([]);
+    const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [skillTracks, setSkillTracks] = useState<SkillTrack[]>([]);
+    const [studyCards, setStudyCards] = useState<StudyCard[]>([]);
     const [loadingData, setLoadingData] = useState(false);
     const [loadingQuizzes, setLoadingQuizzes] = useState(true);
 
