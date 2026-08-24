@@ -53,12 +53,12 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ adminEmail, onClose }) =>
 
     return (
         <div className="fixed inset-0 bg-gray-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4">
-            <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] shadow-2xl w-full max-w-md p-8 relative">
+            <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] shadow-2xl w-full max-w-md p-6 sm:p-8 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <button
                     onClick={onClose}
-                    className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    className="absolute top-5 right-5 sm:top-6 sm:right-6 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
                 >
-                    <X className="w-6 h-6" />
+                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
 
                 <div className="mb-8">

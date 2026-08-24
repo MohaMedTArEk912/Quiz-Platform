@@ -60,9 +60,10 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
                 // Optional: Visual cue for error could be added here
             }
 
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
-            setOutput(['Error executing code:', error.message || 'Unknown error', 'Make sure the backend is running and Judge0 API key is set.']);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            setOutput(['Error executing code:', message, 'Make sure the backend is running and Judge0 API key is set.']);
         } finally {
             setIsRunning(false);
         }

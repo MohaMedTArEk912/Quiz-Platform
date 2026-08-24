@@ -11,12 +11,20 @@ const ProfilePage: React.FC = () => {
 
     if (!currentUser) return null;
 
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            navigate(-1);
+        } else {
+            navigate('/');
+        }
+    };
+
     return (
         <UserProfile
             user={userWithRank || currentUser}
             attempts={allAttempts.filter(a => a.userId === currentUser.userId)}
             allUsers={allUsers}
-            onBack={() => navigate('/')}
+            onBack={handleBack}
             onUserUpdate={(u) => updateUser(u)}
         />
     );

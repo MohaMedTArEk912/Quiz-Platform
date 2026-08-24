@@ -16,6 +16,16 @@ import RoadModals from './road-components/RoadModals';
 import RoadOverview from './road-components/RoadOverview';
 import RoadQuizzes from './road-components/RoadQuizzes';
 
+type RoadTab = 'overview' | 'resources' | 'quizzes' | 'roadmap' | 'study';
+
+const TABS: { id: RoadTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: 'overview', label: 'Overview', icon: BookOpen },
+    { id: 'resources', label: 'Resources & AI', icon: Sparkles },
+    { id: 'roadmap', label: 'Roadmap', icon: Brain },
+    { id: 'quizzes', label: 'Quizzes', icon: GraduationCap },
+    { id: 'study', label: 'Study Cards', icon: Edit },
+];
+
 interface RoadManagerProps {
     currentUser: UserData;
     onNotification: (type: 'success' | 'error' | 'warning', message: string) => void;
@@ -44,7 +54,7 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
     const [quizToEdit, setQuizToEdit] = useState<Quiz | null>(null);
 
     // Tab State for Detail View
-    const [activeTab, setActiveTab] = useState<'overview' | 'resources' | 'quizzes' | 'roadmap' | 'study'>('overview');
+    const [activeTab, setActiveTab] = useState<RoadTab>('overview');
     const [roadmapDirty, setRoadmapDirty] = useState(false);
     const [roadmapLeaveGuard, setRoadmapLeaveGuard] = useState<(() => Promise<boolean>) | null>(null);
 
@@ -57,9 +67,10 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
         try {
             const subjects = await api.getAllSubjects(currentUser.userId);
             setRoads(subjects);
-        } catch (e: any) {
+        } catch (e) {
             console.error(e);
-            onNotification('error', e.message || 'Failed to load roads');
+            const message = e instanceof Error ? e.message : 'Failed to load roads';
+            onNotification('error', message);
         } finally {
             setIsLoading(false);
         }
@@ -95,9 +106,10 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
             await api.updateQuiz(quiz.id, updatedQuiz, currentUser.userId);
             onNotification('success', assign ? `Quiz "${quiz.title}" assigned to this road` : `Quiz "${quiz.title}" unassigned`);
             loadQuizzes(); // Refresh
-        } catch (e: any) {
+        } catch (e) {
             console.error(e);
-            onNotification('error', e.message || 'Failed to update quiz');
+            const message = e instanceof Error ? e.message : 'Failed to update quiz';
+            onNotification('error', message);
         } finally {
             setIsAssigning(null);
         }
@@ -121,9 +133,10 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
             setIsQuizModalOpen(false);
             setQuizToEdit(null);
             loadQuizzes();
-        } catch (e: any) {
+        } catch (e) {
             console.error(e);
-            onNotification('error', e.message || 'Failed to save quiz');
+            const message = e instanceof Error ? e.message : 'Failed to save quiz';
+            onNotification('error', message);
         } finally {
             setIsSubmitting(false);
         }
@@ -166,7 +179,7 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
         return roadmapLeaveGuard();
     }, [activeTab, roadmapLeaveGuard]);
 
-    const handleRoadmapTabChange = useCallback(async (nextTab: 'overview' | 'resources' | 'quizzes' | 'roadmap' | 'study') => {
+    const handleRoadmapTabChange = useCallback(async (nextTab: RoadTab) => {
         if (nextTab === activeTab) return;
 
         if (activeTab === 'roadmap' && nextTab !== 'roadmap') {
@@ -209,8 +222,9 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                 setIsCreateModalOpen(false);
                 loadRoads();
             }
-        } catch (error: any) {
-            onNotification('error', 'Failed to create road: ' + error.message);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to create road';
+            onNotification('error', 'Failed to create road: ' + message);
         } finally {
             setIsSubmitting(false);
         }
@@ -235,8 +249,9 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                 }
                 loadRoads();
             }
-        } catch (error: any) {
-            onNotification('error', 'Failed to update road: ' + error.message);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to update road';
+            onNotification('error', 'Failed to update road: ' + message);
         } finally {
             setIsSubmitting(false);
         }
@@ -256,8 +271,9 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                     loadRoads();
                 }
             }
-        } catch (error: any) {
-            onNotification('error', 'Failed to delete road: ' + error.message);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to delete road';
+            onNotification('error', 'Failed to delete road: ' + message);
         }
     };
 
@@ -293,24 +309,18 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
             {view === 'detail' && selectedRoad && (
                 <div className="flex flex-col">
                     {/* Tabs */}
-                    <div className="flex gap-2 mb-6 overflow-x-auto pb-2 p-1 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/5 w-max max-w-full">
-                        {[
-                            { id: 'overview', label: 'Overview', icon: BookOpen },
-                            { id: 'resources', label: 'Resources & AI', icon: Sparkles },
-                            { id: 'roadmap', label: 'Roadmap', icon: Brain },
-                            { id: 'quizzes', label: 'Quizzes', icon: GraduationCap },
-                            { id: 'study', label: 'Study Cards', icon: Edit },
-                        ].map(tab => (
+                    <div className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto no-scrollbar p-1.5 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/5 w-full sm:w-max max-w-full">
+                        {TABS.map(tab => (
                             <button
                                 key={tab.id}
-                                onClick={() => void handleRoadmapTabChange(tab.id as any)}
-                                className={`px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all duration-300 relative overflow-hidden ${activeTab === tab.id
+                                onClick={() => void handleRoadmapTabChange(tab.id)}
+                                className={`px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 transition-all duration-300 relative overflow-hidden shrink-0 cursor-pointer ${activeTab === tab.id
                                     ? 'bg-white dark:bg-[#1e1e2d] text-indigo-600 dark:text-indigo-400 shadow-lg shadow-indigo-500/10 ring-1 ring-black/5 dark:ring-white/10'
                                     : 'hover:bg-white/50 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                                     }`}
                             >
-                                <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'animate-bounce-subtle' : ''}`} />
-                                {tab.label}
+                                <tab.icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeTab === tab.id ? 'animate-bounce-subtle' : ''}`} />
+                                <span>{tab.label}</span>
                                 {tab.id === 'roadmap' && roadmapDirty && (
                                     <span className="ml-1 inline-block h-2 w-2 rounded-full bg-amber-500" />
                                 )}

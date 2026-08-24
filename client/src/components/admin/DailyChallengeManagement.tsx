@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Zap, Plus, Edit2, Trash2, RefreshCw, Code2, Calendar, Sparkles } from 'lucide-react';
 import Modal from '../common/Modal';
-import type { UserData, Quiz, CompilerQuestion, ShopItem } from '../../types/index.ts';
+import type { UserData, Quiz, CompilerQuestion, ShopItem, DailyChallengeItem } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 import CompilerQuestionManagement from './CompilerQuestionManagement';
 
@@ -13,11 +13,11 @@ interface DailyChallengeManagementProps {
 
 const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ currentUser, onNotification }) => {
     const [activeTab, setActiveTab] = useState<'schedule' | 'questions'>('schedule');
-    const [dailyChallenges, setDailyChallenges] = useState<any[]>([]);
+    const [dailyChallenges, setDailyChallenges] = useState<DailyChallengeItem[]>([]);
     const [compilerQuestions, setCompilerQuestions] = useState<CompilerQuestion[]>([]);
-    const [editingChallenge, setEditingChallenge] = useState<any | null>(null);
+    const [editingChallenge, setEditingChallenge] = useState<DailyChallengeItem | null>(null);
     const [shopItems, setShopItems] = useState<ShopItem[]>([]);
-    const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'reschedule', item: any } | null>(null);
+    const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'reschedule', item: DailyChallengeItem } | null>(null);
     const [isAutoScheduling, setIsAutoScheduling] = useState(false);
 
     const loadData = useCallback(async () => {
@@ -134,9 +134,9 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
             const exists = dailyChallenges.some(c => new Date(c.date).toDateString() === new Date(editingChallenge.date).toDateString());
 
             // Prepare payload
-            const { _isNew, _id, ...payload } = editingChallenge;
-
-            // Clean up old quiz fields if present
+            const payload = { ...editingChallenge };
+            delete payload._isNew;
+            delete payload._id;
             delete payload.quizId;
             delete payload.criteria;
 
@@ -144,7 +144,18 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                 if (exists && editingChallenge._isNew) {
                     // Let backend handle duplicate date error (409)
                 }
-                await api.createDailyChallenge(payload, currentUser.userId);
+                if (!payload.compilerQuestionId) {
+                    onNotification('error', 'Please select a question from the question bank');
+                    return;
+                }
+                await api.createDailyChallenge({
+                    date: payload.date,
+                    compilerQuestionId: payload.compilerQuestionId,
+                    rewardCoins: payload.rewardCoins,
+                    rewardXP: payload.rewardXP,
+                    rewardBadgeId: payload.rewardBadgeId,
+                    rewardItemId: payload.rewardItemId,
+                }, currentUser.userId);
                 onNotification('success', 'Challenge scheduled');
             } else {
                 await api.updateDailyChallenge(editingChallenge._id, payload, currentUser.userId);
@@ -165,8 +176,10 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
 
         try {
             if (type === 'delete') {
-                await api.deleteDailyChallenge(item._id || item.challengeId, currentUser.userId);
-                setDailyChallenges(prev => prev.filter(c => (c._id || c.challengeId) !== (item._id || item.challengeId)));
+                const id = item._id || item.challengeId;
+                if (!id) return;
+                await api.deleteDailyChallenge(id, currentUser.userId);
+                setDailyChallenges(prev => prev.filter(c => (c._id || c.challengeId) !== id));
                 onNotification('success', 'Challenge deleted');
             } else if (type === 'reschedule') {
                 const today = new Date();
@@ -174,17 +187,20 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
                 const todayStr = today.toISOString();
 
                 const id = item._id || item.challengeId;
-                const { _id, challengeId, ...rest } = item;
-                const newPayload = { ...rest, date: todayStr };
+                if (!id) return;
+                const newPayload = { ...item, date: todayStr };
+                delete newPayload._id;
+                delete newPayload.challengeId;
 
                 await api.updateDailyChallenge(id, newPayload, currentUser.userId);
                 setEditingChallenge(null);
                 loadData();
                 onNotification('success', 'Challenge rescheduled to today');
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
-            if (err.message && err.message.includes('exists')) {
+            const message = err instanceof Error ? err.message : '';
+            if (message.includes('exists')) {
                 onNotification('error', 'A challenge already exists for today. Delete it first.');
             } else {
                 onNotification('error', `Failed to ${type} challenge`);

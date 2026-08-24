@@ -11,11 +11,19 @@ const LeaderboardPage: React.FC = () => {
 
     if (!currentUser) return null;
 
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            navigate(-1);
+        } else {
+            navigate('/');
+        }
+    };
+
     return (
         <Leaderboard
             users={allUsers}
             currentUser={userWithRank || currentUser}
-            onBack={() => navigate('/')}
+            onBack={handleBack}
         />
     );
 };

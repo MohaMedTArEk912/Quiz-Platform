@@ -408,25 +408,27 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
     return (
         <div className="space-y-4">
             {/* Header */}
-            <div className="flex flex-wrap gap-4 justify-between mb-4 items-center">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-wrap gap-3 sm:gap-4 justify-between mb-4 items-center">
+                <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
                     {viewMode === 'list' && (
                         <button
                             onClick={() => { setViewMode('stacks'); setSelectedStackId(null); }}
-                            className="p-2 bg-gray-100 dark:bg-white/10 rounded-xl hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
+                            className="p-2 bg-gray-100 dark:bg-white/10 rounded-xl hover:bg-gray-200 dark:hover:bg-white/20 transition-colors cursor-pointer shrink-0"
+                            title="Back to Collections"
                         >
                             <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                         </button>
                     )}
-                    <h2 className="text-2xl font-black text-gray-900 dark:text-white">
+                    <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white truncate">
                         {viewMode === 'stacks' ? 'Quiz Collections' : activeSubjectTitle}
                     </h2>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                     <div className="relative">
                         <button
                             onClick={() => setActiveHeaderMenu(!activeHeaderMenu)}
-                            className="p-3 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50 rounded-xl transition-colors"
+                            className="p-2.5 sm:p-3 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50 rounded-xl transition-colors cursor-pointer"
+                            title="More Options"
                         >
                             <MoreVertical className="w-5 h-5" />
                         </button>
@@ -434,7 +436,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                             <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1e1e2d] rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
                                 <button
                                     onClick={() => { handleDownloadSample(); setActiveHeaderMenu(false); }}
-                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200"
+                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer"
                                 >
                                     <Download className="w-4 h-4 text-gray-400" /> Sample JSON
                                 </button>
@@ -456,9 +458,10 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
 
                     <button
                         onClick={() => setEditingQuiz(getEmptyQuiz())}
-                        className="px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-violet-500/25 flex items-center gap-2"
+                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs sm:text-sm transition-all shadow-lg hover:shadow-violet-500/25 flex items-center gap-2 cursor-pointer shrink-0"
                     >
-                        <Plus className="w-5 h-5" /> Create Quiz
+                        <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span>Create Quiz</span>
                     </button>
                 </div>
             </div>
@@ -472,10 +475,10 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
 
             {/* Quiz Type Filter */}
             {viewMode === 'list' && (
-                <div className="flex gap-3 flex-wrap">
+                <div className="flex gap-2 sm:gap-3 overflow-x-auto no-scrollbar pb-1">
                     <button
                         onClick={() => setQuizTypeFilter('all')}
-                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                        className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shrink-0 cursor-pointer ${
                             quizTypeFilter === 'all'
                                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
                                 : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
@@ -485,7 +488,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                     </button>
                     <button
                         onClick={() => setQuizTypeFilter('session')}
-                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                        className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shrink-0 cursor-pointer ${
                             quizTypeFilter === 'session'
                                 ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
                                 : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
@@ -495,7 +498,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                     </button>
                     <button
                         onClick={() => setQuizTypeFilter('homework')}
-                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                        className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shrink-0 cursor-pointer ${
                             quizTypeFilter === 'homework'
                                 ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/30'
                                 : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
@@ -505,7 +508,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                     </button>
                     <button
                         onClick={() => setQuizTypeFilter('exam')}
-                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                        className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shrink-0 cursor-pointer ${
                             quizTypeFilter === 'exam'
                                 ? 'bg-red-600 text-white shadow-lg shadow-red-500/30'
                                 : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
@@ -515,7 +518,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                     </button>
                     <button
                         onClick={() => setQuizTypeFilter('pool')}
-                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-1.5 ${
+                        className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
                             quizTypeFilter === 'pool'
                                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
                                 : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'

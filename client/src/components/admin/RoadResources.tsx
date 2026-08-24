@@ -7,7 +7,7 @@ import { api } from '../../lib/api';
 import { useAiJobs } from '../../contexts/AiJobContext';
 import { useConfirm } from '../../hooks/useConfirm';
 import ConfirmDialog from '../ConfirmDialog';
-import type { Subject } from '../../types';
+import type { Subject, GeneratedQuestion } from '../../types';
 
 interface RoadResourcesProps {
     subject: Subject;
@@ -23,7 +23,7 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
     // Generator State
     const [genSelectedMaterials, setGenSelectedMaterials] = useState<string[]>([]);
     const [genConfig, setGenConfig] = useState({ count: 10, difficulty: 'Medium' });
-    const [genResult, setGenResult] = useState<any[] | null>(null);
+    const [genResult, setGenResult] = useState<GeneratedQuestion[] | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
 
     // Publish State
@@ -64,8 +64,9 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
                 onNotification('success', `Uploaded ${files.length} file(s)`);
                 await Promise.resolve(onRefresh());
             }
-        } catch (error: any) {
-            onNotification('error', 'Upload failed: ' + error.message);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            onNotification('error', 'Upload failed: ' + message);
         } finally {
             setIsUploading(false);
             e.target.value = '';
@@ -77,8 +78,9 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
         try {
             await api.processMaterial(subject._id, materialId, adminId);
             onNotification('success', 'Processing started');
-        } catch (e: any) {
-            onNotification('error', 'Processing failed: ' + e.message);
+        } catch (e) {
+            const message = e instanceof Error ? e.message : 'Unknown error';
+            onNotification('error', 'Processing failed: ' + message);
         }
     };
 
@@ -95,8 +97,9 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
             await api.deleteMaterial(subject._id, materialId, adminId);
             onNotification('success', 'Resource deleted');
             await Promise.resolve(onRefresh());
-        } catch (e: any) {
-            onNotification('error', 'Delete failed: ' + e.message);
+        } catch (e) {
+            const message = e instanceof Error ? e.message : 'Unknown error';
+            onNotification('error', 'Delete failed: ' + message);
         }
     };
 
@@ -116,8 +119,9 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
                 setGenResult(res.data);
                 addJob('generate', 'Quiz ready!', { status: 'success' });
             }
-        } catch (e: any) {
-            onNotification('error', 'Generation failed: ' + e.message);
+        } catch (e) {
+            const message = e instanceof Error ? e.message : 'Unknown error';
+            onNotification('error', 'Generation failed: ' + message);
         } finally {
             setIsGenerating(false);
         }
@@ -132,7 +136,7 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
                 question: q.question,
                 options: q.options,
                 correctOption: q.correctAnswer,
-                type: 'multiple-choice' as 'multiple-choice',
+                type: 'multiple-choice' as const,
                 points: 1,
                 explanation: '',
                 part: '1'
@@ -158,8 +162,9 @@ const RoadResources: React.FC<RoadResourcesProps> = ({ subject, adminId, onNotif
                 setIsPublishModalOpen(false);
                 await Promise.resolve(onRefresh());
             }
-        } catch (e: any) {
-            onNotification('error', 'Publish failed: ' + e.message);
+        } catch (e) {
+            const message = e instanceof Error ? e.message : 'Unknown error';
+            onNotification('error', 'Publish failed: ' + message);
         } finally {
             setIsPublishing(false);
         }

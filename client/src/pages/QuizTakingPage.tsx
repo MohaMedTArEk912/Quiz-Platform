@@ -205,12 +205,20 @@ const QuizTakingPage: React.FC = () => {
         type: p.type === 'time_freeze' ? 'time' : p.type
     })) || [];
 
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            navigate(-1);
+        } else {
+            navigate('/');
+        }
+    };
+
     return (
         <QuizTaking
             quiz={activeQuiz}
             user={userWithRank || currentUser}
             onComplete={handleComplete}
-            onBack={() => navigate('/')}
+            onBack={handleBack}
             powerUps={mappedPowerUps}
             onPowerUpUsed={handlePowerUpUsed}
             onUserUpdate={(updates) => updateUser(updates)}

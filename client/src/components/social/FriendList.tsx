@@ -115,7 +115,7 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                 ].map((tab) => (
                     <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
+                        onClick={() => setActiveTab(tab.id as 'friends' | 'requests' | 'challenges' | 'add')}
                         className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id
                             ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20'
                             : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'
@@ -186,11 +186,11 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                         onClose={() => setActiveChatFriend(null)}
                         onStartChallenge={(onQuizSelected) => {
                             // Store callback for when quiz is selected
-                            (window as any).__pendingChallengeCallback = onQuizSelected;
+                            window.__pendingChallengeCallback = onQuizSelected;
                             onChallenge?.(activeChatFriend.userId, null);
                         }}
                         onStartAsyncChallenge={(onQuizSelected) => {
-                            (window as any).__pendingAsyncChallengeCallback = onQuizSelected;
+                            window.__pendingAsyncChallengeCallback = onQuizSelected;
                             onAsyncChallenge?.(activeChatFriend.userId);
                         }}
                     />

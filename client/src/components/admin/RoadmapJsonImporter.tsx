@@ -128,6 +128,7 @@ export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen
 
     useEffect(() => {
         if (isOpen && mode === 'editor') {
+
             requestAnimationFrame(() => {
                 textareaRef.current?.focus();
             });
@@ -160,7 +161,7 @@ export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen
                 setMode('editor'); // Switch to editor to show content
                 setSuccessMsg(`Loaded ${file.name} successfully!`);
                 setTimeout(() => setSuccessMsg(null), 3000);
-            } catch (err) {
+            } catch {
                 setError('Failed to parse JSON file. Please check the syntax.');
             }
         };
@@ -204,8 +205,9 @@ export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen
 
             onClose();
 
-        } catch (err: any) {
-            setError(err.message || 'Invalid JSON format');
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Invalid JSON format';
+            setError(message);
         } finally {
             setImporting(false);
         }

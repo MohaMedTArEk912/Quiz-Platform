@@ -158,9 +158,9 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
             hairColor: AVATAR_OPTIONS.hair.colors[Math.floor(Math.random() * AVATAR_OPTIONS.hair.colors.length)],
             accessory: AVATAR_OPTIONS.style.accessories[Math.floor(Math.random() * AVATAR_OPTIONS.style.accessories.length)],
             backgroundColor: AVATAR_OPTIONS.base.backgroundColor[Math.floor(Math.random() * AVATAR_OPTIONS.base.backgroundColor.length)],
-            mood: AVATAR_OPTIONS.mood.moods[Math.floor(Math.random() * AVATAR_OPTIONS.mood.moods.length)] as any,
-            gender: randomGender as any,
-            clothing: validClothing[Math.floor(Math.random() * validClothing.length)] as any
+            mood: AVATAR_OPTIONS.mood.moods[Math.floor(Math.random() * AVATAR_OPTIONS.mood.moods.length)] as AvatarConfig['mood'],
+            gender: randomGender as AvatarConfig['gender'],
+            clothing: validClothing[Math.floor(Math.random() * validClothing.length)] as AvatarConfig['clothing']
         });
     };
 
@@ -206,7 +206,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id as any)}
+                                onClick={() => setActiveTab(tab.id)}
                                 className={`flex items-center gap-2 py-4 px-2 border-b-2 font-bold text-sm transition-colors whitespace-nowrap ${activeTab === tab.id
                                     ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                                     : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white'
@@ -341,7 +341,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                                             <button
                                                 key={item}
                                                 disabled={locked}
-                                                onClick={() => setConfig({ ...config, clothing: item as any })}
+                                                onClick={() => setConfig({ ...config, clothing: item as AvatarConfig['clothing'] })}
                                                 className={`p-4 rounded-xl border-2 text-sm font-bold capitalize transition-all relative ${config.clothing === item
                                                     ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-300'
                                                     : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-indigo-300'
@@ -409,7 +409,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                                                 <button
                                                     key={frame}
                                                     disabled={locked}
-                                                    onClick={() => setConfig({ ...config, frame: frame as any })}
+                                                    onClick={() => setConfig({ ...config, frame: frame as AvatarConfig['frame'] })}
                                                     className={`p-4 rounded-xl border-2 text-sm font-bold capitalize transition-all relative ${(config.frame || 'none') === frame
                                                         ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-300'
                                                         : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-indigo-300'
@@ -440,7 +440,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({ user, onClose, onUpdate }) 
                                     {AVATAR_OPTIONS.mood.moods.map(mood => (
                                         <button
                                             key={mood}
-                                            onClick={() => setConfig({ ...config, mood: mood as any })}
+                                            onClick={() => setConfig({ ...config, mood: mood as AvatarConfig['mood'] })}
                                             className={`p-4 rounded-xl border-2 text-sm font-bold capitalize transition-all ${config.mood === mood
                                                 ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
                                                 : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-indigo-300'

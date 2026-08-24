@@ -30,8 +30,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onSwitchToRegister, 
             setIsLoading(true);
             try {
                 await onLogin(email, password);
-            } catch (err: any) {
-                setError(err.message || 'Login failed');
+            } catch (err) {
+                const message = err instanceof Error ? err.message : 'Login failed';
+                setError(message);
                 setIsLoading(false);
             }
         } else {

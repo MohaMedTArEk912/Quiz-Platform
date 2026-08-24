@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../lib/api';
-import type { Clan, UserData, ClanChatMessage } from '../../types';
+import type { Clan, UserData, ClanChatMessage, AvatarConfig } from '../../types';
 import { Users, Shield, Trophy, Search, LogOut, Star, UserPlus, Edit2, Check, X, MoreVertical, Trash2, ArrowUpCircle, ArrowDownCircle, Bell, Pin, Megaphone, MessageCircle, Lock } from 'lucide-react';
 import Avatar from '../Avatar';
 import { ChatWindow } from '../chat/ChatWindow';
@@ -117,8 +117,8 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
 
         // ISSUE: WebSocket didn't emit update
         // FIX: Listen for real-time kick notifications
-        const handleKickedFromClan = (data: any) => {
-            showNotification('error', data.message);
+        const handleKickedFromClan = (data: { message?: string }) => {
+            showNotification('error', data.message || 'You have been removed from the clan');
             setClan(null);
             setView('browse');
             onUpdateUser();
@@ -172,7 +172,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             setClan(data);
             setEditForm({ name: data.name, description: data.description, isPublic: data.isPublic });
             setLoading(false);
-        } catch (err) {
+        } catch {
             setError('Failed to load clan');
             setLoading(false);
         }
@@ -196,7 +196,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
         try {
             const results = await api.searchClans(queryToUse, user.userId);
             setSearchResults(results);
-        } catch (err) {
+        } catch {
             setError('Search failed');
         }
     };
@@ -207,8 +207,9 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             await api.createClan(createForm, user.userId);
             onUpdateUser(); // Refresh user to get clanId
             // The useEffect will trigger reload
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to create clan';
+            setError(msg);
         }
     };
 
@@ -219,8 +220,9 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             await api.updateClan(clan.clanId, editForm, user.userId);
             loadClan(clan.clanId);
             setShowEdit(false);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to update clan';
+            setError(msg);
         }
     };
 
@@ -229,8 +231,9 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             await api.joinClan(clanId, user.userId);
             onUpdateUser();
             showNotification('success', 'Request sent successfully (or joined if public)!');
-        } catch (err: any) {
-            showNotification('error', err.message || 'Failed to join / send request to clan');
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to join / send request to clan';
+            showNotification('error', msg);
         }
     };
 
@@ -248,8 +251,9 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             onUpdateUser();
             setView('browse');
             showNotification('success', 'You have left the clan');
-        } catch (err: any) {
-            showNotification('error', err.message || 'Failed to leave clan');
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to leave clan';
+            showNotification('error', msg);
         }
     };
 
@@ -269,8 +273,9 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             await api.inviteToClan(clan.clanId, targetId, user.userId);
             showNotification('success', 'Invite sent!');
             setInviteResults(inviteResults.filter(u => u.userId !== targetId));
-        } catch (err: any) {
-            showNotification('error', err.message || 'Failed to send invite');
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to send invite';
+            showNotification('error', msg);
         }
     };
 
@@ -314,8 +319,9 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             }
 
             showNotification('success', 'Member removed');
-        } catch (err: any) {
-            showNotification('error', err.message || 'Failed to remove member');
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to remove member';
+            showNotification('error', msg);
             // Revert optimistic update
             loadClan(clan.clanId);
         }
@@ -327,8 +333,9 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             await api.updateMemberRole(clan.clanId, targetId, newRole, user.userId);
             loadClan(clan.clanId);
             showNotification('success', 'Role updated');
-        } catch (err: any) {
-            showNotification('error', err.message || 'Failed to update role');
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to update role';
+            showNotification('error', msg);
         }
     };
 
@@ -338,8 +345,9 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             await api.handleJoinRequest(clan.clanId, targetId, accept, user.userId);
             loadClan(clan.clanId);
             showNotification('success', accept ? 'Request accepted' : 'Request rejected');
-        } catch (err: any) {
-            showNotification('error', err.message || 'Failed to process request');
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to process request';
+            showNotification('error', msg);
         }
     };
 
@@ -499,7 +507,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                                     try {
                                                                         await api.pinClanAnnouncement(clan.clanId, ann.id, user.userId);
                                                                         loadClan(clan.clanId);
-                                                                    } catch (e: any) { showNotification('error', e.message); }
+                                                                    } catch (e) { const msg = e instanceof Error ? e.message : 'Failed to pin announcement'; showNotification('error', msg); }
                                                                 }}
                                                                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 hover:text-orange-500 transition-colors"
                                                                 title={ann.isPinned ? "Unpin" : "Pin"}
@@ -518,7 +526,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                                     try {
                                                                         await api.deleteClanAnnouncement(clan.clanId, ann.id, user.userId);
                                                                         loadClan(clan.clanId);
-                                                                    } catch (e: any) { showNotification('error', e.message); }
+                                                                    } catch (e) { const msg = e instanceof Error ? e.message : 'Failed to delete announcement'; showNotification('error', msg); }
                                                                 }}
                                                                 className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-gray-400 hover:text-red-500 transition-colors"
                                                                 title="Delete"
@@ -572,12 +580,12 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                     Join Requests ({clan.activeJoinRequests.length})
                                 </h3>
                                 <div className="space-y-3">
-                                    {clan.activeJoinRequests.map((req: any) => (
+                                    {clan.activeJoinRequests.map((req: { userId: string; name?: string; avatar?: AvatarConfig }) => (
                                         <div key={req.userId} className="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center font-bold text-gray-500 overflow-hidden">
-                                                    {(req as any).avatar ? (
-                                                        <Avatar config={(req as any).avatar} size="sm" className="w-full h-full" />
+                                                    {req.avatar ? (
+                                                        <Avatar config={req.avatar} size="sm" className="w-full h-full" />
                                                     ) : (
                                                         req.name ? req.name.substring(0, 2).toUpperCase() : '??'
                                                     )}
@@ -813,8 +821,9 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                 setShowAnnouncementModal(false);
                                                 setAnnouncementContent('');
                                                 showNotification('success', 'Announcement posted successfully!');
-                                            } catch (e: any) {
-                                                showNotification('error', e.message);
+                                            } catch (e) {
+                                                const msg = e instanceof Error ? e.message : 'Failed to post announcement';
+                                                showNotification('error', msg);
                                             }
                                         }}
                                         className="flex-1 px-4 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold hover:from-violet-700 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md"
@@ -945,7 +954,10 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                     try {
                                                         await api.respondToClanInvite(invite.clanId, true, user.userId);
                                                         onUpdateUser();
-                                                    } catch (e: any) { setError(e.message); }
+                                                    } catch (e) {
+                                                        const msg = e instanceof Error ? e.message : 'Failed to accept invite';
+                                                        setError(msg);
+                                                    }
                                                 }}
                                                 className="px-4 py-2 bg-white text-violet-600 rounded-xl font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg"
                                             >
@@ -956,7 +968,10 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                     try {
                                                         await api.respondToClanInvite(invite.clanId, false, user.userId);
                                                         onUpdateUser();
-                                                    } catch (e: any) { setError(e.message); }
+                                                    } catch (e) {
+                                                        const msg = e instanceof Error ? e.message : 'Failed to decline invite';
+                                                        setError(msg);
+                                                    }
                                                 }}
                                                 className="px-4 py-2 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 rounded-xl font-bold text-sm transition-all"
                                             >

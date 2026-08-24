@@ -29,8 +29,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
             setIsLoading(true);
             try {
                 await onRegister(name, email, password);
-            } catch (err: any) {
-                setError(err.message || 'Registration failed');
+            } catch (err) {
+                const message = err instanceof Error ? err.message : 'Registration failed';
+                setError(message);
                 setIsLoading(false);
             }
         } else {

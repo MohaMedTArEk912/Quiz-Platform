@@ -31,7 +31,7 @@ interface ChatWindowProps {
     title?: string;
     currentUser: UserData;
     messages: ChatMessage[];
-    onSendMessage: (content: string, type: 'text' | 'challenge', extra?: any) => void;
+    onSendMessage: (content: string, type: 'text' | 'challenge', extra?: Record<string, unknown>) => void;
     onClose: () => void;
 
     // Challenge acceptance handler

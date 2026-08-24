@@ -37,7 +37,7 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
     const [gameState, setGameState] = useState<'waiting' | 'countdown' | 'playing' | 'finished'>('waiting');
     const [countdown, setCountdown] = useState(5);
 
-    const [gameResult, setGameResult] = useState<{ winnerId: string | null, isDraw: boolean, results: any } | null>(null);
+    const [gameResult, setGameResult] = useState<{ winnerId: string | null, isDraw: boolean, results: Record<string, unknown> } | null>(null);
     const localResultRef = useRef<QuizResult | null>(null);
 
     const [opponentState, setOpponentState] = useState({
@@ -158,7 +158,7 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
             }
         };
 
-        const handleGameOver = (data: { winnerId: string | null, isDraw: boolean, results: any }) => {
+        const handleGameOver = (data: { winnerId: string | null, isDraw: boolean, results: Record<string, unknown> }) => {
             setGameResult(data);
             if (data.isDraw) {
                 addLog('🤝 Match ended in a draw!');

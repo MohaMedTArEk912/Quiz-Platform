@@ -136,7 +136,7 @@ const LoginPage: React.FC = () => {
                     window.removeEventListener('message', handleMessage);
                     try {
                         googleWindow?.close();
-                    } catch (e) {
+                    } catch {
                         // Silently handle COOP policy errors - popup will close itself
                     }
                 }
@@ -152,7 +152,7 @@ const LoginPage: React.FC = () => {
                 window.removeEventListener('message', handleMessage);
                 try {
                     googleWindow?.close();
-                } catch (e) {
+                } catch {
                     // Silently handle COOP policy errors - popup will close itself
                 }
             }

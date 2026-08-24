@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { useNotification } from '../context/NotificationContext';
+import InstallPWA from '../components/InstallPWA';
 
 const MainLayout: React.FC = () => {
     const { socket } = useSocket();
@@ -27,16 +28,6 @@ const MainLayout: React.FC = () => {
 
     const acceptInvite = () => {
         if (!gameInvite) return;
-        // Navigate to VS Game setup? 
-        // We need 'quiz' object and 'opponent' details. 
-        // App.tsx handled this by looking up quiz from availableQuizzes.
-        // But MainLayout doesn't access DataContext yet.
-        // We can navigate to a setup route that handles lookup? 
-        // Or navigate to /game/vs/:roomId?
-        // VsGamePage expects state: { quizId, opponent, roomId }.
-        // We have quizId and roomId from invite. Opponent is { id: fromId, name: fromName }.
-        // So we can navigate directly!
-
         navigate('/game/vs', {
             state: {
                 quizId: gameInvite.quizId,
@@ -50,6 +41,7 @@ const MainLayout: React.FC = () => {
     return (
         <>
             <Outlet /> {/* Renders the child route */}
+            <InstallPWA /> {/* Global PWA install prompt */}
 
             {/* Global Invite Modal */}
             {gameInvite && (
@@ -62,13 +54,13 @@ const MainLayout: React.FC = () => {
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setGameInvite(null)}
-                                className="flex-1 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                                className="flex-1 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
                             >
                                 Decline
                             </button>
                             <button
                                 onClick={acceptInvite}
-                                className="flex-1 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold rounded-lg shadow-lg hover:shadow-orange-500/25"
+                                className="flex-1 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold rounded-lg shadow-lg hover:shadow-orange-500/25 cursor-pointer"
                             >
                                 Accept
                             </button>

@@ -4,6 +4,8 @@ import './index.css'
 import App from './App.tsx'
 import { ThemeProvider } from './context/ThemeContext.tsx'
 
+import { registerSW } from 'virtual:pwa-register'
+
 // Mobile Performance Optimization: Preload critical resources
 const preloadCriticalResources = () => {
   // Warm up API connection early
@@ -29,12 +31,16 @@ if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
   preloadCriticalResources();
 }
 
-// Register service worker for PWA (improves subsequent loads)
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // Service worker registration failed, continue without it
-    });
+// Register service worker for PWA (with instant activation and offline support)
+if ('serviceWorker' in navigator && typeof window !== 'undefined') {
+  registerSW({
+    immediate: true,
+    onNeedRefresh() {
+      console.log('App update available');
+    },
+    onOfflineReady() {
+      console.log('App ready for offline usage');
+    }
   });
 }
 

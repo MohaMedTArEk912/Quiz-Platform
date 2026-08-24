@@ -606,3 +606,33 @@ export interface DirectChatMessage {
     createdAt: string;
     isRead: boolean;
 }
+
+export interface DailyChallengeItem {
+    _id?: string;
+    challengeId?: string;
+    date: string;
+    compilerQuestionId?: string;
+    compilerQuestion?: CompilerQuestion;
+    rewardCoins?: number;
+    rewardXP?: number;
+    rewardBadgeId?: string;
+    rewardItemId?: string;
+    quizId?: string;
+    criteria?: unknown;
+    _isNew?: boolean;
+    title?: string;
+}
+
+export interface GeneratedQuestion {
+    question: string;
+    options: string[];
+    correctAnswer: number;
+}
+
+declare global {
+    interface Window {
+        __pendingChallengeCallback?: (quizId: string, quizTitle: string) => void;
+        __pendingAsyncChallengeCallback?: (quizId: string, quizTitle: string) => void;
+    }
+}
+

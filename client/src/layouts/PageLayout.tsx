@@ -7,9 +7,11 @@ import { AmbientBackground } from '../components/AmbientBackground';
 interface PageLayoutProps {
     children: React.ReactNode;
     title?: string;
+    showBack?: boolean;
+    onBack?: () => void;
 }
 
-const PageLayout: React.FC<PageLayoutProps> = ({ children }) => {
+const PageLayout: React.FC<PageLayoutProps> = ({ children, title, showBack, onBack }) => {
     const { currentUser, logout } = useAuth();
     const navigate = useNavigate();
 
@@ -17,7 +19,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children }) => {
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate('/login', { replace: true });
     };
 
     return (
@@ -28,7 +30,9 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children }) => {
                 onViewProfile={() => navigate('/profile')}
                 onViewLeaderboard={() => navigate('/leaderboard')}
                 onLogout={handleLogout}
-                title="Quiz Platform"
+                title={title || "Quiz Platform"}
+                showBack={showBack}
+                onBack={onBack}
                 showActions={true}
             />
             <div className="min-h-[calc(100vh-64px)] relative z-10">

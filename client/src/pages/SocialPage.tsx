@@ -89,9 +89,9 @@ const SocialPage: React.FC = () => {
 
                 // Trigger DirectChat callback to add message locally
                 const quizTitle = availableQuizzes.find(q => q.id === quizId)?.title || 'Quiz Challenge';
-                if ((window as any).__pendingChallengeCallback) {
-                    (window as any).__pendingChallengeCallback(quizId, quizTitle);
-                    delete (window as any).__pendingChallengeCallback;
+                if (window.__pendingChallengeCallback) {
+                    window.__pendingChallengeCallback(quizId, quizTitle);
+                    delete window.__pendingChallengeCallback;
                 }
 
                 showNotification('success', `Challenge sent! Waiting for opponent...`);
@@ -106,9 +106,9 @@ const SocialPage: React.FC = () => {
 
                 // Trigger DirectChat callback for async challenge
                 const quizTitle = availableQuizzes.find(q => q.id === quizId)?.title || 'Quiz Challenge';
-                if ((window as any).__pendingAsyncChallengeCallback) {
-                    (window as any).__pendingAsyncChallengeCallback(quizId, quizTitle);
-                    delete (window as any).__pendingAsyncChallengeCallback;
+                if (window.__pendingAsyncChallengeCallback) {
+                    window.__pendingAsyncChallengeCallback(quizId, quizTitle);
+                    delete window.__pendingAsyncChallengeCallback;
                 }
 
                 showNotification('success', `Link generated! Copy sent to clipboard.`);

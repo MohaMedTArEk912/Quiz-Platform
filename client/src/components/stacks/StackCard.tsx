@@ -22,8 +22,6 @@ const StackCard: React.FC<StackCardProps> = ({
     onDelete,
     isUncategorized = false
 }) => {
-    const IconComponent = subject ? getIcon(subject.icon) : Folder;
-
     return (
         <div
             onClick={onSelect}
@@ -49,7 +47,6 @@ const StackCard: React.FC<StackCardProps> = ({
                         onClick={(e) => { e.stopPropagation(); onDelete?.(subject); }}
                         className="p-2 bg-white/50 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full backdrop-blur-sm shadow-sm transition-colors text-red-600 dark:text-red-400"
                         title="Delete Stack"
-                    // disabled={quizCount > 0} // Optional safety check based on user feedback
                     >
                         <Trash2 className="w-4 h-4" />
                     </button>
@@ -57,7 +54,7 @@ const StackCard: React.FC<StackCardProps> = ({
             )}
 
             <div className={`w-16 h-16 ${isUncategorized ? 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors' : 'bg-gradient-to-br from-purple-500/10 to-indigo-500/10 text-purple-600 dark:text-purple-400 group-hover:scale-110'} rounded-2xl flex items-center justify-center mb-4 transition-transform duration-300`}>
-                <IconComponent className="w-8 h-8" />
+                {React.createElement(subject ? getIcon(subject.icon) : Folder, { className: "w-8 h-8" })}
             </div>
 
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 truncate pr-8">

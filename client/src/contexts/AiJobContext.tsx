@@ -1,5 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState } from 'react';
-// import { api } from '../lib/api';
 
 // Types
 export interface AiJob {
@@ -7,15 +7,15 @@ export interface AiJob {
     type: 'upload' | 'process' | 'generate';
     status: 'pending' | 'processing' | 'success' | 'error';
     message: string;
-    metadata?: any;
-    result?: any;
+    metadata?: Record<string, unknown>;
+    result?: unknown;
     progress?: number;
     createdAt: number;
 }
 
 interface AiJobContextType {
     jobs: AiJob[];
-    addJob: (type: AiJob['type'], message: string, metadata?: any) => string;
+    addJob: (type: AiJob['type'], message: string, metadata?: Record<string, unknown>) => string;
     updateJob: (id: string, updates: Partial<AiJob>) => void;
     removeJob: (id: string) => void;
     currentJob: AiJob | null; // Most recent active job
@@ -26,7 +26,7 @@ const AiJobContext = createContext<AiJobContextType | undefined>(undefined);
 export const AiJobProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [jobs, setJobs] = useState<AiJob[]>([]);
 
-    const addJob = (type: AiJob['type'], message: string, metadata?: any) => {
+    const addJob = (type: AiJob['type'], message: string, metadata?: Record<string, unknown>) => {
         const id = `job-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const newJob: AiJob = {
             id,

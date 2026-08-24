@@ -81,7 +81,7 @@ export const useApiHealth = (intervalMs: number = apiConfig.healthCheckInterval)
       }
 
       return { healthy, responseTime };
-    } catch (error) {
+    } catch {
       if (isFallback) {
         apiHealthStatus.recordFallbackFailure();
       } else {

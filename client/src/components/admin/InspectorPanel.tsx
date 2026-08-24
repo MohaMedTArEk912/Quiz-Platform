@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
     X, Hash, Layers, Video, Trash2, Copy, ChevronDown,
     Plus, Check, BrainCircuit, Award, Link2
@@ -46,10 +46,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     const [selectedQuizIds, setSelectedQuizIds] = useState<string[]>([]);
     const [quizSearch, setQuizSearch] = useState('');
 
-    useEffect(() => {
+    const [prevModuleId, setPrevModuleId] = useState(node?.moduleId);
+    if (node?.moduleId !== prevModuleId) {
+        setPrevModuleId(node?.moduleId);
         setSelectedQuizIds([]);
         setQuizSearch('');
-    }, [node?.moduleId]);
+    }
 
     const linkedQuizIds = (currentNode?.quizIds || []).map(id => getQuizKey(id)).filter(Boolean);
 

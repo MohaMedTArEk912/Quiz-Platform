@@ -245,7 +245,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
 
         setIsModuleDetailsOpen(false);
         setSelectedModuleForDetails(null);
-    }, [modules, isModuleDetailsOpen, selectedModuleForDetails?.moduleId]);
+    }, [modules, isModuleDetailsOpen, selectedModuleForDetails]);
 
     const { confirm, confirmState, handleCancel } = useConfirm();
 
@@ -274,7 +274,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
             setQuizzes(quizzesData);
             setBadges(badgesData);
 
-            let existingTrack = tracksData.find((t: SkillTrack) => t.subjectId === subjectId);
+            const existingTrack = tracksData.find((t: SkillTrack) => t.subjectId === subjectId);
             if (existingTrack) {
                 setTrack(existingTrack);
                 const migratedModules = migrateTreeToGraph(existingTrack.modules);
@@ -882,7 +882,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
             title: 'New Module',
             description: '',
             level: modules.length,
-            type: type as any,
+            type: type as SkillModule['type'],
             status: NodeState.LOCKED,
             xpReward: 100,
             coordinates: { x: 100, y: 100 },
@@ -897,9 +897,10 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
     const handleSave = useCallback(async () => {
         try {
             await persistRoadmap(undefined, modules, 'Roadmap saved successfully');
-        } catch (error: any) {
+        } catch (error) {
             console.error("Save Error:", error);
-            onNotification('error', `Save Failed: ${error.message || 'Unknown error'}`);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            onNotification('error', `Save Failed: ${message}`);
         }
     }, [modules, onNotification, persistRoadmap]);
 

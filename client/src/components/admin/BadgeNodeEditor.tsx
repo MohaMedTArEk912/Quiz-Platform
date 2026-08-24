@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { BadgeNode } from '../../types';
+import type { BadgeNode, BadgeCriteria } from '../../types';
 import { Plus, Trash2, Save, Sparkles, ChevronDown } from 'lucide-react';
 import Modal from '../common/Modal';
 import { BADGE_CRITERIA_TYPES } from '../../constants/badgeDefaults';
@@ -23,10 +23,14 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
         trees: badge?.trees || []
     });
 
-    const [newCriterion, setNewCriterion] = useState({
-        type: 'total_attempts' as const,
+    const [newCriterion, setNewCriterion] = useState<{
+        type: BadgeCriteria['type'];
+        threshold: number;
+        operator: NonNullable<BadgeCriteria['operator']>;
+    }>({
+        type: 'total_attempts',
         threshold: 0,
-        operator: '>=' as const
+        operator: '>='
     });
 
     const criteriaTypes = BADGE_CRITERIA_TYPES;
@@ -133,7 +137,7 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                         <div className="relative">
                             <select
                                 value={formData.rarity}
-                                onChange={(e) => setFormData({ ...formData, rarity: e.target.value as any })}
+                                onChange={(e) => setFormData({ ...formData, rarity: e.target.value as BadgeNode['rarity'] })}
                                 className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3.5 text-gray-900 dark:text-white font-bold outline-none transition-all appearance-none cursor-pointer"
                             >
                                 <option value="common">Common</option>
@@ -233,7 +237,7 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                             <div className="relative col-span-1">
                                 <select
                                     value={newCriterion.type}
-                                    onChange={(e) => setNewCriterion({ ...newCriterion, type: e.target.value as any })}
+                                    onChange={(e) => setNewCriterion({ ...newCriterion, type: e.target.value as BadgeCriteria['type'] })}
                                     className="w-full bg-white dark:bg-[#111219] text-gray-900 dark:text-white rounded-xl pl-3 pr-8 py-2.5 border border-gray-200 dark:border-gray-800 text-xs font-bold appearance-none cursor-pointer focus:ring-2 focus:ring-indigo-500/50"
                                 >
                                     {criteriaTypes.map(type => (
@@ -246,7 +250,7 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                             <div className="relative">
                                 <select
                                     value={newCriterion.operator}
-                                    onChange={(e) => setNewCriterion({ ...newCriterion, operator: e.target.value as any })}
+                                    onChange={(e) => setNewCriterion({ ...newCriterion, operator: e.target.value as NonNullable<BadgeCriteria['operator']> })}
                                     className="w-full bg-white dark:bg-[#111219] text-gray-900 dark:text-white rounded-xl pl-3 pr-8 py-2.5 border border-gray-200 dark:border-gray-800 text-xs font-bold appearance-none cursor-pointer focus:ring-2 focus:ring-indigo-500/50"
                                 >
                                     <option value=">=">&ge;</option>

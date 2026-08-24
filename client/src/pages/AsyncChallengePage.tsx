@@ -4,7 +4,7 @@ import QuizTaking from '../components/QuizTaking';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { api } from '../lib/api';
-import type { ChallengeData, QuizResult } from '../types';
+import type { ChallengeData, QuizResult, AttemptData } from '../types';
 
 const AsyncChallengePage: React.FC = () => {
     const { token } = useParams<{ token: string }>();
@@ -63,7 +63,7 @@ const AsyncChallengePage: React.FC = () => {
 
             // 2. Save Standard Attempt
             const resolvedQuizId = quiz.id || quiz._id || challengeData.quizId || '';
-            const attempt = {
+            const attempt: AttemptData = {
                 attemptId: crypto.randomUUID(),
                 userId: currentUser.userId,
                 userName: currentUser.name,
@@ -80,8 +80,7 @@ const AsyncChallengePage: React.FC = () => {
                 powerUpsUsed: result.powerUpsUsed || []
             };
 
-            // Cast to any if strictly typed API complains, matching QuizTaking logic
-            await api.saveAttempt(attempt as any);
+            await api.saveAttempt(attempt);
 
             // 3. Update Gamification (Simplified)
             await api.verifySession().then(data => {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
-import type { BadgeTree, BadgeNode } from '../types';
+import type { BadgeTree, BadgeNode, BadgeTreeNode } from '../types';
 import PageLayout from '../layouts/PageLayout';
 import BadgeNodeCard from '../components/badges/BadgeNodeCard';
 import { ArrowLeft, Award, Check, Sparkles } from 'lucide-react';
@@ -48,7 +48,7 @@ const BadgeTreeDetailPage: React.FC = () => {
         return currentUser?.badges?.some(b => b.id === badgeId) || false;
     };
 
-    const canUnlockBadge = (node: any) => {
+    const canUnlockBadge = (node: BadgeTreeNode) => {
         if (!node.prerequisites || node.prerequisites.length === 0) return true;
         return node.prerequisites.every((prereqId: string) => isBadgeEarned(prereqId));
     };
@@ -76,7 +76,7 @@ const BadgeTreeDetailPage: React.FC = () => {
     }
 
     // Group badges by tier
-    const badgesByTier: Record<number, any[]> = {};
+    const badgesByTier: Record<number, BadgeTreeNode[]> = {};
     tree.nodes.forEach(node => {
         const tier = node.position?.tier || 0;
         if (!badgesByTier[tier]) badgesByTier[tier] = [];
@@ -85,17 +85,25 @@ const BadgeTreeDetailPage: React.FC = () => {
 
     const maxTier = Math.max(...Object.keys(badgesByTier).map(Number));
 
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            navigate(-1);
+        } else {
+            navigate('/tracks');
+        }
+    };
+
     return (
-        <PageLayout>
+        <PageLayout title={tree.name} onBack={handleBack}>
             <div className="max-w-7xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-8">
                     <button
-                        onClick={() => navigate('/tracks')}
-                        className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4 transition-colors"
+                        onClick={handleBack}
+                        className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4 transition-colors font-bold text-sm cursor-pointer"
                     >
-                        <ArrowLeft className="w-5 h-5" />
-                        Back to Tracks
+                        <ArrowLeft className="w-4 h-4" />
+                        Back
                     </button>
 
                     <div className="flex items-center gap-4 mb-4">
