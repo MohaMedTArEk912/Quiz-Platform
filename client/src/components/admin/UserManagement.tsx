@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Edit2, Trash2, Users, Eye, EyeOff, Search, BarChart3, Mail, Trophy, Calendar, Map, Lock, Unlock, CheckCircle, Gift, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Edit2, Trash2, Users, Eye, EyeOff, Search, BarChart3, Mail, Trophy, Calendar, Map, Lock, Unlock, CheckCircle, Gift, ChevronDown, Route } from 'lucide-react';
 import Modal from '../common/Modal';
 import Avatar from '../Avatar.tsx';
-import type { UserData, AttemptData, SkillTrack, SkillModule, Quiz, ShopItem } from '../../types/index.ts';
+import type { UserData, AttemptData, SkillTrack, SkillModule, Quiz, ShopItem, Subject } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 
 type EditableUser = UserData & { password?: string };
@@ -14,6 +14,178 @@ interface UserManagementProps {
     onRefresh: () => void | Promise<void>;
     onNotification: (type: 'success' | 'error', message: string) => void;
 }
+
+const ManageUserTracksModal: React.FC<{
+    user: UserData;
+    currentUser: UserData;
+    onClose: () => void;
+    onNotification: (type: 'success' | 'error', message: string) => void;
+    onRefresh: () => void | Promise<void>;
+}> = ({ user, currentUser, onClose, onNotification, onRefresh }) => {
+    const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [unlockedTracks, setUnlockedTracks] = useState<string[]>([]);
+    const [primaryTrackId, setPrimaryTrackId] = useState<string>('');
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const subs = await api.getAllSubjects(currentUser.userId);
+                setSubjects(Array.isArray(subs) ? subs : []);
+                setUnlockedTracks((user.unlockedTracks || []).map(t => t.toString()));
+                setPrimaryTrackId(user.primaryTrackId?.toString() || '');
+            } catch (err) {
+                console.error(err);
+                onNotification('error', 'Failed to load tracks');
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    }, [currentUser.userId, user, onNotification]);
+
+    const toggleTrack = (subjectId: string) => {
+        setUnlockedTracks(prev => {
+            const exists = prev.includes(subjectId);
+            if (exists) {
+                const next = prev.filter(id => id !== subjectId);
+                if (primaryTrackId === subjectId) {
+                    setPrimaryTrackId(next[0] || '');
+                }
+                return next;
+            } else {
+                const next = [...prev, subjectId];
+                if (!primaryTrackId) {
+                    setPrimaryTrackId(subjectId);
+                }
+                return next;
+            }
+        });
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            const res = await api.updateUserUnlockedTracks(user.userId, unlockedTracks, primaryTrackId, currentUser.userId);
+            if (res.success) {
+                onNotification('success', `Track access updated for ${user.name || user.userId}`);
+                await Promise.resolve(onRefresh());
+                onClose();
+            }
+        } catch (err) {
+            console.error(err);
+            onNotification('error', 'Failed to update track access');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <Modal
+            isOpen={true}
+            onClose={onClose}
+            title="Manage Track Permissions"
+            description={`Configure accessible learning roads for ${user.name || user.userId}`}
+            maxWidth="max-w-xl"
+            icon={<Route className="w-6 h-6 text-indigo-500" />}
+            footer={
+                <>
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-colors hover:bg-gray-200 dark:hover:bg-white/10 cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="flex-[2] py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        {saving ? 'Saving...' : 'Save Permissions'}
+                    </button>
+                </>
+            }
+        >
+            <div className="space-y-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    Checked roads are unlocked and accessible for this student. Unchecked roads will appear blurred and locked.
+                </p>
+
+                {loading ? (
+                    <div className="py-8 text-center text-xs text-gray-400">Loading tracks...</div>
+                ) : (
+                    <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar pr-1">
+                        {subjects.map(subject => {
+                            const isChecked = unlockedTracks.includes(subject._id);
+                            const isPrimary = primaryTrackId === subject._id;
+
+                            return (
+                                <div
+                                    key={subject._id}
+                                    onClick={() => toggleTrack(subject._id)}
+                                    className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${
+                                        isChecked
+                                            ? 'bg-indigo-500/10 border-indigo-500/40 text-gray-900 dark:text-white'
+                                            : 'bg-gray-50/50 dark:bg-black/20 border-gray-200/60 dark:border-white/5 opacity-60'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className={`p-2.5 rounded-xl ${isChecked ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-200 dark:bg-white/5 text-gray-400'}`}>
+                                            <Route className="w-4 h-4" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="text-sm font-black uppercase tracking-tight truncate flex items-center gap-2">
+                                                <span>{subject.title}</span>
+                                                {isPrimary && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-500 text-[9px] font-black tracking-wider uppercase border border-amber-500/30">
+                                                        Primary Track
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="text-[11px] text-gray-400 font-mono truncate">{subject._id}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                                        {isChecked && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setPrimaryTrackId(subject._id);
+                                                }}
+                                                className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                                    isPrimary
+                                                        ? 'bg-amber-500 text-white shadow-sm'
+                                                        : 'bg-white/40 dark:bg-white/10 text-gray-400 hover:text-amber-500'
+                                                }`}
+                                                title="Set as primary track"
+                                            >
+                                                {isPrimary ? '★ Primary' : 'Set Primary'}
+                                            </button>
+                                        )}
+                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all ${
+                                            isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-300 dark:border-white/20'
+                                        }`}>
+                                            {isChecked && <CheckCircle className="w-4 h-4" />}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {subjects.length === 0 && (
+                            <div className="py-8 text-center text-gray-400 font-bold text-xs">
+                                No tracks found
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </Modal>
+    );
+};
 
 const RoadmapEditorModal: React.FC<{
     user: UserData;
@@ -406,6 +578,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
     const [searchTerm, setSearchTerm] = useState('');
     const [viewingAttempts, setViewingAttempts] = useState<UserData | null>(null);
     const [managingRoadmap, setManagingRoadmap] = useState<UserData | null>(null);
+    const [managingTrackAccess, setManagingTrackAccess] = useState<UserData | null>(null);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [giftingUser, setGiftingUser] = useState<UserData | null>(null);
     const [giftType, setGiftType] = useState<'coins' | 'xp' | 'shopitem'>('coins');
@@ -604,6 +777,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                                         title="Manage Roadmap"
                                     >
                                         <Map className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => setManagingTrackAccess({ ...user, userId })}
+                                        className="p-2 text-purple-400 hover:bg-purple-500/10 rounded-xl transition-all hover:scale-110"
+                                        title="Manage Track Permissions"
+                                    >
+                                        <Route className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={() => {
@@ -953,6 +1133,17 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                     </p>
                 </div>
             </Modal>
+
+            {/* Manage User Track Permissions Modal */}
+            {managingTrackAccess && (
+                <ManageUserTracksModal
+                    user={managingTrackAccess}
+                    currentUser={currentUser}
+                    onClose={() => setManagingTrackAccess(null)}
+                    onNotification={onNotification}
+                    onRefresh={onRefresh}
+                />
+            )}
         </div>
     );
 };

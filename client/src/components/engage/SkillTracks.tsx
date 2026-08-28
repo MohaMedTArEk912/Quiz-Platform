@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import type { SkillModule, SkillTrack, UserData, BadgeTree, BadgeNode, Badge, BadgeTreeNode } from '../../types';
 import { api } from '../../lib/api';
-import { Target } from 'lucide-react';
+import { Target, Lock } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import SkillTreeVisualization from '../tracks/SkillTreeVisualization';
+import { useNavigate } from 'react-router-dom';
 
 interface SkillTracksProps {
   user: UserData;
@@ -18,6 +19,7 @@ interface ModuleNode {
 }
 
 const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
+  const navigate = useNavigate();
   const [tracks, setTracks] = useState<SkillTrack[]>([]);
   const [badgeTrees, setBadgeTrees] = useState<Record<string, BadgeTree>>({});
   const [error, setError] = useState<string | null>(null);
@@ -278,6 +280,42 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
         {filteredTracks.map(track => {
           const moduleNodes = getModuleNodes(track);
           const earnedBadges = getEarnedBadgeIds();
+          const isUnlocked =
+            user.role === 'admin' ||
+            !track.subjectId ||
+            (user.unlockedTracks || []).map(id => id.toString()).includes(track.subjectId.toString()) ||
+            user.primaryTrackId?.toString() === track.subjectId.toString();
+
+          if (!isUnlocked) {
+            return (
+              <div key={track.trackId} className="relative bg-white dark:bg-gray-900/50 rounded-3xl p-8 border border-amber-500/20 shadow-xl overflow-hidden">
+                <div className="filter blur-[3px] opacity-40 pointer-events-none select-none">
+                  <SkillTreeVisualization
+                    trackTitle={track.title}
+                    trackIcon="📚"
+                    modules={moduleNodes}
+                    onModuleComplete={() => {}}
+                    completingId={null}
+                    earnedBadges={earnedBadges}
+                  />
+                </div>
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 bg-black/40 dark:bg-black/60 backdrop-blur-[2px] rounded-3xl text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center mb-4 shadow-lg shadow-amber-500/20">
+                    <Lock className="w-8 h-8" />
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-amber-500 mb-1">Track Locked</span>
+                  <h3 className="text-xl font-black text-white uppercase tracking-tight mb-3">{track.title}</h3>
+                  <p className="text-xs text-gray-300 max-w-md mb-6">This progression path is locked. Request access from your dashboard to unlock this learning road.</p>
+                  <button
+                    onClick={() => navigate('/')}
+                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 cursor-pointer"
+                  >
+                    Go to Roads to Request Access
+                  </button>
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div key={track.trackId} className="bg-white dark:bg-gray-900/50 rounded-3xl p-8 border border-gray-200 dark:border-gray-800 shadow-xl dark:shadow-none">

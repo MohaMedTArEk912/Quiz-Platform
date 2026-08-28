@@ -75,7 +75,7 @@ const Navbar: React.FC<NavbarProps> = ({
     };
 
     return (
-        <div className="bg-white/80 dark:bg-[#0a0a0b]/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/10 sticky top-0 z-50">
+        <div className="bg-white/80 dark:bg-[#0a0a0b]/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/10 sticky top-0 z-50 pt-safe pl-safe pr-safe">
             <div className="w-full px-4 sm:px-6 py-3.5 sm:py-4">
                 <div className="flex items-center gap-3 sm:gap-4 justify-between">
                     {/* Left Section: Back button + Title */}

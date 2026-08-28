@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import QuizTaking from '../components/QuizTaking';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import { api } from '../lib/api';
 import type { AttemptData } from '../lib/api';
 import type { Quiz, QuizResult, PoolProgressData } from '../types';
@@ -12,6 +13,7 @@ const QuizTakingPage: React.FC = () => {
     const { quizId: encodedQuizId } = useParams<{ quizId: string }>();
     const { availableQuizzes, userWithRank, refreshData } = useData();
     const { currentUser, updateUser } = useAuth();
+    const { showNotification } = useNotification();
     const navigate = useNavigate();
 
     // Decode the quiz ID to handle special characters
@@ -19,6 +21,19 @@ const QuizTakingPage: React.FC = () => {
 
     // Find base quiz from cache/DataContext
     const baseQuiz = availableQuizzes.find(q => q.id === quizId || q._id === quizId);
+
+    // Guard: Check if quiz belongs to a locked road
+    useEffect(() => {
+        if (baseQuiz?.subjectId && currentUser && currentUser.role !== 'admin') {
+            const unlocked = (currentUser.unlockedTracks || []).map(id => id.toString());
+            const primary = currentUser.primaryTrackId?.toString();
+            const isAllowed = unlocked.includes(baseQuiz.subjectId.toString()) || primary === baseQuiz.subjectId.toString();
+            if (!isAllowed) {
+                showNotification('info', 'This quiz belongs to a locked track. Please request access from an administrator.');
+                navigate('/', { replace: true });
+            }
+        }
+    }, [baseQuiz, currentUser, navigate, showNotification]);
 
     // Dynamic session quiz (tailored questions for pool quizzes)
     const [sessionQuiz, setSessionQuiz] = useState<Quiz | null>(null);

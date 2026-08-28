@@ -18,6 +18,7 @@ import {
     ArrowRight,
     ArrowLeft,
     ShieldAlert,
+    Inbox,
     type LucideIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -37,9 +38,10 @@ import BadgeManagement from './admin/BadgeManagement.tsx';
 import RoadManager from './admin/RoadManager';
 import QuizManager from '../pages/QuizManager';
 import AdminSettings from './AdminSettings.tsx';
+import TrackRequestManagement from './admin/TrackRequestManagement.tsx';
 
 // --- Types ---
-type AdminTab = 'main' | 'users' | 'quizzes' | 'road' | 'reviews' | 'daily' | 'tournaments' | 'badges';
+type AdminTab = 'main' | 'users' | 'quizzes' | 'road' | 'badges' | 'daily' | 'tournaments' | 'reviews' | 'track-requests';
 
 interface NavItem {
     id: AdminTab;
@@ -75,6 +77,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     // --- State ---
     const [selectedTab, setSelectedTab] = useState<AdminTab>('main');
     const [pendingReviews, setPendingReviews] = useState<AttemptData[]>([]);
+    const [pendingTrackRequests, setPendingTrackRequests] = useState<number>(0);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
@@ -96,35 +99,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         };
     }, [attempts, users, quizzes]);
 
-    const loadPendingReviews = useCallback(async () => {
+    const loadPendingData = useCallback(async () => {
         try {
-            const reviews = await api.getPendingReviews();
+            const [reviews, trackReqRes] = await Promise.all([
+                api.getPendingReviews().catch(() => []),
+                api.getTrackRequests('pending', currentUser.userId).catch(() => ({ requests: [] }))
+            ]);
             setPendingReviews(Array.isArray(reviews) ? reviews : []);
+            setPendingTrackRequests(Array.isArray(trackReqRes?.requests) ? trackReqRes.requests.length : 0);
         } catch (error) {
-            console.error('Failed to load pending reviews:', error);
+            console.error('Failed to load pending admin data:', error);
             setPendingReviews([]);
+            setPendingTrackRequests(0);
         }
-    }, []);
+    }, [currentUser.userId]);
 
     useEffect(() => {
         const refreshTimer = setTimeout(() => {
-            loadPendingReviews();
+            loadPendingData();
         }, 0);
         return () => clearTimeout(refreshTimer);
-    }, [loadPendingReviews]);
+    }, [loadPendingData]);
 
     const handleNotification = (type: 'success' | 'error' | 'warning', message: string) => {
         setNotification({ type, message });
         setTimeout(() => setNotification(null), 3000);
     };
 
-    // Wrapper for refresh that also reloads pending reviews
+    // Wrapper for refresh that also reloads pending reviews and requests
     const handleRefresh = useCallback(async () => {
         const currentTab = selectedTab;
         await Promise.resolve(onRefresh());
         setSelectedTab(currentTab);
-        loadPendingReviews();
-    }, [loadPendingReviews, onRefresh, selectedTab]);
+        loadPendingData();
+    }, [loadPendingData, onRefresh, selectedTab]);
 
     // --- Navigation Configuration ---
     const navItems: NavGroup[] = [
@@ -140,6 +148,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {
             title: 'Engagement',
             items: [
+                { id: 'track-requests', label: 'Track Requests', icon: Inbox, badge: pendingTrackRequests },
                 { id: 'daily', label: 'Daily Challenges', icon: Zap },
                 { id: 'tournaments', label: 'Tournaments', icon: Trophy },
                 { id: 'reviews', label: 'Reviews', icon: Check, badge: pendingReviews.length },
@@ -153,6 +162,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             case 'quizzes': return 'Quiz Manager';
             case 'road': return 'Roads & Tracks';
             case 'badges': return 'Badge Management';
+            case 'track-requests': return 'Track Access Requests';
             case 'daily': return 'Daily Challenges';
             case 'tournaments': return 'Tournaments';
             case 'reviews': return 'Reviews & Grading';
@@ -161,7 +171,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }, [selectedTab]);
 
     return (
-        <div className="flex flex-col h-screen bg-gray-50 dark:bg-[#050505] font-sans overflow-hidden relative selection:bg-purple-500/30">
+        <div className="flex flex-col h-screen bg-gray-50 dark:bg-[#050505] font-sans overflow-hidden relative selection:bg-purple-500/30 pt-safe pb-safe pl-safe pr-safe">
             {/* Ambient Background Glows */}
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                 <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-purple-500/20 dark:bg-purple-900/20 rounded-full blur-[120px] mix-blend-multiply dark:mix-blend-screen animate-pulse-slow" />
@@ -837,6 +847,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <RoadManager
                                 currentUser={currentUser}
                                 onNotification={handleNotification}
+                            />
+                        )}
+
+                        {selectedTab === 'track-requests' && (
+                            <TrackRequestManagement
+                                currentUser={currentUser}
+                                onNotification={handleNotification}
+                                onRefresh={handleRefresh}
                             />
                         )}
                     </div>

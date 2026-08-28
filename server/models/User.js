@@ -64,6 +64,9 @@ const userSchema = new mongoose.Schema({
     completedModules: [String],
     completedSubModules: [String] // Format: "moduleId:subModuleId"
   }],
+  // Road / Track access control
+  primaryTrackId: { type: String }, // Initial chosen track/road ID (subjectId)
+  unlockedTracks: [{ type: String }], // List of track/subject IDs user has access to
   clanId: { type: String } // Simplified link to clan
 });
 

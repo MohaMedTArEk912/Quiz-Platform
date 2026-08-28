@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AmbientBackground } from './AmbientBackground';
-import type { Quiz, UserData, AttemptData, Subject, SkillTrack, StudyCard, SkillModule } from '../types/index.ts';
+import type { Quiz, UserData, AttemptData, Subject, SkillTrack, StudyCard, SkillModule, TrackRequest } from '../types/index.ts';
 import { DIFFICULTY_COLORS } from '../constants/quizDefaults.ts';
 import {
     Search,
@@ -32,10 +32,14 @@ import {
     Code,
     Terminal,
     Lock,
-    Clipboard
+    Clipboard,
+    Send
 } from 'lucide-react';
 import Navbar from './Navbar.tsx';
 import UserRoadmapView from './UserRoadmapView';
+import InitialTrackSelectionModal from './tracks/InitialTrackSelectionModal';
+import RequestTrackAccessModal from './tracks/RequestTrackAccessModal';
+import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { api } from '../lib/api';
 import { getQuizIconOption } from '../utils/quizIcons';
@@ -96,16 +100,65 @@ interface Milestone {
 const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: subjectsProp, user, attempts: attemptsProp, skillTracks: skillTracksProp, studyCards: studyCardsProp, onSelectQuiz, onViewProfile, onViewLeaderboard, onLogout, onRefreshData }) => {
     const navigate = useNavigate();
     const { showNotification } = useNotification();
+    const { updateUser } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
+
+    // Track requests and access states
+    const [myRequests, setMyRequests] = useState<TrackRequest[]>([]);
+    const [requestingAccessSubject, setRequestingAccessSubject] = useState<Subject | null>(null);
 
     // Derive selected state from URL so refresh / back button work correctly
     const selectedSubjectId = searchParams.get('subject');
     const activeTab = (searchParams.get('tab') as SubjectTab) || 'quizzes';
 
+    const isRoadUnlocked = useCallback((subjectId: string) => {
+        if (!subjectId) return false;
+        if (user.role === 'admin') return true;
+        const unlocked = (user.unlockedTracks || []).map(id => id.toString());
+        const primary = user.primaryTrackId?.toString();
+        const idStr = subjectId.toString();
+        return unlocked.includes(idStr) || primary === idStr;
+    }, [user.role, user.unlockedTracks, user.primaryTrackId]);
+
+    const isInitialTrackSelectionNeeded =
+        user.role !== 'admin' &&
+        subjectsProp.length > 0 &&
+        !user.primaryTrackId &&
+        (!user.unlockedTracks || user.unlockedTracks.length === 0);
+
+    const loadMyRequests = useCallback(async () => {
+        if (user.role === 'admin' || !user.userId) return;
+        try {
+            const res = await api.getMyTrackRequests();
+            setMyRequests(Array.isArray(res.requests) ? res.requests : []);
+        } catch (err) {
+            console.error('Failed to load my track requests:', err);
+        }
+    }, [user.role, user.userId]);
+
+    useEffect(() => {
+        loadMyRequests();
+    }, [loadMyRequests]);
+
+    // Guard against direct URL selection of locked roads
+    useEffect(() => {
+        if (selectedSubjectId && !isRoadUnlocked(selectedSubjectId)) {
+            showNotification('info', 'This learning road is locked. Please request access from an administrator.');
+            setSelectedSubjectId(null);
+        }
+    }, [selectedSubjectId, isRoadUnlocked, showNotification]);
+
     const setSelectedSubjectId = (id: string | null) => {
         if (id === null) {
             setSearchParams({});
         } else {
+            if (!isRoadUnlocked(id)) {
+                const targetSub = subjectsProp.find(s => s._id === id);
+                if (targetSub) {
+                    setRequestingAccessSubject(targetSub);
+                }
+                return;
+            }
             setSearchParams({ subject: id, tab: searchParams.get('tab') || 'quizzes' });
         }
     };
@@ -414,6 +467,84 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                 {Array.isArray(subjects) && subjects.map((subject) => {
                                     const progress = getSubjectProgress(subject._id);
                                     const subjectQuizzes = quizzes.filter(q => q.subjectId === subject._id);
+                                    const isUnlocked = isRoadUnlocked(subject._id);
+                                    const pendingRequest = myRequests.find(r => r.subjectId === subject._id && r.status === 'pending');
+                                    const isPending = !!pendingRequest;
+
+                                    if (!isUnlocked) {
+                                        return (
+                                            <div
+                                                key={subject._id}
+                                                onClick={() => setRequestingAccessSubject(subject)}
+                                                className="group relative bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-amber-500/20 dark:border-amber-500/10 p-8 cursor-pointer hover:border-amber-500/40 transition-all shadow-sm hover:shadow-2xl overflow-hidden"
+                                            >
+                                                {/* Blurred Content Underlay */}
+                                                <div className="filter blur-[3px] opacity-40 select-none pointer-events-none transition-all duration-300 group-hover:blur-[2px] group-hover:opacity-50">
+                                                    <div className="flex justify-between items-start mb-6">
+                                                        <div className="w-16 h-16 bg-white dark:bg-white/10 rounded-2xl flex items-center justify-center text-4xl shadow-md">
+                                                            <SubjectIcon icon={subject.icon} />
+                                                        </div>
+                                                    </div>
+
+                                                    <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2 line-clamp-1">
+                                                        {subject.title}
+                                                    </h3>
+                                                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium line-clamp-2 mb-8">
+                                                        {subject.description || 'Master this subject with a collection of curated quizzes and materials.'}
+                                                    </p>
+
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <LayoutGrid className="w-4 h-4 text-gray-400" />
+                                                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{subjectQuizzes.length} Quizzes</span>
+                                                        </div>
+                                                        <span className="text-xs font-black text-gray-400">Locked</span>
+                                                    </div>
+
+                                                    <div className="w-full h-3 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden mb-8">
+                                                        <div className="h-full bg-gray-400 dark:bg-gray-600 w-0" />
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest">
+                                                        Locked Road <Lock className="w-4 h-4" />
+                                                    </div>
+                                                </div>
+
+                                                {/* Locked Glass Overlay */}
+                                                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 bg-black/40 dark:bg-black/60 backdrop-blur-[2px] rounded-[2.5rem] text-center">
+                                                    <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center mb-3 shadow-lg shadow-amber-500/10 group-hover:scale-110 transition-transform">
+                                                        <Lock className="w-7 h-7" />
+                                                    </div>
+
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 mb-1">
+                                                        Track Restricted
+                                                    </span>
+                                                    <h4 className="text-lg font-black text-white uppercase tracking-tight mb-4 px-2 line-clamp-1">
+                                                        {subject.title}
+                                                    </h4>
+
+                                                    {isPending ? (
+                                                        <div className="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-2 shadow-sm animate-pulse">
+                                                            <Clock className="w-3.5 h-3.5" />
+                                                            <span>Request Pending ⏳</span>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setRequestingAccessSubject(subject);
+                                                            }}
+                                                            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <Send className="w-3.5 h-3.5" />
+                                                            <span>Request Access</span>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    }
 
                                     return (
                                         <div
@@ -1224,6 +1355,33 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                     </div>
                 )}
             </main>
+
+            {/* Initial Track Selection Onboarding Modal */}
+            {isInitialTrackSelectionNeeded && (
+                <InitialTrackSelectionModal
+                    subjects={subjects}
+                    quizzes={quizzes}
+                    currentUser={user}
+                    onSuccess={(updated) => {
+                        updateUser(updated);
+                        if (onRefreshData) onRefreshData();
+                    }}
+                    onNotification={showNotification}
+                />
+            )}
+
+            {/* Request Track Access Modal */}
+            {requestingAccessSubject && (
+                <RequestTrackAccessModal
+                    subject={requestingAccessSubject}
+                    existingRequest={myRequests.find(r => r.subjectId === requestingAccessSubject._id)}
+                    onClose={() => setRequestingAccessSubject(null)}
+                    onSuccess={(newReq) => {
+                        setMyRequests(prev => [newReq, ...prev.filter(r => r.requestId !== newReq.requestId)]);
+                    }}
+                    onNotification={showNotification}
+                />
+            )}
         </div>
     );
 };

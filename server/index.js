@@ -48,6 +48,7 @@ import compilerRoutes from './routes/compiler.js';
 import aiRoutes from './routes/ai.js';
 import subjectRoutes from './routes/subjects.js';
 import aiStudioRoutes from './routes/aiStudio.js';
+import trackRequestRoutes from './routes/trackRequests.js';
 
 // IMPORTANT: Vercel serverless functions are not compatible with long-lived
 // HTTP servers / Socket.IO the same way as a traditional Node process.
@@ -230,6 +231,7 @@ app.use('/api/ai-studio', aiStudioRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/badge-nodes', badgeNodesRoutes);
 app.use('/api/badge-trees', badgeTreesRoutes);
+app.use('/api/track-requests', trackRequestRoutes);
 
 
 // Socket.io event handlers (disabled on Vercel serverless)

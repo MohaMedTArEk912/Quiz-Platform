@@ -17,7 +17,8 @@ import type {
     QuizSessionResponse,
     PoolProgressData,
     QuestionPoolProgress,
-    Subject
+    Subject,
+    TrackRequest
 } from '../types';
 import { fetchWithFallback } from './apiRetry';
 
@@ -40,7 +41,8 @@ export type {
     BadgeNode,
     BadgeTree,
     BadgeTreeNode,
-    Subject
+    Subject,
+    TrackRequest
 };
 
 const getStoredToken = () => {
@@ -1415,4 +1417,91 @@ export const api = {
         if (!response.ok) throw new Error('Failed to update user progress');
         return response.json();
     },
+
+    // Track Access & Requests
+    async selectInitialTrack(subjectId: string): Promise<{ success: boolean; message: string; user: Partial<UserData> }> {
+        const response = await fetchWithFallback('/track-requests/select-initial', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ subjectId })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to select track');
+        }
+        return response.json();
+    },
+
+    async requestTrackAccess(subjectId: string, reason?: string): Promise<{ success: boolean; message: string; request: TrackRequest }> {
+        const response = await fetchWithFallback('/track-requests', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ subjectId, reason })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to submit track request');
+        }
+        return response.json();
+    },
+
+    async getMyTrackRequests(): Promise<{ success: boolean; requests: TrackRequest[] }> {
+        const response = await fetchWithFallback('/track-requests/my-requests', {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch my track requests');
+        }
+        return response.json();
+    },
+
+    async getTrackRequests(status?: string, adminId?: string): Promise<{ success: boolean; requests: TrackRequest[] }> {
+        const url = status ? `/track-requests?status=${encodeURIComponent(status)}` : '/track-requests';
+        const response = await fetchWithFallback(url, {
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch track requests');
+        }
+        return response.json();
+    },
+
+    async approveTrackRequest(requestId: string, adminId?: string): Promise<{ success: boolean; message: string; request: TrackRequest }> {
+        const response = await fetchWithFallback(`/track-requests/${encodeURIComponent(requestId)}/approve`, {
+            method: 'PUT',
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to approve track request');
+        }
+        return response.json();
+    },
+
+    async rejectTrackRequest(requestId: string, adminId?: string): Promise<{ success: boolean; message: string; request: TrackRequest }> {
+        const response = await fetchWithFallback(`/track-requests/${encodeURIComponent(requestId)}/reject`, {
+            method: 'PUT',
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to reject track request');
+        }
+        return response.json();
+    },
+
+    async updateUserUnlockedTracks(userId: string, unlockedTracks: string[], primaryTrackId?: string, adminId?: string): Promise<{ success: boolean; message: string; user: Partial<UserData> }> {
+        const response = await fetchWithFallback(`/track-requests/users/${encodeURIComponent(userId)}/tracks`, {
+            method: 'PUT',
+            headers: getHeaders(adminId),
+            body: JSON.stringify({ unlockedTracks, primaryTrackId })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to update unlocked tracks');
+        }
+        return response.json();
+    }
 };

@@ -122,6 +122,8 @@ export interface UserData {
         unlockedModules: string[];
         completedModules: string[];
     }[];
+    primaryTrackId?: string;
+    unlockedTracks?: string[];
     clanId?: string;
     clanInvites?: {
         clanId: string;
@@ -130,6 +132,20 @@ export interface UserData {
         createdAt: string;
     }[];
     relationship?: 'none' | 'friend' | 'pending_incoming' | 'pending_outgoing';
+}
+
+export interface TrackRequest {
+    requestId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    subjectId: string;
+    subjectTitle: string;
+    reason?: string;
+    status: 'pending' | 'approved' | 'rejected';
+    requestedAt: string;
+    reviewedAt?: string;
+    reviewedBy?: string;
 }
 
 export interface AvatarConfig {
