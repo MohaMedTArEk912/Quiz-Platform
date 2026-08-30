@@ -39,6 +39,7 @@ import TournamentManagement from './admin/TournamentManagement.tsx';
 import QuestionAnalyticsManagement from './admin/QuestionAnalyticsManagement.tsx';
 import CohortAnalyticsManagement from './admin/CohortAnalyticsManagement.tsx';
 import LiveProctoringManagement from './admin/LiveProctoringManagement.tsx';
+import BadgeManagement from './admin/BadgeManagement.tsx';
 import AttemptDetailsModal from './admin/AttemptDetailsModal.tsx';
 
 import RoadManager from './admin/RoadManager';

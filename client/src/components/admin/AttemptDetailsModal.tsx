@@ -3,6 +3,7 @@ import {
     CheckCircle2,
     XCircle,
     HelpCircle,
+    MinusCircle,
     Clock,
     User,
     Calendar,
@@ -38,7 +39,7 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
 }) => {
     const [loading, setLoading] = useState(true);
     const [detailedAttempt, setDetailedAttempt] = useState<DetailedAttemptData | null>(null);
-    const [filter, setFilter] = useState<'all' | 'wrong' | 'correct'>('all');
+    const [filter, setFilter] = useState<'all' | 'wrong' | 'correct' | 'unanswered'>('all');
     const [isExportingPDF, setIsExportingPDF] = useState(false);
     const [isExportingCSV, setIsExportingCSV] = useState(false);
     const [showSecurityTimeline, setShowSecurityTimeline] = useState(false);
@@ -57,25 +58,68 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                 console.warn('Failed to load server attempt details, falling back to local evaluation:', err);
                 if (isMounted) {
                     // Fallback to local evaluation using attempt and quiz props
-                    const questions = attempt.attemptQuestions || quiz?.questions || [];
-                    const breakdown: AttemptQuestionBreakdown[] = questions.map((q, idx) => {
-                        const userAns = attempt.answers?.[idx] ?? attempt.answers?.[q.id];
+                    const allQuestions = quiz?.questions || [];
+                    let questions = attempt.attemptQuestions;
+
+                    if (!questions || questions.length === 0) {
+                        if (Array.isArray(attempt.questionIds) && attempt.questionIds.length > 0) {
+                            const idSet = new Set(attempt.questionIds.map(id => String(id)));
+                            const matched = attempt.questionIds
+                                .map(id => allQuestions.find(q => String(q.id) === String(id)))
+                                .filter(Boolean);
+                            if (matched.length > 0) {
+                                questions = matched as typeof allQuestions;
+                            } else {
+                                questions = allQuestions.filter(q => idSet.has(String(q.id)));
+                            }
+                        } else if (
+                            attempt.isQuestionPool ||
+                            quiz?.isQuestionPool ||
+                            quiz?.quizType === 'pool' ||
+                            (attempt.totalQuestions && attempt.totalQuestions < allQuestions.length)
+                        ) {
+                            const answerKeys = Object.keys(attempt.answers || {});
+                            const matchedById = allQuestions.filter(q => answerKeys.includes(String(q.id)));
+
+                            if (matchedById.length > 0) {
+                                questions = matchedById;
+                            } else {
+                                const numericKeys = answerKeys.map(k => Number(k)).filter(n => !isNaN(n));
+                                const maxIndex = numericKeys.length > 0 ? Math.max(...numericKeys) : -1;
+
+                                if (attempt.totalQuestions && allQuestions.length > attempt.totalQuestions && maxIndex < attempt.totalQuestions) {
+                                    questions = allQuestions.slice(0, attempt.totalQuestions);
+                                } else if (answerKeys.length > 0 && answerKeys.length < allQuestions.length) {
+                                    questions = allQuestions.slice(0, answerKeys.length);
+                                } else {
+                                    questions = allQuestions;
+                                }
+                            }
+                        } else {
+                            questions = allQuestions;
+                        }
+                    }
+
+                    const userAnswers = attempt.answers as Record<string | number, unknown> | undefined;
+                    const breakdown: AttemptQuestionBreakdown[] = (questions || []).map((q, idx) => {
+                        const userAns = userAnswers?.[idx] ?? userAnswers?.[String(idx)] ?? userAnswers?.[q.id] ?? userAnswers?.[String(q.id)];
                         let selected = undefined;
                         let isCorrect = false;
+                        const isAnswered = userAns !== undefined && userAns !== null && userAns !== '';
 
                         if (typeof userAns === 'object' && userAns !== null) {
                             selected = (userAns as { selected?: unknown }).selected;
                             if (typeof (userAns as { isCorrect?: boolean }).isCorrect === 'boolean') {
                                 isCorrect = Boolean((userAns as { isCorrect?: boolean }).isCorrect);
                             } else {
-                                isCorrect = selected !== undefined && (
+                                isCorrect = selected !== undefined && selected !== null && (
                                     Number(selected) === Number(q.correctAnswer) ||
                                     String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
                                 );
                             }
                         } else {
                             selected = userAns;
-                            isCorrect = selected !== undefined && (
+                            isCorrect = selected !== undefined && selected !== null && (
                                 Number(selected) === Number(q.correctAnswer) ||
                                 String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
                             );
@@ -94,12 +138,13 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                             type: q.type || 'multiple-choice',
                             studentAnswer: selected,
                             isCorrect,
-                            isAnswered: selected !== undefined && selected !== null && selected !== ''
+                            isAnswered: isAnswered && selected !== undefined && selected !== null && selected !== ''
                         };
                     });
 
-                    const wrongCount = breakdown.filter(b => !b.isCorrect).length;
                     const correctCount = breakdown.filter(b => b.isCorrect).length;
+                    const wrongCount = breakdown.filter(b => !b.isCorrect && b.isAnswered).length;
+                    const unansweredCount = breakdown.filter(b => !b.isAnswered).length;
 
                     setDetailedAttempt({
                         ...attempt,
@@ -108,6 +153,7 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                             total: breakdown.length,
                             correct: correctCount,
                             wrong: wrongCount,
+                            unanswered: unansweredCount,
                             percentage: attempt.percentage,
                             score: attempt.score,
                             passed: attempt.passed,
@@ -127,14 +173,17 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
     }, [attempt, quiz]);
 
     const questions = detailedAttempt?.questionsBreakdown || [];
-    const wrongQuestions = questions.filter(q => !q.isCorrect);
     const correctQuestions = questions.filter(q => q.isCorrect);
+    const wrongQuestions = questions.filter(q => !q.isCorrect && q.isAnswered);
+    const unansweredQuestions = questions.filter(q => !q.isAnswered);
 
     const filteredQuestions = filter === 'wrong'
         ? wrongQuestions
         : filter === 'correct'
             ? correctQuestions
-            : questions;
+            : filter === 'unanswered'
+                ? unansweredQuestions
+                : questions;
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -254,7 +303,7 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                     </div>
 
                     {/* Stats Metrics Row */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                    <div className={`grid grid-cols-2 ${unansweredQuestions.length > 0 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'} gap-3 pt-2`}>
                         <div className="p-3 rounded-2xl bg-white/70 dark:bg-black/20 border border-gray-200/50 dark:border-white/5 flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
                                 <HelpCircle className="w-4 h-4" />
@@ -284,6 +333,18 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                 <div className="text-sm font-black text-red-600 dark:text-red-400">{wrongQuestions.length}</div>
                             </div>
                         </div>
+
+                        {unansweredQuestions.length > 0 && (
+                            <div className="p-3 rounded-2xl bg-white/70 dark:bg-black/20 border border-gray-200/50 dark:border-white/5 flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                                    <MinusCircle className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <div className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Skipped</div>
+                                    <div className="text-sm font-black text-amber-600 dark:text-amber-400">{unansweredQuestions.length}</div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="p-3 rounded-2xl bg-white/70 dark:bg-black/20 border border-gray-200/50 dark:border-white/5 flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
@@ -459,6 +520,20 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         Correct Answers ({correctQuestions.length})
                     </button>
+                    {unansweredQuestions.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setFilter('unanswered')}
+                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+                                filter === 'unanswered'
+                                    ? 'bg-amber-600 text-white shadow-md shadow-amber-500/30'
+                                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
+                            }`}
+                        >
+                            <MinusCircle className="w-3.5 h-3.5" />
+                            Skipped / Not Answered ({unansweredQuestions.length})
+                        </button>
+                    )}
                 </div>
 
                 {/* Questions List */}
@@ -470,35 +545,45 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                     <div className="py-16 text-center bg-gray-50 dark:bg-white/5 rounded-3xl border border-gray-200 dark:border-white/5">
                         <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
                         <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
-                            {filter === 'wrong' ? 'No Wrong Answers! Flawless Execution.' : 'No Questions Found.'}
+                            {filter === 'wrong'
+                                ? 'No Wrong Answers! Flawless Execution.'
+                                : filter === 'unanswered'
+                                    ? 'All Questions in this attempt were answered!'
+                                    : 'No Questions Found.'}
                         </p>
                     </div>
                 ) : (
                     <div className="space-y-4 max-h-[55vh] overflow-y-auto custom-scrollbar pr-1">
                         {filteredQuestions.map((q, qIndex) => {
-                            const isWrong = !q.isCorrect;
+                            const isAnswered = q.isAnswered ?? (q.studentAnswer !== undefined && q.studentAnswer !== null && q.studentAnswer !== '');
+                            const isCorrect = q.isCorrect;
+                            const isWrong = !isCorrect && isAnswered;
                             const studentAnsIndex = typeof q.studentAnswer === 'number'
                                 ? q.studentAnswer
-                                : (typeof q.studentAnswer === 'string' && !isNaN(Number(q.studentAnswer)) ? Number(q.studentAnswer) : null);
+                                : (typeof q.studentAnswer === 'string' && !isNaN(Number(q.studentAnswer)) && q.studentAnswer.trim() !== '' ? Number(q.studentAnswer) : null);
 
                             return (
                                 <div
                                     key={q.questionId || qIndex}
                                     className={`p-5 sm:p-6 rounded-3xl border transition-all ${
-                                        isWrong
-                                            ? 'bg-red-50/40 dark:bg-red-950/10 border-red-200 dark:border-red-500/20'
-                                            : 'bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-200 dark:border-emerald-500/20'
+                                        isCorrect
+                                            ? 'bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-200 dark:border-emerald-500/20'
+                                            : isWrong
+                                                ? 'bg-red-50/40 dark:bg-red-950/10 border-red-200 dark:border-red-500/20'
+                                                : 'bg-amber-50/30 dark:bg-amber-950/10 border-amber-200/80 dark:border-amber-500/20'
                                     }`}
                                 >
                                     {/* Question Header */}
                                     <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
-                                                isWrong
-                                                    ? 'bg-red-500 text-white'
-                                                    : 'bg-emerald-500 text-white'
+                                                isCorrect
+                                                    ? 'bg-emerald-500 text-white'
+                                                    : isWrong
+                                                        ? 'bg-red-500 text-white'
+                                                        : 'bg-amber-500 text-white'
                                             }`}>
-                                                {isWrong ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                                                {isCorrect ? <CheckCircle2 className="w-3.5 h-3.5" /> : isWrong ? <XCircle className="w-3.5 h-3.5" /> : <MinusCircle className="w-3.5 h-3.5" />}
                                                 Question {q.questionIndex + 1}
                                             </span>
                                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -526,10 +611,12 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                         </div>
 
                                         <div className="text-xs font-black uppercase tracking-wider">
-                                            {isWrong ? (
-                                                <span className="text-red-500 dark:text-red-400">Incorrect</span>
-                                            ) : (
+                                            {isCorrect ? (
                                                 <span className="text-emerald-500 dark:text-emerald-400">Correct (+{q.points})</span>
+                                            ) : isWrong ? (
+                                                <span className="text-red-500 dark:text-red-400">Incorrect (0 pts)</span>
+                                            ) : (
+                                                <span className="text-amber-600 dark:text-amber-400">Skipped / Unanswered (0 pts)</span>
                                             )}
                                         </div>
                                     </div>
@@ -577,25 +664,35 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                             <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 {/* Student's Chosen Answer */}
                                                 <div className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col justify-between gap-2 shadow-sm ${
-                                                    isWrong
-                                                        ? 'bg-red-500/10 border-red-500/40 dark:bg-red-950/25'
-                                                        : 'bg-emerald-500/10 border-emerald-500/40 dark:bg-emerald-950/25'
+                                                    isCorrect
+                                                        ? 'bg-emerald-500/10 border-emerald-500/40 dark:bg-emerald-950/25'
+                                                        : isWrong
+                                                            ? 'bg-red-500/10 border-red-500/40 dark:bg-red-950/25'
+                                                            : 'bg-amber-500/10 border-amber-500/40 dark:bg-amber-950/25'
                                                 }`}>
                                                     <div className="flex items-center justify-between gap-2">
                                                         <span className={`text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
-                                                            isWrong ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'
+                                                            isCorrect
+                                                                ? 'text-emerald-600 dark:text-emerald-400'
+                                                                : isWrong
+                                                                    ? 'text-red-600 dark:text-red-400'
+                                                                    : 'text-amber-600 dark:text-amber-400'
                                                         }`}>
-                                                            {isWrong ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                                                            Student's Chosen Answer
+                                                            {isCorrect ? <CheckCircle2 className="w-3.5 h-3.5" /> : isWrong ? <XCircle className="w-3.5 h-3.5" /> : <MinusCircle className="w-3.5 h-3.5" />}
+                                                            Student's Response
                                                         </span>
                                                         <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
-                                                            isWrong ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
+                                                            isCorrect
+                                                                ? 'bg-emerald-500 text-white'
+                                                                : isWrong
+                                                                    ? 'bg-red-500 text-white'
+                                                                    : 'bg-amber-500 text-white'
                                                         }`}>
-                                                            {isWrong ? 'Wrong Choice' : 'Correct Choice'}
+                                                            {isCorrect ? 'Correct Choice' : isWrong ? 'Wrong Choice' : 'Skipped / Unanswered'}
                                                         </span>
                                                     </div>
                                                     <div className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white flex items-start gap-2 pt-1">
-                                                        {studentOptionLetter && (
+                                                        {studentOptionLetter && isAnswered && (
                                                             <span className={`px-2 py-0.5 rounded-md font-black text-xs shrink-0 ${
                                                                 isWrong
                                                                     ? 'bg-red-500/20 text-red-700 dark:text-red-300 border border-red-500/30'
@@ -604,7 +701,7 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                                                 Option {studentOptionLetter}
                                                             </span>
                                                         )}
-                                                        <MathRenderer text={studentOptionText} className="break-words font-black" />
+                                                        <MathRenderer text={isAnswered ? studentOptionText : 'No Answer Given (Skipped / Not Reached)'} className="break-words font-black" />
                                                     </div>
                                                 </div>
 

@@ -1,15 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Users,
-    Play,
     Trophy,
-    CheckCircle2,
-    XCircle,
-    Clock,
-    Sparkles,
-    ArrowRight,
-    QrCode,
-    RefreshCw,
     X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -49,9 +41,47 @@ export const LiveHostMode: React.FC<LiveHostModeProps> = ({
     ]);
     const [answerCounts, setAnswerCounts] = useState<number[]>([0, 0, 0, 0]);
 
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const questions = quiz.questions || [];
     const currentQ: Question | undefined = questions[currentQuestionIndex];
+
+    const handleRevealAnswers = () => {
+        sounds.playStreak(3);
+        setGameState('reveal');
+
+        // Update mock player scores
+        setPlayers(prev => prev.map((p, i) => {
+            const isCorrect = i % 2 === 0;
+            const points = isCorrect ? Math.floor(700 + Math.random() * 280) : 0;
+            return {
+                ...p,
+                score: p.score + points,
+                streak: isCorrect ? p.streak + 1 : 0,
+                lastAnswerCorrect: isCorrect,
+                lastAnswerPoints: points
+            };
+        }).sort((a, b) => b.score - a.score));
+    };
+
+    const handleStartGame = () => {
+        sounds.playPowerUp();
+        setGameState('question');
+    };
+
+    const handleShowLeaderboard = () => {
+        sounds.playLevelUp();
+        setGameState('leaderboard');
+    };
+
+    const handleNextQuestion = () => {
+        if (currentQuestionIndex < questions.length - 1) {
+            setCurrentQuestionIndex(prev => prev + 1);
+            setGameState('question');
+        } else {
+            setGameState('game_over');
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+        }
+    };
 
     // Simulated student answers during question phase
     useEffect(() => {
@@ -90,44 +120,6 @@ export const LiveHostMode: React.FC<LiveHostModeProps> = ({
             clearTimeout(timeout);
         };
     }, [gameState, currentQuestionIndex]);
-
-    const handleStartGame = () => {
-        sounds.playPowerUp();
-        setGameState('question');
-    };
-
-    const handleRevealAnswers = () => {
-        sounds.playStreak(3);
-        setGameState('reveal');
-
-        // Update mock player scores
-        setPlayers(prev => prev.map((p, i) => {
-            const isCorrect = i % 2 === 0;
-            const points = isCorrect ? Math.floor(700 + Math.random() * 280) : 0;
-            return {
-                ...p,
-                score: p.score + points,
-                streak: isCorrect ? p.streak + 1 : 0,
-                lastAnswerCorrect: isCorrect,
-                lastAnswerPoints: points
-            };
-        }).sort((a, b) => b.score - a.score));
-    };
-
-    const handleShowLeaderboard = () => {
-        sounds.playLevelUp();
-        setGameState('leaderboard');
-    };
-
-    const handleNextQuestion = () => {
-        if (currentQuestionIndex < questions.length - 1) {
-            setCurrentQuestionIndex(prev => prev + 1);
-            setGameState('question');
-        } else {
-            setGameState('game_over');
-            confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
-        }
-    };
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col bg-[#0b0c16] text-white font-sans overflow-y-auto">
@@ -266,7 +258,7 @@ export const LiveHostMode: React.FC<LiveHostModeProps> = ({
 
                         {/* Answer Distribution Bar Chart */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                            {currentQ.options?.map((opt, optIdx) => {
+                            {currentQ.options?.map((_, optIdx) => {
                                 const isCorrect = optIdx === Number(currentQ.correctAnswer);
                                 const count = answerCounts[optIdx] || 0;
 

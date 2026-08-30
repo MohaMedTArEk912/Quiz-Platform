@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link2, Check, X, RotateCcw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Check, X } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
 
 export interface MatchingPair {
@@ -13,6 +13,15 @@ interface MatchingQuestionProps {
     onChange: (userMatches: Record<string, string>) => void;
     readOnly?: boolean;
 }
+
+const shuffleRightSide = (pairsList: MatchingPair[]) => {
+    const rightSide = pairsList.map(p => p.right);
+    for (let i = rightSide.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [rightSide[i], rightSide[j]] = [rightSide[j], rightSide[i]];
+    }
+    return rightSide;
+};
 
 const PAIR_COLORS = [
     'border-indigo-500 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500/40',
@@ -30,19 +39,17 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
     readOnly = false
 }) => {
     const leftItems = pairs.map(p => p.left);
-    const [shuffledRightItems, setShuffledRightItems] = useState<string[]>([]);
+    const [prevPairs, setPrevPairs] = useState(pairs);
+    const [shuffledRightItems, setShuffledRightItems] = useState<string[]>(() => shuffleRightSide(pairs));
     const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
     const [matches, setMatches] = useState<Record<string, string>>({}); // { [left]: right }
 
-    useEffect(() => {
-        // Shuffle right side items initially
-        const rightSide = pairs.map(p => p.right);
-        for (let i = rightSide.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [rightSide[i], rightSide[j]] = [rightSide[j], rightSide[i]];
-        }
-        setShuffledRightItems(rightSide);
-    }, [pairs]);
+    if (prevPairs !== pairs) {
+        setPrevPairs(pairs);
+        setShuffledRightItems(shuffleRightSide(pairs));
+        setSelectedLeft(null);
+        setMatches({});
+    }
 
     const handleLeftClick = (left: string) => {
         if (readOnly || submitted) return;
@@ -83,7 +90,7 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
     };
 
     const getRightPairColorIndex = (right: string) => {
-        const foundEntry = Object.entries(matches).find(([_, r]) => r === right);
+        const foundEntry = Object.entries(matches).find(([, r]) => r === right);
         if (!foundEntry) return null;
         return getPairColorIndex(foundEntry[0]);
     };

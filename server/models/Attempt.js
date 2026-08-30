@@ -19,6 +19,7 @@ const attemptSchema = new mongoose.Schema({
   passed: { type: Boolean, default: false },
   isQuestionPool: { type: Boolean, default: false },
   questionIds: { type: [mongoose.Schema.Types.Mixed], default: [] },
+  attemptQuestions: { type: [mongoose.Schema.Types.Mixed], default: undefined },
   poolProgress: {
     seenCount: { type: Number },
     totalCount: { type: Number },

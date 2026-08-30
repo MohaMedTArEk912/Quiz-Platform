@@ -22,7 +22,9 @@ import type {
     AppNotification,
     QuestionAnalyticsResponse,
     QuestionAnalyticsItem,
-    DetailedAttemptData
+    DetailedAttemptData,
+    CohortAnalyticsResponse,
+    LiveProctoringResponse
 } from '../types';
 import { fetchWithFallback } from './apiRetry';
 
@@ -48,6 +50,8 @@ export type {
     Subject,
     TrackRequest,
     AppNotification,
+    CohortAnalyticsResponse,
+    LiveProctoringResponse,
     QuestionAnalyticsResponse,
     QuestionAnalyticsItem,
     DetailedAttemptData

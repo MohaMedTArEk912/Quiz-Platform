@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Volume2, Play, Pause, RotateCcw, Film, ExternalLink } from 'lucide-react';
+import { Volume2, Play, Pause, Film } from 'lucide-react';
 
 interface MediaPromptPlayerProps {
     audioUrl?: string;

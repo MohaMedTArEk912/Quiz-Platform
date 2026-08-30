@@ -8,14 +8,11 @@ import {
     Copy,
     RefreshCw,
     Search,
-    Filter,
     Clock,
-    User,
-    ChevronRight,
     Zap,
     ExternalLink
 } from 'lucide-react';
-import type { LiveProctoringResponse, LiveProctoringSession, AttemptData } from '../../types';
+import type { LiveProctoringResponse, AttemptData } from '../../types';
 import { api } from '../../lib/api';
 
 interface LiveProctoringManagementProps {

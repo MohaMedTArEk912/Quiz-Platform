@@ -29,7 +29,7 @@ export interface Quiz {
 
 export interface Question {
     id: number;
-    type?: 'multiple-choice' | 'text';
+    type?: 'multiple-choice' | 'text' | 'code-output' | 'ordering' | 'matching';
     part: string;
     question: string;
     options?: string[];
@@ -39,9 +39,13 @@ export interface Question {
     imageUrl?: string;
     codeSnippet?: string;
     audioUrl?: string;
+    videoUrl?: string;
+    videoTimestamp?: number;
     isCompiler?: boolean;
     compilerConfig?: CompilerConfig;
     shuffleOptions?: boolean;
+    orderingItems?: string[];
+    matchingPairs?: { left: string; right: string }[];
 }
 
 export interface CompilerConfig {
@@ -57,7 +61,7 @@ export interface DetailedAnswer {
     type: string;
 }
 
-export type AttemptAnswers = Record<number, DetailedAnswer | string | number | null | undefined>;
+export type AttemptAnswers = Record<string | number, DetailedAnswer | string | number | null | undefined>;
 
 export interface Badge {
     id: string;
@@ -727,6 +731,9 @@ export interface QuestionAnalyticsSummary {
     totalAttemptsAnalyzed: number;
     hardestQuiz: { title: string; averageFailureRate: number } | null;
     mostMissedQuestion: QuestionAnalyticsItem | null;
+    highFailureQuestionsCount?: number;
+    averageAccuracy?: number;
+    averageFailureRate?: number;
 }
 
 export interface QuestionAnalyticsResponse {
@@ -757,6 +764,7 @@ export interface DetailedAttemptData extends AttemptData {
         total: number;
         correct: number;
         wrong: number;
+        unanswered?: number;
         percentage: number;
         score: number;
         passed: boolean;

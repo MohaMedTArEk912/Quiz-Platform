@@ -4,15 +4,11 @@ import {
     TrendingUp,
     TrendingDown,
     Award,
-    CheckCircle2,
     AlertTriangle,
     RefreshCw,
-    Search,
     BookOpen,
     Layers,
-    UserCheck,
-    ChevronDown,
-    ChevronUp
+    UserCheck
 } from 'lucide-react';
 import type { CohortAnalyticsResponse } from '../../types';
 import { api } from '../../lib/api';
@@ -27,7 +23,6 @@ const CohortAnalyticsManagement: React.FC<CohortAnalyticsManagementProps> = ({
     const [data, setData] = useState<CohortAnalyticsResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedTier, setSelectedTier] = useState<'high' | 'medium' | 'atRisk'>('atRisk');
-    const [searchTerm, setSearchTerm] = useState('');
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
@@ -56,10 +51,7 @@ const CohortAnalyticsManagement: React.FC<CohortAnalyticsManagementProps> = ({
     const categoryPerformance = summary?.categoryPerformance || [];
 
     const activeTierUsers = performanceTiers?.[selectedTier]?.users || [];
-    const filteredTierUsers = activeTierUsers.filter(u =>
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredTierUsers = activeTierUsers;
 
     return (
         <div className="space-y-6">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Zap, CheckCircle2, XCircle, ArrowLeft, Trophy } from 'lucide-react';
+import { Zap, ArrowLeft } from 'lucide-react';
 import { sounds } from '../../lib/soundEffects';
 
 interface LivePlayerControllerProps {

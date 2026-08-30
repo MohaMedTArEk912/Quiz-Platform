@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Gift, Sparkles, Coins, Zap, Trophy, Check, Award } from 'lucide-react';
+import { Gift, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../lib/soundEffects';
 

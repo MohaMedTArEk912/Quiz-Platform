@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Sparkles, X, Lightbulb, RefreshCw, MessageSquare } from 'lucide-react';
+import { Bot, Sparkles, X, Lightbulb, RefreshCw } from 'lucide-react';
 import { MathRenderer } from './MathRenderer';
 import { api } from '../../lib/api';
 import { sounds } from '../../lib/soundEffects';
