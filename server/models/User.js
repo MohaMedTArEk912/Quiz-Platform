@@ -53,6 +53,8 @@ const userSchema = new mongoose.Schema({
     quantity: { type: Number, default: 0 }
   }],
   unlockedItems: [{ type: String }], // Array of itemIds for permanent unlocks (cosmetics)
+  // Daily login streak claim tracking
+  lastStreakClaimDate: { type: Date },
   // Daily challenge streak
   dailyChallengeDate: { type: Date },
   dailyChallengeCompleted: { type: Boolean, default: false },

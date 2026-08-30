@@ -1672,6 +1672,30 @@ export const api = {
             throw new Error(error.message || 'Failed to translate content');
         }
         return response.json();
+    },
+
+    // Daily Login Streak Claim & Status
+    async claimDailyStreak(): Promise<{ success: boolean; message: string; streak: number; currentDay: number; rewards: { coins?: number; xp?: number; powerUp?: string | null }; user: Partial<UserData> }> {
+        const response = await fetchWithFallback('/streak/claim', {
+            method: 'POST',
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to claim streak reward');
+        }
+        return response.json();
+    },
+
+    async getStreakStatus(): Promise<{ success: boolean; streak: number; currentDay: number; isClaimedToday: boolean; lastStreakClaimDate?: string | null }> {
+        const response = await fetchWithFallback('/streak/status', {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch streak status');
+        }
+        return response.json();
     }
 };
 

@@ -818,3 +818,110 @@ export const joinTournament = async (req, res) => {
     res.status(500).json({ message: 'Error joining tournament', error: error.message });
   }
 };
+
+/**
+ * Claim Daily Login Streak Reward
+ * @route POST /api/streak/claim
+ */
+export const claimDailyStreak = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+    const todayStr = new Date().toDateString();
+    const isClaimedToday = user.lastStreakClaimDate && new Date(user.lastStreakClaimDate).toDateString() === todayStr;
+
+    if (isClaimedToday) {
+      return res.status(400).json({
+        success: false,
+        message: 'Daily streak reward has already been claimed today',
+        claimedToday: true,
+        lastStreakClaimDate: user.lastStreakClaimDate
+      });
+    }
+
+    const streak = user.streak || 1;
+    const currentDay = ((streak - 1) % 7) + 1; // 1 to 7
+
+    const STREAK_REWARDS = {
+      1: { coins: 25, xp: 0, powerUp: null },
+      2: { coins: 50, xp: 50, powerUp: null },
+      3: { coins: 30, xp: 0, powerUp: 'hint' },
+      4: { coins: 100, xp: 100, powerUp: null },
+      5: { coins: 50, xp: 0, powerUp: 'time_freeze' },
+      6: { coins: 150, xp: 250, powerUp: null },
+      7: { coins: 200, xp: 300, powerUp: 'hint' }
+    };
+
+    const reward = STREAK_REWARDS[currentDay] || { coins: 25, xp: 25, powerUp: null };
+
+    // Apply Coins and XP
+    if (reward.coins) {
+      user.coins = (user.coins || 0) + reward.coins;
+    }
+    if (reward.xp) {
+      user.xp = (user.xp || 0) + reward.xp;
+    }
+
+    // Apply Power-up
+    if (reward.powerUp) {
+      const powerUps = user.powerUps || [];
+      const existing = powerUps.find(p => p.type === reward.powerUp);
+      if (existing) {
+        existing.quantity = (existing.quantity || 0) + 1;
+      } else {
+        powerUps.push({ type: reward.powerUp, quantity: 1 });
+      }
+      user.powerUps = powerUps;
+    }
+
+    // Mark as claimed today
+    user.lastStreakClaimDate = new Date();
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `Day ${currentDay} streak reward claimed!`,
+      streak,
+      currentDay,
+      rewards: reward,
+      user: {
+        userId: user.userId,
+        streak: user.streak,
+        coins: user.coins,
+        xp: user.xp,
+        powerUps: user.powerUps,
+        lastStreakClaimDate: user.lastStreakClaimDate
+      }
+    });
+  } catch (error) {
+    console.error('Error claiming daily streak:', error);
+    res.status(500).json({ success: false, message: 'Error claiming streak', error: error.message });
+  }
+};
+
+/**
+ * Check Daily Login Streak Status
+ * @route GET /api/streak/status
+ */
+export const getStreakStatus = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+    const todayStr = new Date().toDateString();
+    const isClaimedToday = user.lastStreakClaimDate && new Date(user.lastStreakClaimDate).toDateString() === todayStr;
+    const streak = user.streak || 1;
+    const currentDay = ((streak - 1) % 7) + 1;
+
+    res.json({
+      success: true,
+      streak,
+      currentDay,
+      isClaimedToday: Boolean(isClaimedToday),
+      lastStreakClaimDate: user.lastStreakClaimDate || null
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error checking streak status', error: error.message });
+  }
+};

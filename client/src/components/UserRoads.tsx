@@ -368,6 +368,19 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
         return { title, status, index };
     });
 
+    // Check if daily streak reward has been claimed today
+    const isStreakClaimedToday = Boolean((() => {
+        const todayStr = new Date().toDateString();
+        if (user.lastStreakClaimDate && new Date(user.lastStreakClaimDate).toDateString() === todayStr) {
+            return true;
+        }
+        const lastClaimedLocal = localStorage.getItem(`streak_claimed_${user.userId}`);
+        if (lastClaimedLocal && new Date(lastClaimedLocal).toDateString() === todayStr) {
+            return true;
+        }
+        return false;
+    })());
+
     return (
         <div className="min-h-screen bg-white dark:bg-[#0a0a0b] text-gray-900 dark:text-white selection:bg-indigo-500/30">
             {/* Ambient Background Effects */}
@@ -428,29 +441,51 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                     {/* Daily Streak Claim Card */}
                     <div
                         onClick={() => setIsStreakModalOpen(true)}
-                        className="cursor-pointer group relative overflow-hidden bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent border border-orange-500/30 dark:border-orange-500/20 hover:border-orange-500/50 rounded-3xl p-5 backdrop-blur-xl shadow-sm hover:shadow-xl transition-all flex items-center justify-between"
+                        className={`cursor-pointer group relative overflow-hidden rounded-3xl p-5 backdrop-blur-xl shadow-sm hover:shadow-xl transition-all flex items-center justify-between border ${
+                            isStreakClaimedToday
+                                ? 'bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/30 dark:border-emerald-500/20 hover:border-emerald-500/50'
+                                : 'bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent border-orange-500/30 dark:border-orange-500/20 hover:border-orange-500/50'
+                        }`}
                     >
                         <div className="flex items-center gap-3.5">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-400 text-white flex items-center justify-center font-black text-2xl shadow-lg shadow-orange-500/25 group-hover:scale-110 transition-transform">
-                                🔥
+                            <div className={`w-12 h-12 rounded-2xl text-white flex items-center justify-center font-black text-2xl shadow-lg transition-transform group-hover:scale-110 ${
+                                isStreakClaimedToday
+                                    ? 'bg-gradient-to-tr from-emerald-500 to-teal-400 shadow-emerald-500/25'
+                                    : 'bg-gradient-to-tr from-orange-500 to-amber-400 shadow-orange-500/25'
+                            }`}>
+                                {isStreakClaimedToday ? '✓' : '🔥'}
                             </div>
                             <div>
                                 <div className="flex items-center gap-1.5">
-                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-600 dark:text-orange-400">
+                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                        isStreakClaimedToday
+                                            ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                                            : 'bg-orange-500/20 text-orange-600 dark:text-orange-400'
+                                    }`}>
                                         {user.streak || 1} Day Streak
                                     </span>
-                                    <span className="text-[10px] font-bold text-amber-500 animate-pulse">● Ready to Claim</span>
+                                    {isStreakClaimedToday ? (
+                                        <span className="text-[10px] font-bold text-emerald-500">● Claimed Today</span>
+                                    ) : (
+                                        <span className="text-[10px] font-bold text-amber-500 animate-pulse">● Ready to Claim</span>
+                                    )}
                                 </div>
                                 <h4 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-tight">
                                     Daily Streak Calendar &amp; Loot Box
                                 </h4>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                                    Tap to claim Day {((user.streak || 1) - 1) % 7 + 1} rewards &amp; unlock Mystery Boxes!
+                                    {isStreakClaimedToday
+                                        ? `Day ${((user.streak || 1) - 1) % 7 + 1} claimed! Return tomorrow to keep the flame alive.`
+                                        : `Tap to claim Day ${((user.streak || 1) - 1) % 7 + 1} rewards & unlock Mystery Boxes!`}
                                 </p>
                             </div>
                         </div>
-                        <div className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-orange-500/20 group-hover:scale-105 transition-all">
-                            Claim
+                        <div className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider shadow-md transition-all group-hover:scale-105 ${
+                            isStreakClaimedToday
+                                ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                                : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-500/20'
+                        }`}>
+                            {isStreakClaimedToday ? 'Claimed' : 'Claim'}
                         </div>
                     </div>
 

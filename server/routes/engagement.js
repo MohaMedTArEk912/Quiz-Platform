@@ -4,6 +4,10 @@ import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+// Daily Login Streak Rewards
+router.post('/streak/claim', verifyUser, engagementController.claimDailyStreak); // POST /api/streak/claim
+router.get('/streak/status', verifyUser, engagementController.getStreakStatus); // GET /api/streak/status
+
 // Daily Compiler Challenge
 router.get('/daily-challenge', verifyUser, engagementController.getDailyChallenge); // GET /api/daily-challenge
 router.post('/daily-challenge/submit', verifyUser, engagementController.submitCompilerAnswer); // POST /api/daily-challenge/submit

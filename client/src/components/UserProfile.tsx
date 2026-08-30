@@ -1,6 +1,9 @@
 import React, { useRef, useState } from 'react';
 import type { UserData, AttemptData } from '../types/index.ts';
-import { Trophy, TrendingUp, Award, Download, Loader2, Star, Zap, Flame, Settings, Calendar, History } from 'lucide-react';
+import {
+    Trophy, TrendingUp, Award, Download, Loader2, Star, Zap, Flame,
+    Settings, Calendar, History, ShieldCheck, Gift, CheckCircle2, Sparkles
+} from 'lucide-react';
 import Navbar from './Navbar.tsx';
 import { Certificate } from './Certificate.tsx';
 import html2canvas from 'html2canvas';
@@ -10,6 +13,7 @@ import UserSettings from './UserSettings.tsx';
 import AnalyticsPanel from './engage/AnalyticsPanel.tsx';
 import Avatar from './Avatar';
 import AvatarEditor from './AvatarEditor';
+import { StreakRewardModal } from './gamification/StreakRewardModal';
 import { Pencil } from 'lucide-react';
 
 interface UserProfileProps {
@@ -36,7 +40,38 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
     const [error, setError] = useState<string | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
+    const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
     const [currentUser, setCurrentUser] = useState<UserData>(user);
+
+    const streak = currentUser.streak || 0;
+    const dailyChallengeStreak = currentUser.dailyChallengeStreak || 0;
+    const currentStreakDay = streak === 0 ? 1 : (((streak - 1) % 7) + 1);
+
+    const streakShieldCount = (currentUser.inventory || [])
+        .filter(item => item.itemId === 'streak-shield')
+        .reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+    const isStreakClaimedToday = Boolean((() => {
+        const todayStr = new Date().toDateString();
+        if (currentUser.lastStreakClaimDate && new Date(currentUser.lastStreakClaimDate).toDateString() === todayStr) {
+            return true;
+        }
+        const lastClaimedLocal = localStorage.getItem(`streak_claimed_${currentUser.userId}`);
+        if (lastClaimedLocal && new Date(lastClaimedLocal).toDateString() === todayStr) {
+            return true;
+        }
+        return false;
+    })());
+
+    const handleStreakClaim = (rewards: { coins?: number; xp?: number; powerUp?: string }) => {
+        const updated: UserData = {
+            ...currentUser,
+            coins: (currentUser.coins || 0) + (rewards.coins || 0),
+            xp: (currentUser.xp || 0) + (rewards.xp || 0),
+            lastStreakClaimDate: new Date().toISOString()
+        };
+        handleUserUpdate(updated);
+    };
 
     const currentXP = currentUser.xp || 0;
     const level = calculateLevel(currentXP);
@@ -197,6 +232,181 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                     <span className="font-bold text-blue-700 dark:text-blue-200">Joined {new Date(currentUser.createdAt || currentUser.lastLoginDate || new Date()).toLocaleDateString()}</span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Daily Streak & Consistency Tracking Section */}
+                <div className="mb-12">
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-400 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-orange-500/25">
+                                🔥
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-black text-gray-900 dark:text-white">Streak & Activity Tracking</h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                    Track your daily consistency, 7-day milestones, and protected streak multipliers.
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setIsStreakModalOpen(true)}
+                            className={`px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-md ${
+                                isStreakClaimedToday
+                                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                                    : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-orange-500/25 hover:scale-105 active:scale-95'
+                            }`}
+                        >
+                            {isStreakClaimedToday ? (
+                                <><CheckCircle2 className="w-4 h-4" /> Claimed Today</>
+                            ) : (
+                                <><Gift className="w-4 h-4 animate-bounce" /> Claim Day Reward</>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* 4 Stat Overview Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        {/* Current Streak */}
+                        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-3xl p-5 border border-gray-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-orange-600 dark:text-orange-400 bg-orange-500/10 px-2.5 py-1 rounded-lg">
+                                    Login Streak
+                                </span>
+                                <Flame className="w-5 h-5 text-orange-500 animate-pulse" />
+                            </div>
+                            <div className="text-3xl font-black text-gray-900 dark:text-white mb-1">
+                                {streak} <span className="text-sm font-bold text-gray-500">Days</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400">
+                                {isStreakClaimedToday ? (
+                                    <span className="text-emerald-500 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Checked in today</span>
+                                ) : (
+                                    <span className="text-amber-500 flex items-center gap-1 animate-pulse">● Ready for check-in</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Compiler Challenge Streak */}
+                        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-3xl p-5 border border-gray-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg">
+                                    Challenge Streak
+                                </span>
+                                <Zap className="w-5 h-5 text-blue-500" />
+                            </div>
+                            <div className="text-3xl font-black text-gray-900 dark:text-white mb-1">
+                                {dailyChallengeStreak} <span className="text-sm font-bold text-gray-500">Days</span>
+                            </div>
+                            <div className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                                Daily coding arena streak
+                            </div>
+                        </div>
+
+                        {/* Current Cycle */}
+                        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-3xl p-5 border border-gray-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-lg">
+                                    7-Day Cycle
+                                </span>
+                                <Sparkles className="w-5 h-5 text-purple-500" />
+                            </div>
+                            <div className="text-3xl font-black text-gray-900 dark:text-white mb-1">
+                                Day {currentStreakDay} <span className="text-sm font-bold text-gray-500">/ 7</span>
+                            </div>
+                            <div className="text-xs font-bold text-purple-600 dark:text-purple-400">
+                                {currentStreakDay === 7 ? '🎁 Mystery Loot Box today!' : `${7 - currentStreakDay} days to Mystery Box`}
+                            </div>
+                        </div>
+
+                        {/* Streak Shield Protection */}
+                        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-3xl p-5 border border-gray-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                                    Protection
+                                </span>
+                                <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                            </div>
+                            <div className="text-3xl font-black text-gray-900 dark:text-white mb-1">
+                                {streakShieldCount} <span className="text-sm font-bold text-gray-500">Shield{streakShieldCount !== 1 ? 's' : ''}</span>
+                            </div>
+                            <div className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                                {streakShieldCount > 0 ? 'Streak protected against 1 miss' : 'Available in Shop'}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 7-Day Visual Progress Track */}
+                    <div className="bg-white dark:bg-[#13141f] rounded-3xl p-6 border border-gray-200 dark:border-white/5 shadow-xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                                Weekly Milestone Progression
+                            </span>
+                            <span className="text-xs font-bold text-orange-500">
+                                {isStreakClaimedToday ? '✓ Check-in Complete' : '● Action Required'}
+                            </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                            {[
+                                { day: 1, label: '+25 Coins', icon: '🪙' },
+                                { day: 2, label: '+50 Coins & 50 XP', icon: '⚡' },
+                                { day: 3, label: '1x Hint Power-Up', icon: '💡' },
+                                { day: 4, label: '+100 Coins & 100 XP', icon: '🪙' },
+                                { day: 5, label: '1x Time Freeze', icon: '⏳' },
+                                { day: 6, label: '+150 Coins & 250 XP', icon: '🔥' },
+                                { day: 7, label: 'Mystery Loot Box', icon: '🎁' }
+                            ].map((milestone) => {
+                                const isPast = milestone.day < currentStreakDay;
+                                const isToday = milestone.day === currentStreakDay;
+                                return (
+                                    <div
+                                        key={milestone.day}
+                                        className={`p-3.5 rounded-2xl border flex flex-col items-center justify-between text-center transition-all ${
+                                            isToday
+                                                ? 'bg-gradient-to-b from-orange-500/20 to-amber-500/10 border-orange-500 ring-2 ring-orange-500/40 shadow-lg shadow-orange-500/20 scale-102'
+                                                : isPast
+                                                    ? 'bg-emerald-500/10 border-emerald-500/30'
+                                                    : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/5 opacity-60'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between w-full mb-1">
+                                            <span className={`text-[10px] font-black uppercase tracking-wider ${
+                                                isToday ? 'text-orange-600 dark:text-orange-400' : isPast ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'
+                                            }`}>
+                                                Day {milestone.day}
+                                            </span>
+                                            {isPast && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+                                            {isToday && isStreakClaimedToday && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+                                        </div>
+
+                                        <div className="text-2xl my-1.5">{milestone.icon}</div>
+
+                                        <div className="text-[10px] font-black text-gray-800 dark:text-gray-200 leading-tight">
+                                            {milestone.label}
+                                        </div>
+
+                                        <div className="mt-1 text-[9px] font-bold">
+                                            {isPast ? (
+                                                <span className="text-emerald-600 dark:text-emerald-400">Claimed</span>
+                                            ) : isToday ? (
+                                                <span className="text-orange-600 dark:text-orange-400 font-black">
+                                                    {isStreakClaimedToday ? '✓ Done' : '🎁 Today'}
+                                                </span>
+                                            ) : (
+                                                <span className="text-gray-400">Locked</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -396,6 +606,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                     user={currentUser}
                     onClose={() => setIsAvatarEditorOpen(false)}
                     onUpdate={handleUserUpdate}
+                />
+            )}
+
+            {/* Daily Streak Reward Modal */}
+            {isStreakModalOpen && (
+                <StreakRewardModal
+                    isOpen={isStreakModalOpen}
+                    user={currentUser}
+                    onClose={() => setIsStreakModalOpen(false)}
+                    onClaimStreak={handleStreakClaim}
                 />
             )}
         </div>

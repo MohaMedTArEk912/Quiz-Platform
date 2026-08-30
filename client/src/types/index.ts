@@ -109,6 +109,7 @@ export interface UserData {
     level: number;
     streak: number;
     lastLoginDate: string;
+    lastStreakClaimDate?: string;
     badges: Badge[];
     avatar?: AvatarConfig;
     unlockedItems?: string[];
