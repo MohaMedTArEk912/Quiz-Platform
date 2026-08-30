@@ -236,10 +236,13 @@ This project is configured for split deployment:
 * Framework Preset: **Vite**.
 * Build Command: `npm run build`
 * Output Directory: `dist`
-* Environment Variables:
-  * `VITE_API_URL`: `https://your-backend.koyeb.app/api`
-  * `VITE_SOCKET_URL`: `https://your-backend.koyeb.app`
-  * `VITE_ENABLE_SOCKET`: `true`
+* **⚠️ IMPORTANT - Environment Variables**:
+  - Go to **Settings → Environment Variables** and add these for **Production, Preview, and Development**:
+  - `VITE_API_URL`: `/api` (for Vercel serverless) OR `https://your-backend.example.com/api` (for external backend)
+  - `VITE_GOOGLE_CLIENT_ID`: Your Google OAuth Client ID
+  - `VITE_CONVEX_URL`: Your Convex URL (if using)
+  - **Note**: Vercel does NOT load the local `.env` file automatically - all vars must be set in the dashboard!
+  - See [DEPLOYMENT_TROUBLESHOOTING.md](DEPLOYMENT_TROUBLESHOOTING.md) for common deployment issues.
 
 ---
 
