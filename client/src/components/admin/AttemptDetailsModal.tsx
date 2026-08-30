@@ -427,8 +427,8 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                                 All Quiz Options Breakdown:
                                             </div>
                                             {q.options.map((optText, optIdx) => {
-                                                const isStudentPick = studentAnsIndex === optIdx;
-                                                const isCorrectOption = Number(q.correctAnswer) === optIdx;
+                                                const isStudentPick = studentAnsIndex === optIdx || (typeof q.studentAnswer === 'string' && q.studentAnswer.trim() === optText.trim());
+                                                const isCorrectOption = Number(q.correctAnswer) === optIdx || (typeof q.correctAnswer === 'string' && q.correctAnswer.trim() === optText.trim());
 
                                                 let cardStyle = 'bg-white/80 dark:bg-black/30 border-gray-200 dark:border-white/5 text-gray-700 dark:text-gray-300';
                                                 let badge = null;

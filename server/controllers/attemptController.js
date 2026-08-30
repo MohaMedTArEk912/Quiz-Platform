@@ -288,11 +288,19 @@ export const getAttemptDetails = async (req, res) => {
         if (typeof userAnsObj.isCorrect === 'boolean') {
           isCorrect = userAnsObj.isCorrect;
         } else {
-          isCorrect = selected !== undefined && Number(selected) === Number(q.correctAnswer);
+          isCorrect = selected !== undefined && (
+            Number(selected) === Number(q.correctAnswer) ||
+            (Array.isArray(q.options) && typeof q.correctAnswer === 'number' && q.options[q.correctAnswer] === selected) ||
+            String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
+          );
         }
       } else {
         selected = userAnsObj;
-        isCorrect = selected !== undefined && Number(selected) === Number(q.correctAnswer);
+        isCorrect = selected !== undefined && (
+          Number(selected) === Number(q.correctAnswer) ||
+          (Array.isArray(q.options) && typeof q.correctAnswer === 'number' && q.options[q.correctAnswer] === selected) ||
+          String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
+        );
       }
 
       return {
