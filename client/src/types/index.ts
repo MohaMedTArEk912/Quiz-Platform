@@ -97,11 +97,12 @@ export interface UserData {
     name: string;
     email: string;
     role?: 'user' | 'admin';
+    isAdmin?: boolean;
     password?: string;
     totalScore: number;
     totalTime: number; // in seconds
     totalAttempts: number;
-    rank?: number; // Optional, calculated dynamically
+    rank?: number | null; // Optional, calculated dynamically
 
     // Gamification
     xp: number;

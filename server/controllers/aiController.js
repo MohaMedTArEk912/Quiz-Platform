@@ -313,3 +313,93 @@ Provide a concise, 1-2 sentence guided conceptual hint that activates their crit
         });
     }
 };
+
+/**
+ * POST /api/ai/translate
+ * Translate question, options, and explanation into target language
+ */
+export const translateQuestionContent = async (req, res) => {
+    try {
+        const { question, options = [], explanation = '', targetLang = 'es', targetLangName = '' } = req.body;
+        if (!question) {
+            return res.status(400).json({ success: false, message: 'Question content is required' });
+        }
+
+        const groq = getGroqClient();
+        if (groq) {
+            try {
+                const prompt = `You are an expert educational translator.
+Translate the following quiz question content accurately into target language: "${targetLangName || targetLang}".
+Keep any mathematical formulas ($...$, $$...$$), code snippets, and technical acronyms intact and properly formatted.
+
+Input:
+Question: ${JSON.stringify(question)}
+Options: ${JSON.stringify(options)}
+Explanation: ${JSON.stringify(explanation)}
+
+Respond ONLY with a JSON object in this exact format:
+{
+  "question": "translated question",
+  "options": ["translated option 1", "translated option 2"],
+  "explanation": "translated explanation or empty string"
+}`;
+
+                const resp = await groq.chat.completions.create({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [{ role: 'user', content: prompt }],
+                    response_format: { type: 'json_object' },
+                    max_tokens: 2000
+                });
+
+                const content = resp?.choices?.[0]?.message?.content;
+                if (content) {
+                    const parsed = JSON.parse(content);
+                    return res.json({
+                        success: true,
+                        data: {
+                            question: parsed.question || question,
+                            options: Array.isArray(parsed.options) ? parsed.options : options,
+                            explanation: parsed.explanation || explanation
+                        }
+                    });
+                }
+            } catch (aiErr) {
+                console.warn('[Translate AI] Fallback to direct translation:', aiErr.message);
+            }
+        }
+
+        // Fallback helper using Google Translate endpoint
+        const fetchTranslate = async (text) => {
+            if (!text || typeof text !== 'string') return text;
+            try {
+                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(targetLang)}&dt=t&q=${encodeURIComponent(text)}`;
+                const response = await fetch(url);
+                if (!response.ok) return text;
+                const data = await response.json();
+                if (Array.isArray(data) && Array.isArray(data[0])) {
+                    return data[0].map(segment => segment[0]).join('');
+                }
+                return text;
+            } catch (err) {
+                return text;
+            }
+        };
+
+        const translatedQ = await fetchTranslate(question);
+        const translatedOpts = await Promise.all((options || []).map(opt => fetchTranslate(opt)));
+        const translatedExp = explanation ? await fetchTranslate(explanation) : '';
+
+        return res.json({
+            success: true,
+            data: {
+                question: translatedQ,
+                options: translatedOpts,
+                explanation: translatedExp
+            }
+        });
+    } catch (error) {
+        console.error('Translation Error:', error);
+        res.status(500).json({ success: false, message: 'Translation failed', error: error.message });
+    }
+};
+

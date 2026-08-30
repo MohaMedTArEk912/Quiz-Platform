@@ -15,10 +15,18 @@ export interface ApiConfig {
 }
 
 const resolvePrimaryUrl = (): string => {
+  const envUrl = (import.meta.env.VITE_API_URL || '').trim();
+  if (envUrl) {
+    return envUrl.endsWith('/') ? envUrl.slice(0, -1) : envUrl;
+  }
   return '/api';
 };
 
 const resolveFallbackUrl = (): string => {
+  const envUrl = (import.meta.env.VITE_FALLBACK_API_URL || '').trim();
+  if (envUrl) {
+    return envUrl.endsWith('/') ? envUrl.slice(0, -1) : envUrl;
+  }
   return '/api';
 };
 

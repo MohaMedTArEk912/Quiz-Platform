@@ -49,9 +49,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
         }
     }, [activeTab]);
 
-    // Sort users by total score (descending)
+    // Sort users by total score (descending), excluding admin accounts
     const rankedUsers = [...users]
-        .filter(u => u.totalScore && u.totalScore > 0)
+        .filter(u => u.role !== 'admin' && !u.isAdmin && u.totalScore && u.totalScore > 0)
         .sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0))
         .map((user, index) => ({ ...user, rank: index + 1 }));
 
@@ -202,7 +202,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                                 </div>
                                 <div className="relative z-10">
                                     <div className="text-sm text-indigo-100 font-bold uppercase tracking-wider">Your Rank</div>
-                                    <div className="text-3xl font-black text-white">#{currentUserRank?.rank || 'N/A'}</div>
+                                    <div className="text-2xl sm:text-3xl font-black text-white">
+                                        {(currentUser.role === 'admin' || currentUser.isAdmin)
+                                            ? 'Admin (Unranked)'
+                                            : `#${currentUserRank?.rank || 'N/A'}`}
+                                    </div>
                                 </div>
                             </div>
                         </div>

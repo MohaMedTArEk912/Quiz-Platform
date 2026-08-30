@@ -18,9 +18,15 @@ export const getEnrichedUser = async (userId) => {
         // User.skillTracks array is a cache that might be slightly stale or less detailed
         const skillTracks = await SkillTrackProgress.find({ userId }).lean();
 
-        // Calculate rank efficiently
-        // Note: For very large datasets, this count should be cached or approximated
-        const rank = await User.countDocuments({ totalScore: { $gt: user.totalScore || 0 } }) + 1;
+        // Calculate rank efficiently (Excluding admin accounts from student rank)
+        const isAdmin = user.role === 'admin' || user.isAdmin === true;
+        const rank = isAdmin
+            ? null
+            : await User.countDocuments({
+                role: { $ne: 'admin' },
+                isAdmin: { $ne: true },
+                totalScore: { $gt: user.totalScore || 0 }
+            }) + 1;
 
         return {
             ...user,

@@ -1,8 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Quiz, UserData, QuizResult, DetailedAnswer } from '../types';
 import { RotateCcw, Clock, Target, CheckCircle, XCircle, ArrowLeft, Trophy, Flag, AlertTriangle, List } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { MathRenderer } from './common/MathRenderer';
+import { QuestionTranslatorBar } from './common/QuestionTranslatorBar';
+import { translateQuestion, isRTL, type TranslatedQuestionData } from '../lib/translationService';
 
 interface QuizResultsProps {
     result: QuizResult;
@@ -13,10 +15,85 @@ interface QuizResultsProps {
 }
 
 const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes, onRetake }) => {
-    const [showReview, setShowReview] = React.useState(false);
+    const [showReview, setShowReview] = useState(false);
+    const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
+        try {
+            return localStorage.getItem('quiz_pref_lang') || 'original';
+        } catch {
+            return 'original';
+        }
+    });
+    const [isTranslated, setIsTranslated] = useState<boolean>(() => {
+        try {
+            const saved = localStorage.getItem('quiz_pref_lang');
+            return Boolean(saved && saved !== 'original');
+        } catch {
+            return false;
+        }
+    });
+    const [isTranslating, setIsTranslating] = useState(false);
+    const [translatedCache, setTranslatedCache] = useState<Record<number, Record<string, TranslatedQuestionData>>>({});
     const safeQuestions = (result.attemptQuestions && result.attemptQuestions.length > 0) 
         ? result.attemptQuestions 
         : (Array.isArray(quiz.questions) ? quiz.questions : []);
+
+    const handleSelectLanguage = (langCode: string) => {
+        setSelectedLanguage(langCode);
+        try {
+            localStorage.setItem('quiz_pref_lang', langCode);
+        } catch {}
+        setIsTranslated(langCode !== 'original');
+    };
+
+    const handleToggleOriginal = () => {
+        setIsTranslated((prev) => !prev);
+    };
+
+    // Effect to translate review questions when opened and language is selected
+    useEffect(() => {
+        if (!showReview || selectedLanguage === 'original' || !isTranslated) return;
+
+        let isCancelled = false;
+        const toTranslate = safeQuestions.filter((_, idx) => !translatedCache[idx]?.[selectedLanguage]);
+
+        if (toTranslate.length === 0) return;
+
+        setIsTranslating(true);
+
+        Promise.all(
+            safeQuestions.map(async (q, idx) => {
+                if (translatedCache[idx]?.[selectedLanguage]) {
+                    return { idx, data: translatedCache[idx][selectedLanguage] };
+                }
+                const data = await translateQuestion(q, selectedLanguage);
+                return { idx, data };
+            })
+        )
+            .then((results) => {
+                if (!isCancelled) {
+                    setTranslatedCache((prev) => {
+                        const next = { ...prev };
+                        results.forEach(({ idx, data }) => {
+                            next[idx] = { ...(next[idx] || {}), [selectedLanguage]: data };
+                        });
+                        return next;
+                    });
+                }
+            })
+            .catch((err) => {
+                console.warn('[Review Translation] Failed:', err);
+            })
+            .finally(() => {
+                if (!isCancelled) {
+                    setIsTranslating(false);
+                }
+            });
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [showReview, selectedLanguage, isTranslated, safeQuestions, translatedCache]);
+
 
     useEffect(() => {
         if (result.passed || result.poolProgress?.justCompletedPool) {
@@ -289,14 +366,42 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                         {/* --- REVIEW SECTION CONTENT --- */}
                         {showReview && (
                             <div className="flex flex-col gap-4 mt-4 animate-in slide-in-from-top-4 fade-in duration-300">
+                                <QuestionTranslatorBar
+                                    currentLanguage={selectedLanguage}
+                                    isTranslating={isTranslating}
+                                    isTranslated={isTranslated && selectedLanguage !== 'original'}
+                                    autoTranslate={true}
+                                    onSelectLanguage={handleSelectLanguage}
+                                    onToggleOriginal={handleToggleOriginal}
+                                    onToggleAutoTranslate={() => {}}
+                                />
+
                                 {safeQuestions.map((q, idx) => {
+                                    const activeTrans = (isTranslated && selectedLanguage !== 'original' && translatedCache[idx]?.[selectedLanguage]) || null;
+                                    const isRtl = Boolean(isTranslated && selectedLanguage !== 'original' && isRTL(selectedLanguage));
+                                    const displayQ = activeTrans?.question || q.question;
+                                    const displayExp = activeTrans?.explanation || q.explanation;
                                     const ans = result.answers[idx];
                                     const isDetailed = typeof ans === 'object' && ans !== null;
                                     const isCorrect = isDetailed ? ans.isCorrect : (ans !== undefined && ans !== null && ans === q.correctAnswer);
                                     const userAnswer = isDetailed ? ans.selected : ans;
+
+                                    const rawUserAnsText = q.type === 'multiple-choice' || !q.type 
+                                        ? (q.options ? q.options[userAnswer as number] : userAnswer) 
+                                        : userAnswer?.toString();
+                                    const userAnsText = (activeTrans?.options && typeof userAnswer === 'number' && activeTrans.options[userAnswer] !== undefined)
+                                        ? activeTrans.options[userAnswer]
+                                        : rawUserAnsText;
+
+                                    const rawCorrectText = q.type === 'multiple-choice' || !q.type 
+                                        ? (q.options ? q.options[q.correctAnswer as number] : q.correctAnswer) 
+                                        : q.correctAnswer?.toString();
+                                    const correctAnsText = (activeTrans?.options && typeof q.correctAnswer === 'number' && activeTrans.options[q.correctAnswer] !== undefined)
+                                        ? activeTrans.options[q.correctAnswer]
+                                        : rawCorrectText;
                                     
                                     return (
-                                        <div key={idx} className={`p-5 rounded-3xl border ${isCorrect ? 'bg-green-50/50 dark:bg-emerald-500/5 border-green-200 dark:border-emerald-500/20' : 'bg-red-50/50 dark:bg-fuchsia-500/5 border-red-200 dark:border-fuchsia-500/20'} transition-all hover:shadow-md`}>
+                                        <div key={idx} dir={isRtl ? 'rtl' : 'ltr'} className={`p-5 rounded-3xl border ${isCorrect ? 'bg-green-50/50 dark:bg-emerald-500/5 border-green-200 dark:border-emerald-500/20' : 'bg-red-50/50 dark:bg-fuchsia-500/5 border-red-200 dark:border-fuchsia-500/20'} transition-all hover:shadow-md`}>
                                             <div className="flex items-start gap-3">
                                                 <div className="mt-1 flex-shrink-0">
                                                     {isCorrect ? (
@@ -306,43 +411,39 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                                                     )}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="font-bold text-gray-800 dark:text-gray-200 mb-3 landscape:mb-1.5 lg:landscape:mb-3 text-lg landscape:text-base lg:landscape:text-lg leading-snug">
-                                                        <span className="opacity-50 mr-2">{idx + 1}.</span> <MathRenderer text={q.question} inline={true} />
+                                                    <p className={`font-bold text-gray-800 dark:text-gray-200 mb-3 landscape:mb-1.5 lg:landscape:mb-3 text-lg landscape:text-base lg:landscape:text-lg leading-snug ${isRtl ? 'text-right' : 'text-left'}`}>
+                                                        <span className="opacity-50 mr-2">{idx + 1}.</span> <MathRenderer text={displayQ} inline={true} />
                                                     </p>
                                                     
                                                     {q.codeSnippet && (
-                                                        <pre className="p-4 mb-4 bg-white/60 dark:bg-black/40 rounded-2xl font-mono text-sm text-indigo-600 dark:text-emerald-400 overflow-x-auto border border-gray-200/50 dark:border-gray-800/50 shadow-inner">
+                                                        <pre dir="ltr" className="p-4 mb-4 bg-white/60 dark:bg-black/40 rounded-2xl font-mono text-sm text-indigo-600 dark:text-emerald-400 overflow-x-auto border border-gray-200/50 dark:border-gray-800/50 shadow-inner">
                                                             {q.codeSnippet}
                                                         </pre>
                                                     )}
 
                                                     <div className="flex flex-col gap-2 mt-4 landscape:mt-2 lg:landscape:mt-4 bg-white/50 dark:bg-black/20 p-4 landscape:p-3 lg:landscape:p-4 rounded-2xl border border-gray-100 dark:border-white/5 transition-all">
                                                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                                                            <span className="text-xs font-bold uppercase tracking-widest text-gray-400 w-24">Your Answer</span>
-                                                            <span className={`font-semibold ${isCorrect ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-fuchsia-400'}`}>
-                                                                {q.type === 'multiple-choice' || !q.type 
-                                                                    ? (q.options ? q.options[userAnswer as number] : userAnswer) 
-                                                                    : userAnswer?.toString()}
+                                                            <span className="text-xs font-bold uppercase tracking-widest text-gray-400 w-24 shrink-0">Your Answer</span>
+                                                            <span className={`font-semibold ${isCorrect ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-fuchsia-400'} ${isRtl ? 'text-right' : 'text-left'}`}>
+                                                                {userAnsText}
                                                                 {userAnswer === undefined && 'No Answer'}
                                                             </span>
                                                         </div>
                                                         
                                                         {!isCorrect && q.type !== 'text' && (
                                                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 pt-2 border-t border-gray-200/50 dark:border-gray-800">
-                                                                <span className="text-xs font-bold uppercase tracking-widest text-gray-400 w-24">Correct</span>
-                                                                <span className="font-semibold text-gray-800 dark:text-gray-200">
-                                                                    {q.type === 'multiple-choice' || !q.type 
-                                                                        ? (q.options ? q.options[q.correctAnswer as number] : q.correctAnswer) 
-                                                                        : q.correctAnswer?.toString()}
+                                                                <span className="text-xs font-bold uppercase tracking-widest text-gray-400 w-24 shrink-0">Correct</span>
+                                                                <span className={`font-semibold text-gray-800 dark:text-gray-200 ${isRtl ? 'text-right' : 'text-left'}`}>
+                                                                    {correctAnsText}
                                                                 </span>
                                                             </div>
                                                         )}
                                                     </div>
                                                     
-                                                    {q.explanation && (
-                                                        <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 bg-blue-50/50 dark:bg-indigo-500/5 p-4 rounded-2xl border border-blue-100 dark:border-indigo-500/20">
+                                                    {displayExp && (
+                                                        <div className={`mt-4 text-sm text-gray-600 dark:text-gray-400 bg-blue-50/50 dark:bg-indigo-500/5 p-4 rounded-2xl border border-blue-100 dark:border-indigo-500/20 ${isRtl ? 'text-right' : 'text-left'}`}>
                                                             <span className="font-bold block mb-1 text-blue-600 dark:text-indigo-400">Explanation</span>
-                                                            <MathRenderer text={q.explanation} />
+                                                            <MathRenderer text={displayExp} />
                                                         </div>
                                                     )}
                                                 </div>

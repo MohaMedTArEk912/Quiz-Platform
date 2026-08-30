@@ -161,10 +161,13 @@ export const saveAttempt = async (req, res) => {
             throw saveError;
         }
 
-    // UPDATE USER STATS & REWARDS
+    // UPDATE USER STATS & REWARDS (Admins do not compete on student leaderboards)
+    const isAdminUser = user?.role === 'admin' || user?.isAdmin === true;
     if (user) {
         user.totalAttempts = (user.totalAttempts || 0) + 1;
-        user.totalScore = (user.totalScore || 0) + (normalizedAttempt.score || 0);
+        if (!isAdminUser) {
+            user.totalScore = (user.totalScore || 0) + (normalizedAttempt.score || 0);
+        }
         user.totalTime = (user.totalTime || 0) + (normalizedAttempt.timeTaken || 0);
         
         if (quiz) {

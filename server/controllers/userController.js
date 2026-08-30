@@ -97,9 +97,9 @@ export const getUserData = async (req, res) => {
       ...((user.friendRequests || []).map((r) => r.to)),
     ].filter(Boolean));
 
-    // Top leaderboard slice
+    // Top leaderboard slice (Excludes admin accounts)
     const leaderboard = await User.find(
-      {},
+      { role: { $ne: 'admin' }, isAdmin: { $ne: true } },
       'userId name totalScore totalAttempts xp level streak lastLoginDate badges role'
     )
       .sort({ totalScore: -1 })

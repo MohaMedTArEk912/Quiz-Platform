@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Edit2, Trash2, Share2 } from 'lucide-react';
+import { Download, Edit2, Trash2, Share2, Play } from 'lucide-react';
 import type { Quiz } from '../../types';
 import { getQuizIconOption } from '../../utils/quizIcons';
 
@@ -9,9 +9,11 @@ interface QuizCardProps {
     onEdit: (quiz: Quiz) => void;
     onDelete: (id: string) => void;
     onShare: (quiz: Quiz) => void;
+    onPlay?: (quiz: Quiz) => void;
+    onHost?: (quiz: Quiz) => void;
 }
 
-const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, onShare }) => {
+const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, onShare, onPlay, onHost }) => {
     const quizIcon = getQuizIconOption(quiz.icon);
     const QuizIcon = quizIcon.Icon;
     const isPool = Boolean(quiz.quizType === 'pool' || quiz.isQuestionPool);
@@ -55,16 +57,34 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, o
                 </div>
             </div>
             <div className="flex gap-2 flex-wrap">
-                <button onClick={() => onShare(quiz)} className="flex-1 py-2 bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-500/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 min-w-[80px]">
+                {onPlay && (
+                    <button
+                        onClick={() => onPlay(quiz)}
+                        className="flex-1 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-purple-500/20 rounded-xl font-bold text-sm transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 min-w-[80px]"
+                        title="Play / Preview quiz in student view"
+                    >
+                        <Play className="w-4 h-4 fill-current" /> Preview
+                    </button>
+                )}
+                {onHost && (
+                    <button
+                        onClick={() => onHost(quiz)}
+                        className="py-2 px-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl font-bold text-sm transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-1.5"
+                        title="Host Live Classroom Arena game for this quiz"
+                    >
+                        🎮 Host
+                    </button>
+                )}
+                <button onClick={() => onShare(quiz)} className="flex-1 py-2 bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-500/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 min-w-[70px]">
                     <Share2 className="w-4 h-4" /> Share
                 </button>
-                <button onClick={() => onExport(quiz)} className="flex-1 py-2 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 min-w-[80px]">
+                <button onClick={() => onExport(quiz)} className="flex-1 py-2 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 min-w-[70px]">
                     <Download className="w-4 h-4" /> Export
                 </button>
-                <button onClick={() => onEdit(quiz)} className="flex-1 py-2 bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-500/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 min-w-[80px]">
+                <button onClick={() => onEdit(quiz)} className="flex-1 py-2 bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-500/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 min-w-[70px]">
                     <Edit2 className="w-4 h-4" /> Edit
                 </button>
-                <button onClick={() => onDelete(quiz.id)} className="flex-1 py-2 bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 min-w-[80px]">
+                <button onClick={() => onDelete(quiz.id)} className="flex-1 py-2 bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 min-w-[70px]">
                     <Trash2 className="w-4 h-4" /> Delete
                 </button>
             </div>

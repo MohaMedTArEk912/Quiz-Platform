@@ -314,13 +314,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 )}
 
                 {/* Sidebar - Desktop */}
-                <div className="hidden md:flex w-64 bg-white/40 dark:bg-[#0a0a0b]/40 backdrop-blur-3xl border-r border-white/20 dark:border-white/5 flex-col py-4 transition-all duration-300">
-                    <div className="flex-1 overflow-y-auto px-4 space-y-6 custom-scrollbar">
+                <div className="hidden md:flex w-72 shrink-0 bg-white/40 dark:bg-[#0a0a0b]/40 backdrop-blur-3xl border-r border-white/20 dark:border-white/5 flex-col py-4 transition-all duration-300">
+                    <div className="flex-1 overflow-y-auto px-3.5 space-y-5 custom-scrollbar">
                         {navItems.map((group, idx) => (
-                            <div key={idx} className="space-y-1.5">
-                                <h3 className="px-3 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] mb-3 flex items-center gap-2 opacity-60">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                                    {group.title}
+                            <div key={idx} className="space-y-1">
+                                <h3 className="px-3 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2 opacity-70 whitespace-nowrap">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                                    <span className="truncate">{group.title}</span>
                                 </h3>
                                 <div className="space-y-1">
                                     {group.items.map((item) => {
@@ -330,20 +330,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             <button
                                                 key={item.id}
                                                 onClick={() => setSelectedTab(item.id)}
-                                                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl transition-all duration-300 font-bold group relative overflow-hidden cursor-pointer ${isActive
+                                                className={`w-full h-11 flex items-center justify-between px-3.5 py-2 rounded-2xl transition-all duration-300 font-bold group relative overflow-hidden cursor-pointer ${isActive
                                                     ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25'
                                                     : 'text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-white/5'
                                                     }`}
                                             >
-                                                <div className="flex items-center gap-3 relative z-10">
-                                                    <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-white/20' : 'bg-transparent group-hover:bg-indigo-500/10'}`}>
-                                                        <Icon className={`w-4 h-4 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-indigo-500'}`} />
+                                                <div className="flex items-center gap-3 relative z-10 min-w-0 flex-1">
+                                                    <div className={`p-1.5 rounded-xl transition-all shrink-0 ${isActive ? 'bg-white/20' : 'bg-transparent group-hover:bg-indigo-500/10'}`}>
+                                                        <Icon className={`w-4 h-4 transition-transform group-hover:scale-110 shrink-0 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-indigo-500'}`} />
                                                     </div>
-                                                    <span className="text-xs uppercase tracking-wider font-black">{item.label}</span>
+                                                    <span className="text-xs uppercase tracking-wider font-black whitespace-nowrap text-left truncate">{item.label}</span>
                                                 </div>
 
                                                 {item.badge && item.badge > 0 && (
-                                                    <span className={`relative z-10 text-[9px] font-black px-1.5 py-0.5 rounded-lg shadow-sm ${isActive
+                                                    <span className={`relative z-10 text-[9px] font-black px-1.5 py-0.5 rounded-lg shadow-sm shrink-0 ml-2 ${isActive
                                                         ? 'bg-white text-indigo-600'
                                                         : 'bg-indigo-500 text-white'}`}>
                                                         {item.badge}
@@ -362,16 +362,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <button
                             type="button"
                             onClick={() => navigate('/')}
-                            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 transition-all font-black text-xs uppercase tracking-wider group cursor-pointer"
+                            className="w-full h-11 flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 transition-all font-black text-xs uppercase tracking-wider group cursor-pointer"
                             title="Switch to Student / Home View"
                         >
-                            <div className="flex items-center gap-2.5">
-                                <div className="p-1.5 rounded-xl bg-purple-500/20 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="p-1.5 rounded-xl bg-purple-500/20 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform shrink-0">
                                     <Home className="w-4 h-4" />
                                 </div>
-                                <span>Student App</span>
+                                <span className="whitespace-nowrap truncate">Student App</span>
                             </div>
-                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
                         </button>
                     </div>
                 </div>
@@ -411,28 +411,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
 
                     {/* Drawer Navigation List */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar">
                         {/* Main Overview button */}
                         <button
                             onClick={() => {
                                 setSelectedTab('main');
                                 setIsSidebarOpen(false);
                             }}
-                            className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-300 font-black uppercase tracking-wider text-xs cursor-pointer ${selectedTab === 'main'
+                            className={`w-full h-11 flex items-center justify-between px-3.5 py-2.5 rounded-2xl transition-all duration-300 font-black uppercase tracking-wider text-xs cursor-pointer ${selectedTab === 'main'
                                 ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/30'
                                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5'
                                 }`}
                         >
-                            <div className="flex items-center gap-3">
-                                <Trophy className="w-5 h-5" />
-                                <span>Dashboard Overview</span>
+                            <div className="flex items-center gap-3 min-w-0">
+                                <Trophy className="w-5 h-5 shrink-0" />
+                                <span className="whitespace-nowrap truncate">Dashboard Overview</span>
                             </div>
                         </button>
 
                         {navItems.map((group, idx) => (
-                            <div key={idx} className="space-y-1.5">
-                                <h3 className="px-3 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] mb-2">
-                                    {group.title}
+                            <div key={idx} className="space-y-1">
+                                <h3 className="px-3 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2 opacity-70 whitespace-nowrap">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                                    <span className="truncate">{group.title}</span>
                                 </h3>
                                 <div className="space-y-1">
                                     {group.items.map((item) => {
@@ -445,18 +446,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                     setSelectedTab(item.id);
                                                     setIsSidebarOpen(false);
                                                 }}
-                                                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-300 font-black uppercase tracking-wider text-xs cursor-pointer ${isActive
+                                                className={`w-full h-11 flex items-center justify-between px-3.5 py-2.5 rounded-2xl transition-all duration-300 font-bold group relative overflow-hidden cursor-pointer ${isActive
                                                     ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/30'
                                                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5'
                                                     }`}
                                             >
-                                                <div className="flex items-center gap-3">
-                                                    <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                                                    <span>{item.label}</span>
+                                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                    <div className={`p-1.5 rounded-xl transition-all shrink-0 ${isActive ? 'bg-white/20' : 'bg-transparent'}`}>
+                                                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                                                    </div>
+                                                    <span className="text-xs uppercase tracking-wider font-black whitespace-nowrap text-left truncate">{item.label}</span>
                                                 </div>
 
                                                 {item.badge && item.badge > 0 && (
-                                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${isActive ? 'bg-white text-indigo-600' : 'bg-indigo-500 text-white'}`}>
+                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-lg shrink-0 ml-2 ${isActive ? 'bg-white text-indigo-600' : 'bg-indigo-500 text-white'}`}>
                                                         {item.badge}
                                                     </span>
                                                 )}

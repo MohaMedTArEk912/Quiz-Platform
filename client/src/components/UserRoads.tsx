@@ -119,28 +119,29 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
 
     const isRoadUnlocked = useCallback((subjectId: string) => {
         if (!subjectId) return false;
-        if (user.role === 'admin') return true;
+        if (user.role === 'admin' || user.isAdmin) return true;
         const unlocked = (user.unlockedTracks || []).map(id => id.toString());
         const primary = user.primaryTrackId?.toString();
         const idStr = subjectId.toString();
         return unlocked.includes(idStr) || primary === idStr;
-    }, [user.role, user.unlockedTracks, user.primaryTrackId]);
+    }, [user.role, user.isAdmin, user.unlockedTracks, user.primaryTrackId]);
 
     const isInitialTrackSelectionNeeded =
         user.role !== 'admin' &&
+        !user.isAdmin &&
         subjectsProp.length > 0 &&
         !user.primaryTrackId &&
         (!user.unlockedTracks || user.unlockedTracks.length === 0);
 
     const loadMyRequests = useCallback(async () => {
-        if (user.role === 'admin' || !user.userId) return;
+        if (user.role === 'admin' || user.isAdmin || !user.userId) return;
         try {
             const res = await api.getMyTrackRequests();
             setMyRequests(Array.isArray(res.requests) ? res.requests : []);
         } catch (err) {
             console.error('Failed to load my track requests:', err);
         }
-    }, [user.role, user.userId]);
+    }, [user.role, user.isAdmin, user.userId]);
 
     useEffect(() => {
         loadMyRequests();
@@ -213,8 +214,6 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
     const regularQuizzes = filteredQuizzes.filter(q => q.quizType !== 'exam');
     const examQuizzes = filteredQuizzes.filter(q => q.quizType === 'exam');
 
-
-
     const getDifficultyBadgeBg = (difficulty: string | undefined) => {
         const key = typeof difficulty === 'string' ? difficulty.toLowerCase() : 'default';
         return DIFFICULTY_COLORS[key] || DIFFICULTY_COLORS.default;
@@ -230,6 +229,9 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
 
     // Check if quiz is locked based on roadmap progress
     const isQuizLocked = (quiz: Quiz) => {
+        // Admins have 100% unrestricted access to every quiz
+        if (user?.role === 'admin' || user?.isAdmin) return false;
+
         const quizId = getQuizId(quiz);
 
         // Find the skill track for this subject (check subjectId first, then trackId)
@@ -1093,38 +1095,54 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                         )}
                                                     </div>
 
-                                                    <button
-                                                        disabled={locked}
-                                                        className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${
-                                                            locked
-                                                                ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
-                                                                : poolStatus.isPool
-                                                                    ? poolStatus.hasStarted && !poolStatus.isFullyCompleted
-                                                                        ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/25'
-                                                                        : poolStatus.isFullyCompleted
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            disabled={locked}
+                                                            className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${
+                                                                locked
+                                                                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
+                                                                    : poolStatus.isPool
+                                                                        ? poolStatus.hasStarted && !poolStatus.isFullyCompleted
+                                                                            ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/25'
+                                                                            : poolStatus.isFullyCompleted
+                                                                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
+                                                                                : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500'
+                                                                        : attempted
                                                                             ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
                                                                             : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500'
-                                                                    : attempted
-                                                                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
-                                                                        : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500'
-                                                        }`}
-                                                    >
-                                                        {locked ? (
-                                                            <><Lock className="w-4 h-4" /> Locked</>
-                                                        ) : poolStatus.isPool ? (
-                                                            poolStatus.hasStarted && !poolStatus.isFullyCompleted ? (
-                                                                <><Play className="w-4 h-4 fill-white" /> Complete Remaining ({poolStatus.remainingCount} Left)</>
-                                                            ) : poolStatus.isFullyCompleted ? (
-                                                                <><RefreshCw className="w-4 h-4" /> Retake (Start Next Cycle)</>
+                                                            }`}
+                                                        >
+                                                            {locked ? (
+                                                                <><Lock className="w-4 h-4" /> Locked</>
+                                                            ) : poolStatus.isPool ? (
+                                                                poolStatus.hasStarted && !poolStatus.isFullyCompleted ? (
+                                                                    <><Play className="w-4 h-4 fill-white" /> Complete Remaining ({poolStatus.remainingCount} Left)</>
+                                                                ) : poolStatus.isFullyCompleted ? (
+                                                                    <><RefreshCw className="w-4 h-4" /> Retake (Start Next Cycle)</>
+                                                                ) : (
+                                                                    <><Play className="w-4 h-4 fill-white" /> Start Pool</>
+                                                                )
+                                                            ) : attempted ? (
+                                                                <><RefreshCw className="w-4 h-4" /> Retake</>
                                                             ) : (
-                                                                <><Play className="w-4 h-4 fill-white" /> Start Pool</>
-                                                            )
-                                                        ) : attempted ? (
-                                                            <><RefreshCw className="w-4 h-4" /> Retake</>
-                                                        ) : (
-                                                            <><Play className="w-4 h-4 fill-white" /> Start</>
+                                                                <><Play className="w-4 h-4 fill-white" /> Start</>
+                                                            )}
+                                                        </button>
+
+                                                        {!locked && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setLiveHostQuiz(quiz);
+                                                                }}
+                                                                className="px-3.5 py-4 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-sm shrink-0"
+                                                                title="Host a Live Classroom Arena game for this quiz"
+                                                            >
+                                                                🎮
+                                                            </button>
                                                         )}
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
@@ -1302,38 +1320,54 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                         )}
                                                     </div>
 
-                                                    <button
-                                                        disabled={locked}
-                                                        className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${
-                                                            locked
-                                                                ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
-                                                                : poolStatus.isPool
-                                                                    ? poolStatus.hasStarted && !poolStatus.isFullyCompleted
-                                                                        ? 'bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 hover:from-orange-500 hover:to-pink-500 text-white shadow-lg shadow-orange-500/25'
-                                                                        : poolStatus.isFullyCompleted
-                                                                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
-                                                                            : 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-500'
-                                                                    : attempted
-                                                                        ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-500'
-                                                                        : 'bg-red-600 text-white shadow-lg shadow-red-500/20 hover:bg-red-500'
-                                                        }`}
-                                                    >
-                                                        {locked ? (
-                                                            <><Lock className="w-4 h-4" /> Locked</>
-                                                        ) : poolStatus.isPool ? (
-                                                            poolStatus.hasStarted && !poolStatus.isFullyCompleted ? (
-                                                                <><Play className="w-4 h-4 fill-white" /> Complete Remaining ({poolStatus.remainingCount} Left)</>
-                                                            ) : poolStatus.isFullyCompleted ? (
-                                                                <><RefreshCw className="w-4 h-4" /> Retake (Start Next Cycle)</>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            disabled={locked}
+                                                            className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${
+                                                                locked
+                                                                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
+                                                                    : poolStatus.isPool
+                                                                        ? poolStatus.hasStarted && !poolStatus.isFullyCompleted
+                                                                            ? 'bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 hover:from-orange-500 hover:to-pink-500 text-white shadow-lg shadow-orange-500/25'
+                                                                            : poolStatus.isFullyCompleted
+                                                                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
+                                                                                : 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-500'
+                                                                        : attempted
+                                                                            ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-500'
+                                                                            : 'bg-red-600 text-white shadow-lg shadow-red-500/20 hover:bg-red-500'
+                                                            }`}
+                                                        >
+                                                            {locked ? (
+                                                                <><Lock className="w-4 h-4" /> Locked</>
+                                                            ) : poolStatus.isPool ? (
+                                                                poolStatus.hasStarted && !poolStatus.isFullyCompleted ? (
+                                                                    <><Play className="w-4 h-4 fill-white" /> Complete Remaining ({poolStatus.remainingCount} Left)</>
+                                                                ) : poolStatus.isFullyCompleted ? (
+                                                                    <><RefreshCw className="w-4 h-4" /> Retake (Start Next Cycle)</>
+                                                                ) : (
+                                                                    <><Play className="w-4 h-4 fill-white" /> Start Exam Pool</>
+                                                                )
+                                                            ) : attempted ? (
+                                                                <><RefreshCw className="w-4 h-4" /> Retake</>
                                                             ) : (
-                                                                <><Play className="w-4 h-4 fill-white" /> Start Exam Pool</>
-                                                            )
-                                                        ) : attempted ? (
-                                                            <><RefreshCw className="w-4 h-4" /> Retake</>
-                                                        ) : (
-                                                            <><Play className="w-4 h-4 fill-white" /> Start</>
+                                                                <><Play className="w-4 h-4 fill-white" /> Start</>
+                                                            )}
+                                                        </button>
+
+                                                        {!locked && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setLiveHostQuiz(quiz);
+                                                                }}
+                                                                className="px-3.5 py-4 rounded-2xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/20 font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-sm shrink-0"
+                                                                title="Host a Live Classroom Arena game for this exam"
+                                                            >
+                                                                🎮
+                                                            </button>
                                                         )}
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );

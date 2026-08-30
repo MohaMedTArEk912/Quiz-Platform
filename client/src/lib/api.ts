@@ -1658,6 +1658,20 @@ export const api = {
             throw new Error(error.message || 'Failed to fetch AI coach hint');
         }
         return response.json();
+    },
+
+    // Question & Content Translation API
+    async translateQuestionContent(data: { question: string; options?: string[]; explanation?: string; targetLang: string; targetLangName?: string }): Promise<{ success: boolean; data: { question: string; options: string[]; explanation: string } }> {
+        const response = await fetchWithFallback('/ai/translate', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to translate content');
+        }
+        return response.json();
     }
 };
 

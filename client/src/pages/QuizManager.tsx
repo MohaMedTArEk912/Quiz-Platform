@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MoreVertical, Download, Upload, Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Quiz, Subject, UserData } from '../types';
@@ -17,6 +18,7 @@ import StackDeleteModal from '../components/stacks/StackDeleteModal';
 import QuizEditorModal from '../components/quizzes/QuizEditorModal';
 import DeleteQuizModal from '../components/quizzes/DeleteQuizModal';
 import ShareQuizModal from '../components/quizzes/ShareQuizModal';
+import LiveHostMode from '../components/multiplayer/LiveHostMode';
 
 interface QuizManagerProps {
     quizzes: Quiz[];
@@ -27,6 +29,7 @@ interface QuizManagerProps {
 }
 
 const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefresh, onNotification, selectedSubjectId }) => {
+    const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Data State
@@ -88,6 +91,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
     const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
     const [deleteQuizConfirmation, setDeleteQuizConfirmation] = useState<{ isOpen: boolean; id: string } | null>(null);
     const [sharingQuiz, setSharingQuiz] = useState<Quiz | null>(null);
+    const [liveHostQuiz, setLiveHostQuiz] = useState<Quiz | null>(null);
 
     // Import State
     const [importTargetStackId, setImportTargetStackId] = useState<string | null>(null);
@@ -542,6 +546,13 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
             ) : (
                 <QuizGrid
                     quizzes={filteredQuizzes}
+                    onPlay={(quiz) => {
+                        const quizId = quiz.id || quiz._id;
+                        if (quizId) {
+                            navigate(`/quiz/${encodeURIComponent(quizId)}`);
+                        }
+                    }}
+                    onHost={setLiveHostQuiz}
                     onExport={handleDownloadQuiz}
                     onEdit={setEditingQuiz}
                     onDelete={(id) => setDeleteQuizConfirmation({ isOpen: true, id })}
@@ -585,6 +596,13 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                 isOpen={!!sharingQuiz}
                 onClose={() => setSharingQuiz(null)}
             />
+
+            {liveHostQuiz && (
+                <LiveHostMode
+                    quiz={liveHostQuiz}
+                    onClose={() => setLiveHostQuiz(null)}
+                />
+            )}
         </div>
     );
 };
