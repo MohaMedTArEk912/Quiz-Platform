@@ -3,7 +3,7 @@
   "framework": "vite",
   "buildCommand": "npm --prefix client run build",
   "outputDirectory": "client/dist",
-  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- . ':!server' ':!*.md'",
+  "ignoreCommand": "git rev-parse --verify HEAD^ >/dev/null 2>&1 && [ -z \"$(git diff --name-only HEAD^ HEAD -- . ':(exclude)server' ':(exclude)**/*.md')\" ] && exit 0 || exit 1",
   "functions": {
     "api/[...path].js": {
       "memory": 1024,
