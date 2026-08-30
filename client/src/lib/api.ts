@@ -18,7 +18,11 @@ import type {
     PoolProgressData,
     QuestionPoolProgress,
     Subject,
-    TrackRequest
+    TrackRequest,
+    AppNotification,
+    QuestionAnalyticsResponse,
+    QuestionAnalyticsItem,
+    DetailedAttemptData
 } from '../types';
 import { fetchWithFallback } from './apiRetry';
 
@@ -42,7 +46,11 @@ export type {
     BadgeTree,
     BadgeTreeNode,
     Subject,
-    TrackRequest
+    TrackRequest,
+    AppNotification,
+    QuestionAnalyticsResponse,
+    QuestionAnalyticsItem,
+    DetailedAttemptData
 };
 
 const getStoredToken = () => {
@@ -1468,10 +1476,11 @@ export const api = {
         return response.json();
     },
 
-    async approveTrackRequest(requestId: string, adminId?: string): Promise<{ success: boolean; message: string; request: TrackRequest }> {
+    async approveTrackRequest(requestId: string, adminId?: string, adminNote?: string): Promise<{ success: boolean; message: string; request: TrackRequest }> {
         const response = await fetchWithFallback(`/track-requests/${encodeURIComponent(requestId)}/approve`, {
             method: 'PUT',
-            headers: getHeaders(adminId)
+            headers: getHeaders(adminId),
+            body: JSON.stringify({ adminNote })
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
@@ -1480,14 +1489,28 @@ export const api = {
         return response.json();
     },
 
-    async rejectTrackRequest(requestId: string, adminId?: string): Promise<{ success: boolean; message: string; request: TrackRequest }> {
+    async rejectTrackRequest(requestId: string, adminId?: string, adminNote?: string): Promise<{ success: boolean; message: string; request: TrackRequest }> {
         const response = await fetchWithFallback(`/track-requests/${encodeURIComponent(requestId)}/reject`, {
             method: 'PUT',
-            headers: getHeaders(adminId)
+            headers: getHeaders(adminId),
+            body: JSON.stringify({ adminNote })
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
             throw new Error(error.message || 'Failed to reject track request');
+        }
+        return response.json();
+    },
+
+    async reRequestTrackAccess(requestIdOrSubjectId: string, reason: string, reRequestNote: string): Promise<{ success: boolean; message: string; request: TrackRequest }> {
+        const response = await fetchWithFallback(`/track-requests/${encodeURIComponent(requestIdOrSubjectId)}/re-request`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ reason, reRequestNote })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to re-submit track request');
         }
         return response.json();
     },
@@ -1503,5 +1526,96 @@ export const api = {
             throw new Error(error.message || 'Failed to update unlocked tracks');
         }
         return response.json();
+    },
+
+    // Notifications API
+    async getNotifications(limit?: number): Promise<{ success: boolean; notifications: AppNotification[] }> {
+        const url = limit ? `/notifications?limit=${limit}` : '/notifications';
+        const response = await fetchWithFallback(url, {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch notifications');
+        }
+        return response.json();
+    },
+
+    async getUnreadNotificationCount(): Promise<{ success: boolean; count: number }> {
+        const response = await fetchWithFallback('/notifications/unread-count', {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            return { success: true, count: 0 };
+        }
+        return response.json();
+    },
+
+    async markNotificationRead(notificationId: string): Promise<{ success: boolean }> {
+        const response = await fetchWithFallback(`/notifications/${encodeURIComponent(notificationId)}/read`, {
+            method: 'PUT',
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to mark notification as read');
+        }
+        return response.json();
+    },
+
+    async markAllNotificationsRead(): Promise<{ success: boolean }> {
+        const response = await fetchWithFallback('/notifications/read-all', {
+            method: 'PUT',
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to mark all notifications as read');
+        }
+        return response.json();
+    },
+
+    async deleteNotification(notificationId: string): Promise<{ success: boolean }> {
+        const response = await fetchWithFallback(`/notifications/${encodeURIComponent(notificationId)}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to delete notification');
+        }
+        return response.json();
+    },
+
+    // Question Analytics API
+    async getQuestionAnalytics(quizId?: string, minAttempts?: number): Promise<QuestionAnalyticsResponse> {
+        let url = '/analytics/questions';
+        const params = new URLSearchParams();
+        if (quizId) params.append('quizId', quizId);
+        if (minAttempts) params.append('minAttempts', String(minAttempts));
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        const response = await fetchWithFallback(url, {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch question analytics');
+        }
+        return response.json();
+    },
+
+    // Detailed Student Attempt Details API (Wrong vs Right answers)
+    async getAttemptDetails(attemptId: string): Promise<{ success: boolean; attempt: DetailedAttemptData }> {
+        const response = await fetchWithFallback(`/attempts/${encodeURIComponent(attemptId)}/details`, {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch attempt details');
+        }
+        return response.json();
     }
 };
+

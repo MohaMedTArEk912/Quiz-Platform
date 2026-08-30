@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Edit2, Trash2, Users, Eye, EyeOff, Search, BarChart3, Mail, Trophy, Calendar, Map, Lock, Unlock, CheckCircle, Gift, ChevronDown, Route } from 'lucide-react';
 import Modal from '../common/Modal';
 import Avatar from '../Avatar.tsx';
+import AttemptDetailsModal from './AttemptDetailsModal';
 import type { UserData, AttemptData, SkillTrack, SkillModule, Quiz, ShopItem, Subject } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 
@@ -577,6 +578,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
     const [showPassword, setShowPassword] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [viewingAttempts, setViewingAttempts] = useState<UserData | null>(null);
+    const [inspectingAttempt, setInspectingAttempt] = useState<AttemptData | null>(null);
     const [managingRoadmap, setManagingRoadmap] = useState<UserData | null>(null);
     const [managingTrackAccess, setManagingTrackAccess] = useState<UserData | null>(null);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -857,31 +859,34 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                     {viewingAttempts && attempts.filter(a => a.userId === viewingAttempts.userId).length > 0 ? (
                         attempts.filter(a => a.userId === viewingAttempts.userId).sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()).map(attempt => (
                             <div key={attempt.attemptId} className="bg-gray-50/50 dark:bg-black/20 p-5 rounded-[2rem] border border-gray-200 dark:border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 hover:border-indigo-500/20 transition-all">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10">
-                                        <Trophy className={`w-5 h-5 ${attempt.percentage >= 60 ? 'text-emerald-500' : 'text-red-500'}`} />
+                                <div className="flex items-center gap-4 min-w-0">
+                                    <div className="p-3 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 shrink-0">
+                                        <Trophy className={`w-5 h-5 ${attempt.percentage >= 70 ? 'text-emerald-500' : 'text-red-500'}`} />
                                     </div>
-                                    <div>
-                                        <div className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight mb-0.5">{attempt.quizTitle}</div>
+                                    <div className="min-w-0">
+                                        <div className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight mb-0.5 truncate">{attempt.quizTitle}</div>
                                         <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                                             <Calendar className="w-3 h-3" />
                                             {new Date(attempt.completedAt).toLocaleDateString()}
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                                     <div className="text-right">
-                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">SCORE</div>
-                                        <div className={`text-lg font-black ${attempt.percentage >= 60 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-0.5">SCORE</div>
+                                        <div className={`text-lg font-black ${attempt.percentage >= 70 ? 'text-emerald-500' : 'text-red-500'}`}>
                                             {attempt.percentage}%
                                         </div>
                                     </div>
-                                    <div className="w-1.5 h-12 bg-gray-200 dark:bg-white/5 rounded-full overflow-hidden hidden sm:block">
-                                        <div
-                                            className={`w-full transition-all duration-1000 ${attempt.percentage >= 60 ? 'bg-emerald-500' : 'bg-red-500'}`}
-                                            style={{ height: `${attempt.percentage}%`, marginTop: `${100 - attempt.percentage}%` }}
-                                        />
-                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setInspectingAttempt(attempt)}
+                                        className="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shrink-0 border border-indigo-500/20"
+                                        title="Inspect question-by-question student answers"
+                                    >
+                                        <Eye className="w-3.5 h-3.5" />
+                                        <span>Inspect Answers</span>
+                                    </button>
                                 </div>
                             </div>
                         ))
@@ -1142,6 +1147,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
                     onClose={() => setManagingTrackAccess(null)}
                     onNotification={onNotification}
                     onRefresh={onRefresh}
+                />
+            )}
+
+            {/* Inspect Attempt Questions Modal */}
+            {inspectingAttempt && (
+                <AttemptDetailsModal
+                    attempt={inspectingAttempt}
+                    onClose={() => setInspectingAttempt(null)}
                 />
             )}
         </div>

@@ -19,6 +19,7 @@ import {
     ArrowLeft,
     ShieldAlert,
     Inbox,
+    AlertTriangle,
     type LucideIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -26,6 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import type { UserData, Quiz, AttemptData } from '../types/index.ts';
 import { api } from '../lib/api.ts';
 import ThemeToggle from './ThemeToggle.tsx';
+import NotificationCenter from './NotificationCenter.tsx';
 import Avatar from './Avatar.tsx';
 
 // Import Admin Sub-Components
@@ -34,6 +36,8 @@ import ReviewManagement from './admin/ReviewManagement.tsx';
 import DailyChallengeManagement from './admin/DailyChallengeManagement.tsx';
 import TournamentManagement from './admin/TournamentManagement.tsx';
 import BadgeManagement from './admin/BadgeManagement.tsx';
+import QuestionAnalyticsManagement from './admin/QuestionAnalyticsManagement.tsx';
+import AttemptDetailsModal from './admin/AttemptDetailsModal.tsx';
 
 import RoadManager from './admin/RoadManager';
 import QuizManager from '../pages/QuizManager';
@@ -41,7 +45,7 @@ import AdminSettings from './AdminSettings.tsx';
 import TrackRequestManagement from './admin/TrackRequestManagement.tsx';
 
 // --- Types ---
-type AdminTab = 'main' | 'users' | 'quizzes' | 'road' | 'badges' | 'daily' | 'tournaments' | 'reviews' | 'track-requests';
+type AdminTab = 'main' | 'users' | 'quizzes' | 'road' | 'badges' | 'daily' | 'tournaments' | 'reviews' | 'track-requests' | 'question-analytics';
 
 interface NavItem {
     id: AdminTab;
@@ -78,6 +82,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const [selectedTab, setSelectedTab] = useState<AdminTab>('main');
     const [pendingReviews, setPendingReviews] = useState<AttemptData[]>([]);
     const [pendingTrackRequests, setPendingTrackRequests] = useState<number>(0);
+    const [selectedAttemptForInspection, setSelectedAttemptForInspection] = useState<AttemptData | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
@@ -141,6 +146,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             items: [
                 { id: 'users', label: 'Users', icon: Users },
                 { id: 'quizzes', label: 'Quizzes', icon: BookOpen },
+                { id: 'question-analytics', label: 'Error Diagnostics', icon: AlertTriangle },
                 { id: 'road', label: 'Roads', icon: Route },
                 { id: 'badges', label: 'Badges', icon: Award },
             ]
@@ -160,6 +166,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         switch (selectedTab) {
             case 'users': return 'User Management';
             case 'quizzes': return 'Quiz Manager';
+            case 'question-analytics': return 'Question Error Analytics';
             case 'road': return 'Roads & Tracks';
             case 'badges': return 'Badge Management';
             case 'track-requests': return 'Track Access Requests';
@@ -227,6 +234,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <span className="hidden sm:inline">Student View</span>
                         </button>
 
+                        <NotificationCenter currentUser={currentUser} />
                         <ThemeToggle />
 
                         {/* Admin Info (Desktop only) */}
@@ -767,10 +775,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         return (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                                 {items.map((a, i) => (
-                                                    <div key={i} className="flex flex-col p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-gray-50/50 dark:bg-black/20 border border-white/5 hover:border-indigo-500/20 transition-all group">
+                                                    <div
+                                                        key={i}
+                                                        onClick={() => setSelectedAttemptForInspection(a)}
+                                                        className="flex flex-col p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-gray-50/50 dark:bg-black/20 border border-white/5 hover:border-indigo-500/30 transition-all group cursor-pointer hover:scale-[1.02] shadow-sm"
+                                                        title="Click to inspect question-by-question breakdown"
+                                                    >
                                                         <div className="flex justify-between items-start mb-2.5">
                                                             <div className="flex items-center gap-2.5 min-w-0">
-                                                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-[10px] font-black text-indigo-500 shrink-0">
+                                                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-[10px] font-black text-indigo-500 shrink-0 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
                                                                     {(a.userName || 'S').charAt(0).toUpperCase()}
                                                                 </div>
                                                                 <div className="min-w-0">
@@ -778,12 +791,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                                     <div className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest">{formatDate(a.completedAt).split(',')[0]}</div>
                                                                 </div>
                                                             </div>
-                                                            <div className={`px-2 py-0.5 rounded-lg text-[10px] font-black shrink-0 ${(a.percentage || 0) >= 60 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'
+                                                            <div className={`px-2 py-0.5 rounded-lg text-[10px] font-black shrink-0 ${(a.percentage || 0) >= 70 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'
                                                                 }`}>
                                                                 {a.percentage || 0}%
                                                             </div>
                                                         </div>
                                                         <div className="text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-tight line-clamp-1">{a.quizTitle || 'Quiz'}</div>
+                                                        <div className="mt-2 text-[9px] font-black uppercase text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                                            <span>Inspect student answers →</span>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -808,6 +824,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 onRefresh={handleRefresh}
                                 onNotification={handleNotification}
                                 quizzes={quizzes}
+                            />
+                        )}
+
+                        {selectedTab === 'question-analytics' && (
+                            <QuestionAnalyticsManagement
+                                currentUser={currentUser}
+                                quizzes={quizzes}
+                                onNotification={handleNotification}
                             />
                         )}
 
@@ -860,6 +884,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                 </div>
             </div>
+
+            {/* Inspect Attempt Questions Modal */}
+            {selectedAttemptForInspection && (
+                <AttemptDetailsModal
+                    attempt={selectedAttemptForInspection}
+                    onClose={() => setSelectedAttemptForInspection(null)}
+                />
+            )}
 
             {/* Admin Settings Modal */}
             {isSettingsOpen && (

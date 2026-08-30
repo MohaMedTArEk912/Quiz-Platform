@@ -9,6 +9,7 @@ import {
     Settings
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle.tsx';
+import NotificationCenter from './NotificationCenter.tsx';
 import type { UserData } from '../types/index.ts';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Avatar from './Avatar';
@@ -189,11 +190,13 @@ const Navbar: React.FC<NavbarProps> = ({
                                 </button>
                             </>
                         )}
+                        <NotificationCenter currentUser={user} />
                         <ThemeToggle />
                     </div>
 
                     {/* Mobile Menu Toggle & Theme */}
                     <div className="flex lg:hidden items-center gap-2 shrink-0">
+                        <NotificationCenter currentUser={user} />
                         <ThemeToggle />
                         {showActions && (
                             <button

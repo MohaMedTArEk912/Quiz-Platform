@@ -1,6 +1,7 @@
 import { TrackRequest } from '../models/TrackRequest.js';
 import { User } from '../models/User.js';
 import { Subject } from '../models/Subject.js';
+import { createAndSendNotification } from './notificationController.js';
 import crypto from 'crypto';
 
 /**
@@ -109,13 +110,28 @@ export const createTrackRequest = async (req, res) => {
       subjectId: subjectIdStr,
       subjectTitle: subject.title,
       reason: (reason || '').trim(),
+      adminNote: '',
+      reRequestNote: '',
+      reRequestCount: 0,
       status: 'pending',
       requestedAt: new Date()
     });
 
     await newRequest.save();
 
-    // Emit real-time notification to admins if socket io is active
+    // Notify admins via persistent notification and socket
+    await createAndSendNotification(req.app, {
+      recipientId: 'all',
+      senderId: userId,
+      senderName: user.name || userId,
+      type: 're_request',
+      title: 'New Track Access Request',
+      message: `${user.name || userId} submitted a request to unlock "${subject.title}".`,
+      note: newRequest.reason,
+      link: '/admin',
+      metadata: { requestId: newRequest.requestId, subjectId: subjectIdStr, userId }
+    });
+
     const io = req.app.get('io');
     if (io) {
       io.emit('track_request_created', {
@@ -135,6 +151,82 @@ export const createTrackRequest = async (req, res) => {
   } catch (error) {
     console.error('Error creating track request:', error);
     res.status(500).json({ success: false, message: 'Failed to create request', error: error.message });
+  }
+};
+
+/**
+ * User re-submits a previously rejected track request with an explanatory note
+ */
+export const reRequestTrackAccess = async (req, res) => {
+  try {
+    const { id } = req.params; // requestId or subjectId
+    const { reason, reRequestNote } = req.body;
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    let request = await TrackRequest.findOne({
+      $or: [
+        { requestId: id, userId },
+        ...(id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: id, userId }, { subjectId: id, userId }] : [{ subjectId: id, userId }])
+      ]
+    }).sort({ requestedAt: -1 });
+
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Track request record not found' });
+    }
+
+    const noteText = (reRequestNote || reason || '').trim();
+    if (!noteText) {
+      return res.status(400).json({ success: false, message: 'Please provide a note explaining your re-request.' });
+    }
+
+    request.status = 'pending';
+    request.reRequestNote = noteText;
+    request.reason = (reason || request.reason || noteText).trim();
+    request.reRequestCount = (request.reRequestCount || 0) + 1;
+    request.requestedAt = new Date();
+    request.reviewedAt = undefined;
+    request.reviewedBy = undefined;
+
+    await request.save();
+
+    // Create notification for admins
+    await createAndSendNotification(req.app, {
+      recipientId: 'all',
+      senderId: userId,
+      senderName: request.userName || userId,
+      type: 're_request',
+      title: 'Track Request Re-submitted',
+      message: `${request.userName} re-submitted their access request for "${request.subjectTitle}".`,
+      note: noteText,
+      link: '/admin',
+      metadata: { requestId: request.requestId, subjectId: request.subjectId, userId }
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('track_request_created', {
+        requestId: request.requestId,
+        userId: request.userId,
+        userName: request.userName,
+        subjectTitle: request.subjectTitle,
+        requestedAt: request.requestedAt,
+        isReRequest: true,
+        reRequestNote: noteText
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Re-request submitted with note. The administrator has been notified.`,
+      request
+    });
+  } catch (error) {
+    console.error('Error re-requesting track access:', error);
+    res.status(500).json({ success: false, message: 'Failed to re-submit request', error: error.message });
   }
 };
 
@@ -172,11 +264,12 @@ export const getAllTrackRequests = async (req, res) => {
 };
 
 /**
- * Admin: Approve track request
+ * Admin: Approve track request (with optional admin note)
  */
 export const approveTrackRequest = async (req, res) => {
   try {
     const { id } = req.params;
+    const { adminNote } = req.body;
     const adminId = req.user?.userId;
 
     const request = await TrackRequest.findOne({
@@ -187,8 +280,9 @@ export const approveTrackRequest = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Track request not found' });
     }
 
-    // Update request status
+    // Update request status and admin note
     request.status = 'approved';
+    request.adminNote = (adminNote || '').trim();
     request.reviewedAt = new Date();
     request.reviewedBy = adminId;
     await request.save();
@@ -204,13 +298,27 @@ export const approveTrackRequest = async (req, res) => {
       }
       await targetUser.save();
 
+      // Create persistent notification for student
+      await createAndSendNotification(req.app, {
+        recipientId: request.userId,
+        senderId: adminId || 'admin',
+        senderName: req.user?.name || 'Administrator',
+        type: 'request_approved',
+        title: 'Track Access Granted! 🎉',
+        message: `Your request for "${request.subjectTitle}" has been approved! All modules and quizzes in this road are now accessible.`,
+        note: request.adminNote,
+        link: '/tracks',
+        metadata: { subjectId: request.subjectId, requestId: request.requestId }
+      });
+
       // Emit socket event to user if online
       const io = req.app.get('io');
       if (io) {
         io.to(request.userId).emit('track_request_approved', {
           requestId: request.requestId,
           subjectId: request.subjectId,
-          subjectTitle: request.subjectTitle
+          subjectTitle: request.subjectTitle,
+          adminNote: request.adminNote
         });
       }
     }
@@ -227,11 +335,12 @@ export const approveTrackRequest = async (req, res) => {
 };
 
 /**
- * Admin: Reject track request
+ * Admin: Reject track request (with feedback / note)
  */
 export const rejectTrackRequest = async (req, res) => {
   try {
     const { id } = req.params;
+    const { adminNote } = req.body;
     const adminId = req.user?.userId;
 
     const request = await TrackRequest.findOne({
@@ -243,9 +352,23 @@ export const rejectTrackRequest = async (req, res) => {
     }
 
     request.status = 'rejected';
+    request.adminNote = (adminNote || '').trim();
     request.reviewedAt = new Date();
     request.reviewedBy = adminId;
     await request.save();
+
+    // Create persistent notification for student with the admin's note
+    await createAndSendNotification(req.app, {
+      recipientId: request.userId,
+      senderId: adminId || 'admin',
+      senderName: req.user?.name || 'Administrator',
+      type: 'request_rejected',
+      title: 'Track Request Declined',
+      message: `Your request for "${request.subjectTitle}" was not approved by the administrator.`,
+      note: request.adminNote || 'You can review and re-request with additional details.',
+      link: '/tracks',
+      metadata: { subjectId: request.subjectId, requestId: request.requestId }
+    });
 
     // Emit socket event to user
     const io = req.app.get('io');
@@ -253,7 +376,8 @@ export const rejectTrackRequest = async (req, res) => {
       io.to(request.userId).emit('track_request_rejected', {
         requestId: request.requestId,
         subjectId: request.subjectId,
-        subjectTitle: request.subjectTitle
+        subjectTitle: request.subjectTitle,
+        adminNote: request.adminNote
       });
     }
 

@@ -1,5 +1,6 @@
 import { Quiz } from '../models/Quiz.js';
 import { QuestionPoolProgress } from '../models/QuestionPoolProgress.js';
+import { createAndSendNotification } from './notificationController.js';
 import { readdir, readFile } from 'fs/promises';
 import path from 'path';
 
@@ -190,6 +191,17 @@ export const createQuiz = async (req, res) => {
     await newQuiz.save();
     
     console.log(`✅ Quiz created: ${newQuiz.title} (${newQuiz.id})`);
+
+    // Broadcast notification to all students
+    createAndSendNotification(req.app, {
+      recipientId: 'all',
+      type: 'new_quiz',
+      title: 'New Quiz Added! 🎯',
+      message: `"${newQuiz.title}" has just been added under ${newQuiz.category || 'General'}. Test your skills now!`,
+      link: '/quizzes',
+      metadata: { quizId: newQuiz.id, title: newQuiz.title, category: newQuiz.category }
+    }).catch(e => console.error('Failed to send new quiz notification:', e));
+
     res.status(201).json(newQuiz);
   } catch (error) {
     console.error('❌ Error creating quiz:', error);
@@ -246,6 +258,18 @@ export const importQuizzes = async (req, res) => {
         return res.status(400).json({ message: 'Failed to import quizzes', errors });
     }
     
+    if (results.length > 0) {
+      const titles = results.slice(0, 3).map(q => `"${q.title}"`).join(', ') + (results.length > 3 ? ` and ${results.length - 3} more` : '');
+      createAndSendNotification(req.app, {
+        recipientId: 'all',
+        type: 'new_quiz',
+        title: `${results.length} New Quiz${results.length > 1 ? 'zes' : ''} Published! 📚`,
+        message: `New quiz content available: ${titles}. Check them out!`,
+        link: '/quizzes',
+        metadata: { count: results.length }
+      }).catch(e => console.error('Failed to send import quiz notification:', e));
+    }
+
     res.json({ 
         message: `Imported ${results.length} quizzes successfully`, 
         count: results.length,

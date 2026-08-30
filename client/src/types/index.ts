@@ -142,6 +142,9 @@ export interface TrackRequest {
     subjectId: string;
     subjectTitle: string;
     reason?: string;
+    adminNote?: string;
+    reRequestNote?: string;
+    reRequestCount?: number;
     status: 'pending' | 'approved' | 'rejected';
     requestedAt: string;
     reviewedAt?: string;
@@ -645,10 +648,103 @@ export interface GeneratedQuestion {
     correctAnswer: number;
 }
 
+export interface AppNotification {
+    notificationId: string;
+    recipientId: string;
+    senderId?: string;
+    senderName?: string;
+    type: 'new_quiz' | 'request_approved' | 'request_rejected' | 're_request' | 'system' | 'challenge' | 'badge';
+    title: string;
+    message: string;
+    note?: string;
+    link?: string;
+    metadata?: Record<string, unknown>;
+    isRead: boolean;
+    createdAt: string;
+}
+
+export interface QuestionOptionDistribution {
+    optionIndex: number;
+    text: string;
+    count: number;
+    percentage: number;
+    isCorrect: boolean;
+    isTopMisconception?: boolean;
+}
+
+export interface QuestionAnalyticsItem {
+    key: string;
+    quizId: string;
+    quizTitle: string;
+    quizCategory: string;
+    questionId: number | string;
+    questionText: string;
+    options: string[];
+    correctAnswer?: number;
+    explanation?: string;
+    imageUrl?: string;
+    codeSnippet?: string;
+    type: string;
+    totalAttempts: number;
+    correctCount: number;
+    wrongCount: number;
+    failureRate: number;
+    accuracy: number;
+    mostCommonWrongChoice: string;
+    mostCommonWrongCount: number;
+    optionDistribution: QuestionOptionDistribution[];
+    uniqueStudentsCount: number;
+}
+
+export interface QuestionAnalyticsSummary {
+    totalQuestionsAnalyzed: number;
+    avgFailureRate: number;
+    avgAccuracy: number;
+    totalAttemptsAnalyzed: number;
+    hardestQuiz: { title: string; averageFailureRate: number } | null;
+    mostMissedQuestion: QuestionAnalyticsItem | null;
+}
+
+export interface QuestionAnalyticsResponse {
+    success: boolean;
+    summary: QuestionAnalyticsSummary;
+    questions: QuestionAnalyticsItem[];
+}
+
+export interface AttemptQuestionBreakdown {
+    questionId: number | string;
+    questionIndex: number;
+    question: string;
+    options: string[];
+    correctAnswer?: number;
+    explanation?: string;
+    points: number;
+    imageUrl?: string;
+    codeSnippet?: string;
+    type: string;
+    studentAnswer: unknown;
+    isCorrect: boolean;
+    isAnswered: boolean;
+}
+
+export interface DetailedAttemptData extends AttemptData {
+    questionsBreakdown?: AttemptQuestionBreakdown[];
+    summary?: {
+        total: number;
+        correct: number;
+        wrong: number;
+        percentage: number;
+        score: number;
+        passed: boolean;
+        timeTaken: number;
+    };
+}
+
 declare global {
     interface Window {
         __pendingChallengeCallback?: (quizId: string, quizTitle: string) => void;
         __pendingAsyncChallengeCallback?: (quizId: string, quizTitle: string) => void;
     }
 }
+
 

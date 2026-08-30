@@ -6,7 +6,8 @@ import {
   getAllTrackRequests,
   approveTrackRequest,
   rejectTrackRequest,
-  updateUserUnlockedTracks
+  updateUserUnlockedTracks,
+  reRequestTrackAccess
 } from '../controllers/trackRequestController.js';
 import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
 
@@ -15,6 +16,7 @@ const router = express.Router();
 // User endpoints
 router.post('/select-initial', verifyUser, selectInitialTrack);
 router.post('/', verifyUser, createTrackRequest);
+router.post('/:id/re-request', verifyUser, reRequestTrackAccess);
 router.get('/my-requests', verifyUser, getUserRequests);
 
 // Admin endpoints

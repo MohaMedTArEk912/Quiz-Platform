@@ -255,6 +255,90 @@ export const submitReview = async (req, res) => {
 };
 
 /**
+ * GET /api/attempts/:attemptId/details
+ * Retrieve complete attempt breakdown with question text, student's chosen answer, correct answer, and explanation
+ */
+export const getAttemptDetails = async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+    const attempt = await Attempt.findOne({
+      $or: [{ attemptId }, ...(attemptId.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: attemptId }] : [])]
+    }).lean();
+
+    if (!attempt) {
+      return res.status(404).json({ success: false, message: 'Attempt not found' });
+    }
+
+    // Find the quiz to populate questions & explanations
+    let quiz = await Quiz.findOne({ id: attempt.quizId }).lean();
+    if (!quiz) {
+      quiz = await Quiz.findById(attempt.quizId).lean().catch(() => null);
+    }
+
+    const quizQuestions = attempt.attemptQuestions || quiz?.questions || [];
+
+    // Map each question with student's answer evaluation
+    const questionsBreakdown = (quizQuestions || []).map((q, idx) => {
+      const userAnsObj = attempt.answers?.[idx] ?? attempt.answers?.[String(idx)] ?? attempt.answers?.[q.id] ?? attempt.answers?.[String(q.id)];
+      let selected = undefined;
+      let isCorrect = false;
+
+      if (typeof userAnsObj === 'object' && userAnsObj !== null) {
+        selected = userAnsObj.selected;
+        if (typeof userAnsObj.isCorrect === 'boolean') {
+          isCorrect = userAnsObj.isCorrect;
+        } else {
+          isCorrect = selected !== undefined && Number(selected) === Number(q.correctAnswer);
+        }
+      } else {
+        selected = userAnsObj;
+        isCorrect = selected !== undefined && Number(selected) === Number(q.correctAnswer);
+      }
+
+      return {
+        questionId: q.id ?? idx + 1,
+        questionIndex: idx,
+        question: q.question,
+        options: q.options || [],
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation || '',
+        points: q.points || 10,
+        imageUrl: q.imageUrl || '',
+        codeSnippet: q.codeSnippet || '',
+        type: q.type || 'multiple-choice',
+        studentAnswer: selected,
+        isCorrect,
+        isAnswered: selected !== undefined && selected !== null && selected !== ''
+      };
+    });
+
+    const wrongCount = questionsBreakdown.filter(q => !q.isCorrect).length;
+    const correctCount = questionsBreakdown.filter(q => q.isCorrect).length;
+
+    res.json({
+      success: true,
+      attempt: {
+        ...attempt,
+        quizTitle: attempt.quizTitle || quiz?.title || 'Quiz',
+        questionsBreakdown,
+        summary: {
+          total: questionsBreakdown.length,
+          correct: correctCount,
+          wrong: wrongCount,
+          percentage: attempt.percentage,
+          score: attempt.score,
+          passed: attempt.passed,
+          timeTaken: attempt.timeTaken
+        }
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error fetching attempt details:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch attempt details', error: error.message });
+  }
+};
+
+/**
  * Update Roadmap Progress based on quiz completion.
  * A module is marked complete only when:
  * 1. ALL linked quizzes are passed by the user
