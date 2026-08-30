@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 import {
   BookOpen, ChevronLeft, ChevronRight, Grid3x3, Search, LayoutGrid, Filter, Folder, ArrowLeft
 } from 'lucide-react';
+import { MathRenderer } from '../common/MathRenderer';
 
 const StudyCardComponent: React.FC = () => {
   const [cards, setCards] = useState<StudyCard[]>([]);
@@ -352,13 +353,11 @@ const StudyCardComponent: React.FC = () => {
                       ))}
                     </div>
                     <h2 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-white leading-tight mb-8">
-                      {currentCard.title}
+                      <MathRenderer text={currentCard.title} />
                     </h2>
                     <div className="bg-gray-50 dark:bg-[#0a0a0b] rounded-3xl p-8 border border-gray-200 dark:border-white/5 relative overflow-hidden">
                       <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500/50"></div>
-                      <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-lg font-medium leading-relaxed">
-                        {currentCard.content}
-                      </p>
+                      <MathRenderer text={currentCard.content} className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-lg font-medium leading-relaxed" />
                     </div>
                   </div>
 

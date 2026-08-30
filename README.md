@@ -1,209 +1,251 @@
-# 🎯 Quiz Platform
+# 🎯 Quiz Platform — Next-Gen Gamified Learning & Assessment Ecosystem
 
-## 📚 About The Project
+[![Tech Stack](https://img.shields.io/badge/Stack-MERN%20%2B%20TypeScript-61DAFB.svg)](https://reactjs.org/)
+[![AI Powered](https://img.shields.io/badge/AI-Groq%20LLaMA%203.3%20%26%20Mixtral-F05A28.svg)](https://groq.com/)
+[![Real-Time](https://img.shields.io/badge/Real--Time-WebSockets%20%2F%20Socket.IO-010101.svg)](https://socket.io/)
+[![Styling](https://img.shields.io/badge/Styling-TailwindCSS%20v4-38B2AC.svg)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Welcome to the ultimate **Quiz Platform**, a comprehensive learning ecosystem designed to transform the way students and professionals test their knowledge. Built on the robust **MERN stack**, this application goes beyond simple question-and-answer formats. It integrates powerful gamification mechanics, real-time social competition, and advanced coding challenges to create an engaging, immersive educational experience.
+---
 
-Whether you are an institution looking to host exams, a coding bootcamp assessing student progress, or a community of learners competing for the top spot, this platform provides the tools to track progress, visualize growth, and make learning fun.
+## 📚 Overview
 
-## ✨ Key Features
+**Quiz Platform** is a full-featured, enterprise-grade learning and assessment ecosystem built on the **MERN stack (MongoDB, Express, React 19, Node.js)** and **TypeScript**. 
 
-### 🎮 Gamified Learning Ecosystem
-Learning shouldn't be boring. We've built a system that rewards consistency and mastery.
-- **Interactive Quizzes**: Support for multiple formats including multiple-choice, true/false, and code-based questions.
-- **Multi-Line Questions**: **New!** Questions now support multi-line text formatting, perfect for code examples and complex scenarios.
-- **Image Support**: **New!** Attach images to questions for visual context, diagrams, and code screenshots.
-- **Blockly Integration**: **New!** A drag-and-drop coding interface that allows users to solve logic puzzles visually, with semantic grading that understands the *logic* of the code.
-- **XP & Leveling**: Earn Experience Points (XP) for every correct answer, leveling up to unlock prestige and new features.
-- **Dynamic Shop**: A virtual economy where users spend earned currency on power-ups (e.g., "50/50", "Time Freeze"), cosmetic avatars, and badges.
-- **Daily Challenges**: Unique, time-limited quizzes generated daily to keep engagement high.
+It transcends conventional question-and-answer apps by unifying **AI-driven quiz extraction/generation**, **live real-time multiplayer duels**, **interactive code compilation & Blockly visual programming**, **RPG-style skill trees**, **social clans**, and a **deep administrative analytics suite**.
 
-### 📝 Question Enhancement Features
-Create richer, more engaging quiz questions with our new features:
-- **Multi-Line Text Support**: 
-  - Questions can span multiple lines for better readability
-  - Perfect for code snippets, mathematical expressions, and detailed scenarios
-  - Preserves formatting with proper line breaks
-  - Example:
-    ```
-    What prints after the following code:
-    val = input('Num: ') (user types 5)
-    then print(val * 3)?
-    ```
+Whether you are an educational institution hosting formal exams, a coding bootcamp tracking student mastery, or a community of competitive learners, this platform delivers unmatched engagement, deep analytics, and gamified motivation.
 
-- **Image Attachments**:
-  - Add visual context to questions with image URLs
-  - Supports all standard image formats (PNG, JPG, GIF, WebP)
-  - Automatic preview in the admin panel
-  - Responsive display on all devices
-  - Example use cases:
-    - Code output screenshots
-    - Data structure diagrams
-    - UI/UX mockups
-    - Mathematical graphs
-    - Algorithm flowcharts
+---
 
+## 🌟 Comprehensive Feature Matrix
 
-### 🤝 Social & Competitive Hub
-Knowledge is better shared. Our social suite connects learners.
-- **Friends System**: Search for users, send friend requests, and build your learning network.
-- **Live Battles (VS Mode)**: Real-time 1v1 competitive quizzes powered by WebSockets. Challenge friends or match with random opponents.
-- **Clans & Communities**: Join forces to create Clans. Compete in exclusive Clan Leaderboards.
-- **Global Leaderboards**: Track ranking globally, among friends, or within your clan.
+### 🧮 1. LaTeX & Rich Mathematical Formula Support
+* **KaTeX Rendering Engine**:
+  * Seamless mathematical typesetting for inline equations (`$...$`) and multiline block math (`$$...$$`).
+  * Live equation previewing in question editor, flashcard decks, attempt inspector, and result reviews.
+  * Resilient fallback rendering for complex scientific notations, Greek symbols, matrices, and fractions.
 
-### 🛡️ Enterprise-Grade Security
-Built with security first to protect data and privacy.
-- **Secure Authentication**: Robust JWT-based authentication with bcrypt hashing.
-- **Advanced Protection**: XSS sanitization, rate limiting, and HTTP parameter pollution protection.
-- **Role-Based Access Control (RBAC)**: Distinct secure environments for Students and Admins.
+---
 
-### 🛠️ Powerful Admin Dashboard
-Complete control over the platform's content and users.
-- **Analytics Suite**: Visual graphs showing user growth, completion rates, and scores.
-- **User Management**: Administrators can view, edit, or ban users as needed.
-- **Content CMS**: Built-in tools to create and manage Shop Items, Quizzes, and Daily Challenges.
+### 🛡️ 2. Exam Integrity & Anti-Cheating Telemetry
+* **Enforced Fullscreen Lock**:
+  * Proctored exam mode requires fullscreen locking before commencing.
+  * Real-time penalty deductions and instant warning alerts on fullscreen exit.
+* **Copy-Paste & Right-Click Disabling**:
+  * Intercepts and blocks context menu right-clicks and clipboard copy/paste attempts.
+* **Rapid Guessing Detection**:
+  * Detects rushed responses submitted under 1.8 seconds on non-trivial questions and flags suspicious rush patterns.
+* **Multi-Factor Integrity Gauge & Audit Trail**:
+  * 0–100% composite score rating (*Pristine*, *Moderate Caution*, *High Suspicion*).
+  * Timestamped security incident logs in the admin attempt inspector.
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
-- Node.js 20.19+ or 22.12+
-- npm or yarn
-- MongoDB Instance (Local or Atlas)
+### 🎮 3. Live Classroom Arena & Multiplayer Host Mode
+* **Kahoot/Quizizz-Style Host Broadcasting**:
+  * Host room generator with 6-digit game PIN and QR code join link.
+  * Live connected players lobby with real-time avatar arrival animations.
+  * Synchronized 30-second question timer with tick audio and speed-accuracy scoring ($Score = Base + SpeedBonus$).
+  * Real-time student answer distribution bar charts.
+  * Top-5 Podium Leaderboard and championship confetti celebration.
+* **Mobile Gamepad Controller (`LivePlayerController`)**:
+  * Responsive 4-shape gamepad interface (Red ▲, Blue ◆, Yellow ●, Green ■) with haptic feedback.
 
-### Installation
+---
 
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-  cd "Quiz Platform"
-   ```
+### 🔥 4. Daily Login Streak Rewards & Mythic Mystery Loot Box
+* **7-Day Streak Calendar**:
+  * Escalating daily coin and XP multipliers.
+  * Day 7 awards the **Mythic Mystery Loot Box**!
+* **Interactive 3D Mystery Chest Unboxing**:
+  * Shaking chest animation with sparkling aura, particle explosions, sound fanfares, and rare/epic/legendary loot cards (Coins, XP, Power-Ups).
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+---
 
-3. **Configure Environment Variables**
-   Create a `.env` file in the root directory:
-   ```env
-   # App Config
-   PORT=5000
-   NODE_ENV=development
-   
-   # Database
-   MONGODB_URI=mongodb://localhost:27017/quiz-platform
-   
-   # Security
-   JWT_SECRET=your_super_secret_jwt_key
-   JWT_EXPIRE=30d
+### 🎵 5. Zero-Latency Web Audio & Haptics Engine
+* **Synthesized Web Audio API**:
+  * Zero external sound asset load times with 100% offline support.
+  * Harmonious arpeggios for correct answers, low buzzers for wrong choices, escalating streak pitch multipliers, clock ticks, and level-up fanfares.
+  * Device vibration & haptic feedback integration (`navigator.vibrate`).
+  * Persistent mute toggle in user settings.
 
-  # Client / Server URLs
-  CLIENT_URL=http://localhost:5173
-  VITE_API_URL=http://localhost:5000/api
-  VITE_SOCKET_URL=http://localhost:5000
-  VITE_ENABLE_SOCKET=true
+---
 
-  # AI (optional)
-  GROQ_API_KEY=your_groq_api_key
-   
-   # Optional: Supabase (Legacy/Hybrid support)
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_key
-   ```
+### 📄 6. PDF & Excel / CSV Export Engine
+* **Branded PDF Reports**:
+  * Multi-page assessment breakdown reports generated directly in the browser via `jsPDF`.
+* **Excel-Compatible CSV Exports**:
+  * UTF-8 BOM CSV exports for individual attempt logs and question error diagnostics.
 
-4. **Run development server**
-   This enables concurrent execution of both the Client (Vite) and Server (Node/Express).
-   ```bash
-   npm run dev
-   ```
-   - Client: http://localhost:5173
-   - Server: http://localhost:5000
+---
 
-  Or run them separately:
-  ```bash
-  npm run client
-  npm run server
-  ```
+### ⚡ 7. Performance, Offline PWA & Accessibility
+* **Full Keyboard Hotkeys**:
+  * Select options via `[1-4]` or `[A-D]`, confirm with `Enter`, navigate questions with `←/→`, and press `?` to open the shortcuts modal.
+* **Offline-First Outbox Sync**:
+  * Automatically stores completed attempts in a local outbox if disconnected and seamlessly syncs to the server when connection resumes.
+* **WAI-ARIA Accessibility**:
+  * Semantic `role="radiogroup"`, `role="radio"`, `aria-live` dynamic announcements, and high-contrast indicators.
 
-5. **Build for production**
-   ```bash
-   npm run build
-   ```
+---
+
+### 📊 8. Admin Control Center, Cohort Intelligence & Live Proctoring
+* **Real-Time Live Proctoring Monitor (`LiveProctoringManagement`)**:
+  * Live exam surveillance grid with auto-refresh every 15s.
+  * Live risk filters (*All*, *High Risk*, *Moderate*, *Pristine*) with instant telemetry counts.
+* **Cohort & Tier Analytics (`CohortAnalyticsManagement`)**:
+  * Performance tiers (*High Performers ≥80%*, *Proficient 60-79%*, *Needs Attention <60%*).
+  * Experience cohorts (*Novice*, *Adept*, *Master*) and topic mastery matrices.
+* **Question Misconception & Error Diagnostics (`QuestionAnalyticsManagement`)**:
+  * Failure rate rankings and top distractor identification with one-click CSV export.
+* **Deep Attempt Inspector (`AttemptDetailsModal`)**:
+  * Detailed student response breakdown, correct answer comparisons, security telemetry pills, and PDF/CSV export.
+  * Progressive Web App support with service workers, install prompts, and responsive mobile-first layouts.
+* **Theme System**:
+  * Dynamic dark/light mode with ambient reactive gradients.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, Lucide Icons, Blockly, Canvas Confetti |
+| **Backend** | Node.js (ES Modules), Express.js, Socket.IO, Mongoose |
+| **Database** | MongoDB Atlas / Local MongoDB |
+| **AI Inference** | Groq SDK (`llama-3.3-70b-versatile`, `llama-3.2-90b`, `mixtral-8x7b-32768`) |
+| **Security & Auth** | JWT (JSON Web Tokens), Bcrypt.js, Express-Rate-Limit, CORS |
+| **Document Parsing**| `pdf-parse`, `office-text-extractor` |
+
+---
 
 ## 📦 Project Structure
 
 ```
-Quiz Platform/
-├── api/                  # Serverless API (Vercel/Netlify)
-├── netlify/functions/    # Netlify Functions entry
-├── public/               # Static assets & Legacy JSON quizzes
-├── scripts/              # Build/maintenance scripts
-├── server/               # Backend Logic (Express + Mongoose)
-│   ├── controllers/      # Route logic (Auth, Users, Shop, etc.)
-│   ├── middleware/       # Auth, Error handling, Security
-│   ├── models/           # Mongoose Schemas (User, Attempt, Clan)
-│   └── routes/           # API Routes
-├── src/                  # Frontend Logic (React + Vite)
-│   ├── components/       # Reusable UI Components
-│   ├── pages/            # Main Application Pages
-│   ├── context/          # Global State (Auth, Theme, Notifications)
-│   └── lib/              # Utilities & Third-party configs
-├── uploads/              # Uploaded files (local dev)
-├── .env                  # Environment variables
-└── package.json
+Quiz-Platform/
+├── client/                     # Frontend Application (React + Vite + TS)
+│   ├── public/                 # Static assets, icons, manifest
+│   └── src/
+│       ├── components/
+│       │   ├── admin/          # Admin CMS, InspectorPanel, AttemptDetailsModal, Analytics
+│       │   ├── badges/         # Badge nodes & skill progression UI
+│       │   ├── chat/           # Global and direct messaging windows
+│       │   ├── common/         # Modals, SearchBars, EmptyStates
+│       │   ├── engage/         # DailyChallenge, Shop, StudyCard, Tournaments
+│       │   ├── multiplayer/    # Real-time WebSocket 1v1 VS Game
+│       │   ├── question-types/ # Compiler & Blockly question renderers
+│       │   ├── quizzes/        # Quiz cards, editor modals, question editors
+│       │   ├── social/         # ClanHub, FriendList, DirectChat
+│       │   └── tracks/         # Skill trees & roadmap visualizers
+│       ├── context/            # AuthContext, ThemeContext, NotificationContext
+│       ├── lib/                # API client, Socket instance, sound utils
+│       ├── pages/              # App route views (Dashboard, Quizzes, Clans, Admin, etc.)
+│       └── types/              # Full TypeScript interface definitions
+│
+├── server/                     # Backend API & WebSocket Server
+│   ├── config/                 # DB connection and CORS configuration
+│   ├── controllers/            # Route business logic (AI, Quizzes, Clans, Attempts, etc.)
+│   ├── middleware/             # Auth, Admin validation, error handlers, rate limiters
+│   ├── models/                 # Mongoose schemas (User, Quiz, Attempt, Clan, Badge, etc.)
+│   ├── routes/                 # Express API routes
+│   ├── services/               # Compiler evaluation, progress tracking services
+│   ├── utils/                  # Token optimizers, AI limiter, XP sync
+│   └── index.js                # Server entry point & Socket.IO initialization
+│
+├── package.json                # Root package & monorepo scripts
+└── vercel.json                 # Vercel deployment configuration
 ```
 
-## 🛠️ Technologies Used
+---
 
-### Frontend
-- **React 19** - Latest UI features
-- **TypeScript** - Strict type safety
-- **Tailwind CSS v4** - Modern, utility-first styling
-- **Vite** - Lightning-fast tooling
-- **Blockly** - Visual programming editor
-- **Socket.io Client** - Real-time communication
+## 🚀 Quick Start Guide
 
-### Backend
-- **Node.js & Express** - Robust server architecture
-- **MongoDB & Mongoose** - Flexible data modeling
-- **Socket.io** - WebSocket server for VS mode
-- **Bcrypt & JWT** - Industrial-grade security
+### Prerequisites
+* **Node.js**: v20.18+ or v22.0+
+* **npm** or **yarn** / **pnpm**
+* **MongoDB**: Local MongoDB server or a free MongoDB Atlas cluster
 
-## 🚀 Production Deployment
+### 1. Clone & Install Dependencies
+```bash
+git clone https://github.com/MohaMedTArEk912/Quiz-Platform.git
+cd Quiz-Platform
 
-This project is optimized for a split-deployment: **Frontend on Vercel** and **Backend on Koyeb**.
+# Install root dependencies
+npm install
 
-### 1. Backend (Koyeb)
-- **Deployment**: Connect your GitHub repository and point to the `server/index.js` as the entry point.
-- **Environment Variables**:
-  - `NODE_ENV`: `production`
-  - `MONGODB_URI`: Your MongoDB Atlas connection string.
-  - `JWT_SECRET`: A long, random string.
-  - `PORT`: `5000` (or as provided by Koyeb).
-  - `CLIENT_URL`: `https://your-app-name.vercel.app` (Your Vercel frontend URL).
-  - `GROQ_API_KEY`: Your Groq API key (for AI quiz generation).
+# Install client dependencies
+cd client && npm install && cd ..
+```
+
+### 2. Environment Variables Setup
+Create a `.env` file in the root directory:
+
+```env
+# Server Configuration
+PORT=5000
+NODE_ENV=development
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/quiz-platform
+
+# Security & JWT
+JWT_SECRET=your_super_secret_jwt_key_here
+JWT_EXPIRE=30d
+
+# Client / Server URLs
+CLIENT_URL=http://localhost:5173
+VITE_API_URL=http://localhost:5000/api
+VITE_SOCKET_URL=http://localhost:5000
+VITE_ENABLE_SOCKET=true
+
+# AI Quiz Studio (Optional, powered by Groq)
+GROQ_API_KEY=your_groq_api_key_here
+```
+
+### 3. Running Locally
+Run both client and server concurrently:
+```bash
+npm run dev
+```
+
+* **Client UI**: [http://localhost:5173](http://localhost:5173)
+* **Backend API**: [http://localhost:5000/api](http://localhost:5000/api)
+
+To run them in separate terminals:
+```bash
+# Terminal 1: Backend Server
+npm run server
+
+# Terminal 2: Frontend Client
+npm run client
+```
+
+---
+
+## 🌐 Production Deployment
+
+This project is configured for split deployment:
+
+### 1. Backend (Koyeb / Render / Railway)
+* Point deployment to `server/index.js`.
+* Set environment variables: `MONGODB_URI`, `JWT_SECRET`, `NODE_ENV=production`, `PORT=5000`, `CLIENT_URL=https://your-frontend.vercel.app`, and `GROQ_API_KEY`.
 
 ### 2. Frontend (Vercel)
-- **Deployment**: Select the root directory. Vercel will automatically detect Vite.
-- **Build Settings**:
-  - **Framework Preset**: `Vite`
-  - **Build Command**: `npm run build`
-  - **Output Directory**: `dist`
-- **Environment Variables**:
-  - `VITE_API_URL`: `https://your-koyeb-app.koyeb.app/api`
-  - `VITE_SOCKET_URL`: `https://your-koyeb-app.koyeb.app`
-  - `VITE_ENABLE_SOCKET`: `true`
+* Connect repository and set root or `client` as directory.
+* Framework Preset: **Vite**.
+* Build Command: `npm run build`
+* Output Directory: `dist`
+* Environment Variables:
+  * `VITE_API_URL`: `https://your-backend.koyeb.app/api`
+  * `VITE_SOCKET_URL`: `https://your-backend.koyeb.app`
+  * `VITE_ENABLE_SOCKET`: `true`
 
 ---
 
 ## 📄 License
-
-MIT License - feel free to use this project for your own purposes!
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-Made with ❤️ for education and learning
+Made with ❤️ by the **Quiz Platform Team** for learners, educators, and developers worldwide.

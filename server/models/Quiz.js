@@ -50,6 +50,10 @@ const quizSchema = new mongoose.Schema({
   linkedTrackId: { type: String }, // Links this quiz to a specific skill track
   linkedModuleId: { type: String }, // Links this quiz to a specific module within that track
   reviewMode: { type: Boolean, default: false }, // Enable immediate feedback after each answer
+  isProctored: { type: Boolean, default: false }, // Strict exam proctoring mode
+  requireFullscreen: { type: Boolean, default: false }, // Force fullscreen mode during quiz
+  disableCopyPaste: { type: Boolean, default: false }, // Block clipboard & right click
+  strictTabSwitchLimit: { type: Number, default: 0 }, // Max allowed tab switches before auto-submit (0 for unlimited)
   questions: [questionSchema]
 });
 

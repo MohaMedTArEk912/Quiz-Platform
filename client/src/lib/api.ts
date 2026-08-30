@@ -1616,6 +1616,44 @@ export const api = {
             throw new Error(error.message || 'Failed to fetch attempt details');
         }
         return response.json();
+    },
+
+    // Cohort & Group Performance Analytics API
+    async getCohortAnalytics(): Promise<CohortAnalyticsResponse> {
+        const response = await fetchWithFallback('/analytics/cohorts', {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch cohort analytics');
+        }
+        return response.json();
+    },
+
+    // Real-Time Live Proctoring & Exam Telemetry API
+    async getLiveProctoringData(): Promise<LiveProctoringResponse> {
+        const response = await fetchWithFallback('/analytics/live-proctoring', {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch live proctoring data');
+        }
+        return response.json();
+    },
+
+    // Socratic AI Study Coach Hint
+    async getAICoachHint(data: { question: string; options?: string[]; studentAnswer?: string; category?: string }): Promise<{ success: boolean; hint: string }> {
+        const response = await fetchWithFallback('/ai/coach-hint', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch AI coach hint');
+        }
+        return response.json();
     }
 };
 

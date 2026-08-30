@@ -8,6 +8,7 @@ import { api } from '../lib/api';
 import type { AttemptData } from '../lib/api';
 import type { Quiz, QuizResult, PoolProgressData } from '../types';
 import { calculateLevel } from '../lib/gamification';
+import { saveAttemptWithOfflineFallback, initOfflineSyncListener } from '../lib/offlineSync';
 
 const QuizTakingPage: React.FC = () => {
     const { quizId: encodedQuizId } = useParams<{ quizId: string }>();
@@ -21,6 +22,15 @@ const QuizTakingPage: React.FC = () => {
 
     // Find base quiz from cache/DataContext
     const baseQuiz = availableQuizzes.find(q => q.id === quizId || q._id === quizId);
+
+    // Background offline attempt sync listener
+    useEffect(() => {
+        const cleanup = initOfflineSyncListener((count) => {
+            showNotification('success', `Connection restored! ${count} offline quiz attempt(s) synced.`);
+            refreshData();
+        });
+        return cleanup;
+    }, [showNotification, refreshData]);
 
     // Guard: Check if quiz belongs to a locked road
     useEffect(() => {
@@ -144,11 +154,15 @@ const QuizTakingPage: React.FC = () => {
                 powerUpsUsed: result.powerUpsUsed || [],
                 isQuestionPool: isPool,
                 questionIds: questionIds,
-                attemptQuestions: activeQuiz.questions
+                attemptQuestions: activeQuiz.questions,
+                telemetry: result.telemetry
             };
 
-            // 1. Save Attempt (backend handles XP, coins, badges, roadmap progress, pool progress)
-            const savedAttempt = await api.saveAttempt(attempt);
+            // 1. Save Attempt (with offline queue fallback)
+            const savedAttempt = await saveAttemptWithOfflineFallback(attempt);
+            if (savedAttempt?.isOfflineQueued) {
+                showNotification('info', 'Offline Mode: Attempt saved locally. It will auto-sync when online.');
+            }
 
             // 2. Optimistic local state update for instant feedback
             const xpGained = result.passed ? (activeQuiz.xpReward ?? 50) : Math.floor((activeQuiz.xpReward ?? 50) * 0.1);

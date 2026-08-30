@@ -2,6 +2,7 @@ import React from 'react';
 import { COMPILER_ALLOWED_LANGUAGES, COMPILER_INITIAL_CODE } from '../../constants/quizDefaults';
 import { ChevronDown } from 'lucide-react';
 import CompilerQuestion from '../question-types/CompilerQuestion';
+import { MathRenderer } from '../common/MathRenderer';
 import type { Question } from '../../types';
 
 interface QuestionEditorProps {
@@ -56,14 +57,22 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
             </div>
 
             <div className="space-y-1">
-                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Question Text</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Question Text (Supports LaTeX: $x^2$ or $$E=mc^2$$)</label>
                 <textarea
-                    placeholder="Enter your question here (supports multiple lines)"
+                    placeholder="Enter your question here (supports multiple lines and LaTeX formulas like $x^2$)"
                     value={question.question}
                     onChange={e => onChange({ ...question, question: e.target.value })}
                     className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[100px] resize-y"
                     rows={4}
                 />
+                {question.question && (question.question.includes('$') || question.question.includes('\\(') || question.question.includes('\\[')) && (
+                    <div className="p-3 bg-indigo-50/80 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-500/20 text-xs">
+                        <div className="font-bold text-indigo-600 dark:text-indigo-400 mb-1 flex items-center gap-1.5">
+                            <span>✨ Live LaTeX / Math Preview:</span>
+                        </div>
+                        <MathRenderer text={question.question} className="text-gray-800 dark:text-gray-200 font-medium" />
+                    </div>
+                )}
             </div>
 
             <div className="space-y-1">
@@ -238,12 +247,23 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
                     className="w-20 bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1"
                 />
             </div>
-            <input
-                placeholder="Explanation (Optional)"
-                value={question.explanation || ''}
-                onChange={e => onChange({ ...question, explanation: e.target.value })}
-                className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-            />
+            <div className="space-y-1">
+                <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Explanation (Optional)</label>
+                <input
+                    placeholder="Explanation (Optional, supports LaTeX $...$)"
+                    value={question.explanation || ''}
+                    onChange={e => onChange({ ...question, explanation: e.target.value })}
+                    className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                />
+                {question.explanation && (question.explanation.includes('$') || question.explanation.includes('\\(') || question.explanation.includes('\\[')) && (
+                    <div className="p-2.5 bg-indigo-50/80 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-500/20 text-xs">
+                        <div className="font-bold text-indigo-600 dark:text-indigo-400 mb-1 flex items-center gap-1.5">
+                            <span>✨ Explanation Math Preview:</span>
+                        </div>
+                        <MathRenderer text={question.explanation} className="text-gray-800 dark:text-gray-200 font-medium" />
+                    </div>
+                )}
+            </div>
 
             <div className="flex gap-2">
                 <button onClick={onSave} className="flex-1 py-2 bg-green-600 text-white rounded-lg">Save</button>

@@ -25,6 +25,18 @@ const attemptSchema = new mongoose.Schema({
     percentage: { type: Number },
     cycle: { type: Number },
     justCompletedPool: { type: Boolean, default: false }
+  },
+  telemetry: {
+    tabSwitches: { type: Number, default: 0 },
+    focusLossCount: { type: Number, default: 0 },
+    copyPasteAttempts: { type: Number, default: 0 },
+    timePerQuestion: { type: Object, default: {} },
+    events: [{
+      type: { type: String },
+      timestamp: { type: Date, default: Date.now },
+      questionIndex: { type: Number }
+    }],
+    integrityScore: { type: Number, default: 100 }
   }
 });
 

@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
-import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins } from 'lucide-react';
-import type { Quiz, UserData, QuizResult, AttemptAnswers, PoolProgressData } from '../types';
+import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins, Keyboard, WifiOff, Bot } from 'lucide-react';
+import type { Quiz, UserData, QuizResult, AttemptAnswers, PoolProgressData, IntegrityTelemetry, IntegrityTelemetryEvent } from '../types';
 import { api } from '../lib/api';
 import { AmbientBackground } from './AmbientBackground';
+import { MathRenderer } from './common/MathRenderer';
+import { KeyboardShortcutsModal } from './common/KeyboardShortcutsModal';
+import { AICoachModal } from './common/AICoachModal';
+import { sounds } from '../lib/soundEffects';
+import MediaPromptPlayer from './common/MediaPromptPlayer';
+import OrderingQuestion from './question-types/OrderingQuestion';
+import MatchingQuestion from './question-types/MatchingQuestion';
+import CodeOutputQuestion from './question-types/CodeOutputQuestion';
 
 const CompilerQuestion = React.lazy(() => import('./question-types/CompilerQuestion'));
 
@@ -61,9 +69,141 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     const [hiddenOptions, setHiddenOptions] = useState<Record<number, number[]>>({}); // actualIndex -> [originalOptionsToHide]
     const [activePowerUpAnimation, setActivePowerUpAnimation] = useState<string | null>(null);
 
+    // --- INTEGRITY & TELEMETRY TRACKING ---
+    const tabSwitchesRef = useRef(0);
+    const focusLossRef = useRef(0);
+    const copyPasteRef = useRef(0);
+    const fullscreenExitsRef = useRef(0);
+    const rapidGuessesRef = useRef(0);
+    const timePerQuestionRef = useRef<Record<number, number>>({});
+    const telemetryEventsRef = useRef<IntegrityTelemetryEvent[]>([]);
+    const questionStartTimeRef = useRef(Date.now());
+    const [isFullscreenActive, setIsFullscreenActive] = useState(false);
+    const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
+
+    // Event listeners for window/tab focus & clipboard integrity
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                tabSwitchesRef.current += 1;
+                telemetryEventsRef.current.push({
+                    type: 'tab_hidden',
+                    timestamp: new Date().toISOString(),
+                    questionIndex: currentQuestion
+                });
+            }
+        };
+
+        const handleBlur = () => {
+            focusLossRef.current += 1;
+            telemetryEventsRef.current.push({
+                type: 'window_blur',
+                timestamp: new Date().toISOString(),
+                questionIndex: currentQuestion
+            });
+        };
+
+        const handleCopy = () => {
+            copyPasteRef.current += 1;
+            telemetryEventsRef.current.push({
+                type: 'copy_attempt',
+                timestamp: new Date().toISOString(),
+                questionIndex: currentQuestion
+            });
+        };
+
+        const handlePaste = () => {
+            copyPasteRef.current += 1;
+            telemetryEventsRef.current.push({
+                type: 'paste_attempt',
+                timestamp: new Date().toISOString(),
+                questionIndex: currentQuestion
+            });
+        };
+
+        const handleFullscreenChange = () => {
+            const inFs = Boolean(document.fullscreenElement);
+            setIsFullscreenActive(inFs);
+            if (!inFs && (quiz.requireFullscreen || quiz.isProctored)) {
+                fullscreenExitsRef.current += 1;
+                telemetryEventsRef.current.push({
+                    type: 'fullscreen_exit',
+                    timestamp: new Date().toISOString(),
+                    questionIndex: currentQuestion,
+                    details: 'Exited Fullscreen Proctoring Mode'
+                });
+                setShowFullscreenWarning(true);
+            }
+        };
+
+        const handleContextMenu = (e: MouseEvent) => {
+            if (quiz.disableCopyPaste !== false) {
+                e.preventDefault();
+                telemetryEventsRef.current.push({
+                    type: 'context_menu',
+                    timestamp: new Date().toISOString(),
+                    questionIndex: currentQuestion,
+                    details: 'Context menu / right click blocked'
+                });
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('blur', handleBlur);
+        document.addEventListener('copy', handleCopy);
+        document.addEventListener('paste', handlePaste);
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('contextmenu', handleContextMenu);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('blur', handleBlur);
+            document.removeEventListener('copy', handleCopy);
+            document.removeEventListener('paste', handlePaste);
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('contextmenu', handleContextMenu);
+        };
+    }, [currentQuestion, quiz.requireFullscreen, quiz.isProctored, quiz.disableCopyPaste]);
+
+    const enterFullscreen = async () => {
+        try {
+            if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+                setIsFullscreenActive(true);
+                setShowFullscreenWarning(false);
+            }
+        } catch (err) {
+            console.warn('Fullscreen request denied:', err);
+        }
+    };
+
+    // Question timing tracker
+    useEffect(() => {
+        const now = Date.now();
+        const elapsed = Math.max(1, Math.round((now - questionStartTimeRef.current) / 1000));
+        const prevQ = currentQuestion > 0 ? currentQuestion - 1 : 0;
+        timePerQuestionRef.current[prevQ] = (timePerQuestionRef.current[prevQ] || 0) + elapsed;
+        questionStartTimeRef.current = now;
+    }, [currentQuestion]);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [shakeError, setShakeError] = useState(false);
     const [isMobileDevice, setIsMobileDevice] = useState(false);
+    const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+    const [isAICoachOpen, setIsAICoachOpen] = useState(false);
+    const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+    // Online/Offline status listener
+    useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
 
     useEffect(() => {
         const checkMobile = () => {
@@ -300,6 +440,35 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         const totalPoints = quiz.questions.reduce((sum, q) => sum + q.points, 0);
         const percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
 
+        // Finalize timing for the last question
+        const now = Date.now();
+        const elapsedFinal = Math.max(1, Math.round((now - questionStartTimeRef.current) / 1000));
+        timePerQuestionRef.current[currentQuestion] = (timePerQuestionRef.current[currentQuestion] || 0) + elapsedFinal;
+
+        // Calculate Exam Integrity Score
+        const tabDeduction = Math.min(40, tabSwitchesRef.current * 10);
+        const blurDeduction = Math.min(20, focusLossRef.current * 5);
+        const copyPasteDeduction = Math.min(30, copyPasteRef.current * 15);
+        const fullscreenDeduction = Math.min(30, fullscreenExitsRef.current * 15);
+        const rapidGuessDeduction = Math.min(20, rapidGuessesRef.current * 5);
+        const totalDeduction = tabDeduction + blurDeduction + copyPasteDeduction + fullscreenDeduction + rapidGuessDeduction;
+        const integrityScore = Math.max(0, Math.min(100, 100 - totalDeduction));
+
+        const telemetry: IntegrityTelemetry = {
+            tabSwitches: tabSwitchesRef.current,
+            focusLossCount: focusLossRef.current,
+            copyPasteAttempts: copyPasteRef.current,
+            fullscreenExits: fullscreenExitsRef.current,
+            rapidGuesses: rapidGuessesRef.current,
+            timePerQuestion: timePerQuestionRef.current,
+            events: telemetryEventsRef.current,
+            integrityScore
+        };
+
+        if (percentage >= (quiz.passingScore ?? 70)) {
+            sounds.playLevelUp();
+        }
+
         onComplete({
             score,
             totalQuestions: quiz.questions.length,
@@ -308,7 +477,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             answers: detailedAnswers,
             passed: percentage >= (quiz.passingScore ?? 70),
             reviewStatus: 'completed',
-            powerUpsUsed: []
+            powerUpsUsed: [],
+            telemetry
         });
 
     }, [answers, delayedValidation, isSubmitting, onComplete, onProgress, questionOrder, quiz.questions, quiz.passingScore, storageKey, timeLeft, countUpTimer, checkComplexAnswer]);
@@ -342,6 +512,18 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         const actualIndex = getActualQuestionIndex();
         const q = quiz.questions[actualIndex];
 
+        // Rapid Guessing Detection (< 1.8 seconds on questions with text)
+        const elapsedOnQ = (Date.now() - questionStartTimeRef.current) / 1000;
+        if (elapsedOnQ < 1.8 && (q.question?.length || 0) > 25) {
+            rapidGuessesRef.current += 1;
+            telemetryEventsRef.current.push({
+                type: 'rapid_guess',
+                timestamp: new Date().toISOString(),
+                questionIndex: currentQuestion,
+                details: `Fast answer in ${elapsedOnQ.toFixed(1)}s`
+            });
+        }
+
         // Strict Mode Check
         if (mustAnswerCorrectly && !delayedValidation) {
             if (!q.isCompiler && q.type !== 'text') {
@@ -366,6 +548,12 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             setQuestionSubmitted(true);
             setSubmittedQuestions(prev => ({ ...prev, [actualIndex]: true }));
             setQuestionCorrectness(prev => ({ ...prev, [actualIndex]: isCorrect }));
+
+            if (isCorrect) {
+                sounds.playCorrect();
+            } else {
+                sounds.playIncorrect();
+            }
         }
 
         if (onProgress) {
@@ -437,6 +625,12 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         if (showResumePrompt || isSubmitting || showShop) return;
 
         const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+                e.preventDefault();
+                setShowKeyboardShortcuts(prev => !prev);
+                return;
+            }
+
             const actualIndex = getActualQuestionIndex();
             const q = quiz.questions[actualIndex];
             
@@ -517,6 +711,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
     // --- Power-up Application Logic ---
     const applyPowerUp = useCallback((type: string) => {
+        sounds.playPowerUp();
         setActivePowerUpAnimation(type);
         setTimeout(() => setActivePowerUpAnimation(null), 1500);
 
@@ -701,6 +896,47 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 />
             )}
 
+            {/* Proctored Exam Fullscreen Warning / Entry Banner */}
+            {(quiz.requireFullscreen || quiz.isProctored) && !isFullscreenActive && (
+                <div className="bg-gradient-to-r from-red-600 via-indigo-600 to-purple-600 text-white px-4 py-2 text-xs font-black uppercase tracking-wider flex items-center justify-between gap-3 z-40 shadow-lg animate-pulse">
+                    <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-amber-300" />
+                        <span>🔒 Proctored Exam Mode — Fullscreen is required for this assessment.</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={enterFullscreen}
+                        className="px-3 py-1 bg-white text-indigo-900 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-white/90 transition shadow cursor-pointer"
+                    >
+                        Enter Fullscreen
+                    </button>
+                </div>
+            )}
+
+            {/* Fullscreen Exit Warning Modal */}
+            {showFullscreenWarning && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-[#11121d] text-gray-900 dark:text-white border-2 border-red-500 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-4 text-center">
+                        <div className="w-14 h-14 rounded-2xl bg-red-500/15 text-red-500 flex items-center justify-center mx-auto">
+                            <Shield className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-xl font-black uppercase tracking-tight text-red-600 dark:text-red-400">
+                            Security Alert: Fullscreen Exit
+                        </h3>
+                        <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
+                            You exited fullscreen mode. This event has been recorded in the exam security audit log. Please return to fullscreen immediately to avoid penalties.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={enterFullscreen}
+                            className="w-full py-3.5 bg-gradient-to-r from-red-600 to-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-[1.01] active:scale-[0.99] transition-all shadow-lg shadow-red-500/25 cursor-pointer"
+                        >
+                            Return to Fullscreen
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Power-up Screen Overlay Animation */}
             {activePowerUpAnimation && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
@@ -733,6 +969,16 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     </div>
 
                     <div className="flex items-center gap-4">
+                        {/* AI Study Coach Button */}
+                        <button
+                            type="button"
+                            onClick={() => setIsAICoachOpen(true)}
+                            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-500/15 to-purple-500/15 hover:from-indigo-500/25 hover:to-purple-500/25 text-indigo-600 dark:text-indigo-400 font-black text-xs uppercase tracking-wider rounded-xl border border-indigo-500/30 transition-all cursor-pointer shadow-sm hover:scale-105"
+                        >
+                            <Bot className="w-4 h-4 text-indigo-500 animate-pulse" />
+                            <span className="hidden sm:inline">AI Coach</span>
+                        </button>
+
                         {/* Shop Button */}
                         {!hidePowerUps && (
                             <button onClick={() => setShowShop(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-500/20 dark:hover:bg-yellow-500/30 text-yellow-700 dark:text-yellow-400 font-bold rounded-xl border border-yellow-200 dark:border-yellow-500/30 transition-all">
@@ -785,7 +1031,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     <div className={`flex-none landscape:flex-1 landscape:overflow-y-auto px-5 sm:px-8 lg:px-12 pb-24 landscape:pb-28 lg:landscape:pb-28 flex flex-col pt-4 sm:pt-8 landscape:pt-3 lg:landscape:pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
                         
                         <h2 className="text-xl sm:text-2xl lg:text-[32px] landscape:text-base lg:landscape:text-[32px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight mb-4 sm:mb-8 landscape:mb-2 lg:landscape:mb-8">
-                            {q.question}
+                            <MathRenderer text={q.question} />
                         </h2>
 
                         {/* Image */}
@@ -793,8 +1039,17 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             <img src={q.imageUrl} alt="Reference" className="w-full rounded-2xl mb-8 object-cover max-h-64 shadow-lg border border-gray-100 dark:border-gray-800" />
                         )}
 
+                        {/* Audio / Video Question Prompt */}
+                        {(q.audioUrl || q.videoUrl) && (
+                            <MediaPromptPlayer
+                                audioUrl={q.audioUrl}
+                                videoUrl={q.videoUrl}
+                                videoTimestamp={q.videoTimestamp}
+                            />
+                        )}
+
                         {/* Code Snippet Preview */}
-                        {q.codeSnippet && (
+                        {q.codeSnippet && q.type !== 'code-output' && (
                             <div className="bg-[#F6F7F8] dark:bg-[#0d0d1a] border border-gray-100 dark:border-[#1f2937] rounded-2xl overflow-hidden shadow-[inset_0_2px_8px_rgba(0,0,0,0.05)] dark:shadow-inner mb-6">
                                 <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-[#1f2937] bg-white dark:bg-[#111827]">
                                     <div className="w-3 h-3 rounded-full bg-red-400"></div>
@@ -829,9 +1084,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                             <Lightbulb className="w-3.5 h-3.5 text-yellow-500 animate-pulse"/>
                                             <span>Explanation</span>
                                         </div>
-                                        <p className="text-sm leading-relaxed opacity-90 font-medium">
-                                            {q.explanation}
-                                        </p>
+                                        <MathRenderer text={q.explanation} className="text-sm leading-relaxed opacity-90 font-medium" />
                                     </div>
                                 ) : (
                                     <div className="pt-3 border-t border-gray-200/50 dark:border-white/5 text-xs text-gray-400 italic">
@@ -848,7 +1101,11 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
                 {/* --- RIGHT SIDE: Answer Options --- */}
                 <div className="w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col bg-transparent lg:bg-white/40 dark:bg-[#0b0f19] relative z-10">
-                    <div className="flex-1 landscape:overflow-y-auto p-5 sm:p-8 lg:p-12 pt-10 sm:pt-12 landscape:pt-6 pb-24 landscape:pb-28 lg:landscape:pb-28 flex flex-col justify-start lg:justify-center gap-3 sm:gap-4 no-scrollbar">
+                    <div
+                        role="radiogroup"
+                        aria-label={`Options for Question ${currentQuestion + 1}`}
+                        className="flex-1 landscape:overflow-y-auto p-5 sm:p-8 lg:p-12 pt-10 sm:pt-12 landscape:pt-6 pb-24 landscape:pb-28 lg:landscape:pb-28 flex flex-col justify-start lg:justify-center gap-3 sm:gap-4 no-scrollbar"
+                    >
                         {q.isCompiler ? (
                             <Suspense fallback={<div className="animate-spin w-8 h-8 border-4 border-indigo-500 rounded-full border-t-transparent mx-auto"></div>}>
                                 <div className="h-[400px] rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-xl bg-white dark:bg-black">
@@ -860,6 +1117,31 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                     />
                                 </div>
                             </Suspense>
+                        ) : q.type === 'ordering' ? (
+                            <OrderingQuestion
+                                items={q.orderingItems || q.options || []}
+                                correctOrder={q.orderingItems || q.options}
+                                submitted={questionSubmitted && !delayedValidation}
+                                onChange={(ordered) => handleAnswer(ordered as any)}
+                                readOnly={isSubmitting}
+                            />
+                        ) : q.type === 'matching' ? (
+                            <MatchingQuestion
+                                pairs={q.matchingPairs || []}
+                                submitted={questionSubmitted && !delayedValidation}
+                                onChange={(matches) => handleAnswer(matches as any)}
+                                readOnly={isSubmitting}
+                            />
+                        ) : q.type === 'code-output' ? (
+                            <CodeOutputQuestion
+                                codeSnippet={q.codeSnippet}
+                                options={q.options}
+                                correctAnswer={q.correctAnswer as any}
+                                submitted={questionSubmitted && !delayedValidation}
+                                userAnswer={answers[actualIndex] as any}
+                                onChange={(val) => handleAnswer(val)}
+                                readOnly={isSubmitting}
+                            />
                         ) : (
                             currentOptions.map((originalIndex, visualIndex) => {
                                 // If user used a hint to hide this
@@ -876,7 +1158,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 const label = letters[visualIndex] || (visualIndex + 1);
 
                                 // Dynamic classes based on state
-                                const baseClass = "group relative flex items-center p-4 sm:p-5 lg:p-6 rounded-[1.25rem] cursor-pointer transition-all duration-300 w-full text-left border-2 shadow-sm font-semibold mb-1";
+                                const baseClass = "group relative flex items-center p-4 sm:p-5 lg:p-6 rounded-[1.25rem] cursor-pointer transition-all duration-300 w-full text-left border-2 shadow-sm font-semibold mb-1 focus-visible:ring-4 focus-visible:ring-indigo-500 focus-visible:outline-none";
                                 let stateClass = "bg-white dark:bg-[#1f2937] border-gray-100 dark:border-[#374151] hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]";
                                 let textClass = "text-gray-800 dark:text-gray-200";
                                 let badgeClass = "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 group-hover:text-indigo-600 dark:group-hover:text-indigo-400";
@@ -902,6 +1184,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 return (
                                     <button
                                         key={originalIndex}
+                                        role="radio"
+                                        aria-checked={isSelected}
+                                        aria-label={`Option ${label}: ${option}`}
+                                        tabIndex={0}
                                         onClick={() => handleAnswer(originalIndex)}
                                         disabled={isSubmitting || (questionSubmitted && !delayedValidation)}
                                         className={`${baseClass} ${stateClass} disabled:opacity-75 disabled:cursor-default`}
@@ -909,15 +1195,23 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                         <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center font-bold text-base lg:text-lg mr-4 lg:mr-6 transition-colors ${badgeClass}`}>
                                             {showSuccess || showCorrect ? <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6" /> : showWrong ? <XCircle className="w-5 h-5 lg:w-6 lg:h-6"/> : label}
                                         </div>
-                                        <span className={`flex-1 text-base lg:text-lg text-left leading-relaxed ${textClass}`}>
-                                            {option}
-                                        </span>
+                                        <MathRenderer text={option} className={`flex-1 text-base lg:text-lg text-left leading-relaxed ${textClass}`} />
+                                        <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
+                                            <kbd className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-[10px] font-mono text-gray-500 dark:text-gray-400">
+                                                {visualIndex + 1}
+                                            </kbd>
+                                        </div>
                                     </button>
                                 );
                             })
                         )}
                     </div>
                 </div>
+            </div>
+
+            {/* Screen Reader Live Announcements */}
+            <div className="sr-only" aria-live="polite" aria-atomic="true">
+                Question {currentQuestion + 1} of {quiz.questions.length}: {q.question}
             </div>
 
             {/* Bottom Action Footer Overlay */}
@@ -928,11 +1222,27 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             <>
                                 <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">1-{q.options.length}</span>
                                 <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">A-{String.fromCharCode(65 + q.options.length - 1)}</span> 
-                                <span className="text-xs">to select,</span> 
+                                <span className="text-xs">select,</span> 
                             </>
                         )}
                         <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">←</span> <span className="text-xs">back,</span>
-                        <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">Enter ↵</span> <span className="text-xs">to advance</span>
+                        <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">Enter ↵</span> <span className="text-xs">advance</span>
+                        <button
+                            type="button"
+                            onClick={() => setShowKeyboardShortcuts(true)}
+                            className="ml-2 text-indigo-600 dark:text-indigo-400 hover:underline text-xs font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                            <Keyboard className="w-3.5 h-3.5" />
+                            <span>Shortcuts [?]</span>
+                        </button>
+                    </div>
+                )}
+
+                {/* Offline Warning Pill */}
+                {!isOnline && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold">
+                        <WifiOff className="w-3.5 h-3.5" />
+                        <span>Offline (Cached)</span>
                     </div>
                 )}
                 
@@ -1129,6 +1439,21 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     </div>
                 </div>
             )}
+
+            {/* Keyboard Shortcuts Help Modal */}
+            <KeyboardShortcutsModal
+                isOpen={showKeyboardShortcuts}
+                onClose={() => setShowKeyboardShortcuts(false)}
+            />
+
+            {/* AI Study Coach Modal */}
+            <AICoachModal
+                isOpen={isAICoachOpen}
+                question={q.question}
+                options={q.options}
+                category={quiz.category}
+                onClose={() => setIsAICoachOpen(false)}
+            />
         </div>
     );
 };

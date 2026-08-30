@@ -39,6 +39,9 @@ import Navbar from './Navbar.tsx';
 import UserRoadmapView from './UserRoadmapView';
 import InitialTrackSelectionModal from './tracks/InitialTrackSelectionModal';
 import RequestTrackAccessModal from './tracks/RequestTrackAccessModal';
+import StreakRewardModal from './gamification/StreakRewardModal';
+import LiveHostMode from './multiplayer/LiveHostMode';
+import LivePlayerController from './multiplayer/LivePlayerController';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { api } from '../lib/api';
@@ -106,6 +109,9 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
     // Track requests and access states
     const [myRequests, setMyRequests] = useState<TrackRequest[]>([]);
     const [requestingAccessSubject, setRequestingAccessSubject] = useState<Subject | null>(null);
+    const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
+    const [isLivePlayerOpen, setIsLivePlayerOpen] = useState(false);
+    const [liveHostQuiz, setLiveHostQuiz] = useState<Quiz | null>(null);
 
     // Derive selected state from URL so refresh / back button work correctly
     const selectedSubjectId = searchParams.get('subject');
@@ -413,6 +419,67 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                             </div>
                         </div>
                     ))}
+                </div>
+
+                {/* Daily Streak & Live Multiplayer Action Bar */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    {/* Daily Streak Claim Card */}
+                    <div
+                        onClick={() => setIsStreakModalOpen(true)}
+                        className="cursor-pointer group relative overflow-hidden bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent border border-orange-500/30 dark:border-orange-500/20 hover:border-orange-500/50 rounded-3xl p-5 backdrop-blur-xl shadow-sm hover:shadow-xl transition-all flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-400 text-white flex items-center justify-center font-black text-2xl shadow-lg shadow-orange-500/25 group-hover:scale-110 transition-transform">
+                                🔥
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-600 dark:text-orange-400">
+                                        {user.streak || 1} Day Streak
+                                    </span>
+                                    <span className="text-[10px] font-bold text-amber-500 animate-pulse">● Ready to Claim</span>
+                                </div>
+                                <h4 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                                    Daily Streak Calendar &amp; Loot Box
+                                </h4>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                    Tap to claim Day {((user.streak || 1) - 1) % 7 + 1} rewards &amp; unlock Mystery Boxes!
+                                </p>
+                            </div>
+                        </div>
+                        <div className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-orange-500/20 group-hover:scale-105 transition-all">
+                            Claim
+                        </div>
+                    </div>
+
+                    {/* Live Classroom / Multiplayer Gamepad Card */}
+                    <div
+                        onClick={() => setIsLivePlayerOpen(true)}
+                        className="cursor-pointer group relative overflow-hidden bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-transparent border border-indigo-500/30 dark:border-indigo-500/20 hover:border-indigo-500/50 rounded-3xl p-5 backdrop-blur-xl shadow-sm hover:shadow-xl transition-all flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-indigo-500/25 group-hover:scale-110 transition-transform">
+                                🎮
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">
+                                        Live Arena
+                                    </span>
+                                    <span className="text-[10px] font-bold text-indigo-400">● 6-Digit PIN</span>
+                                </div>
+                                <h4 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                                    Join Live Classroom Quiz
+                                </h4>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                    Enter host game PIN to compete live against your classmates!
+                                </p>
+                            </div>
+                        </div>
+                        <div className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-all">
+                            Join
+                        </div>
+                    </div>
                 </div>
 
                 {/* Clan Invites Banner */}
@@ -1380,6 +1447,36 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                         setMyRequests(prev => [newReq, ...prev.filter(r => r.requestId !== newReq.requestId)]);
                     }}
                     onNotification={showNotification}
+                />
+            )}
+
+            {/* Streak Reward Modal */}
+            {isStreakModalOpen && (
+                <StreakRewardModal
+                    isOpen={isStreakModalOpen}
+                    user={user}
+                    onClose={() => setIsStreakModalOpen(false)}
+                    onClaimStreak={(rewards) => {
+                        showNotification('success', `Claimed: ${rewards.coins ? `+${rewards.coins} Coins ` : ''}${rewards.xp ? `+${rewards.xp} XP` : ''}`);
+                        if (onRefreshData) onRefreshData();
+                    }}
+                />
+            )}
+
+            {/* Live Player Mobile Controller */}
+            {isLivePlayerOpen && (
+                <div className="fixed inset-0 z-50">
+                    <LivePlayerController
+                        onBack={() => setIsLivePlayerOpen(false)}
+                    />
+                </div>
+            )}
+
+            {/* Live Host Mode */}
+            {liveHostQuiz && (
+                <LiveHostMode
+                    quiz={liveHostQuiz}
+                    onClose={() => setLiveHostQuiz(null)}
                 />
             )}
         </div>

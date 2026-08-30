@@ -20,6 +20,10 @@ export interface Quiz {
     linkedModuleId?: string;
     reviewMode?: boolean;
     shuffleQuestions?: boolean; // Default: true. Set to false to disable question shuffling.
+    isProctored?: boolean; // Enable strict proctoring mode
+    requireFullscreen?: boolean; // Force fullscreen during quiz
+    disableCopyPaste?: boolean; // Block clipboard copy/paste and right-click
+    strictTabSwitchLimit?: number; // Max allowed tab switches before penalty or auto-submit
     questions: Question[];
 }
 
@@ -192,6 +196,24 @@ export interface QuizSessionResponse {
     justResetCycle?: boolean;
 }
 
+export interface IntegrityTelemetryEvent {
+    type: 'tab_hidden' | 'window_blur' | 'copy_attempt' | 'paste_attempt' | 'fullscreen_exit' | 'rapid_guess' | 'context_menu';
+    timestamp: string | number;
+    questionIndex?: number;
+    details?: string;
+}
+
+export interface IntegrityTelemetry {
+    tabSwitches: number;
+    focusLossCount: number;
+    copyPasteAttempts: number;
+    fullscreenExits?: number;
+    rapidGuesses?: number;
+    timePerQuestion?: Record<number | string, number>;
+    events?: IntegrityTelemetryEvent[];
+    integrityScore?: number;
+}
+
 export interface AttemptData {
     id?: number;
     attemptId: string;
@@ -214,6 +236,7 @@ export interface AttemptData {
     questionIds?: (string | number)[];
     poolProgress?: PoolProgressData;
     attemptQuestions?: Question[];
+    telemetry?: IntegrityTelemetry;
 }
 
 export interface QuizResult {
@@ -228,6 +251,7 @@ export interface QuizResult {
     isQuestionPool?: boolean;
     poolProgress?: PoolProgressData;
     attemptQuestions?: Question[];
+    telemetry?: IntegrityTelemetry;
 }
 
 export interface ChallengeData {
@@ -738,6 +762,86 @@ export interface DetailedAttemptData extends AttemptData {
         passed: boolean;
         timeTaken: number;
     };
+}
+
+export interface LevelCohortData {
+    name: string;
+    users: number;
+    totalScore: number;
+    totalAttempts: number;
+    avgScore: number;
+    passRate: number;
+    passes: number;
+}
+
+export interface PerformanceTierData {
+    name: string;
+    count: number;
+    avgPercentage: number;
+    totalAttempts: number;
+    users: {
+        userId: string;
+        name: string;
+        email: string;
+        level: number;
+        avgScore: number;
+        attempts: number;
+    }[];
+}
+
+export interface CategoryPerformanceData {
+    category: string;
+    totalAttempts: number;
+    avgScore: number;
+    passRate: number;
+}
+
+export interface CohortAnalyticsResponse {
+    success: boolean;
+    summary: {
+        totalStudents: number;
+        totalAttemptsEvaluated: number;
+        levelCohorts: LevelCohortData[];
+        performanceTiers: {
+            high: PerformanceTierData;
+            medium: PerformanceTierData;
+            atRisk: PerformanceTierData;
+        };
+        categoryPerformance: CategoryPerformanceData[];
+    };
+}
+
+export interface LiveProctoringSession {
+    attemptId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    quizId: string;
+    quizTitle: string;
+    score: number;
+    percentage: number;
+    passed: boolean;
+    timeTaken: number;
+    completedAt: string;
+    telemetry: IntegrityTelemetry;
+    riskLevel: 'clean' | 'moderate' | 'high';
+}
+
+export interface LiveProctoringResponse {
+    success: boolean;
+    summary: {
+        totalMonitored: number;
+        cleanCount: number;
+        moderateCount: number;
+        highRiskCount: number;
+        avgIntegrityScore: number;
+        totalTabSwitches: number;
+        totalFocusLosses: number;
+        totalCopyPastes: number;
+        totalFullscreenExits: number;
+        totalRapidGuesses: number;
+    };
+    sessions: LiveProctoringSession[];
 }
 
 declare global {

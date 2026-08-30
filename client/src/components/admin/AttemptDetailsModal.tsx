@@ -8,9 +8,20 @@ import {
     Calendar,
     BookOpen,
     Filter,
-    Sparkles
+    Sparkles,
+    FileText,
+    Table,
+    ShieldCheck,
+    ShieldAlert,
+    EyeOff,
+    Copy,
+    Activity,
+    ChevronDown,
+    ChevronUp
 } from 'lucide-react';
 import Modal from '../common/Modal';
+import { MathRenderer } from '../common/MathRenderer';
+import { exportAttemptToCSV, exportAttemptToPDF } from '../../lib/exportUtils';
 import type { AttemptData, DetailedAttemptData, AttemptQuestionBreakdown, Quiz } from '../../types';
 import { api } from '../../lib/api';
 
@@ -28,6 +39,9 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
     const [loading, setLoading] = useState(true);
     const [detailedAttempt, setDetailedAttempt] = useState<DetailedAttemptData | null>(null);
     const [filter, setFilter] = useState<'all' | 'wrong' | 'correct'>('all');
+    const [isExportingPDF, setIsExportingPDF] = useState(false);
+    const [isExportingCSV, setIsExportingCSV] = useState(false);
+    const [showSecurityTimeline, setShowSecurityTimeline] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -128,6 +142,30 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
         return `${mins}m ${secs}s`;
     };
 
+    const handleExportPDF = async () => {
+        if (!detailedAttempt) return;
+        setIsExportingPDF(true);
+        try {
+            await exportAttemptToPDF(detailedAttempt);
+        } catch (err) {
+            console.error('PDF export failed:', err);
+        } finally {
+            setIsExportingPDF(false);
+        }
+    };
+
+    const handleExportCSV = () => {
+        if (!detailedAttempt) return;
+        setIsExportingCSV(true);
+        try {
+            exportAttemptToCSV(detailedAttempt);
+        } catch (err) {
+            console.error('CSV export failed:', err);
+        } finally {
+            setIsExportingCSV(false);
+        }
+    };
+
     return (
         <Modal
             isOpen={true}
@@ -137,13 +175,37 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
             maxWidth="max-w-4xl"
             icon={<BookOpen className="w-6 h-6 text-indigo-500" />}
             footer={
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-[1.01] active:scale-[0.99] transition-all shadow-lg shadow-indigo-500/25"
-                >
-                    Close Inspector
-                </button>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <button
+                            type="button"
+                            onClick={handleExportPDF}
+                            disabled={loading || isExportingPDF || !detailedAttempt}
+                            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 shadow-md shadow-indigo-500/20"
+                        >
+                            <FileText className="w-3.5 h-3.5" />
+                            {isExportingPDF ? 'Generating PDF...' : 'Export PDF Report'}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleExportCSV}
+                            disabled={loading || isExportingCSV || !detailedAttempt}
+                            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 shadow-md shadow-emerald-500/20"
+                        >
+                            <Table className="w-3.5 h-3.5" />
+                            {isExportingCSV ? 'Exporting...' : 'Export Excel / CSV'}
+                        </button>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="w-full sm:w-auto px-6 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/15 text-gray-800 dark:text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                        Close Inspector
+                    </button>
+                </div>
             }
         >
             <div className="space-y-6">
@@ -235,6 +297,130 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                     </div>
                 </div>
 
+                {/* Exam Integrity & Security Telemetry Box */}
+                {(() => {
+                    const telemetry = detailedAttempt?.telemetry;
+                    const integrityScore = telemetry?.integrityScore ?? 100;
+                    const tabSwitches = telemetry?.tabSwitches ?? 0;
+                    const focusLosses = telemetry?.focusLossCount ?? 0;
+                    const copyPastes = telemetry?.copyPasteAttempts ?? 0;
+                    const avgTimePerQ = (questions.length > 0 && attempt.timeTaken) ? Math.round(attempt.timeTaken / questions.length) : 0;
+                    const isPristine = integrityScore >= 90;
+                    const isModerate = integrityScore >= 70 && integrityScore < 90;
+
+                    return (
+                        <div className={`p-4 sm:p-5 rounded-3xl border transition-all ${
+                            isPristine
+                                ? 'bg-emerald-500/5 border-emerald-500/20 dark:bg-emerald-950/15'
+                                : isModerate
+                                    ? 'bg-amber-500/5 border-amber-500/25 dark:bg-amber-950/15'
+                                    : 'bg-red-500/5 border-red-500/25 dark:bg-red-950/15'
+                        }`}>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+                                <div className="flex items-center gap-2.5">
+                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                                        isPristine
+                                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                            : isModerate
+                                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                                : 'bg-red-500/15 text-red-600 dark:text-red-400'
+                                    }`}>
+                                        {isPristine ? <ShieldCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
+                                    </div>
+                                    <div>
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Exam Integrity & Security</div>
+                                        <div className="text-xs font-black text-gray-900 dark:text-white flex items-center gap-1.5">
+                                            Status: {isPristine ? 'Pristine (No Red Flags)' : isModerate ? 'Moderate Caution' : 'High Suspicion / Flagged'}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 self-end sm:self-auto">
+                                    <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1 border ${
+                                        isPristine
+                                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                                            : isModerate
+                                                ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                                                : 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400'
+                                    }`}>
+                                        Score: {integrityScore}%
+                                    </span>
+                                    {telemetry?.events && telemetry.events.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSecurityTimeline(!showSecurityTimeline)}
+                                            className="text-[10px] font-bold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-white/5 cursor-pointer transition-colors"
+                                        >
+                                            {showSecurityTimeline ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                            {telemetry.events.length} Events
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* 4 Telemetry Metrics */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                <div className="p-2.5 rounded-xl bg-white/60 dark:bg-black/20 border border-gray-200/50 dark:border-white/5 flex items-center gap-2">
+                                    <EyeOff className={`w-3.5 h-3.5 ${tabSwitches > 0 ? 'text-amber-500' : 'text-gray-400'}`} />
+                                    <div>
+                                        <div className="text-[9px] font-bold text-gray-400 uppercase">Tab Switches</div>
+                                        <div className="font-black text-gray-900 dark:text-white">{tabSwitches}</div>
+                                    </div>
+                                </div>
+
+                                <div className="p-2.5 rounded-xl bg-white/60 dark:bg-black/20 border border-gray-200/50 dark:border-white/5 flex items-center gap-2">
+                                    <Activity className={`w-3.5 h-3.5 ${focusLosses > 0 ? 'text-amber-500' : 'text-gray-400'}`} />
+                                    <div>
+                                        <div className="text-[9px] font-bold text-gray-400 uppercase">Focus Losses</div>
+                                        <div className="font-black text-gray-900 dark:text-white">{focusLosses}</div>
+                                    </div>
+                                </div>
+
+                                <div className="p-2.5 rounded-xl bg-white/60 dark:bg-black/20 border border-gray-200/50 dark:border-white/5 flex items-center gap-2">
+                                    <Copy className={`w-3.5 h-3.5 ${copyPastes > 0 ? 'text-red-500' : 'text-gray-400'}`} />
+                                    <div>
+                                        <div className="text-[9px] font-bold text-gray-400 uppercase">Copy / Paste</div>
+                                        <div className="font-black text-gray-900 dark:text-white">{copyPastes}</div>
+                                    </div>
+                                </div>
+
+                                <div className="p-2.5 rounded-xl bg-white/60 dark:bg-black/20 border border-gray-200/50 dark:border-white/5 flex items-center gap-2">
+                                    <Clock className="w-3.5 h-3.5 text-gray-400" />
+                                    <div>
+                                        <div className="text-[9px] font-bold text-gray-400 uppercase">Avg / Question</div>
+                                        <div className="font-black text-gray-900 dark:text-white">{avgTimePerQ}s</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Collapsible Security Event Audit Log */}
+                            {showSecurityTimeline && telemetry?.events && telemetry.events.length > 0 && (
+                                <div className="mt-3 pt-3 border-t border-gray-200/50 dark:border-white/5 space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar">
+                                    <div className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Audit Trail Events:</div>
+                                    {telemetry.events.map((evt, eIdx) => (
+                                        <div key={eIdx} className="text-[11px] font-mono flex items-center justify-between p-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-gray-700 dark:text-gray-300">
+                                            <span className="flex items-center gap-1.5">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                {evt.type === 'tab_hidden' && 'Switched Tab / Hidden'}
+                                                {evt.type === 'window_blur' && 'Window Focus Lost'}
+                                                {evt.type === 'copy_attempt' && 'Copied Question Content'}
+                                                {evt.type === 'paste_attempt' && 'Pasted Content'}
+                                                {evt.type === 'fullscreen_exit' && 'Exited Fullscreen Mode'}
+                                                {evt.type === 'rapid_guess' && `Rapid Guessing (${evt.details || '< 2s'})`}
+                                                {evt.type === 'context_menu' && 'Right-Click / Context Menu Blocked'}
+                                                {evt.questionIndex !== undefined && ` (Question ${evt.questionIndex + 1})`}
+                                            </span>
+                                            <span className="text-[10px] text-gray-400">
+                                                {new Date(evt.timestamp).toLocaleTimeString()}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
+
                 {/* Filter Pills */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-1">
                     <button
@@ -305,8 +491,8 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                     }`}
                                 >
                                     {/* Question Header */}
-                                    <div className="flex items-start justify-between gap-3 mb-3">
-                                        <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                                        <div className="flex flex-wrap items-center gap-2">
                                             <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
                                                 isWrong
                                                     ? 'bg-red-500 text-white'
@@ -318,6 +504,25 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                                 {q.points} Points
                                             </span>
+
+                                            {/* Question-level telemetry warnings */}
+                                            {detailedAttempt?.telemetry?.events?.some(e => e.questionIndex === q.questionIndex && e.type === 'tab_hidden') && (
+                                                <span className="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                                    <EyeOff className="w-3 h-3" /> Tab Switch
+                                                </span>
+                                            )}
+
+                                            {detailedAttempt?.telemetry?.events?.some(e => e.questionIndex === q.questionIndex && e.type === 'rapid_guess') && (
+                                                <span className="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-orange-500/15 border border-orange-500/30 text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                                                    <Activity className="w-3 h-3" /> Rush / Rapid Answer (&lt;2s)
+                                                </span>
+                                            )}
+
+                                            {detailedAttempt?.telemetry?.events?.some(e => e.questionIndex === q.questionIndex && e.type === 'copy_attempt') && (
+                                                <span className="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                    <Copy className="w-3 h-3" /> Copied Text
+                                                </span>
+                                            )}
                                         </div>
 
                                         <div className="text-xs font-black uppercase tracking-wider">
@@ -329,9 +534,9 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                         </div>
                                     </div>
 
-                                    {/* Question Text */}
+                                    {/* Question Text with MathRenderer */}
                                     <h4 className="text-base font-bold text-gray-900 dark:text-white leading-relaxed mb-3 whitespace-pre-line">
-                                        {q.question}
+                                        <MathRenderer text={q.question} />
                                     </h4>
 
                                     {/* Question Image if present */}
@@ -399,9 +604,7 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                                                 Option {studentOptionLetter}
                                                             </span>
                                                         )}
-                                                        <span className="break-words font-black">
-                                                            {studentOptionText}
-                                                        </span>
+                                                        <MathRenderer text={studentOptionText} className="break-words font-black" />
                                                     </div>
                                                 </div>
 
@@ -421,9 +624,7 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                                                 Option {correctOptionLetter}
                                                             </span>
                                                         )}
-                                                        <span className="break-words font-black text-emerald-700 dark:text-emerald-300">
-                                                            {correctOptionText}
-                                                        </span>
+                                                        <MathRenderer text={correctOptionText} className="break-words font-black text-emerald-700 dark:text-emerald-300" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -478,7 +679,7 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                                             <span className="w-6 h-6 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center font-black text-xs shrink-0">
                                                                 {String.fromCharCode(65 + optIdx)}
                                                             </span>
-                                                            <span className="truncate">{optText}</span>
+                                                            <MathRenderer text={optText} className="truncate" />
                                                         </div>
                                                         {badge}
                                                     </div>
@@ -499,17 +700,15 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                         </div>
                                     )}
 
-                                    {/* Explanation / Reference Note */}
+                                    {/* Explanation / Reference Note with MathRenderer */}
                                     {q.explanation && (
                                         <div className="p-3.5 rounded-2xl bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/15 flex items-start gap-2.5">
                                             <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                                            <div>
+                                            <div className="w-full">
                                                 <div className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-0.5">
                                                     Explanation / Correct Logic
                                                 </div>
-                                                <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
-                                                    {q.explanation}
-                                                </p>
+                                                <MathRenderer text={q.explanation} className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-medium" />
                                             </div>
                                         </div>
                                     )}

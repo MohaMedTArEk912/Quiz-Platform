@@ -269,3 +269,47 @@ Schema:
         });
     }
 };
+
+/**
+ * POST /api/ai/coach-hint
+ * Socratic AI Study Coach generating an adaptive concept hint without spoiling the answer
+ */
+export const getAICoachHint = async (req, res) => {
+    try {
+        const { question, options, studentAnswer, category } = req.body;
+        if (!question) {
+            return res.status(400).json({ success: false, message: 'Question content is required' });
+        }
+
+        const groq = getGroqClient();
+        if (!groq) {
+            return res.json({
+                success: true,
+                hint: `💡 Concept Focus: Carefully review the core principles in "${category || 'this topic'}". Focus on key terms in the question!`
+            });
+        }
+
+        const prompt = `You are a supportive, high-IQ Socratic AI Study Coach on a learning platform.
+A student is currently taking an assessment and is stuck on this question:
+Question: "${question}"
+Options: ${JSON.stringify(options || [])}
+${studentAnswer ? `Student's initial thought: "${studentAnswer}"` : ''}
+
+Provide a concise, 1-2 sentence guided conceptual hint that activates their critical thinking WITHOUT revealing the direct answer letter or spoiling the test.`;
+
+        const resp = await groq.chat.completions.create({
+            model: 'llama-3.3-70b-versatile',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 200
+        });
+
+        const hintText = resp?.choices?.[0]?.message?.content?.trim() || 'Break down the question prompt into its fundamental components and eliminate options that contradict the core definitions.';
+        res.json({ success: true, hint: hintText });
+    } catch (error) {
+        console.error('AI Coach Hint Error:', error);
+        res.json({
+            success: true,
+            hint: '💡 Study Pointer: Break down the question keywords and rule out any options that conflict with core domain principles.'
+        });
+    }
+};

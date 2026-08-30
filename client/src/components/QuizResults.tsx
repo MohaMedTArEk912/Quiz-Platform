@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import type { Quiz, UserData, QuizResult, DetailedAnswer } from '../types';
 import { RotateCcw, Clock, Target, CheckCircle, XCircle, ArrowLeft, Trophy, Flag, AlertTriangle, List } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { MathRenderer } from './common/MathRenderer';
 
 interface QuizResultsProps {
     result: QuizResult;
@@ -306,7 +307,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                                                 </div>
                                                 <div className="flex-1">
                                                     <p className="font-bold text-gray-800 dark:text-gray-200 mb-3 landscape:mb-1.5 lg:landscape:mb-3 text-lg landscape:text-base lg:landscape:text-lg leading-snug">
-                                                        <span className="opacity-50 mr-2">{idx + 1}.</span> {q.question}
+                                                        <span className="opacity-50 mr-2">{idx + 1}.</span> <MathRenderer text={q.question} inline={true} />
                                                     </p>
                                                     
                                                     {q.codeSnippet && (
@@ -341,7 +342,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                                                     {q.explanation && (
                                                         <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 bg-blue-50/50 dark:bg-indigo-500/5 p-4 rounded-2xl border border-blue-100 dark:border-indigo-500/20">
                                                             <span className="font-bold block mb-1 text-blue-600 dark:text-indigo-400">Explanation</span>
-                                                            {q.explanation}
+                                                            <MathRenderer text={q.explanation} />
                                                         </div>
                                                     )}
                                                 </div>

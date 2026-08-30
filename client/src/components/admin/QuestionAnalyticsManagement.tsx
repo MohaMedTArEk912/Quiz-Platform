@@ -10,10 +10,14 @@ import {
     RefreshCw,
     TrendingDown,
     Flame,
-    BookOpen
+    BookOpen,
+    Download,
+    Table
 } from 'lucide-react';
 import type { UserData, Quiz, QuestionAnalyticsItem, QuestionAnalyticsSummary } from '../../types';
 import { api } from '../../lib/api';
+import { MathRenderer } from '../common/MathRenderer';
+import { exportQuestionAnalyticsToCSV } from '../../lib/exportUtils';
 
 interface QuestionAnalyticsManagementProps {
     currentUser?: UserData;
@@ -94,15 +98,27 @@ const QuestionAnalyticsManagement: React.FC<QuestionAnalyticsManagementProps> = 
                     </p>
                 </div>
 
-                <button
-                    type="button"
-                    onClick={loadAnalytics}
-                    disabled={isLoading}
-                    className="px-4 py-2.5 bg-white dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl border border-gray-200 dark:border-white/10 text-xs font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 transition-all flex items-center gap-2 cursor-pointer shrink-0 shadow-sm hover:scale-105 active:scale-95"
-                >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-                    <span>Refresh</span>
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => exportQuestionAnalyticsToCSV(filteredQuestions, summary)}
+                        disabled={isLoading || filteredQuestions.length === 0}
+                        className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shrink-0 shadow-sm disabled:opacity-50"
+                    >
+                        <Table className="w-3.5 h-3.5" />
+                        <span>Export CSV / Excel</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={loadAnalytics}
+                        disabled={isLoading}
+                        className="px-4 py-2.5 bg-white dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl border border-gray-200 dark:border-white/10 text-xs font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 transition-all flex items-center gap-2 cursor-pointer shrink-0 shadow-sm hover:scale-105 active:scale-95"
+                    >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                        <span>Refresh</span>
+                    </button>
+                </div>
             </div>
 
             {/* KPI Summary Cards */}
@@ -297,7 +313,7 @@ const QuestionAnalyticsManagement: React.FC<QuestionAnalyticsManagementProps> = 
                                             </div>
 
                                             <h4 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white line-clamp-2">
-                                                {q.questionText}
+                                                <MathRenderer text={q.questionText} />
                                             </h4>
 
                                             {/* Most Common Wrong Choice Highlight */}
@@ -404,13 +420,11 @@ const QuestionAnalyticsManagement: React.FC<QuestionAnalyticsManagementProps> = 
                                         {q.explanation && (
                                             <div className="p-4 rounded-2xl bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/15 flex items-start gap-3">
                                                 <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                                                <div>
+                                                <div className="w-full">
                                                     <div className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-0.5">
                                                         Reference Guide / Explanation
                                                     </div>
-                                                    <p className="text-xs text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
-                                                        {q.explanation}
-                                                    </p>
+                                                    <MathRenderer text={q.explanation} className="text-xs text-gray-600 dark:text-gray-300 font-medium leading-relaxed" />
                                                 </div>
                                             </div>
                                         )}

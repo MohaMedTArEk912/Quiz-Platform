@@ -20,6 +20,7 @@ import {
     ShieldAlert,
     Inbox,
     AlertTriangle,
+    Layers,
     type LucideIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -35,8 +36,9 @@ import UserManagement from './admin/UserManagement.tsx';
 import ReviewManagement from './admin/ReviewManagement.tsx';
 import DailyChallengeManagement from './admin/DailyChallengeManagement.tsx';
 import TournamentManagement from './admin/TournamentManagement.tsx';
-import BadgeManagement from './admin/BadgeManagement.tsx';
 import QuestionAnalyticsManagement from './admin/QuestionAnalyticsManagement.tsx';
+import CohortAnalyticsManagement from './admin/CohortAnalyticsManagement.tsx';
+import LiveProctoringManagement from './admin/LiveProctoringManagement.tsx';
 import AttemptDetailsModal from './admin/AttemptDetailsModal.tsx';
 
 import RoadManager from './admin/RoadManager';
@@ -45,7 +47,7 @@ import AdminSettings from './AdminSettings.tsx';
 import TrackRequestManagement from './admin/TrackRequestManagement.tsx';
 
 // --- Types ---
-type AdminTab = 'main' | 'users' | 'quizzes' | 'road' | 'badges' | 'daily' | 'tournaments' | 'reviews' | 'track-requests' | 'question-analytics';
+type AdminTab = 'main' | 'users' | 'quizzes' | 'road' | 'badges' | 'daily' | 'tournaments' | 'reviews' | 'track-requests' | 'question-analytics' | 'cohort-analytics' | 'live-proctoring';
 
 interface NavItem {
     id: AdminTab;
@@ -142,13 +144,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     // --- Navigation Configuration ---
     const navItems: NavGroup[] = [
         {
-            title: 'Overview',
+            title: 'Overview & Content',
             items: [
                 { id: 'users', label: 'Users', icon: Users },
                 { id: 'quizzes', label: 'Quizzes', icon: BookOpen },
-                { id: 'question-analytics', label: 'Error Diagnostics', icon: AlertTriangle },
                 { id: 'road', label: 'Roads', icon: Route },
                 { id: 'badges', label: 'Badges', icon: Award },
+            ]
+        },
+        {
+            title: 'Analytics & Proctoring',
+            items: [
+                { id: 'live-proctoring', label: 'Live Proctoring', icon: ShieldAlert },
+                { id: 'cohort-analytics', label: 'Cohort Intelligence', icon: Layers },
+                { id: 'question-analytics', label: 'Error Diagnostics', icon: AlertTriangle },
             ]
         },
         {
@@ -166,6 +175,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         switch (selectedTab) {
             case 'users': return 'User Management';
             case 'quizzes': return 'Quiz Manager';
+            case 'live-proctoring': return 'Live Proctoring & Telemetry Monitor';
+            case 'cohort-analytics': return 'Student Cohort & Tier Analytics';
             case 'question-analytics': return 'Question Error Analytics';
             case 'road': return 'Roads & Tracks';
             case 'badges': return 'Badge Management';
@@ -831,6 +842,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <QuestionAnalyticsManagement
                                 currentUser={currentUser}
                                 quizzes={quizzes}
+                                onNotification={handleNotification}
+                            />
+                        )}
+
+                        {selectedTab === 'cohort-analytics' && (
+                            <CohortAnalyticsManagement
+                                onNotification={handleNotification}
+                            />
+                        )}
+
+                        {selectedTab === 'live-proctoring' && (
+                            <LiveProctoringManagement
+                                onInspectAttempt={(att) => setSelectedAttemptForInspection(att)}
                                 onNotification={handleNotification}
                             />
                         )}

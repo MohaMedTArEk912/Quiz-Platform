@@ -254,6 +254,204 @@ export const getQuestionAnalytics = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/analytics/cohorts
+ * Cohort and group-level performance analytics
+ */
+export const getCohortAnalytics = async (req, res) => {
+  try {
+    const [users, attempts, quizzes] = await Promise.all([
+      User.find({}, 'userId name email level xp totalScore totalAttempts').lean(),
+      Attempt.find({}).sort({ completedAt: -1 }).lean(),
+      Quiz.find({}, 'id title category difficulty').lean()
+    ]);
+
+    const userAttemptMap = new Map();
+    attempts.forEach(a => {
+      if (!userAttemptMap.has(a.userId)) {
+        userAttemptMap.set(a.userId, []);
+      }
+      userAttemptMap.get(a.userId).push(a);
+    });
+
+    // 1. Level-Based Cohorts
+    const levelCohorts = {
+      novice: { name: 'Novice (Lvl 1-3)', users: 0, totalScore: 0, totalAttempts: 0, avgScore: 0, passRate: 0, passes: 0 },
+      adept: { name: 'Adept (Lvl 4-7)', users: 0, totalScore: 0, totalAttempts: 0, avgScore: 0, passRate: 0, passes: 0 },
+      master: { name: 'Master (Lvl 8+)', users: 0, totalScore: 0, totalAttempts: 0, avgScore: 0, passRate: 0, passes: 0 }
+    };
+
+    // 2. Performance Tier Cohorts
+    const performanceTiers = {
+      high: { name: 'High Performers (≥80%)', count: 0, avgPercentage: 0, totalAttempts: 0, users: [] },
+      medium: { name: 'Proficient (60-79%)', count: 0, avgPercentage: 0, totalAttempts: 0, users: [] },
+      atRisk: { name: 'Needs Attention (<60%)', count: 0, avgPercentage: 0, totalAttempts: 0, users: [] }
+    };
+
+    users.forEach(u => {
+      const userAttempts = userAttemptMap.get(u.userId) || [];
+      const lvl = u.level || 1;
+      const cohortKey = lvl <= 3 ? 'novice' : lvl <= 7 ? 'adept' : 'master';
+
+      levelCohorts[cohortKey].users += 1;
+      levelCohorts[cohortKey].totalAttempts += userAttempts.length;
+
+      let userTotalPct = 0;
+      let userPasses = 0;
+
+      userAttempts.forEach(a => {
+        const pct = a.percentage || 0;
+        userTotalPct += pct;
+        levelCohorts[cohortKey].totalScore += pct;
+        if (a.passed) {
+          userPasses += 1;
+          levelCohorts[cohortKey].passes += 1;
+        }
+      });
+
+      const userAvgPct = userAttempts.length > 0 ? Math.round(userTotalPct / userAttempts.length) : 0;
+      const tierKey = userAvgPct >= 80 ? 'high' : userAvgPct >= 60 ? 'medium' : 'atRisk';
+
+      performanceTiers[tierKey].count += 1;
+      performanceTiers[tierKey].totalAttempts += userAttempts.length;
+      if (performanceTiers[tierKey].users.length < 15) {
+        performanceTiers[tierKey].users.push({
+          userId: u.userId,
+          name: u.name,
+          email: u.email,
+          level: u.level || 1,
+          avgScore: userAvgPct,
+          attempts: userAttempts.length
+        });
+      }
+    });
+
+    // Compute averages
+    Object.values(levelCohorts).forEach(c => {
+      c.avgScore = c.totalAttempts > 0 ? Math.round(c.totalScore / c.totalAttempts) : 0;
+      c.passRate = c.totalAttempts > 0 ? Math.round((c.passes / c.totalAttempts) * 100) : 0;
+    });
+
+    // 3. Category Breakdown
+    const quizCategoryMap = new Map(quizzes.map(q => [q.id, q.category]));
+    const categoryPerformance = {};
+
+    attempts.forEach(a => {
+      const cat = quizCategoryMap.get(a.quizId) || 'General';
+      if (!categoryPerformance[cat]) {
+        categoryPerformance[cat] = { category: cat, totalAttempts: 0, totalPct: 0, passes: 0 };
+      }
+      categoryPerformance[cat].totalAttempts += 1;
+      categoryPerformance[cat].totalPct += (a.percentage || 0);
+      if (a.passed) categoryPerformance[cat].passes += 1;
+    });
+
+    const categoryList = Object.values(categoryPerformance).map(c => ({
+      category: c.category,
+      totalAttempts: c.totalAttempts,
+      avgScore: Math.round(c.totalPct / (c.totalAttempts || 1)),
+      passRate: Math.round((c.passes / (c.totalAttempts || 1)) * 100)
+    })).sort((a, b) => b.totalAttempts - a.totalAttempts);
+
+    res.json({
+      success: true,
+      summary: {
+        totalStudents: users.length,
+        totalAttemptsEvaluated: attempts.length,
+        levelCohorts: Object.values(levelCohorts),
+        performanceTiers,
+        categoryPerformance: categoryList
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error generating cohort analytics:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate cohort analytics', error: error.message });
+  }
+};
+
+/**
+ * GET /api/analytics/live-proctoring
+ * Real-time exam sessions and integrity telemetry monitor
+ */
+export const getLiveProctoringData = async (req, res) => {
+  try {
+    const attempts = await Attempt.find({})
+      .sort({ completedAt: -1 })
+      .limit(100)
+      .lean();
+
+    let cleanCount = 0;
+    let moderateCount = 0;
+    let highRiskCount = 0;
+    let totalTabSwitches = 0;
+    let totalFocusLosses = 0;
+    let totalCopyPastes = 0;
+    let totalFullscreenExits = 0;
+    let totalRapidGuesses = 0;
+
+    const monitoredSessions = attempts.map(a => {
+      const tel = a.telemetry || {
+        integrityScore: 100,
+        tabSwitches: 0,
+        focusLossCount: 0,
+        copyPasteAttempts: 0,
+        fullscreenExits: 0,
+        rapidGuesses: 0,
+        events: []
+      };
+
+      const score = tel.integrityScore ?? 100;
+      if (score >= 90) cleanCount++;
+      else if (score >= 70) moderateCount++;
+      else highRiskCount++;
+
+      totalTabSwitches += tel.tabSwitches || 0;
+      totalFocusLosses += tel.focusLossCount || 0;
+      totalCopyPastes += tel.copyPasteAttempts || 0;
+      totalFullscreenExits += tel.fullscreenExits || 0;
+      totalRapidGuesses += tel.rapidGuesses || 0;
+
+      return {
+        attemptId: a.attemptId,
+        userId: a.userId,
+        userName: a.userName,
+        userEmail: a.userEmail,
+        quizId: a.quizId,
+        quizTitle: a.quizTitle,
+        score: a.score,
+        percentage: a.percentage,
+        passed: a.passed,
+        timeTaken: a.timeTaken,
+        completedAt: a.completedAt,
+        telemetry: tel,
+        riskLevel: score >= 90 ? 'clean' : score >= 70 ? 'moderate' : 'high'
+      };
+    });
+
+    res.json({
+      success: true,
+      summary: {
+        totalMonitored: attempts.length,
+        cleanCount,
+        moderateCount,
+        highRiskCount,
+        avgIntegrityScore: attempts.length > 0
+          ? Math.round(monitoredSessions.reduce((s, a) => s + (a.telemetry.integrityScore || 100), 0) / attempts.length)
+          : 100,
+        totalTabSwitches,
+        totalFocusLosses,
+        totalCopyPastes,
+        totalFullscreenExits,
+        totalRapidGuesses
+      },
+      sessions: monitoredSessions
+    });
+  } catch (error) {
+    console.error('❌ Error fetching live proctoring telemetry:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch live proctoring telemetry', error: error.message });
+  }
+};
+
 export const getData = async (req, res) => {
   try {
     const isAdmin = req.user?.role === 'admin';

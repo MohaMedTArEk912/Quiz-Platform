@@ -37,6 +37,17 @@ const normalizeAttemptPayload = (attemptData, user) => {
         normalized.powerUpsUsed = [];
     }
 
+    if (normalized.telemetry && typeof normalized.telemetry === 'object') {
+        normalized.telemetry = {
+            tabSwitches: Number(normalized.telemetry.tabSwitches) || 0,
+            focusLossCount: Number(normalized.telemetry.focusLossCount) || 0,
+            copyPasteAttempts: Number(normalized.telemetry.copyPasteAttempts) || 0,
+            timePerQuestion: normalized.telemetry.timePerQuestion || {},
+            events: Array.isArray(normalized.telemetry.events) ? normalized.telemetry.events : [],
+            integrityScore: Number.isFinite(normalized.telemetry.integrityScore) ? normalized.telemetry.integrityScore : 100
+        };
+    }
+
     return normalized;
 };
 
