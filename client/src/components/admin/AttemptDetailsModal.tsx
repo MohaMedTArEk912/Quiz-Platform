@@ -342,9 +342,90 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                         </div>
                                     )}
 
+                                    {/* Side-by-Side Student Choice vs Correct Answer Comparison Box */}
+                                    {(() => {
+                                        const correctOptIndex = typeof q.correctAnswer === 'number' ? q.correctAnswer : null;
+                                        const correctOptionLetter = correctOptIndex !== null ? String.fromCharCode(65 + correctOptIndex) : '';
+                                        const correctOptionText = correctOptIndex !== null && Array.isArray(q.options) && q.options[correctOptIndex]
+                                            ? q.options[correctOptIndex]
+                                            : (q.correctAnswer !== undefined && q.correctAnswer !== null ? String(q.correctAnswer) : 'Not specified');
+
+                                        const studentOptionLetter = studentAnsIndex !== null ? String.fromCharCode(65 + studentAnsIndex) : '';
+                                        let studentOptionText = 'No Answer Given';
+                                        if (studentAnsIndex !== null && Array.isArray(q.options) && q.options[studentAnsIndex]) {
+                                            studentOptionText = q.options[studentAnsIndex];
+                                        } else if (q.studentAnswer !== undefined && q.studentAnswer !== null && q.studentAnswer !== '') {
+                                            studentOptionText = typeof q.studentAnswer === 'object' ? JSON.stringify(q.studentAnswer) : String(q.studentAnswer);
+                                        }
+
+                                        return (
+                                            <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                {/* Student's Chosen Answer */}
+                                                <div className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col justify-between gap-2 shadow-sm ${
+                                                    isWrong
+                                                        ? 'bg-red-500/10 border-red-500/40 dark:bg-red-950/25'
+                                                        : 'bg-emerald-500/10 border-emerald-500/40 dark:bg-emerald-950/25'
+                                                }`}>
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className={`text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
+                                                            isWrong ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'
+                                                        }`}>
+                                                            {isWrong ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                                                            Student's Chosen Answer
+                                                        </span>
+                                                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                                                            isWrong ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
+                                                        }`}>
+                                                            {isWrong ? 'Wrong Choice' : 'Correct Choice'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white flex items-start gap-2 pt-1">
+                                                        {studentOptionLetter && (
+                                                            <span className={`px-2 py-0.5 rounded-md font-black text-xs shrink-0 ${
+                                                                isWrong
+                                                                    ? 'bg-red-500/20 text-red-700 dark:text-red-300 border border-red-500/30'
+                                                                    : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                                                            }`}>
+                                                                Option {studentOptionLetter}
+                                                            </span>
+                                                        )}
+                                                        <span className="break-words font-black">
+                                                            {studentOptionText}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Correct Answer */}
+                                                <div className="p-3.5 sm:p-4 rounded-2xl border bg-emerald-500/10 border-emerald-500/40 dark:bg-emerald-950/25 flex flex-col justify-between gap-2 shadow-sm">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                                                            <CheckCircle2 className="w-3.5 h-3.5" /> Correct Answer
+                                                        </span>
+                                                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-wider">
+                                                            Required
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white flex items-start gap-2 pt-1">
+                                                        {correctOptionLetter && (
+                                                            <span className="px-2 py-0.5 rounded-md font-black text-xs shrink-0 bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                                                                Option {correctOptionLetter}
+                                                            </span>
+                                                        )}
+                                                        <span className="break-words font-black text-emerald-700 dark:text-emerald-300">
+                                                            {correctOptionText}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
                                     {/* Options List for Multiple Choice */}
                                     {Array.isArray(q.options) && q.options.length > 0 ? (
                                         <div className="space-y-2 mb-4">
+                                            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
+                                                All Quiz Options Breakdown:
+                                            </div>
                                             {q.options.map((optText, optIdx) => {
                                                 const isStudentPick = studentAnsIndex === optIdx;
                                                 const isCorrectOption = Number(q.correctAnswer) === optIdx;
