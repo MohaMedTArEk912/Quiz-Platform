@@ -61,4 +61,8 @@ badgeNodeSchema.pre('save', function(next) {
   next();
 });
 
+badgeNodeSchema.index({ badgeId: 1 }, { unique: true });
+badgeNodeSchema.index({ trees: 1 });
+badgeNodeSchema.index({ rarity: 1 });
+
 export const BadgeNode = mongoose.model('BadgeNode', badgeNodeSchema);

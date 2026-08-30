@@ -41,8 +41,11 @@ const attemptSchema = new mongoose.Schema({
   }
 });
 
-// Indexes for quick filtering and sorting
+// Indexes for quick filtering, sorting, and user activity lookups
+attemptSchema.index({ attemptId: 1 }, { unique: true });
 attemptSchema.index({ userId: 1, completedAt: -1 });
-attemptSchema.index({ quizId: 1 });
+attemptSchema.index({ quizId: 1, completedAt: -1 });
+attemptSchema.index({ userId: 1, quizId: 1 });
+attemptSchema.index({ completedAt: -1 });
 
 export const Attempt = mongoose.model('Attempt', attemptSchema);

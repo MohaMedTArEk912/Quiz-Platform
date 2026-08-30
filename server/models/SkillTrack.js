@@ -50,4 +50,8 @@ const skillTrackSchema = new mongoose.Schema({
   timestamps: true // Automatically manages createdAt and updatedAt
 });
 
+skillTrackSchema.index({ trackId: 1 }, { unique: true });
+skillTrackSchema.index({ subjectId: 1 });
+skillTrackSchema.index({ category: 1 });
+
 export const SkillTrack = mongoose.model('SkillTrack', skillTrackSchema);

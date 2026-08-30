@@ -76,7 +76,28 @@ export const deleteUser = async (req, res) => {
 
 export const getUserData = async (req, res) => {
   try {
-    const enrichedUser = await getEnrichedUser(req.user.userId);
+    const userId = req.user.userId;
+
+    // Fetch user and all core data concurrently
+    const [enrichedUser, attempts, badges, leaderboard, challenges, shopItems] = await Promise.all([
+      getEnrichedUser(userId),
+      Attempt.find({ userId }).sort({ completedAt: -1 }).lean(),
+      Badge.find({}).lean(),
+      User.find(
+        { role: { $ne: 'admin' }, isAdmin: { $ne: true } },
+        'userId name totalScore totalAttempts xp level streak lastLoginDate badges role'
+      )
+        .sort({ totalScore: -1 })
+        .limit(100)
+        .lean(),
+      Challenge.find({
+        $or: [{ fromId: userId }, { toId: userId }]
+      })
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .lean(),
+      ShopItem.find({}).lean()
+    ]);
 
     if (!enrichedUser) {
       return res.status(404).json({ message: 'User not found' });
@@ -84,27 +105,12 @@ export const getUserData = async (req, res) => {
 
     const { password: _pw, ...user } = enrichedUser;
 
-    const attempts = await Attempt.find({ userId: req.user.userId })
-      .sort({ completedAt: -1 })
-      .lean();
-
-    const badges = await Badge.find({}).lean();
-
     // Build friend / request participant list
     const friendIds = new Set([
       ...(user.friends || []),
       ...((user.friendRequests || []).map((r) => r.from)),
       ...((user.friendRequests || []).map((r) => r.to)),
     ].filter(Boolean));
-
-    // Top leaderboard slice (Excludes admin accounts)
-    const leaderboard = await User.find(
-      { role: { $ne: 'admin' }, isAdmin: { $ne: true } },
-      'userId name totalScore totalAttempts xp level streak lastLoginDate badges role'
-    )
-      .sort({ totalScore: -1 })
-      .limit(100)
-      .lean();
 
     const friendDocs = friendIds.size > 0
       ? await User.find(
@@ -114,28 +120,10 @@ export const getUserData = async (req, res) => {
       : [];
 
     // Merge leaderboard + friends + current user into a single unique list
-      const mergedUsersMap = new Map();
+    const mergedUsersMap = new Map();
     [...leaderboard, ...friendDocs, user].forEach((u) => {
       if (u) mergedUsersMap.set(u.userId, u);
     });
-
-    // Calculate rank with an indexed count (totalScore index added in model)
-    // Rank is now included in enrichedUser
-    // const rank = await User.countDocuments({ totalScore: { $gt: user.totalScore || 0 } }) + 1;
-
-    // Challenges
-    const challenges = await Challenge.find({
-      $or: [{ fromId: req.user.userId }, { toId: req.user.userId }]
-    })
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .lean();
-
-    // Shop items
-    const shopItems = await ShopItem.find({}).lean();
-
-    // Use skillTracks from enriched user
-    // const skillTracks = await SkillTrackProgress.find({ userId: req.user.userId }).lean();
 
     res.json({
       user, // Contains rank and skillTracks

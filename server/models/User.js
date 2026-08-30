@@ -72,9 +72,14 @@ const userSchema = new mongoose.Schema({
   clanId: { type: String } // Simplified link to clan
 });
 
-// Indexes to speed up lookups and leaderboards
+// Indexes to speed up lookups, authentication, and leaderboards
+userSchema.index({ userId: 1 }, { unique: true });
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ role: 1, totalScore: -1 }); // Ultra-fast leaderboard slice
+userSchema.index({ isAdmin: 1, totalScore: -1 });
 userSchema.index({ totalScore: -1 });
 userSchema.index({ name: 1 });
 userSchema.index({ clanId: 1 });
+userSchema.index({ createdAt: -1 });
 
 export const User = mongoose.model('User', userSchema);

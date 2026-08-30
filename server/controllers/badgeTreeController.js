@@ -22,7 +22,7 @@ export const getAllBadgeTrees = async (req, res) => {
     if (type) filter.type = type;
     if (isActive !== undefined) filter.isActive = isActive === 'true';
     
-    const trees = await BadgeTree.find(filter).sort({ createdAt: -1 });
+    const trees = await BadgeTree.find(filter).sort({ createdAt: -1 }).lean();
     res.json(trees);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching badge trees', error: error.message });
@@ -32,14 +32,14 @@ export const getAllBadgeTrees = async (req, res) => {
 // Get single badge tree with populated badge nodes
 export const getBadgeTree = async (req, res) => {
   try {
-    const tree = await BadgeTree.findOne({ treeId: req.params.treeId });
+    const tree = await BadgeTree.findOne({ treeId: req.params.treeId }).lean();
     if (!tree) {
       return res.status(404).json({ message: 'Badge tree not found' });
     }
     
     // Populate badge node details
-    const badgeIds = tree.nodes.map(n => n.badgeId);
-    const badges = await BadgeNode.find({ badgeId: { $in: badgeIds } });
+    const badgeIds = (tree.nodes || []).map(n => n.badgeId);
+    const badges = await BadgeNode.find({ badgeId: { $in: badgeIds } }).lean();
     
     // Create a map for quick lookup
     const badgeMap = {};
@@ -48,13 +48,13 @@ export const getBadgeTree = async (req, res) => {
     });
     
     // Enhance nodes with badge details
-    const enhancedNodes = tree.nodes.map(node => ({
-      ...node.toObject(),
+    const enhancedNodes = (tree.nodes || []).map(node => ({
+      ...node,
       badge: badgeMap[node.badgeId] || null
     }));
     
     res.json({
-      ...tree.toObject(),
+      ...tree,
       nodes: enhancedNodes
     });
   } catch (error) {

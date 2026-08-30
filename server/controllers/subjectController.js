@@ -296,7 +296,9 @@ export const createSubject = async (req, res) => {
 
 export const getSubjects = async (req, res) => {
     try {
-        const subjects = await Subject.find().select('-content -styleContext').lean(); // Exclude heavy text fields for list view
+        const subjects = await Subject.find()
+            .select('-content -styleContext -materials.rawContent -materials.extractedQuestions -oldQuestions')
+            .lean(); // Exclude heavy raw content dumps for fast list view
         
         // Sort subjects by extracted number
         subjects.sort((a, b) => {
