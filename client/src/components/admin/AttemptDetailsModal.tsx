@@ -54,11 +54,17 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                             if (typeof (userAns as { isCorrect?: boolean }).isCorrect === 'boolean') {
                                 isCorrect = Boolean((userAns as { isCorrect?: boolean }).isCorrect);
                             } else {
-                                isCorrect = Number(selected) === Number(q.correctAnswer);
+                                isCorrect = selected !== undefined && (
+                                    Number(selected) === Number(q.correctAnswer) ||
+                                    String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
+                                );
                             }
                         } else {
                             selected = userAns;
-                            isCorrect = Number(selected) === Number(q.correctAnswer);
+                            isCorrect = selected !== undefined && (
+                                Number(selected) === Number(q.correctAnswer) ||
+                                String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
+                            );
                         }
 
                         return {
@@ -344,7 +350,11 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
 
                                     {/* Side-by-Side Student Choice vs Correct Answer Comparison Box */}
                                     {(() => {
-                                        const correctOptIndex = typeof q.correctAnswer === 'number' ? q.correctAnswer : null;
+                                        const correctOptIndex = typeof q.correctAnswer === 'number'
+                                            ? q.correctAnswer
+                                            : (typeof q.correctAnswer === 'string' && !isNaN(Number(q.correctAnswer)) && q.correctAnswer.trim() !== ''
+                                                ? Number(q.correctAnswer)
+                                                : null);
                                         const correctOptionLetter = correctOptIndex !== null ? String.fromCharCode(65 + correctOptIndex) : '';
                                         const correctOptionText = correctOptIndex !== null && Array.isArray(q.options) && q.options[correctOptIndex]
                                             ? q.options[correctOptIndex]

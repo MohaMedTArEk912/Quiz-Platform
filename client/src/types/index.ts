@@ -29,7 +29,7 @@ export interface Question {
     part: string;
     question: string;
     options?: string[];
-    correctAnswer?: number;
+    correctAnswer?: number | string;
     explanation: string;
     points: number;
     imageUrl?: string;
@@ -716,7 +716,7 @@ export interface AttemptQuestionBreakdown {
     questionIndex: number;
     question: string;
     options: string[];
-    correctAnswer?: number;
+    correctAnswer?: number | string;
     explanation?: string;
     points: number;
     imageUrl?: string;
