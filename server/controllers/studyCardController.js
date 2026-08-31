@@ -14,7 +14,7 @@ export const getAllCards = async (req, res) => {
         if (req.query.subjectId) {
             query.subjectId = req.query.subjectId;
         }
-        const cards = await StudyCard.find(query);
+        const cards = await StudyCard.find(query).sort({ createdAt: -1 }).lean();
         res.json(cards);
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -103,6 +103,12 @@ html.dark body {
 .mb-safe {
   margin-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
 }
+.ml-safe {
+  margin-left: max(env(safe-area-inset-left, 0px), 0px);
+}
+.mr-safe {
+  margin-right: max(env(safe-area-inset-right, 0px), 0px);
+}
 .top-safe {
   top: max(env(safe-area-inset-top, 0px), 0px);
 }

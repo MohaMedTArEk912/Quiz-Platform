@@ -254,7 +254,7 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
 
     if (gameState === 'waiting') {
         return (
-            <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-8 text-white relative overflow-hidden">
+            <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-8 text-white relative overflow-hidden p-safe">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/40 via-gray-900 to-black pointer-events-none"></div>
 
                 <div className="z-10 bg-slate-800/50 p-12 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl text-center max-w-md w-full animate-in zoom-in duration-500">
@@ -285,7 +285,7 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
 
     if (gameState === 'countdown') {
         return (
-            <div className="min-h-screen bg-indigo-600 flex items-center justify-center relative overflow-hidden">
+            <div className="min-h-screen bg-indigo-600 flex items-center justify-center relative overflow-hidden p-safe">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/20 to-transparent animate-pulse"></div>
                 <div key={countdown} className="text-[15rem] md:text-[20rem] font-black text-white drop-shadow-2xl animate-in zoom-in duration-300">
                     {countdown > 0 ? countdown : "GO!"}
@@ -299,7 +299,7 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
         const isDraw = gameResult?.isDraw;
 
         return (
-            <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white relative overflow-hidden">
+            <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white relative overflow-hidden p-safe">
                 <div className={`absolute inset-0 opacity-40 ${iWon ? 'bg-green-900' : isDraw ? 'bg-yellow-900' : 'bg-red-900'}`}></div>
 
                 <div className="z-10 text-center max-w-lg w-full p-8 bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-500">
@@ -346,11 +346,11 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
     }
 
     return (
-        <div className="h-screen w-full bg-gray-900 border-x border-gray-800 flex flex-col md:flex-row overflow-hidden">
+        <div className="h-screen w-full bg-gray-900 border-x border-gray-800 flex flex-col md:flex-row overflow-hidden pt-safe pb-safe">
             {/* LEFT SIDE: MY GAME */}
             <div className="flex-1 h-1/2 md:h-full overflow-y-auto border-r border-gray-800 bg-gray-50 dark:bg-slate-900/50 relative">
                 {/* Badge for Mobile */}
-                <div className="md:hidden absolute top-2 left-2 z-20 bg-indigo-600 text-white px-2 py-0.5 rounded text-xs font-bold shadow-sm">
+                <div className="md:hidden absolute top-2 left-2 z-20 bg-indigo-600 text-white px-2 py-0.5 rounded text-xs font-bold shadow-sm mt-safe ml-safe">
                     YOU
                 </div>
 

@@ -46,7 +46,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onSwitchToRegister, 
             <AmbientBackground />
 
             {/* Theme Toggle - Floating */}
-            <div className="absolute top-6 right-6 z-50">
+            <div className="absolute top-6 right-6 z-50 mt-safe mr-safe">
                 <ThemeToggle />
             </div>
 

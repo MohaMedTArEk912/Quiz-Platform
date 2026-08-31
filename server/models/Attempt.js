@@ -19,6 +19,7 @@ const attemptSchema = new mongoose.Schema({
   passed: { type: Boolean, default: false },
   isQuestionPool: { type: Boolean, default: false },
   questionIds: { type: [mongoose.Schema.Types.Mixed], default: [] },
+  attemptQuestions: { type: [mongoose.Schema.Types.Mixed], default: undefined },
   poolProgress: {
     seenCount: { type: Number },
     totalCount: { type: Number },
@@ -40,8 +41,11 @@ const attemptSchema = new mongoose.Schema({
   }
 });
 
-// Indexes for quick filtering and sorting
+// Indexes for quick filtering, sorting, and user activity lookups
+attemptSchema.index({ attemptId: 1 }, { unique: true });
 attemptSchema.index({ userId: 1, completedAt: -1 });
-attemptSchema.index({ quizId: 1 });
+attemptSchema.index({ quizId: 1, completedAt: -1 });
+attemptSchema.index({ userId: 1, quizId: 1 });
+attemptSchema.index({ completedAt: -1 });
 
 export const Attempt = mongoose.model('Attempt', attemptSchema);

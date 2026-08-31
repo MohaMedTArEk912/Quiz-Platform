@@ -50,6 +50,8 @@ export type {
     Subject,
     TrackRequest,
     AppNotification,
+    CohortAnalyticsResponse,
+    LiveProctoringResponse,
     QuestionAnalyticsResponse,
     QuestionAnalyticsItem,
     DetailedAttemptData
@@ -184,10 +186,12 @@ export const api = {
         return response.json();
     },
 
-    async getQuizzes(subjectId?: string) {
-        const url = subjectId
-            ? `/quizzes?subjectId=${subjectId}`
-            : `/quizzes`;
+    async getQuizzes(subjectId?: string, includeHidden = false) {
+        const params = new URLSearchParams();
+        if (subjectId) params.set('subjectId', subjectId);
+        if (includeHidden) params.set('includeHidden', 'true');
+
+        const url = `/quizzes${params.toString() ? `?${params.toString()}` : ''}`;
         const response = await fetchWithFallback(url);
         if (!response.ok) {
             let errorMessage = 'Failed to load quizzes';
@@ -750,10 +754,12 @@ export const api = {
     },
 
     // Skill Tracks
-    async getSkillTracks(subjectId?: string): Promise<SkillTrack[]> {
-        const url = subjectId
-            ? `/skill-tracks?subjectId=${subjectId}`
-            : `/skill-tracks`;
+    async getSkillTracks(subjectId?: string, includeHidden = false): Promise<SkillTrack[]> {
+        const params = new URLSearchParams();
+        if (subjectId) params.set('subjectId', subjectId);
+        if (includeHidden) params.set('includeHidden', 'true');
+
+        const url = `/skill-tracks${params.toString() ? `?${params.toString()}` : ''}`;
         const response = await fetchWithFallback(url);
         if (!response.ok) throw new Error('Failed to load skill tracks');
         return response.json();
@@ -1654,6 +1660,44 @@ export const api = {
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
             throw new Error(error.message || 'Failed to fetch AI coach hint');
+        }
+        return response.json();
+    },
+
+    // Question & Content Translation API
+    async translateQuestionContent(data: { question: string; options?: string[]; explanation?: string; targetLang: string; targetLangName?: string }): Promise<{ success: boolean; data: { question: string; options: string[]; explanation: string } }> {
+        const response = await fetchWithFallback('/ai/translate', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to translate content');
+        }
+        return response.json();
+    },
+
+    // Daily Login Streak Claim & Status
+    async claimDailyStreak(): Promise<{ success: boolean; message: string; streak: number; currentDay: number; rewards: { coins?: number; xp?: number; powerUp?: string | null }; user: Partial<UserData> }> {
+        const response = await fetchWithFallback('/streak/claim', {
+            method: 'POST',
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to claim streak reward');
+        }
+        return response.json();
+    },
+
+    async getStreakStatus(): Promise<{ success: boolean; streak: number; currentDay: number; isClaimedToday: boolean; lastStreakClaimDate?: string | null }> {
+        const response = await fetchWithFallback('/streak/status', {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch streak status');
         }
         return response.json();
     }

@@ -86,6 +86,7 @@ const compilerQuestionSchema = new mongoose.Schema({
 });
 
 // Index for efficient querying of available questions
+compilerQuestionSchema.index({ questionId: 1 }, { unique: true });
 compilerQuestionSchema.index({ isActive: 1, lastUsed: 1 });
 compilerQuestionSchema.index({ category: 1 });
 compilerQuestionSchema.index({ difficulty: 1 });

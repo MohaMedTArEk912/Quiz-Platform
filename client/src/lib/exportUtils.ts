@@ -101,7 +101,8 @@ export const exportAttemptToCSV = (attempt: DetailedAttemptData): void => {
             correctAns = String(q.correctAnswer);
         }
 
-        const result = q.isCorrect ? 'CORRECT' : 'WRONG';
+        const isAnswered = q.isAnswered ?? (q.studentAnswer !== undefined && q.studentAnswer !== null && q.studentAnswer !== '');
+        const result = q.isCorrect ? 'CORRECT' : (isAnswered ? 'WRONG' : 'UNANSWERED / SKIPPED');
         const explanation = q.explanation || 'None provided';
 
         lines.push([
@@ -209,9 +210,10 @@ export const exportAttemptToPDF = async (attempt: DetailedAttemptData): Promise<
     doc.setTextColor(100, 116, 139);
     const breakdown = attempt.questionsBreakdown || [];
     const correctCount = breakdown.filter(q => q.isCorrect).length;
-    const wrongCount = breakdown.filter(q => !q.isCorrect).length;
+    const wrongCount = breakdown.filter(q => !q.isCorrect && (q.isAnswered ?? (q.studentAnswer !== undefined && q.studentAnswer !== null && q.studentAnswer !== ''))).length;
+    const unansweredCount = breakdown.filter(q => !(q.isAnswered ?? (q.studentAnswer !== undefined && q.studentAnswer !== null && q.studentAnswer !== ''))).length;
 
-    doc.text(`Score: ${attempt.score} pts  |  Total: ${breakdown.length} Qs  |  Correct: ${correctCount}  |  Wrong: ${wrongCount}  |  Duration: ${formatDuration(attempt.timeTaken || 0)}`, margin + 6, y + 26);
+    doc.text(`Score: ${attempt.score} pts  |  Total: ${breakdown.length} Qs  |  Correct: ${correctCount}  |  Wrong: ${wrongCount}${unansweredCount > 0 ? `  |  Skipped: ${unansweredCount}` : ''}  |  Duration: ${formatDuration(attempt.timeTaken || 0)}`, margin + 6, y + 26);
 
     // Integrity Telemetry Row
     const telemetry = attempt.telemetry;
@@ -236,9 +238,12 @@ export const exportAttemptToPDF = async (attempt: DetailedAttemptData): Promise<
     breakdown.forEach((q, idx) => {
         checkPageBreak(35);
 
-        const isWrong = !q.isCorrect;
-        const cardBg = isWrong ? [254, 242, 242] : [240, 253, 244];
-        const cardBorder = isWrong ? [254, 202, 202] : [187, 247, 208];
+        const isAnswered = q.isAnswered ?? (q.studentAnswer !== undefined && q.studentAnswer !== null && q.studentAnswer !== '');
+        const isCorrect = q.isCorrect;
+        const isWrong = !isCorrect && isAnswered;
+
+        const cardBg = isCorrect ? [240, 253, 244] : isWrong ? [254, 242, 242] : [254, 249, 195];
+        const cardBorder = isCorrect ? [187, 247, 208] : isWrong ? [254, 202, 202] : [253, 224, 71];
 
         doc.setFillColor(cardBg[0], cardBg[1], cardBg[2]);
         doc.setDrawColor(cardBorder[0], cardBorder[1], cardBorder[2]);
@@ -247,8 +252,9 @@ export const exportAttemptToPDF = async (attempt: DetailedAttemptData): Promise<
         // Question Header line
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
-        doc.setTextColor(isWrong ? 220 : 16, isWrong ? 38 : 185, isWrong ? 38 : 129);
-        doc.text(`Question ${idx + 1} (${q.points || 10} pts) — ${isWrong ? 'WRONG' : 'CORRECT'}`, margin + 4, y + 5);
+        const statusText = isCorrect ? 'CORRECT' : isWrong ? 'WRONG' : 'SKIPPED / UNANSWERED';
+        doc.setTextColor(isCorrect ? 16 : isWrong ? 220 : 180, isCorrect ? 185 : isWrong ? 38 : 83, isCorrect ? 129 : isWrong ? 38 : 9);
+        doc.text(`Question ${idx + 1} (${q.points || 10} pts) — ${statusText}`, margin + 4, y + 5);
 
         y += 8;
 
@@ -261,7 +267,7 @@ export const exportAttemptToPDF = async (attempt: DetailedAttemptData): Promise<
         y += splitQuestion.length * 4 + 2;
 
         // Student Answer
-        let studentAns = 'No Answer Given';
+        let studentAns = 'No Answer Given (Skipped / Not Reached)';
         if (typeof q.studentAnswer === 'number' && Array.isArray(q.options) && q.options[q.studentAnswer]) {
             studentAns = `Option ${String.fromCharCode(65 + q.studentAnswer)}: ${q.options[q.studentAnswer]}`;
         } else if (q.studentAnswer !== undefined && q.studentAnswer !== null && q.studentAnswer !== '') {
@@ -277,12 +283,12 @@ export const exportAttemptToPDF = async (attempt: DetailedAttemptData): Promise<
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
-        doc.setTextColor(isWrong ? 185 : 16, isWrong ? 28 : 150, isWrong ? 28 : 100);
+        doc.setTextColor(isCorrect ? 16 : isWrong ? 185 : 160, isCorrect ? 150 : isWrong ? 28 : 100, isCorrect ? 100 : isWrong ? 28 : 20);
         const splitStudentAns = doc.splitTextToSize(`Student Answer: ${studentAns}`, contentWidth - 8);
         doc.text(splitStudentAns, margin + 4, y);
         y += splitStudentAns.length * 3.5 + 1;
 
-        if (isWrong) {
+        if (!isCorrect) {
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(16, 150, 100);
             const splitCorrectAns = doc.splitTextToSize(`Required Answer: ${correctAns}`, contentWidth - 8);
@@ -340,10 +346,14 @@ export const exportQuestionAnalyticsToCSV = (
     lines.push('QUESTION PERFORMANCE & MISCONCEPTION ANALYTICS');
     lines.push(`Generated Date,${escapeCSV(new Date().toLocaleString())}`);
     if (summary) {
+        const highFailureCount = summary.highFailureQuestionsCount ?? questions.filter(q => q.failureRate >= 40).length;
+        const avgAcc = summary.avgAccuracy ?? summary.averageAccuracy ?? 0;
+        const avgFail = summary.avgFailureRate ?? summary.averageFailureRate ?? 0;
         lines.push(`Total Questions Analyzed,${escapeCSV(summary.totalQuestionsAnalyzed)}`);
-        lines.push(`Total Attempts Analyzed,${escapeCSV(summary.totalAttemptsAnalyzed)}`);
-        lines.push(`Average Accuracy,${escapeCSV(summary.avgAccuracy + '%')}`);
-        lines.push(`Average Failure Rate,${escapeCSV(summary.avgFailureRate + '%')}`);
+        lines.push(`Total Attempts Analyzed,${escapeCSV(summary.totalAttemptsAnalyzed ?? 0)}`);
+        lines.push(`High Failure Questions Count,${escapeCSV(highFailureCount)}`);
+        lines.push(`Average Accuracy,${escapeCSV(avgAcc + '%')}`);
+        lines.push(`Average Failure Rate,${escapeCSV(avgFail + '%')}`);
     }
     lines.push('');
 

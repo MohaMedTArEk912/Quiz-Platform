@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { generateQuiz, aiHealth, getAICoachHint } from '../controllers/aiController.js';
+import { generateQuiz, aiHealth, getAICoachHint, translateQuestionContent } from '../controllers/aiController.js';
 import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -48,7 +48,11 @@ router.post('/generate', verifyUser, verifyAdmin, upload.fields([
 // Socratic AI Study Coach Hint
 router.post('/coach-hint', verifyUser, getAICoachHint);
 
+// Real-time Question & Options Translation
+router.post('/translate', verifyUser, translateQuestionContent);
+
 // Simple health check for AI key/model
 router.get('/health', verifyUser, verifyAdmin, aiHealth);
 
 export default router;
+

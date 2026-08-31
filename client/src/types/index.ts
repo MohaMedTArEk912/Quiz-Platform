@@ -16,6 +16,7 @@ export interface Quiz {
     subjectId?: string;
     moduleId?: string;
     isTournamentOnly?: boolean;
+    isVisible?: boolean;
     linkedTrackId?: string;
     linkedModuleId?: string;
     reviewMode?: boolean;
@@ -29,7 +30,7 @@ export interface Quiz {
 
 export interface Question {
     id: number;
-    type?: 'multiple-choice' | 'text' | 'ordering' | 'matching' | 'code-output';
+    type?: 'multiple-choice' | 'text' | 'code-output' | 'ordering' | 'matching';
     part: string;
     question: string;
     options?: string[];
@@ -61,7 +62,7 @@ export interface DetailedAnswer {
     type: string;
 }
 
-export type AttemptAnswers = Record<number, DetailedAnswer | string | number | null | undefined>;
+export type AttemptAnswers = Record<string | number, DetailedAnswer | string | number | null | undefined>;
 
 export interface Badge {
     id: string;
@@ -97,17 +98,19 @@ export interface UserData {
     name: string;
     email: string;
     role?: 'user' | 'admin';
+    isAdmin?: boolean;
     password?: string;
     totalScore: number;
     totalTime: number; // in seconds
     totalAttempts: number;
-    rank?: number; // Optional, calculated dynamically
+    rank?: number | null; // Optional, calculated dynamically
 
     // Gamification
     xp: number;
     level: number;
     streak: number;
     lastLoginDate: string;
+    lastStreakClaimDate?: string;
     badges: Badge[];
     avatar?: AvatarConfig;
     unlockedItems?: string[];
@@ -382,6 +385,7 @@ export interface SkillTrack {
     category?: string;
     subjectId?: string;
     icon?: string;
+    isVisible?: boolean;
     modules: SkillModule[];
 }
 
@@ -617,6 +621,7 @@ export interface Subject {
     description: string;
     icon: string;
     materials: Material[];
+    isVisible?: boolean;
     createdAt: string;
     oldQuestions?: SubjectQuestion[];
 }
@@ -731,6 +736,9 @@ export interface QuestionAnalyticsSummary {
     totalAttemptsAnalyzed: number;
     hardestQuiz: { title: string; averageFailureRate: number } | null;
     mostMissedQuestion: QuestionAnalyticsItem | null;
+    highFailureQuestionsCount?: number;
+    averageAccuracy?: number;
+    averageFailureRate?: number;
 }
 
 export interface QuestionAnalyticsResponse {
@@ -761,6 +769,7 @@ export interface DetailedAttemptData extends AttemptData {
         total: number;
         correct: number;
         wrong: number;
+        unanswered?: number;
         percentage: number;
         score: number;
         passed: boolean;

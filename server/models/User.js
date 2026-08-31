@@ -53,6 +53,8 @@ const userSchema = new mongoose.Schema({
     quantity: { type: Number, default: 0 }
   }],
   unlockedItems: [{ type: String }], // Array of itemIds for permanent unlocks (cosmetics)
+  // Daily login streak claim tracking
+  lastStreakClaimDate: { type: Date },
   // Daily challenge streak
   dailyChallengeDate: { type: Date },
   dailyChallengeCompleted: { type: Boolean, default: false },
@@ -70,9 +72,14 @@ const userSchema = new mongoose.Schema({
   clanId: { type: String } // Simplified link to clan
 });
 
-// Indexes to speed up lookups and leaderboards
+// Indexes to speed up lookups, authentication, and leaderboards
+userSchema.index({ userId: 1 }, { unique: true });
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ role: 1, totalScore: -1 }); // Ultra-fast leaderboard slice
+userSchema.index({ isAdmin: 1, totalScore: -1 });
 userSchema.index({ totalScore: -1 });
 userSchema.index({ name: 1 });
 userSchema.index({ clanId: 1 });
+userSchema.index({ createdAt: -1 });
 
 export const User = mongoose.model('User', userSchema);

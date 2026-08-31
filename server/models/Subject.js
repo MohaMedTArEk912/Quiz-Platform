@@ -60,4 +60,7 @@ const subjectSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+subjectSchema.index({ title: 1 });
+subjectSchema.index({ createdAt: -1 });
+
 export const Subject = mongoose.model('Subject', subjectSchema);

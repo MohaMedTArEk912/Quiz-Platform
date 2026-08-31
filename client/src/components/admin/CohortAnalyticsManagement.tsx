@@ -53,10 +53,7 @@ const CohortAnalyticsManagement: React.FC<CohortAnalyticsManagementProps> = ({
     const categoryPerformance = summary?.categoryPerformance || [];
 
     const activeTierUsers = performanceTiers?.[selectedTier]?.users || [];
-    const filteredTierUsers = activeTierUsers.filter(u =>
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredTierUsers = activeTierUsers;
 
     return (
         <div className="space-y-6">

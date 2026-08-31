@@ -3,6 +3,7 @@ import { Flame, Check } from 'lucide-react';
 import Modal from '../common/Modal';
 import { MysteryLootBox, type LootReward } from './MysteryLootBox';
 import { sounds } from '../../lib/soundEffects';
+import { api } from '../../lib/api';
 import type { UserData } from '../../types';
 
 interface StreakRewardModalProps {
@@ -29,20 +30,28 @@ export const StreakRewardModal: React.FC<StreakRewardModalProps> = ({
     onClaimStreak
 }) => {
     const [showLootBox, setShowLootBox] = useState(false);
-    const [isClaimedToday, setIsClaimedToday] = useState(() => {
-        const lastClaimed = localStorage.getItem(`streak_claimed_${user.userId}`);
-        if (!lastClaimed) return false;
-        const lastDate = new Date(lastClaimed).toDateString();
-        return lastDate === new Date().toDateString();
-    });
+    const [isClaiming, setIsClaiming] = useState(false);
+
+    // Reliable check if claimed today: either from DB field or localStorage
+    const isClaimedToday = Boolean((() => {
+        const todayStr = new Date().toDateString();
+        if (user.lastStreakClaimDate && new Date(user.lastStreakClaimDate).toDateString() === todayStr) {
+            return true;
+        }
+        const lastClaimedLocal = localStorage.getItem(`streak_claimed_${user.userId}`);
+        if (lastClaimedLocal && new Date(lastClaimedLocal).toDateString() === todayStr) {
+            return true;
+        }
+        return false;
+    })());
 
     if (!isOpen) return null;
 
     const streak = user.streak || 1;
     const currentStreakDay = ((streak - 1) % 7) + 1; // 1 to 7
 
-    const handleClaimToday = () => {
-        if (isClaimedToday) return;
+    const handleClaimToday = async () => {
+        if (isClaimedToday || isClaiming) return;
 
         const dayConfig = STREAK_DAYS[currentStreakDay - 1];
         if (dayConfig.isLootBox) {
@@ -50,27 +59,54 @@ export const StreakRewardModal: React.FC<StreakRewardModalProps> = ({
             return;
         }
 
+        setIsClaiming(true);
         sounds.playStreak(streak);
-        localStorage.setItem(`streak_claimed_${user.userId}`, new Date().toISOString());
-        setIsClaimedToday(true);
 
-        onClaimStreak({
-            coins: dayConfig.coins,
-            xp: dayConfig.xp,
-            powerUp: dayConfig.powerUp
-        });
+        try {
+            const res = await api.claimDailyStreak();
+            localStorage.setItem(`streak_claimed_${user.userId}`, new Date().toISOString());
+            onClaimStreak({
+                coins: res.rewards?.coins ?? dayConfig.coins,
+                xp: res.rewards?.xp ?? dayConfig.xp,
+                powerUp: res.rewards?.powerUp ?? dayConfig.powerUp
+            });
+        } catch (err) {
+            console.warn('Backend streak claim fallback to client state:', err);
+            localStorage.setItem(`streak_claimed_${user.userId}`, new Date().toISOString());
+            onClaimStreak({
+                coins: dayConfig.coins,
+                xp: dayConfig.xp,
+                powerUp: dayConfig.powerUp
+            });
+        } finally {
+            setIsClaiming(false);
+        }
     };
 
-    const handleLootBoxClaim = (loot: LootReward) => {
-        localStorage.setItem(`streak_claimed_${user.userId}`, new Date().toISOString());
-        setIsClaimedToday(true);
-        setShowLootBox(false);
+    const handleLootBoxClaim = async (loot: LootReward) => {
+        setIsClaiming(true);
+        sounds.playStreak(streak);
 
-        onClaimStreak({
-            coins: loot.type === 'coins' ? loot.amount : 50,
-            xp: loot.type === 'xp' ? loot.amount : 100,
-            powerUp: loot.type === 'powerup' ? 'hint' : undefined
-        });
+        try {
+            const res = await api.claimDailyStreak();
+            localStorage.setItem(`streak_claimed_${user.userId}`, new Date().toISOString());
+            setShowLootBox(false);
+            onClaimStreak({
+                coins: res.rewards?.coins ?? (loot.type === 'coins' ? loot.amount : 50),
+                xp: res.rewards?.xp ?? (loot.type === 'xp' ? loot.amount : 100),
+                powerUp: res.rewards?.powerUp ?? (loot.type === 'powerup' ? 'hint' : undefined)
+            });
+        } catch (err) {
+            localStorage.setItem(`streak_claimed_${user.userId}`, new Date().toISOString());
+            setShowLootBox(false);
+            onClaimStreak({
+                coins: loot.type === 'coins' ? loot.amount : 50,
+                xp: loot.type === 'xp' ? loot.amount : 100,
+                powerUp: loot.type === 'powerup' ? 'hint' : undefined
+            });
+        } finally {
+            setIsClaiming(false);
+        }
     };
 
     return (

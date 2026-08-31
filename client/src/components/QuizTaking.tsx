@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
-import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins, Keyboard, WifiOff, Bot } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins, Keyboard, WifiOff, Bot, Globe } from 'lucide-react';
 import type { Quiz, UserData, QuizResult, AttemptAnswers, PoolProgressData, IntegrityTelemetry, IntegrityTelemetryEvent } from '../types';
 import { api } from '../lib/api';
 import { AmbientBackground } from './AmbientBackground';
 import { MathRenderer } from './common/MathRenderer';
 import { KeyboardShortcutsModal } from './common/KeyboardShortcutsModal';
 import { AICoachModal } from './common/AICoachModal';
+import { QuestionTranslatorBar } from './common/QuestionTranslatorBar';
+import { translateQuestion, getLanguageByCode, isRTL, type TranslatedQuestionData } from '../lib/translationService';
 import { sounds } from '../lib/soundEffects';
 import MediaPromptPlayer from './common/MediaPromptPlayer';
 import OrderingQuestion from './question-types/OrderingQuestion';
@@ -68,6 +70,34 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     const [localPowerUps, setLocalPowerUps] = useState(powerUps || []);
     const [hiddenOptions, setHiddenOptions] = useState<Record<number, number[]>>({}); // actualIndex -> [originalOptionsToHide]
     const [activePowerUpAnimation, setActivePowerUpAnimation] = useState<string | null>(null);
+
+    // --- TRANSLATION STATES ---
+    const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
+        try {
+            return localStorage.getItem('quiz_pref_lang') || 'original';
+        } catch {
+            return 'original';
+        }
+    });
+    const [isTranslated, setIsTranslated] = useState<boolean>(() => {
+        try {
+            const saved = localStorage.getItem('quiz_pref_lang');
+            return Boolean(saved && saved !== 'original');
+        } catch {
+            return false;
+        }
+    });
+    const [autoTranslate, setAutoTranslate] = useState<boolean>(() => {
+        try {
+            const saved = localStorage.getItem('quiz_pref_auto_trans');
+            return saved !== 'false';
+        } catch {
+            return true;
+        }
+    });
+    const [isTranslating, setIsTranslating] = useState(false);
+    const [translatedCache, setTranslatedCache] = useState<Record<number, Record<string, TranslatedQuestionData>>>({});
+
 
     // --- INTEGRITY & TELEMETRY TRACKING ---
     const tabSwitchesRef = useRef(0);
@@ -506,6 +536,71 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         resetQuestionState(currentQuestion - 1);
     }, [isSubmitting, currentQuestion, resetQuestionState]);
 
+    // Handlers for Question Translation
+    const handleSelectLanguage = useCallback((langCode: string) => {
+        setSelectedLanguage(langCode);
+        try {
+            localStorage.setItem('quiz_pref_lang', langCode);
+        } catch {}
+
+        if (langCode === 'original') {
+            setIsTranslated(false);
+        } else {
+            setIsTranslated(true);
+        }
+    }, []);
+
+    const handleToggleOriginal = useCallback(() => {
+        setIsTranslated((prev) => !prev);
+    }, []);
+
+    const handleToggleAutoTranslate = useCallback(() => {
+        setAutoTranslate((prev) => {
+            const next = !prev;
+            try {
+                localStorage.setItem('quiz_pref_auto_trans', String(next));
+            } catch {}
+            return next;
+        });
+    }, []);
+
+    // Translate question when question index or language changes
+    useEffect(() => {
+        const actualIdx = getActualQuestionIndex();
+        const currentQ = quiz.questions[actualIdx];
+        if (!currentQ || selectedLanguage === 'original' || !isTranslated) return;
+
+        if (translatedCache[actualIdx]?.[selectedLanguage]) return;
+
+        let isCancelled = false;
+        setIsTranslating(true);
+
+        translateQuestion(currentQ, selectedLanguage)
+            .then((data) => {
+                if (!isCancelled) {
+                    setTranslatedCache((prev) => ({
+                        ...prev,
+                        [actualIdx]: {
+                            ...(prev[actualIdx] || {}),
+                            [selectedLanguage]: data
+                        }
+                    }));
+                }
+            })
+            .catch((err) => {
+                console.warn('[Translate] Error translating question:', err);
+            })
+            .finally(() => {
+                if (!isCancelled) {
+                    setIsTranslating(false);
+                }
+            });
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [currentQuestion, selectedLanguage, isTranslated, getActualQuestionIndex, quiz.questions, translatedCache]);
+
     const handleAnswer = useCallback((answer: string | number, isKeyboard = false) => {
         if (isSubmitting) return;
 
@@ -814,6 +909,12 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     const q = quiz.questions[actualIndex];
     if (!q) return <div className="p-8 text-center text-gray-500">Loading...</div>;
 
+    const activeTranslation = (isTranslated && selectedLanguage !== 'original' && translatedCache[actualIndex]?.[selectedLanguage]) || null;
+    const isCurrentRtl = Boolean(isTranslated && selectedLanguage !== 'original' && isRTL(selectedLanguage));
+    const displayQuestionText = activeTranslation?.question || q.question;
+    const displayExplanationText = activeTranslation?.explanation || q.explanation;
+
+
     const currentOptions = optionsOrder[actualIndex] || [];
     const progressPercentage = retryMode
         ? (wrongQuestionIndices.length > 0 ? ((currentQuestion + 1) / wrongQuestionIndices.length) * 100 : 0)
@@ -897,7 +998,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             )}
 
             {/* Proctored Exam Fullscreen Warning / Entry Banner */}
-            {(quiz.requireFullscreen || quiz.isProctored) && !isFullscreenActive && (
+            {(quiz.requireFullscreen || quiz.isProctored) && !isFullscreenActive && !(user?.role === 'admin' || user?.isAdmin) && (
                 <div className="bg-gradient-to-r from-red-600 via-indigo-600 to-purple-600 text-white px-4 py-2 text-xs font-black uppercase tracking-wider flex items-center justify-between gap-3 z-40 shadow-lg animate-pulse">
                     <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-amber-300" />
@@ -914,7 +1015,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             )}
 
             {/* Fullscreen Exit Warning Modal */}
-            {showFullscreenWarning && (
+            {showFullscreenWarning && !(user?.role === 'admin' || user?.isAdmin) && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-[#11121d] text-gray-900 dark:text-white border-2 border-red-500 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-4 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-red-500/15 text-red-500 flex items-center justify-center mx-auto">
@@ -950,7 +1051,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
             {/* --- TOP BAR (Full width) --- */}
             {!embedded && (
-                <header className="flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 bg-[#e0e7ff]/60 dark:bg-[#0d0d1c]/80 border-b border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-20 shadow-sm">
+                <header className="flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 bg-[#e0e7ff]/60 dark:bg-[#0d0d1c]/80 border-b border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-20 shadow-sm pt-safe pl-safe pr-safe">
                     <div className="flex items-center gap-3 sm:gap-4">
                         <button onClick={onBack} className="flex items-center gap-2 p-1.5 sm:p-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-gray-600 dark:text-slate-400 transition-all border border-gray-200 dark:border-white/10">
                             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -959,6 +1060,11 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             <span className="text-[10px] sm:text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate max-w-[120px] sm:max-w-xs px-2 sm:px-3 py-1 sm:py-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg border border-indigo-100 dark:border-indigo-500/20">
                                 {retryMode ? '⚠ Retry' : quiz.title}
                             </span>
+                            {(user?.role === 'admin' || user?.isAdmin) && (
+                                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-purple-500/15 text-purple-600 dark:text-purple-300 rounded-lg border border-purple-500/30">
+                                    <span>🛡️</span> Admin View • Unranked
+                                </span>
+                            )}
                             {poolProgress && (
                                 <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-500/20">
                                     <span>📦</span> Bank: {poolProgress.seenCount}/{poolProgress.totalCount} ({poolProgress.percentage}%)
@@ -1027,11 +1133,34 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         </div>
                     </div>
 
+                    {/* Real-time Language & Translation Toolbar */}
+                    <div className="px-5 sm:px-8 lg:px-12 pt-3 sm:pt-4">
+                        <QuestionTranslatorBar
+                            currentLanguage={selectedLanguage}
+                            isTranslating={isTranslating}
+                            isTranslated={isTranslated && selectedLanguage !== 'original'}
+                            autoTranslate={autoTranslate}
+                            onSelectLanguage={handleSelectLanguage}
+                            onToggleOriginal={handleToggleOriginal}
+                            onToggleAutoTranslate={handleToggleAutoTranslate}
+                        />
+                    </div>
+
                     {/* Question Content */}
-                    <div className={`flex-none landscape:flex-1 landscape:overflow-y-auto px-5 sm:px-8 lg:px-12 pb-24 landscape:pb-28 lg:landscape:pb-28 flex flex-col pt-4 sm:pt-8 landscape:pt-3 lg:landscape:pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
+                    <div
+                        dir={isCurrentRtl ? 'rtl' : 'ltr'}
+                        className={`flex-none landscape:flex-1 landscape:overflow-y-auto px-5 sm:px-8 lg:px-12 pb-24 landscape:pb-28 lg:landscape:pb-28 flex flex-col pt-4 sm:pt-8 landscape:pt-3 lg:landscape:pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
                         
-                        <h2 className="text-xl sm:text-2xl lg:text-[32px] landscape:text-base lg:landscape:text-[32px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight mb-4 sm:mb-8 landscape:mb-2 lg:landscape:mb-8">
-                            <MathRenderer text={q.question} />
+                        {/* Translated Indicator Badge */}
+                        {isTranslated && selectedLanguage !== 'original' && (
+                            <div className={`flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-2 ${isCurrentRtl ? 'justify-end' : 'justify-start'}`}>
+                                <Globe className="w-3.5 h-3.5 shrink-0" />
+                                <span>Translated to {getLanguageByCode(selectedLanguage).name} ({getLanguageByCode(selectedLanguage).nativeName})</span>
+                            </div>
+                        )}
+
+                        <h2 className={`text-xl sm:text-2xl lg:text-[32px] landscape:text-base lg:landscape:text-[32px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight mb-4 sm:mb-8 landscape:mb-2 lg:landscape:mb-8 ${isCurrentRtl ? 'text-right' : 'text-left'}`}>
+                            <MathRenderer text={displayQuestionText} />
                         </h2>
 
                         {/* Image */}
@@ -1078,13 +1207,13 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                     </h4>
                                 </div>
 
-                                {q.explanation ? (
+                                {displayExplanationText ? (
                                     <div className="pt-3 border-t border-gray-200/50 dark:border-white/5">
                                         <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">
                                             <Lightbulb className="w-3.5 h-3.5 text-yellow-500 animate-pulse"/>
                                             <span>Explanation</span>
                                         </div>
-                                        <MathRenderer text={q.explanation} className="text-sm leading-relaxed opacity-90 font-medium" />
+                                        <MathRenderer text={displayExplanationText} className={`text-sm leading-relaxed opacity-90 font-medium ${isCurrentRtl ? 'text-right' : 'text-left'}`} />
                                     </div>
                                 ) : (
                                     <div className="pt-3 border-t border-gray-200/50 dark:border-white/5 text-xs text-gray-400 italic">
@@ -1119,7 +1248,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             </Suspense>
                         ) : q.type === 'ordering' ? (
                             <OrderingQuestion
-                                items={q.orderingItems || q.options || []}
+                                items={activeTranslation?.orderingItems || q.orderingItems || q.options || []}
                                 correctOrder={q.orderingItems || q.options}
                                 submitted={questionSubmitted && !delayedValidation}
                                 onChange={(ordered) => handleAnswer(ordered as any)}
@@ -1127,7 +1256,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             />
                         ) : q.type === 'matching' ? (
                             <MatchingQuestion
-                                pairs={q.matchingPairs || []}
+                                pairs={activeTranslation?.matchingPairs || q.matchingPairs || []}
                                 submitted={questionSubmitted && !delayedValidation}
                                 onChange={(matches) => handleAnswer(matches as any)}
                                 readOnly={isSubmitting}
@@ -1135,7 +1264,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         ) : q.type === 'code-output' ? (
                             <CodeOutputQuestion
                                 codeSnippet={q.codeSnippet}
-                                options={q.options}
+                                options={activeTranslation?.options || q.options}
                                 correctAnswer={q.correctAnswer as any}
                                 submitted={questionSubmitted && !delayedValidation}
                                 userAnswer={answers[actualIndex] as any}
@@ -1147,7 +1276,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 // If user used a hint to hide this
                                 if (hiddenOptsForCurrent.includes(originalIndex)) return null;
 
-                                const option = q.options![originalIndex];
+                                const rawOption = q.options![originalIndex];
+                                const option = (activeTranslation?.options && activeTranslation.options[originalIndex] !== undefined)
+                                    ? activeTranslation.options[originalIndex]
+                                    : rawOption;
                                 const isSelected = answers[actualIndex] === originalIndex;
                                 const isCorrectOption = originalIndex === q.correctAnswer;
                                 const showCorrect = questionSubmitted && !delayedValidation && !isCurrentAnswerCorrect && isCorrectOption;
@@ -1185,6 +1317,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                     <button
                                         key={originalIndex}
                                         role="radio"
+                                        dir={isCurrentRtl ? 'rtl' : 'ltr'}
                                         aria-checked={isSelected}
                                         aria-label={`Option ${label}: ${option}`}
                                         tabIndex={0}
@@ -1192,10 +1325,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                         disabled={isSubmitting || (questionSubmitted && !delayedValidation)}
                                         className={`${baseClass} ${stateClass} disabled:opacity-75 disabled:cursor-default`}
                                     >
-                                        <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center font-bold text-base lg:text-lg mr-4 lg:mr-6 transition-colors ${badgeClass}`}>
+                                        <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center font-bold text-base lg:text-lg ${isCurrentRtl ? 'ml-4 lg:ml-6' : 'mr-4 lg:mr-6'} transition-colors shrink-0 ${badgeClass}`}>
                                             {showSuccess || showCorrect ? <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6" /> : showWrong ? <XCircle className="w-5 h-5 lg:w-6 lg:h-6"/> : label}
                                         </div>
-                                        <MathRenderer text={option} className={`flex-1 text-base lg:text-lg text-left leading-relaxed ${textClass}`} />
+                                        <MathRenderer text={option} className={`flex-1 text-base lg:text-lg ${isCurrentRtl ? 'text-right' : 'text-left'} leading-relaxed ${textClass}`} />
                                         <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
                                             <kbd className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-[10px] font-mono text-gray-500 dark:text-gray-400">
                                                 {visualIndex + 1}
@@ -1215,7 +1348,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             </div>
 
             {/* Bottom Action Footer Overlay */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-5 lg:p-5 bg-slate-100/85 dark:bg-[#0d0d1c]/90 border-t border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-30 w-full shadow-lg flex items-center justify-between pointer-events-auto">
+            <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-5 lg:p-5 bg-slate-100/85 dark:bg-[#0d0d1c]/90 border-t border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-30 w-full shadow-lg flex items-center justify-between pointer-events-auto pb-safe pl-safe pr-safe">
                 {!isMobileDevice && (
                     <div className="hidden lg:flex text-gray-500 dark:text-slate-400 font-medium items-center gap-2 bg-gray-50 dark:bg-white/[0.03] px-4 py-2.5 rounded-xl border border-gray-200/50 dark:border-white/5">
                         {q && q.options && !q.isCompiler && (

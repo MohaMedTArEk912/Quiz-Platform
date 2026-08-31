@@ -18,7 +18,7 @@ export const createBadgeNode = async (req, res) => {
 // Get all badge nodes
 export const getAllBadgeNodes = async (req, res) => {
   try {
-    const badges = await BadgeNode.find().sort({ createdAt: -1 });
+    const badges = await BadgeNode.find().sort({ createdAt: -1 }).lean();
     res.json(badges);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching badge nodes', error: error.message });
@@ -28,7 +28,7 @@ export const getAllBadgeNodes = async (req, res) => {
 // Get single badge node
 export const getBadgeNode = async (req, res) => {
   try {
-    const badge = await BadgeNode.findOne({ badgeId: req.params.badgeId });
+    const badge = await BadgeNode.findOne({ badgeId: req.params.badgeId }).lean();
     if (!badge) {
       return res.status(404).json({ message: 'Badge not found' });
     }

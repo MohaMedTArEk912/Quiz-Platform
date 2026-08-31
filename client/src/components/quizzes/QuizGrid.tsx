@@ -9,10 +9,12 @@ interface QuizGridProps {
     onEdit: (quiz: Quiz) => void;
     onDelete: (id: string) => void;
     onShare: (quiz: Quiz) => void;
+    onPlay?: (quiz: Quiz) => void;
+    onHost?: (quiz: Quiz) => void;
     onCreateFirstQuiz?: () => void;
 }
 
-const QuizGrid: React.FC<QuizGridProps> = ({ quizzes, onExport, onEdit, onDelete, onShare, onCreateFirstQuiz }) => {
+const QuizGrid: React.FC<QuizGridProps> = ({ quizzes, onExport, onEdit, onDelete, onShare, onPlay, onHost, onCreateFirstQuiz }) => {
     const safeQuizzes = Array.isArray(quizzes) ? quizzes : [];
 
     return (
@@ -25,6 +27,8 @@ const QuizGrid: React.FC<QuizGridProps> = ({ quizzes, onExport, onEdit, onDelete
                     onEdit={onEdit}
                     onDelete={onDelete}
                     onShare={onShare}
+                    onPlay={onPlay}
+                    onHost={onHost}
                 />
             ))}
             {safeQuizzes.length === 0 && (

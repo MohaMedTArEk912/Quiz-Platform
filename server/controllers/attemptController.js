@@ -161,10 +161,13 @@ export const saveAttempt = async (req, res) => {
             throw saveError;
         }
 
-    // UPDATE USER STATS & REWARDS
+    // UPDATE USER STATS & REWARDS (Admins do not compete on student leaderboards)
+    const isAdminUser = user?.role === 'admin' || user?.isAdmin === true;
     if (user) {
         user.totalAttempts = (user.totalAttempts || 0) + 1;
-        user.totalScore = (user.totalScore || 0) + (normalizedAttempt.score || 0);
+        if (!isAdminUser) {
+            user.totalScore = (user.totalScore || 0) + (normalizedAttempt.score || 0);
+        }
         user.totalTime = (user.totalTime || 0) + (normalizedAttempt.timeTaken || 0);
         
         if (quiz) {
@@ -286,20 +289,64 @@ export const getAttemptDetails = async (req, res) => {
       quiz = await Quiz.findById(attempt.quizId).lean().catch(() => null);
     }
 
-    const quizQuestions = attempt.attemptQuestions || quiz?.questions || [];
+    const allQuizQuestions = quiz?.questions || [];
+    let quizQuestions = attempt.attemptQuestions;
+
+    // If attemptQuestions is not directly cached on attempt, filter all questions accurately for pool/subset attempts
+    if (!Array.isArray(quizQuestions) || quizQuestions.length === 0) {
+      if (Array.isArray(attempt.questionIds) && attempt.questionIds.length > 0) {
+        const idSet = new Set(attempt.questionIds.map(id => String(id)));
+        const matched = attempt.questionIds
+          .map(id => allQuizQuestions.find(q => String(q.id) === String(id)))
+          .filter(Boolean);
+        if (matched.length > 0) {
+          quizQuestions = matched;
+        } else {
+          quizQuestions = allQuizQuestions.filter(q => idSet.has(String(q.id)));
+        }
+      } else if (
+        attempt.isQuestionPool ||
+        quiz?.isQuestionPool ||
+        quiz?.quizType === 'pool' ||
+        (attempt.totalQuestions && attempt.totalQuestions < allQuizQuestions.length)
+      ) {
+        const answerKeys = Object.keys(attempt.answers || {});
+        // Check if answer keys match question IDs
+        const matchedById = allQuizQuestions.filter(q => answerKeys.includes(String(q.id)));
+
+        if (matchedById.length > 0) {
+          quizQuestions = matchedById;
+        } else {
+          // Check if answer keys are 0-based indices or if totalQuestions defines the subset size
+          const numericKeys = answerKeys.map(k => Number(k)).filter(n => !isNaN(n));
+          const maxIndex = numericKeys.length > 0 ? Math.max(...numericKeys) : -1;
+
+          if (attempt.totalQuestions && allQuizQuestions.length > attempt.totalQuestions && maxIndex < attempt.totalQuestions) {
+            quizQuestions = allQuizQuestions.slice(0, attempt.totalQuestions);
+          } else if (answerKeys.length > 0 && answerKeys.length < allQuizQuestions.length) {
+            quizQuestions = allQuizQuestions.slice(0, answerKeys.length);
+          } else {
+            quizQuestions = allQuizQuestions;
+          }
+        }
+      } else {
+        quizQuestions = allQuizQuestions;
+      }
+    }
 
     // Map each question with student's answer evaluation
     const questionsBreakdown = (quizQuestions || []).map((q, idx) => {
       const userAnsObj = attempt.answers?.[idx] ?? attempt.answers?.[String(idx)] ?? attempt.answers?.[q.id] ?? attempt.answers?.[String(q.id)];
       let selected = undefined;
       let isCorrect = false;
+      const isAnswered = userAnsObj !== undefined && userAnsObj !== null && userAnsObj !== '';
 
       if (typeof userAnsObj === 'object' && userAnsObj !== null) {
         selected = userAnsObj.selected;
         if (typeof userAnsObj.isCorrect === 'boolean') {
           isCorrect = userAnsObj.isCorrect;
         } else {
-          isCorrect = selected !== undefined && (
+          isCorrect = selected !== undefined && selected !== null && (
             Number(selected) === Number(q.correctAnswer) ||
             (Array.isArray(q.options) && typeof q.correctAnswer === 'number' && q.options[q.correctAnswer] === selected) ||
             String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
@@ -307,7 +354,7 @@ export const getAttemptDetails = async (req, res) => {
         }
       } else {
         selected = userAnsObj;
-        isCorrect = selected !== undefined && (
+        isCorrect = selected !== undefined && selected !== null && (
           Number(selected) === Number(q.correctAnswer) ||
           (Array.isArray(q.options) && typeof q.correctAnswer === 'number' && q.options[q.correctAnswer] === selected) ||
           String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
@@ -327,12 +374,13 @@ export const getAttemptDetails = async (req, res) => {
         type: q.type || 'multiple-choice',
         studentAnswer: selected,
         isCorrect,
-        isAnswered: selected !== undefined && selected !== null && selected !== ''
+        isAnswered: isAnswered && selected !== undefined && selected !== null && selected !== ''
       };
     });
 
-    const wrongCount = questionsBreakdown.filter(q => !q.isCorrect).length;
     const correctCount = questionsBreakdown.filter(q => q.isCorrect).length;
+    const wrongCount = questionsBreakdown.filter(q => !q.isCorrect && q.isAnswered).length;
+    const unansweredCount = questionsBreakdown.filter(q => !q.isAnswered).length;
 
     res.json({
       success: true,
@@ -344,6 +392,7 @@ export const getAttemptDetails = async (req, res) => {
           total: questionsBreakdown.length,
           correct: correctCount,
           wrong: wrongCount,
+          unanswered: unansweredCount,
           percentage: attempt.percentage,
           score: attempt.score,
           passed: attempt.passed,

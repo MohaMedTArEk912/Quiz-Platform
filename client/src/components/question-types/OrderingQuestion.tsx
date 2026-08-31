@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArrowUp, ArrowDown, Check, X } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
 
@@ -17,11 +17,13 @@ export const OrderingQuestion: React.FC<OrderingQuestionProps> = ({
     onChange,
     readOnly = false
 }) => {
-    const [currentOrder, setCurrentOrder] = useState<string[]>(() => [...initialItems]);
+    const [prevInitialItems, setPrevInitialItems] = useState(initialItems);
+    const [currentOrder, setCurrentOrder] = useState<string[]>(initialItems);
 
-    useEffect(() => {
-        setCurrentOrder([...initialItems]);
-    }, [initialItems]);
+    if (prevInitialItems !== initialItems) {
+        setPrevInitialItems(initialItems);
+        setCurrentOrder(initialItems);
+    }
 
     const moveItem = (index: number, direction: 'up' | 'down') => {
         if (readOnly || submitted) return;

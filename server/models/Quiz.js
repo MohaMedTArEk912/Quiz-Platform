@@ -47,6 +47,7 @@ const quizSchema = new mongoose.Schema({
   shuffleQuestions: { type: Boolean, default: true },
   subjectId: { type: String }, // Link to standard Subject model
   isTournamentOnly: { type: Boolean, default: false },
+  isVisible: { type: Boolean, default: true }, // Hide from public browsing while keeping admin access
   linkedTrackId: { type: String }, // Links this quiz to a specific skill track
   linkedModuleId: { type: String }, // Links this quiz to a specific module within that track
   reviewMode: { type: Boolean, default: false }, // Enable immediate feedback after each answer
@@ -58,10 +59,12 @@ const quizSchema = new mongoose.Schema({
 });
 
 // Performance indexes for frequent filtering and sorting
-quizSchema.index({ category: 1 });
-quizSchema.index({ difficulty: 1 });
+quizSchema.index({ id: 1 }, { unique: true });
+quizSchema.index({ subjectId: 1 });
+quizSchema.index({ category: 1, difficulty: 1 });
 quizSchema.index({ quizType: 1 });
 quizSchema.index({ isQuestionPool: 1 });
-quizSchema.index({ subjectId: 1 });
+quizSchema.index({ linkedTrackId: 1 });
+quizSchema.index({ isTournamentOnly: 1 });
 
 export const Quiz = mongoose.model('Quiz', quizSchema);

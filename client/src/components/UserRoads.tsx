@@ -132,28 +132,29 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
 
     const isRoadUnlocked = useCallback((subjectId: string) => {
         if (!subjectId) return false;
-        if (user.role === 'admin') return true;
+        if (user.role === 'admin' || user.isAdmin) return true;
         const unlocked = (user.unlockedTracks || []).map(id => id.toString());
         const primary = user.primaryTrackId?.toString();
         const idStr = subjectId.toString();
         return unlocked.includes(idStr) || primary === idStr;
-    }, [user.role, user.unlockedTracks, user.primaryTrackId]);
+    }, [user.role, user.isAdmin, user.unlockedTracks, user.primaryTrackId]);
 
     const isInitialTrackSelectionNeeded =
         user.role !== 'admin' &&
+        !user.isAdmin &&
         subjectsProp.length > 0 &&
         !user.primaryTrackId &&
         (!user.unlockedTracks || user.unlockedTracks.length === 0);
 
     const loadMyRequests = useCallback(async () => {
-        if (user.role === 'admin' || !user.userId) return;
+        if (user.role === 'admin' || user.isAdmin || !user.userId) return;
         try {
             const res = await api.getMyTrackRequests();
             setMyRequests(Array.isArray(res.requests) ? res.requests : []);
         } catch (err) {
             console.error('Failed to load my track requests:', err);
         }
-    }, [user.role, user.userId]);
+    }, [user.role, user.isAdmin, user.userId]);
 
     useEffect(() => {
         loadMyRequests();
@@ -226,8 +227,6 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
     const regularQuizzes = filteredQuizzes.filter(q => q.quizType !== 'exam');
     const examQuizzes = filteredQuizzes.filter(q => q.quizType === 'exam');
 
-
-
     const getDifficultyBadgeBg = (difficulty: string | undefined) => {
         const key = typeof difficulty === 'string' ? difficulty.toLowerCase() : 'default';
         return DIFFICULTY_COLORS[key] || DIFFICULTY_COLORS.default;
@@ -243,6 +242,9 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
 
     // Check if quiz is locked based on roadmap progress
     const isQuizLocked = (quiz: Quiz) => {
+        // Admins have 100% unrestricted access to every quiz
+        if (user?.role === 'admin' || user?.isAdmin) return false;
+
         const quizId = getQuizId(quiz);
 
         // Find the skill track for this subject (check subjectId first, then trackId)
@@ -379,6 +381,19 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
         return { title, status, index };
     });
 
+    // Check if daily streak reward has been claimed today
+    const isStreakClaimedToday = Boolean((() => {
+        const todayStr = new Date().toDateString();
+        if (user.lastStreakClaimDate && new Date(user.lastStreakClaimDate).toDateString() === todayStr) {
+            return true;
+        }
+        const lastClaimedLocal = localStorage.getItem(`streak_claimed_${user.userId}`);
+        if (lastClaimedLocal && new Date(lastClaimedLocal).toDateString() === todayStr) {
+            return true;
+        }
+        return false;
+    })());
+
     return (
         <div className="min-h-screen bg-white dark:bg-[#0a0a0b] text-gray-900 dark:text-white selection:bg-indigo-500/30">
             {/* Ambient Background Effects */}
@@ -439,29 +454,51 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                     {/* Daily Streak Claim Card */}
                     <div
                         onClick={() => setIsStreakModalOpen(true)}
-                        className="cursor-pointer group relative overflow-hidden bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent border border-orange-500/30 dark:border-orange-500/20 hover:border-orange-500/50 rounded-3xl p-5 backdrop-blur-xl shadow-sm hover:shadow-xl transition-all flex items-center justify-between"
+                        className={`cursor-pointer group relative overflow-hidden rounded-3xl p-5 backdrop-blur-xl shadow-sm hover:shadow-xl transition-all flex items-center justify-between border ${
+                            isStreakClaimedToday
+                                ? 'bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/30 dark:border-emerald-500/20 hover:border-emerald-500/50'
+                                : 'bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent border-orange-500/30 dark:border-orange-500/20 hover:border-orange-500/50'
+                        }`}
                     >
                         <div className="flex items-center gap-3.5">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-400 text-white flex items-center justify-center font-black text-2xl shadow-lg shadow-orange-500/25 group-hover:scale-110 transition-transform">
-                                🔥
+                            <div className={`w-12 h-12 rounded-2xl text-white flex items-center justify-center font-black text-2xl shadow-lg transition-transform group-hover:scale-110 ${
+                                isStreakClaimedToday
+                                    ? 'bg-gradient-to-tr from-emerald-500 to-teal-400 shadow-emerald-500/25'
+                                    : 'bg-gradient-to-tr from-orange-500 to-amber-400 shadow-orange-500/25'
+                            }`}>
+                                {isStreakClaimedToday ? '✓' : '🔥'}
                             </div>
                             <div>
                                 <div className="flex items-center gap-1.5">
-                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-600 dark:text-orange-400">
+                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                        isStreakClaimedToday
+                                            ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                                            : 'bg-orange-500/20 text-orange-600 dark:text-orange-400'
+                                    }`}>
                                         {user.streak || 1} Day Streak
                                     </span>
-                                    <span className="text-[10px] font-bold text-amber-500 animate-pulse">● Ready to Claim</span>
+                                    {isStreakClaimedToday ? (
+                                        <span className="text-[10px] font-bold text-emerald-500">● Claimed Today</span>
+                                    ) : (
+                                        <span className="text-[10px] font-bold text-amber-500 animate-pulse">● Ready to Claim</span>
+                                    )}
                                 </div>
                                 <h4 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-tight">
                                     Daily Streak Calendar &amp; Loot Box
                                 </h4>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                                    Tap to claim Day {((user.streak || 1) - 1) % 7 + 1} rewards &amp; unlock Mystery Boxes!
+                                    {isStreakClaimedToday
+                                        ? `Day ${((user.streak || 1) - 1) % 7 + 1} claimed! Return tomorrow to keep the flame alive.`
+                                        : `Tap to claim Day ${((user.streak || 1) - 1) % 7 + 1} rewards & unlock Mystery Boxes!`}
                                 </p>
                             </div>
                         </div>
-                        <div className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-orange-500/20 group-hover:scale-105 transition-all">
-                            Claim
+                        <div className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider shadow-md transition-all group-hover:scale-105 ${
+                            isStreakClaimedToday
+                                ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                                : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-500/20'
+                        }`}>
+                            {isStreakClaimedToday ? 'Claimed' : 'Claim'}
                         </div>
                     </div>
 
@@ -1147,57 +1184,71 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                         </button>
 
                                                         {!locked && (
-                                                            <div className="relative">
+                                                            <>
                                                                 <button
                                                                     type="button"
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        setActiveExportQuizId(activeExportQuizId === quizId ? null : quizId);
+                                                                        setLiveHostQuiz(quiz);
                                                                     }}
-                                                                    className="p-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 rounded-2xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
-                                                                    title="Export Quiz"
+                                                                    className="px-3.5 py-4 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-sm shrink-0 cursor-pointer"
+                                                                    title="Host a Live Classroom Arena game for this quiz"
                                                                 >
-                                                                    <Download className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                                                                    🎮
                                                                 </button>
 
-                                                                {activeExportQuizId === quizId && (
-                                                                    <div
-                                                                        onClick={(e) => e.stopPropagation()}
-                                                                        className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 text-left"
+                                                                <div className="relative">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setActiveExportQuizId(activeExportQuizId === quizId ? null : quizId);
+                                                                        }}
+                                                                        className="p-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 rounded-2xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
+                                                                        title="Export Quiz"
                                                                     >
-                                                                        <div className="p-2 border-b border-gray-100 dark:border-white/5 text-[9px] font-black uppercase tracking-wider text-gray-400">
-                                                                            Export Quiz
+                                                                        <Download className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                                                                    </button>
+
+                                                                    {activeExportQuizId === quizId && (
+                                                                        <div
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                            className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 text-left"
+                                                                        >
+                                                                            <div className="p-2 border-b border-gray-100 dark:border-white/5 text-[9px] font-black uppercase tracking-wider text-gray-400">
+                                                                                Export Quiz
+                                                                            </div>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    exportQuizToJSON(quiz);
+                                                                                    setActiveExportQuizId(null);
+                                                                                    showNotification('success', `Quiz "${quiz.title}" exported as JSON!`);
+                                                                                }}
+                                                                                className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                                                            >
+                                                                                <Download className="w-3.5 h-3.5 text-emerald-500" />
+                                                                                <span>JSON (Like Admin)</span>
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={async (e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setActiveExportQuizId(null);
+                                                                                    showNotification('info', 'Generating Study PDF...');
+                                                                                    await exportQuizToPDF(quiz);
+                                                                                    showNotification('success', 'Study PDF downloaded!');
+                                                                                }}
+                                                                                className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                                                            >
+                                                                                <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                                                                                <span>PDF Study Sheet</span>
+                                                                            </button>
                                                                         </div>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                exportQuizToJSON(quiz);
-                                                                                setActiveExportQuizId(null);
-                                                                                showNotification('success', `Quiz "${quiz.title}" exported as JSON!`);
-                                                                            }}
-                                                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                                                        >
-                                                                            <Download className="w-3.5 h-3.5 text-emerald-500" />
-                                                                            <span>JSON (Like Admin)</span>
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={async (e) => {
-                                                                                e.stopPropagation();
-                                                                                setActiveExportQuizId(null);
-                                                                                showNotification('info', 'Generating Study PDF...');
-                                                                                await exportQuizToPDF(quiz);
-                                                                                showNotification('success', 'Study PDF downloaded!');
-                                                                            }}
-                                                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                                                        >
-                                                                            <FileText className="w-3.5 h-3.5 text-indigo-500" />
-                                                                            <span>PDF Study Sheet</span>
-                                                                        </button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                                    )}
+                                                                </div>
+                                                            </>
                                                         )}
                                                     </div>
                                                 </div>
@@ -1418,57 +1469,71 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                         </button>
 
                                                         {!locked && (
-                                                            <div className="relative">
+                                                            <>
                                                                 <button
                                                                     type="button"
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        setActiveExportQuizId(activeExportQuizId === quizId ? null : quizId);
+                                                                        setLiveHostQuiz(quiz);
                                                                     }}
-                                                                    className="p-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 rounded-2xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
-                                                                    title="Export Exam"
+                                                                    className="px-3.5 py-4 rounded-2xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/20 font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-sm shrink-0 cursor-pointer"
+                                                                    title="Host a Live Classroom Arena game for this exam"
                                                                 >
-                                                                    <Download className="w-4 h-4 text-orange-500 dark:text-orange-400" />
+                                                                    🎮
                                                                 </button>
 
-                                                                {activeExportQuizId === quizId && (
-                                                                    <div
-                                                                        onClick={(e) => e.stopPropagation()}
-                                                                        className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 text-left"
+                                                                <div className="relative">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setActiveExportQuizId(activeExportQuizId === quizId ? null : quizId);
+                                                                        }}
+                                                                        className="p-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 rounded-2xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
+                                                                        title="Export Exam"
                                                                     >
-                                                                        <div className="p-2 border-b border-gray-100 dark:border-white/5 text-[9px] font-black uppercase tracking-wider text-gray-400">
-                                                                            Export Exam
+                                                                        <Download className="w-4 h-4 text-orange-500 dark:text-orange-400" />
+                                                                    </button>
+
+                                                                    {activeExportQuizId === quizId && (
+                                                                        <div
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                            className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 text-left"
+                                                                        >
+                                                                            <div className="p-2 border-b border-gray-100 dark:border-white/5 text-[9px] font-black uppercase tracking-wider text-gray-400">
+                                                                                Export Exam
+                                                                            </div>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    exportQuizToJSON(quiz);
+                                                                                    setActiveExportQuizId(null);
+                                                                                    showNotification('success', `Exam "${quiz.title}" exported as JSON!`);
+                                                                                }}
+                                                                                className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                                                            >
+                                                                                <Download className="w-3.5 h-3.5 text-emerald-500" />
+                                                                                <span>JSON (Like Admin)</span>
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={async (e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setActiveExportQuizId(null);
+                                                                                    showNotification('info', 'Generating Study PDF...');
+                                                                                    await exportQuizToPDF(quiz);
+                                                                                    showNotification('success', 'Study PDF downloaded!');
+                                                                                }}
+                                                                                className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                                                            >
+                                                                                <FileText className="w-3.5 h-3.5 text-orange-500" />
+                                                                                <span>PDF Study Sheet</span>
+                                                                            </button>
                                                                         </div>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                exportQuizToJSON(quiz);
-                                                                                setActiveExportQuizId(null);
-                                                                                showNotification('success', `Exam "${quiz.title}" exported as JSON!`);
-                                                                            }}
-                                                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                                                        >
-                                                                            <Download className="w-3.5 h-3.5 text-emerald-500" />
-                                                                            <span>JSON (Like Admin)</span>
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={async (e) => {
-                                                                                e.stopPropagation();
-                                                                                setActiveExportQuizId(null);
-                                                                                showNotification('info', 'Generating Study PDF...');
-                                                                                await exportQuizToPDF(quiz);
-                                                                                showNotification('success', 'Study PDF downloaded!');
-                                                                            }}
-                                                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                                                        >
-                                                                            <FileText className="w-3.5 h-3.5 text-orange-500" />
-                                                                            <span>PDF Study Sheet</span>
-                                                                        </button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                                    )}
+                                                                </div>
+                                                            </>
                                                         )}
                                                     </div>
                                                 </div>

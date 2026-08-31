@@ -41,16 +41,55 @@ export const LiveHostMode: React.FC<LiveHostModeProps> = ({
     ]);
     const [answerCounts, setAnswerCounts] = useState<number[]>([0, 0, 0, 0]);
 
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const questions = quiz.questions || [];
     const currentQ: Question | undefined = questions[currentQuestionIndex];
 
-    // Simulated student answers during question phase
-    useEffect(() => {
-        if (gameState !== 'question') return;
+    const handleRevealAnswers = () => {
+        sounds.playStreak(3);
+        setGameState('reveal');
 
+        // Update mock player scores
+        setPlayers(prev => prev.map((p, i) => {
+            const isCorrect = i % 2 === 0;
+            const points = isCorrect ? Math.floor(700 + Math.random() * 280) : 0;
+            return {
+                ...p,
+                score: p.score + points,
+                streak: isCorrect ? p.streak + 1 : 0,
+                lastAnswerCorrect: isCorrect,
+                lastAnswerPoints: points
+            };
+        }).sort((a, b) => b.score - a.score));
+    };
+
+    const handleStartGame = () => {
+        sounds.playPowerUp();
         setTimeLeft(25);
         setAnswerCounts([0, 0, 0, 0]);
+        setGameState('question');
+    };
+
+    const handleShowLeaderboard = () => {
+        sounds.playLevelUp();
+        setGameState('leaderboard');
+    };
+
+    const handleNextQuestion = () => {
+        if (currentQuestionIndex < questions.length - 1) {
+            setCurrentQuestionIndex(prev => prev + 1);
+            setTimeLeft(25);
+            setAnswerCounts([0, 0, 0, 0]);
+            setGameState('question');
+        } else {
+            setGameState('game_over');
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+        }
+    };
+
+    // Timer and simulated student answers during question phase
+    useEffect(() => {
+        if (gameState !== 'question') return;
 
         timerRef.current = setInterval(() => {
             setTimeLeft(prev => {
@@ -83,48 +122,10 @@ export const LiveHostMode: React.FC<LiveHostModeProps> = ({
         };
     }, [gameState, currentQuestionIndex]);
 
-    const handleStartGame = () => {
-        sounds.playPowerUp();
-        setGameState('question');
-    };
-
-    const handleRevealAnswers = () => {
-        sounds.playStreak(3);
-        setGameState('reveal');
-
-        // Update mock player scores
-        setPlayers(prev => prev.map((p, i) => {
-            const isCorrect = i % 2 === 0;
-            const points = isCorrect ? Math.floor(700 + Math.random() * 280) : 0;
-            return {
-                ...p,
-                score: p.score + points,
-                streak: isCorrect ? p.streak + 1 : 0,
-                lastAnswerCorrect: isCorrect,
-                lastAnswerPoints: points
-            };
-        }).sort((a, b) => b.score - a.score));
-    };
-
-    const handleShowLeaderboard = () => {
-        sounds.playLevelUp();
-        setGameState('leaderboard');
-    };
-
-    const handleNextQuestion = () => {
-        if (currentQuestionIndex < questions.length - 1) {
-            setCurrentQuestionIndex(prev => prev + 1);
-            setGameState('question');
-        } else {
-            setGameState('game_over');
-            confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
-        }
-    };
-
     return (
-        <div className="fixed inset-0 z-50 flex flex-col bg-[#0b0c16] text-white font-sans overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex flex-col bg-[#0b0c16] text-white font-sans overflow-y-auto p-safe">
             {/* Top Bar */}
-            <div className="p-4 sm:p-6 bg-white/5 border-b border-white/10 flex items-center justify-between">
+            <div className="p-4 sm:p-6 bg-white/5 border-b border-white/10 flex items-center justify-between pt-safe">
                 <div className="flex items-center gap-3">
                     <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-xs font-black uppercase tracking-wider">
                         {quiz.title}

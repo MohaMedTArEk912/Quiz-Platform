@@ -1,6 +1,9 @@
 import { Attempt } from '../models/Attempt.js';
 import { Quiz } from '../models/Quiz.js';
 import { User } from '../models/User.js';
+import { Badge } from '../models/Badge.js';
+import { Challenge } from '../models/Challenge.js';
+import { ShopItem } from '../models/ShopItem.js';
 
 export const getAnalyticsSummary = async (req, res) => {
   try {
@@ -455,37 +458,29 @@ export const getLiveProctoringData = async (req, res) => {
 export const getData = async (req, res) => {
   try {
     const isAdmin = req.user?.role === 'admin';
-    
-    // If admin, they can see EVERYTHING. If user, only public info.
-    let users;
-    let attempts;
-    
-    if (isAdmin) {
-      users = await User.find({}, '-password').lean();
-      attempts = await Attempt.find({}).lean();
-    } else {
-      // Filter out passwords and sensitive emails for general users
-      users = await User.find({}, 'userId name totalScore totalAttempts xp level streak rank lastLoginDate createdAt badges').lean();
-      // Only return the user's own attempts for privacy
-      attempts = await Attempt.find({ userId: req.user.userId }).lean();
-    }
+    const userId = req.user?.userId;
 
-    const badges = await import('../models/Badge.js').then(m => m.Badge.find({}).lean());
-    const Challenge = await import('../models/Challenge.js').then(m => m.Challenge);
-    const ShopItem = await import('../models/ShopItem.js').then(m => m.ShopItem);
+    const [users, attempts, badges, challenges, shopItems] = await Promise.all([
+      isAdmin
+        ? User.find({}, '-password').lean()
+        : User.find({}, 'userId name totalScore totalAttempts xp level streak rank lastLoginDate createdAt badges')
+            .sort({ totalScore: -1 })
+            .limit(100)
+            .lean(),
+      isAdmin
+        ? Attempt.find({}).sort({ completedAt: -1 }).limit(500).lean()
+        : Attempt.find({ userId }).sort({ completedAt: -1 }).lean(),
+      Badge.find({}).lean(),
+      Challenge.find({
+        $or: [{ fromId: userId }, { toId: userId }]
+      })
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .lean(),
+      ShopItem.find({}).lean()
+    ]);
 
-    // Challenges the user is involved in
-    const challenges = await Challenge.find({
-      $or: [{ fromId: req.user.userId }, { toId: req.user.userId }]
-    })
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .lean();
-
-    // Shop items (for client cache)
-    const shopItems = await ShopItem.find({}).lean();
-
-    res.json({ users, attempts, badges });
+    res.json({ users, attempts, badges, challenges, shopItems });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

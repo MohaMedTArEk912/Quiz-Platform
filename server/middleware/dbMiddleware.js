@@ -32,12 +32,13 @@ export async function connectToDatabase() {
   connectionAttemptTime = Date.now();
 
   const opts = {
-    maxPoolSize: 10,
-    minPoolSize: 1,
-    serverSelectionTimeoutMS: 15000, // 15 seconds for serverless
-    connectTimeoutMS: 15000,
-    socketTimeoutMS: 30000,
-    heartbeatFrequencyMS: 15000,
+    maxPoolSize: 50, // Support high concurrent query throughput
+    minPoolSize: 5,  // Maintain ready warm sockets
+    serverSelectionTimeoutMS: 5000, // Faster failure recovery (5s)
+    connectTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+    heartbeatFrequencyMS: 10000,
+    autoIndex: true, // Automatically ensure indexes exist in background
     family: 4, // prefer IPv4 to avoid slow DNS/IPv6 fallbacks
   };
 
