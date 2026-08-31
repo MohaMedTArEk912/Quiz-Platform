@@ -1,10 +1,7 @@
 import dotenv from 'dotenv';
 
-// Load environment variables FIRST before any other imports
-// Only load from .env files in development (Vercel handles env vars automatically)
-if (process.env.NODE_ENV !== 'production') {
-  dotenv.config();
-}
+// Load environment variables (.env files won't override already set deployment env vars)
+dotenv.config();
 
 // Provider and key presence checks (non-fatal)
 if (!process.env.GROQ_API_KEY || !String(process.env.GROQ_API_KEY).trim()) {
@@ -17,7 +14,7 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import { connectToDatabase } from './middleware/dbMiddleware.js';
+import { connectToDatabase, dbMiddleware, getDbDiagnostics, getMongoUri } from './middleware/dbMiddleware.js';
 
 import compression from 'compression';
 import helmet from 'helmet';
@@ -177,39 +174,25 @@ app.use((req, res, next) => {
 
 // Health Check Route (Bypasses DB middleware)
 app.get('/api/health-check', (req, res) => {
+  const diagnostics = getDbDiagnostics();
   res.status(200).json({ 
     status: 'ok', 
-    timestamp: new Date(),
+    timestamp: new Date().toISOString(),
     env: {
-      mongo_defined: !!process.env.MONGODB_URI,
-      client_url: process.env.CLIENT_URL
-    }
+      mongo_defined: diagnostics.is_uri_defined,
+      client_url: process.env.CLIENT_URL || null,
+      node_env: process.env.NODE_ENV || 'development'
+    },
+    database: diagnostics
   });
 });
 
-// Middleware to ensure DB connection (with timeout protection for serverless)
+// Middleware to ensure DB connection across all API routes (skips health check)
 app.use(async (req, res, next) => {
-  // Skip DB check for health check endpoint
   if (req.path === '/api/health-check') {
     return next();
   }
-  
-  try {
-    // Set a timeout for DB connection in serverless environments
-    // Use Mongoose's internal connection logic
-    await connectToDatabase();
-    next();
-  } catch (error) {
-    console.error('❌ DB_MIDDLEWARE_ERROR:', error.message);
-    // Ensure headers aren't already sent
-    if (!res.headersSent) {
-        res.status(500).json({ 
-        message: 'Database connection failed', 
-        error: error.message,
-        hint: 'Check MongoDB URI and network connectivity'
-        });
-    }
-  }
+  return dbMiddleware(req, res, next);
 });
 
 // Mount Routes
