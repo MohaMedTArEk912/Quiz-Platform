@@ -99,6 +99,8 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/, /^\/socket\.io/],
         // Cache strategies for optimal performance
         runtimeCaching: [
           {

@@ -256,6 +256,19 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ isOpen, quiz, subject
                         </div>
                     )}
 
+                    <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                        <input
+                            type="checkbox"
+                            id="isVisible"
+                            checked={editingQuiz.isVisible !== false}
+                            onChange={e => setEditingQuiz({ ...editingQuiz, isVisible: e.target.checked })}
+                            className="w-5 h-5 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
+                        />
+                        <label htmlFor="isVisible" className="flex-1 cursor-pointer">
+                            <div className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Visible to students</div>
+                            <div className="text-xs text-emerald-700 dark:text-emerald-300">Turn this off to hide the quiz from public browsing while keeping it editable in admin tools.</div>
+                        </label>
+                    </div>
                     <div className="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
                         <input
                             type="checkbox"

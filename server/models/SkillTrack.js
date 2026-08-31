@@ -45,6 +45,7 @@ const skillTrackSchema = new mongoose.Schema({
   icon: { type: String, default: '🗺️' },
   category: { type: String, default: 'General' },
   subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject' },
+  isVisible: { type: Boolean, default: true },
   modules: [moduleSchema]
 }, {
   timestamps: true // Automatically manages createdAt and updatedAt

@@ -134,7 +134,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
     const incorrectCount = result.totalQuestions - correctCount;
 
     return (
-        <div className="h-screen bg-gray-50 dark:bg-[#080812] relative overflow-hidden flex flex-col w-full min-h-0 font-sans text-gray-900 dark:text-gray-100 transition-colors">
+        <div className="h-screen bg-gray-50 dark:bg-[#080812] relative overflow-hidden flex flex-col w-full min-h-0 font-sans text-gray-900 dark:text-gray-100 transition-colors pb-safe">
             
             {/* === Ambient Background Glows === */}
             <div className="absolute inset-x-[-50%] inset-y-[-50%] lg:inset-0 w-[200%] h-[200%] lg:w-full lg:h-full overflow-hidden pointer-events-none z-0">
@@ -152,7 +152,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
             </div>
 
             {/* === Top Navigation Bar === */}
-            <header className="flex-none h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-6 bg-white/80 dark:bg-[#0d0d1c]/70 lg:bg-transparent border-b border-gray-100 lg:border-transparent dark:border-white/[0.06] backdrop-blur-xl lg:backdrop-blur-none z-20 transition-all">
+            <header className="flex-none h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-6 bg-white/80 dark:bg-[#0d0d1c]/70 lg:bg-transparent border-b border-gray-100 lg:border-transparent dark:border-white/[0.06] backdrop-blur-xl lg:backdrop-blur-none z-20 transition-all pt-safe pl-safe pr-safe">
                 <button
                     onClick={onBackToQuizzes}
                     className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/[0.10] border border-transparent dark:border-white/[0.08] transition-all"

@@ -3,7 +3,8 @@ import type { Subject } from '../../../types';
 import {
     BookOpen, GraduationCap, Brain, Code, Atom, Calculator, Globe,
     Music, Palette, Microscope, FlaskConical, Landmark, Scale,
-    Heart, Languages, History, Cpu, Database, Sparkles, Layout, type LucideIcon
+    Heart, Languages, History, Cpu, Database, Sparkles, Layout,
+    Eye, EyeOff, type LucideIcon
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -55,6 +56,18 @@ const RoadList: React.FC<RoadListProps> = ({ isLoading, roads, onSelectRoad }) =
                     <div className="flex items-start justify-between mb-4 relative z-10">
                         <div className="w-14 h-14 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-2xl flex items-center justify-center shadow-sm border border-white/50 dark:border-white/10 group-hover:scale-110 transition-transform duration-300">
                             <RoadIcon iconName={road.icon} />
+                        </div>
+
+                        <div
+                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
+                                road.isVisible === false
+                                    ? 'border-red-200 bg-red-50 text-red-600 dark:border-red-800/50 dark:bg-red-500/10 dark:text-red-300'
+                                    : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/50 dark:bg-emerald-500/10 dark:text-emerald-300'
+                            }`}
+                            title={road.isVisible === false ? 'Hidden from students' : 'Visible to students'}
+                        >
+                            {road.isVisible === false ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                            {road.isVisible === false ? 'Hidden' : 'Visible'}
                         </div>
                     </div>
                     <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2 relative z-10 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">

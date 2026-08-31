@@ -111,8 +111,20 @@ const sanitizeQuestions = (questions, quizId = 'unknown') => {
 
 export const getQuizzes = async (req, res) => {
   try {
+    const includeHidden = req.query.includeHidden === 'true';
+    const filter = includeHidden ? {} : {
+      $or: [
+        { isVisible: { $ne: false } },
+        { isVisible: { $exists: false } }
+      ]
+    };
+
+    if (req.query.subjectId) {
+      filter.subjectId = req.query.subjectId;
+    }
+
     // Fetch all quizzes including questions to show accurate question counts
-    let quizzes = await Quiz.find({}).lean();
+    let quizzes = await Quiz.find(filter).lean();
 
     if (!Array.isArray(quizzes) || quizzes.length === 0) {
       const fallbackQuizzes = await loadStaticQuizzes();

@@ -42,12 +42,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [loadingData, setLoadingData] = useState(false);
     const [loadingQuizzes, setLoadingQuizzes] = useState(true);
 
-    // Load Quizzes (Public)
+    // Load Quizzes
     useEffect(() => {
         const loadQuizzes = async () => {
             setLoadingQuizzes(true);
             try {
-                const quizzes = await api.getQuizzes();
+                const quizzes = isAdmin
+                    ? await api.getQuizzes(undefined, true)
+                    : await api.getQuizzes();
+
                 console.log('[DataContext] Loaded quizzes:', quizzes.length, quizzes);
                 setAvailableQuizzes(Array.isArray(quizzes) ? quizzes : []);
             } catch (error) {
@@ -57,8 +60,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setLoadingQuizzes(false);
             }
         };
-        loadQuizzes();
-    }, []);
+
+        if (currentUser) {
+            loadQuizzes();
+        }
+    }, [currentUser, isAdmin]);
 
     // Load User Data (Authenticated)
     const refreshData = useCallback(async () => {

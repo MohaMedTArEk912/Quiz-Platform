@@ -142,7 +142,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] dark:from-indigo-900 dark:via-purple-900 dark:to-pink-900 flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-300">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] dark:from-indigo-900 dark:via-purple-900 dark:to-pink-900 flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-300 p-safe">
             {/* Background Decorations */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-200/40 dark:bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>

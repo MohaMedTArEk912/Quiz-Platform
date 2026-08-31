@@ -602,7 +602,14 @@ export const deleteDailyChallenge = async (req, res) => {
 // --- Skill Tracks ---
 export const getSkillTracks = async (req, res) => {
   try {
-    const query = {};
+    const includeHidden = req.query.includeHidden === 'true';
+    const query = includeHidden ? {} : {
+      $or: [
+        { isVisible: { $ne: false } },
+        { isVisible: { $exists: false } }
+      ]
+    };
+
     if (req.query.subjectId) {
         query.subjectId = req.query.subjectId;
     }

@@ -266,8 +266,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
             setLoading(true);
             // Fetch tracks, quizzes, and badges in parallel
             const [tracksData, quizzesData, badgesData] = await Promise.all([
-                api.getSkillTracks(subjectId),
-                api.getQuizzes(subjectId).catch(() => []), // Fail gracefully
+                api.getSkillTracks(subjectId, true),
+                api.getQuizzes(subjectId, true).catch(() => []), // Admins must be able to manage hidden items
                 api.getBadgeNodes().catch(() => [])
             ]);
 
@@ -418,7 +418,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
         }
     }, [adminId, onNotification, rememberSavedDraft, subjectId, track]);
 
-    const handleTrackFieldChange = useCallback((field: 'title' | 'description' | 'icon', value: string) => {
+    const handleTrackFieldChange = useCallback((field: 'title' | 'description' | 'icon' | 'isVisible', value: string | boolean) => {
         setTrack(prev => ({
             ...(prev || createEmptyTrackDraft(subjectId)),
             [field]: value,
@@ -1099,6 +1099,19 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
                                                 className="h-16 w-full resize-none rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] px-4 py-3 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
                                             />
                                         </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/20 px-4 py-3">
+                                        <input
+                                            type="checkbox"
+                                            id="trackIsVisible"
+                                            checked={track?.isVisible !== false}
+                                            onChange={(event) => handleTrackFieldChange('isVisible', event.target.checked)}
+                                            className="h-5 w-5 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                                        />
+                                        <label htmlFor="trackIsVisible" className="cursor-pointer text-sm font-bold text-emerald-900 dark:text-emerald-100">
+                                            Visible to students
+                                        </label>
                                     </div>
 
                                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

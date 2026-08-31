@@ -84,9 +84,12 @@ const InstallPWA: React.FC = () => {
     return (
         <>
             {/* Floating Install Prompt Banner */}
-            <div className="fixed bottom-5 right-5 z-[80] animate-in slide-in-from-bottom-5 duration-300">
-                <div className="bg-white/95 dark:bg-[#13141f]/95 backdrop-blur-2xl border border-purple-500/30 p-3.5 sm:p-4 rounded-2xl shadow-2xl shadow-purple-500/20 max-w-xs sm:max-w-sm flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-purple-500/30">
+            <aside
+                aria-label="Install Quiz Platform App"
+                className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:bottom-6 z-[80] animate-in slide-in-from-bottom-5 duration-300 pb-safe"
+            >
+                <div className="bg-white/95 dark:bg-[#13141f]/95 backdrop-blur-2xl border border-purple-500/30 dark:border-purple-500/40 p-3.5 sm:p-4 rounded-3xl shadow-2xl shadow-purple-500/20 max-w-full sm:max-w-sm flex items-center gap-3.5 ring-1 ring-black/5 dark:ring-white/10">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-purple-500/30">
                         <Download className="w-5 h-5 animate-pulse" />
                     </div>
 
@@ -96,27 +99,29 @@ const InstallPWA: React.FC = () => {
                             <Sparkles className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                         </div>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium line-clamp-1">
-                            {isIOS ? 'Add to Home Screen for best experience' : 'Fast, offline ready, and fullscreen'}
+                            {isIOS ? 'Add to Home Screen for best experience' : 'Fast, offline ready & fullscreen'}
                         </p>
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
                         <button
+                            type="button"
                             onClick={handleInstallClick}
-                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black text-xs uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md shadow-purple-500/25 cursor-pointer"
+                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white font-black text-xs uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md shadow-purple-500/25 cursor-pointer"
                         >
                             Install
                         </button>
                         <button
+                            type="button"
                             onClick={handleDismiss}
-                            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
                             aria-label="Dismiss install banner"
                         >
                             <X className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
-            </div>
+            </aside>
 
             {/* iOS Instructions Modal */}
             {showIOSModal && (

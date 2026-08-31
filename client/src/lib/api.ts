@@ -186,10 +186,12 @@ export const api = {
         return response.json();
     },
 
-    async getQuizzes(subjectId?: string) {
-        const url = subjectId
-            ? `/quizzes?subjectId=${subjectId}`
-            : `/quizzes`;
+    async getQuizzes(subjectId?: string, includeHidden = false) {
+        const params = new URLSearchParams();
+        if (subjectId) params.set('subjectId', subjectId);
+        if (includeHidden) params.set('includeHidden', 'true');
+
+        const url = `/quizzes${params.toString() ? `?${params.toString()}` : ''}`;
         const response = await fetchWithFallback(url);
         if (!response.ok) {
             let errorMessage = 'Failed to load quizzes';
@@ -752,10 +754,12 @@ export const api = {
     },
 
     // Skill Tracks
-    async getSkillTracks(subjectId?: string): Promise<SkillTrack[]> {
-        const url = subjectId
-            ? `/skill-tracks?subjectId=${subjectId}`
-            : `/skill-tracks`;
+    async getSkillTracks(subjectId?: string, includeHidden = false): Promise<SkillTrack[]> {
+        const params = new URLSearchParams();
+        if (subjectId) params.set('subjectId', subjectId);
+        if (includeHidden) params.set('includeHidden', 'true');
+
+        const url = `/skill-tracks${params.toString() ? `?${params.toString()}` : ''}`;
         const response = await fetchWithFallback(url);
         if (!response.ok) throw new Error('Failed to load skill tracks');
         return response.json();

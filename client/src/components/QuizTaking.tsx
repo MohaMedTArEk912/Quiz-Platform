@@ -1051,7 +1051,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
             {/* --- TOP BAR (Full width) --- */}
             {!embedded && (
-                <header className="flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 bg-[#e0e7ff]/60 dark:bg-[#0d0d1c]/80 border-b border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-20 shadow-sm">
+                <header className="flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 bg-[#e0e7ff]/60 dark:bg-[#0d0d1c]/80 border-b border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-20 shadow-sm pt-safe pl-safe pr-safe">
                     <div className="flex items-center gap-3 sm:gap-4">
                         <button onClick={onBack} className="flex items-center gap-2 p-1.5 sm:p-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-gray-600 dark:text-slate-400 transition-all border border-gray-200 dark:border-white/10">
                             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1348,7 +1348,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             </div>
 
             {/* Bottom Action Footer Overlay */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-5 lg:p-5 bg-slate-100/85 dark:bg-[#0d0d1c]/90 border-t border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-30 w-full shadow-lg flex items-center justify-between pointer-events-auto">
+            <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-5 lg:p-5 bg-slate-100/85 dark:bg-[#0d0d1c]/90 border-t border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-30 w-full shadow-lg flex items-center justify-between pointer-events-auto pb-safe pl-safe pr-safe">
                 {!isMobileDevice && (
                     <div className="hidden lg:flex text-gray-500 dark:text-slate-400 font-medium items-center gap-2 bg-gray-50 dark:bg-white/[0.03] px-4 py-2.5 rounded-xl border border-gray-200/50 dark:border-white/5">
                         {q && q.options && !q.isCompiler && (

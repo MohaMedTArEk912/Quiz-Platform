@@ -16,6 +16,7 @@ export interface Quiz {
     subjectId?: string;
     moduleId?: string;
     isTournamentOnly?: boolean;
+    isVisible?: boolean;
     linkedTrackId?: string;
     linkedModuleId?: string;
     reviewMode?: boolean;
@@ -384,6 +385,7 @@ export interface SkillTrack {
     category?: string;
     subjectId?: string;
     icon?: string;
+    isVisible?: boolean;
     modules: SkillModule[];
 }
 
@@ -619,6 +621,7 @@ export interface Subject {
     description: string;
     icon: string;
     materials: Material[];
+    isVisible?: boolean;
     createdAt: string;
     oldQuestions?: SubjectQuestion[];
 }
