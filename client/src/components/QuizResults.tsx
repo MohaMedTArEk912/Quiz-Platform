@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import type { Quiz, UserData, QuizResult, DetailedAnswer } from '../types';
-import { RotateCcw, Clock, Target, CheckCircle, XCircle, ArrowLeft, Trophy, Flag, AlertTriangle, List, Download, FileText, Table, ChevronDown, Loader2 } from 'lucide-react';
+import { RotateCcw, Clock, Target, CheckCircle, XCircle, ArrowLeft, Trophy, Flag, AlertTriangle, List, Download, FileText, ChevronDown, Loader2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { MathRenderer } from './common/MathRenderer';
 import {
     exportAttemptToPDF,
-    exportAttemptToCSV,
-    exportQuizToJSON,
     exportQuizToPDF
 } from '../lib/exportUtils';
 import { QuestionTranslatorBar } from './common/QuestionTranslatorBar';
@@ -142,7 +140,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
 
     const incorrectCount = result.totalQuestions - correctCount;
 
-    const handleExportResult = async (format: 'pdf' | 'csv') => {
+    const handleExportResultPDF = async () => {
         setIsExportingResult(true);
         try {
             const breakdown = safeQuestions.map((q, idx) => {
@@ -184,29 +182,21 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                 questionsBreakdown: breakdown
             };
 
-            if (format === 'pdf') {
-                await exportAttemptToPDF(detailedData);
-            } else {
-                exportAttemptToCSV(detailedData);
-            }
+            await exportAttemptToPDF(detailedData);
         } catch (err) {
-            console.error('Error exporting result:', err);
+            console.error('Error exporting result PDF:', err);
         } finally {
             setIsExportingResult(false);
             setIsExportMenuOpen(false);
         }
     };
 
-    const handleExportQuiz = async (format: 'json' | 'pdf') => {
+    const handleExportQuizPDF = async () => {
         setIsExportingQuiz(true);
         try {
-            if (format === 'json') {
-                exportQuizToJSON(quiz);
-            } else {
-                await exportQuizToPDF(quiz);
-            }
+            await exportQuizToPDF(quiz);
         } catch (err) {
-            console.error('Error exporting quiz:', err);
+            console.error('Error exporting quiz study sheet PDF:', err);
         } finally {
             setIsExportingQuiz(false);
             setIsExportMenuOpen(false);
@@ -436,47 +426,25 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                 {isExportMenuOpen && (
                                     <div className="absolute left-0 sm:left-auto sm:right-0 bottom-full mb-2 w-56 bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 text-left">
                                         <div className="p-2 border-b border-gray-100 dark:border-white/5 text-[10px] font-black uppercase tracking-wider text-gray-400">
-                                            Export Result
+                                            PDF Export Options
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() => handleExportResult('pdf')}
+                                            onClick={handleExportResultPDF}
                                             disabled={isExportingResult}
                                             className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
                                         >
                                             {isExportingResult ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5 text-indigo-500" />}
-                                            <span>Assessment PDF</span>
+                                            <span>Assessment Result (PDF)</span>
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => handleExportResult('csv')}
-                                            disabled={isExportingResult}
-                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                        >
-                                            {isExportingResult ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Table className="w-3.5 h-3.5 text-emerald-500" />}
-                                            <span>Result CSV / Excel</span>
-                                        </button>
-
-                                        <div className="p-2 border-t border-b border-gray-100 dark:border-white/5 text-[10px] font-black uppercase tracking-wider text-gray-400">
-                                            Export Quiz Data
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleExportQuiz('json')}
-                                            disabled={isExportingQuiz}
-                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                        >
-                                            <Download className="w-3.5 h-3.5 text-emerald-500" />
-                                            <span>JSON (Like Admin)</span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleExportQuiz('pdf')}
+                                            onClick={handleExportQuizPDF}
                                             disabled={isExportingQuiz}
                                             className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
                                         >
                                             {isExportingQuiz ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5 text-orange-500" />}
-                                            <span>Study Sheet PDF</span>
+                                            <span>Quiz Study Sheet (PDF)</span>
                                         </button>
                                     </div>
                                 )}

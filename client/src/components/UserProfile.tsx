@@ -1,8 +1,8 @@
 import React, { useRef, useState } from 'react';
 import type { UserData, AttemptData } from '../types/index.ts';
 import {
-    Trophy, TrendingUp, Award, Download, Loader2, Star, Zap, Flame,
-    Settings, Calendar, History, FileText, Table, FileSpreadsheet, Eye, ChevronDown,
+    Trophy, TrendingUp, Award, Loader2, Star, Zap, Flame,
+    Settings, Calendar, History, FileText, Eye,
     ShieldCheck, Gift, CheckCircle2, Sparkles
 } from 'lucide-react';
 import Navbar from './Navbar.tsx';
@@ -11,10 +11,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { calculateLevel } from '../lib/gamification';
 import {
-    exportQuizHistoryToCSV,
     exportQuizHistoryToPDF,
-    exportQuizHistoryToJSON,
-    exportAttemptToCSV,
     exportAttemptToPDF
 } from '../lib/exportUtils';
 import AttemptDetailsModal from './admin/AttemptDetailsModal.tsx';
@@ -51,10 +48,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
     const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
     const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
     const [currentUser, setCurrentUser] = useState<UserData>(user);
-    const [isExportHistoryMenuOpen, setIsExportHistoryMenuOpen] = useState(false);
     const [inspectingAttempt, setInspectingAttempt] = useState<AttemptData | null>(null);
     const [exportingAttemptId, setExportingAttemptId] = useState<string | null>(null);
-    const [exportingFormat, setExportingFormat] = useState<'pdf' | 'csv' | null>(null);
 
     const streak = currentUser.streak || 0;
     const dailyChallengeStreak = currentUser.dailyChallengeStreak || 0;
@@ -110,20 +105,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
         .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
         .slice(0, 10);
 
-    const handleExportHistory = (format: 'csv' | 'pdf' | 'json') => {
-        setIsExportHistoryMenuOpen(false);
-        if (format === 'csv') {
-            exportQuizHistoryToCSV(attempts, currentUser);
-        } else if (format === 'pdf') {
-            exportQuizHistoryToPDF(attempts, currentUser);
-        } else if (format === 'json') {
-            exportQuizHistoryToJSON(attempts, currentUser);
-        }
+    const handleExportHistoryPDF = () => {
+        exportQuizHistoryToPDF(attempts, currentUser);
     };
 
-    const handleExportSingleAttempt = async (attempt: AttemptData, format: 'pdf' | 'csv') => {
+    const handleExportSingleAttemptPDF = async (attempt: AttemptData) => {
         setExportingAttemptId(attempt.attemptId);
-        setExportingFormat(format);
         try {
             // Build detailed fallback
             const questions = attempt.attemptQuestions || [];
@@ -163,17 +150,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                 questionsBreakdown: breakdown
             };
 
-            if (format === 'pdf') {
-                await exportAttemptToPDF(detailedData);
-            } else {
-                exportAttemptToCSV(detailedData);
-            }
+            await exportAttemptToPDF(detailedData);
         } catch (err) {
             console.error('Failed to export attempt:', err);
             setError('Failed to export attempt');
         } finally {
             setExportingAttemptId(null);
-            setExportingFormat(null);
         }
     };
 
@@ -546,51 +528,17 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                 <Zap className="w-4 h-4" /> {error}
                             </span>}
 
-                            {/* Export History Dropdown */}
+                            {/* Direct PDF Transcript Export */}
                             {attempts.length > 0 && (
-                                <div className="relative">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsExportHistoryMenuOpen(!isExportHistoryMenuOpen)}
-                                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        <span>Export History</span>
-                                        <ChevronDown className="w-3.5 h-3.5" />
-                                    </button>
-
-                                    {isExportHistoryMenuOpen && (
-                                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                                            <div className="p-2 border-b border-gray-100 dark:border-white/5 text-[10px] font-black uppercase tracking-wider text-gray-400">
-                                                Export Options
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleExportHistory('csv')}
-                                                className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2.5 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                            >
-                                                <Table className="w-4 h-4 text-emerald-500" />
-                                                <span>Excel / CSV Spreadsheet</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleExportHistory('pdf')}
-                                                className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2.5 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                            >
-                                                <FileText className="w-4 h-4 text-indigo-500" />
-                                                <span>PDF Transcript Report</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleExportHistory('json')}
-                                                className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2.5 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                            >
-                                                <FileSpreadsheet className="w-4 h-4 text-amber-500" />
-                                                <span>JSON Raw Data</span>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleExportHistoryPDF}
+                                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                                    title="Download Academic Transcript PDF"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    <span>Export PDF Transcript</span>
+                                </button>
                             )}
                         </div>
                     </div>
@@ -630,32 +578,17 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
 
                                         <button
                                             type="button"
-                                            onClick={() => handleExportSingleAttempt(attempt, 'pdf')}
+                                            onClick={() => handleExportSingleAttemptPDF(attempt)}
                                             disabled={exportingAttemptId === attempt.attemptId}
                                             className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                                             title="Export PDF Report"
                                         >
-                                            {exportingAttemptId === attempt.attemptId && exportingFormat === 'pdf' ? (
+                                            {exportingAttemptId === attempt.attemptId ? (
                                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                             ) : (
                                                 <FileText className="w-3.5 h-3.5" />
                                             )}
                                             <span>PDF</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => handleExportSingleAttempt(attempt, 'csv')}
-                                            disabled={exportingAttemptId === attempt.attemptId}
-                                            className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                                            title="Export CSV"
-                                        >
-                                            {exportingAttemptId === attempt.attemptId && exportingFormat === 'csv' ? (
-                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                            ) : (
-                                                <Table className="w-3.5 h-3.5" />
-                                            )}
-                                            <span>CSV</span>
                                         </button>
 
                                         {attempt.percentage === 100 && (
@@ -731,32 +664,17 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
 
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleExportSingleAttempt(attempt, 'pdf')}
+                                                    onClick={() => handleExportSingleAttemptPDF(attempt)}
                                                     disabled={exportingAttemptId === attempt.attemptId}
                                                     className="p-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-xl transition-all font-bold text-xs flex items-center gap-1 border border-indigo-500/20 cursor-pointer"
                                                     title="Export PDF Report"
                                                 >
-                                                    {exportingAttemptId === attempt.attemptId && exportingFormat === 'pdf' ? (
+                                                    {exportingAttemptId === attempt.attemptId ? (
                                                         <Loader2 className="w-4 h-4 animate-spin" />
                                                     ) : (
                                                         <FileText className="w-4 h-4" />
                                                     )}
                                                     <span className="hidden lg:inline">PDF</span>
-                                                </button>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleExportSingleAttempt(attempt, 'csv')}
-                                                    disabled={exportingAttemptId === attempt.attemptId}
-                                                    className="p-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl transition-all font-bold text-xs flex items-center gap-1 border border-emerald-500/20 cursor-pointer"
-                                                    title="Export Excel / CSV"
-                                                >
-                                                    {exportingAttemptId === attempt.attemptId && exportingFormat === 'csv' ? (
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                    ) : (
-                                                        <Table className="w-4 h-4" />
-                                                    )}
-                                                    <span className="hidden lg:inline">CSV</span>
                                                 </button>
 
                                                 {attempt.percentage === 100 && (

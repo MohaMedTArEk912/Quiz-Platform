@@ -33,8 +33,7 @@ import {
     Terminal,
     Lock,
     Clipboard,
-    Send,
-    Download
+    Send
 } from 'lucide-react';
 import Navbar from './Navbar.tsx';
 import UserRoadmapView from './UserRoadmapView';
@@ -48,7 +47,7 @@ import { useNotification } from '../context/NotificationContext';
 import { api } from '../lib/api';
 import { getQuizIconOption } from '../utils/quizIcons';
 import { getQuizPoolStatus, calculateSubjectProgress } from '../utils/poolUtils';
-import { exportQuizToJSON, exportQuizToPDF } from '../lib/exportUtils';
+import { exportQuizToPDF } from '../lib/exportUtils';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
     'BookOpen': <BookOpen className="w-8 h-8" />,
@@ -1197,57 +1196,19 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                                     🎮
                                                                 </button>
 
-                                                                <div className="relative">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setActiveExportQuizId(activeExportQuizId === quizId ? null : quizId);
-                                                                        }}
-                                                                        className="p-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 rounded-2xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
-                                                                        title="Export Quiz"
-                                                                    >
-                                                                        <Download className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
-                                                                    </button>
-
-                                                                    {activeExportQuizId === quizId && (
-                                                                        <div
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                            className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 text-left"
-                                                                        >
-                                                                            <div className="p-2 border-b border-gray-100 dark:border-white/5 text-[9px] font-black uppercase tracking-wider text-gray-400">
-                                                                                Export Quiz
-                                                                            </div>
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    exportQuizToJSON(quiz);
-                                                                                    setActiveExportQuizId(null);
-                                                                                    showNotification('success', `Quiz "${quiz.title}" exported as JSON!`);
-                                                                                }}
-                                                                                className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                                                            >
-                                                                                <Download className="w-3.5 h-3.5 text-emerald-500" />
-                                                                                <span>JSON (Like Admin)</span>
-                                                                            </button>
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={async (e) => {
-                                                                                    e.stopPropagation();
-                                                                                    setActiveExportQuizId(null);
-                                                                                    showNotification('info', 'Generating Study PDF...');
-                                                                                    await exportQuizToPDF(quiz);
-                                                                                    showNotification('success', 'Study PDF downloaded!');
-                                                                                }}
-                                                                                className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                                                            >
-                                                                                <FileText className="w-3.5 h-3.5 text-indigo-500" />
-                                                                                <span>PDF Study Sheet</span>
-                                                                            </button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        showNotification('info', 'Generating Study PDF...');
+                                                                        await exportQuizToPDF(quiz);
+                                                                        showNotification('success', 'Study PDF downloaded!');
+                                                                    }}
+                                                                    className="p-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 rounded-2xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
+                                                                    title="Export PDF Study Sheet"
+                                                                >
+                                                                    <FileText className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                                                                </button>
                                                             </>
                                                         )}
                                                     </div>
@@ -1482,57 +1443,19 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                                     🎮
                                                                 </button>
 
-                                                                <div className="relative">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setActiveExportQuizId(activeExportQuizId === quizId ? null : quizId);
-                                                                        }}
-                                                                        className="p-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 rounded-2xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
-                                                                        title="Export Exam"
-                                                                    >
-                                                                        <Download className="w-4 h-4 text-orange-500 dark:text-orange-400" />
-                                                                    </button>
-
-                                                                    {activeExportQuizId === quizId && (
-                                                                        <div
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                            className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 text-left"
-                                                                        >
-                                                                            <div className="p-2 border-b border-gray-100 dark:border-white/5 text-[9px] font-black uppercase tracking-wider text-gray-400">
-                                                                                Export Exam
-                                                                            </div>
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    exportQuizToJSON(quiz);
-                                                                                    setActiveExportQuizId(null);
-                                                                                    showNotification('success', `Exam "${quiz.title}" exported as JSON!`);
-                                                                                }}
-                                                                                className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                                                            >
-                                                                                <Download className="w-3.5 h-3.5 text-emerald-500" />
-                                                                                <span>JSON (Like Admin)</span>
-                                                                            </button>
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={async (e) => {
-                                                                                    e.stopPropagation();
-                                                                                    setActiveExportQuizId(null);
-                                                                                    showNotification('info', 'Generating Study PDF...');
-                                                                                    await exportQuizToPDF(quiz);
-                                                                                    showNotification('success', 'Study PDF downloaded!');
-                                                                                }}
-                                                                                className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
-                                                                            >
-                                                                                <FileText className="w-3.5 h-3.5 text-orange-500" />
-                                                                                <span>PDF Study Sheet</span>
-                                                                            </button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        showNotification('info', 'Generating Study PDF...');
+                                                                        await exportQuizToPDF(quiz);
+                                                                        showNotification('success', 'Study PDF downloaded!');
+                                                                    }}
+                                                                    className="p-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 rounded-2xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
+                                                                    title="Export PDF Study Sheet"
+                                                                >
+                                                                    <FileText className="w-4 h-4 text-orange-500 dark:text-orange-400" />
+                                                                </button>
                                                             </>
                                                         )}
                                                     </div>
