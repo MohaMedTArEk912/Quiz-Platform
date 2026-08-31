@@ -42,6 +42,7 @@ import LiveProctoringManagement from './admin/LiveProctoringManagement.tsx';
 import AttemptDetailsModal from './admin/AttemptDetailsModal.tsx';
 
 import RoadManager from './admin/RoadManager';
+import BadgeManagement from './admin/BadgeManagement.tsx';
 import QuizManager from '../pages/QuizManager';
 import AdminSettings from './AdminSettings.tsx';
 import TrackRequestManagement from './admin/TrackRequestManagement.tsx';

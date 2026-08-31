@@ -1,11 +1,19 @@
 import React, { useRef, useState } from 'react';
 import type { UserData, AttemptData } from '../types/index.ts';
-import { Trophy, TrendingUp, Award, Download, Loader2, Star, Zap, Flame, Settings, Calendar, History } from 'lucide-react';
+import { Trophy, TrendingUp, Award, Download, Loader2, Star, Zap, Flame, Settings, Calendar, History, FileText, Table, FileSpreadsheet, Eye, ChevronDown } from 'lucide-react';
 import Navbar from './Navbar.tsx';
 import { Certificate } from './Certificate.tsx';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { calculateLevel } from '../lib/gamification';
+import {
+    exportQuizHistoryToCSV,
+    exportQuizHistoryToPDF,
+    exportQuizHistoryToJSON,
+    exportAttemptToCSV,
+    exportAttemptToPDF
+} from '../lib/exportUtils';
+import AttemptDetailsModal from './admin/AttemptDetailsModal.tsx';
 import UserSettings from './UserSettings.tsx';
 import AnalyticsPanel from './engage/AnalyticsPanel.tsx';
 import Avatar from './Avatar';
@@ -37,6 +45,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
     const [currentUser, setCurrentUser] = useState<UserData>(user);
+    const [isExportHistoryMenuOpen, setIsExportHistoryMenuOpen] = useState(false);
+    const [inspectingAttempt, setInspectingAttempt] = useState<AttemptData | null>(null);
+    const [exportingAttemptId, setExportingAttemptId] = useState<string | null>(null);
+    const [exportingFormat, setExportingFormat] = useState<'pdf' | 'csv' | null>(null);
 
     const currentXP = currentUser.xp || 0;
     const level = calculateLevel(currentXP);
@@ -61,6 +73,73 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
     const recentAttempts = [...attempts]
         .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
         .slice(0, 10);
+
+    const handleExportHistory = (format: 'csv' | 'pdf' | 'json') => {
+        setIsExportHistoryMenuOpen(false);
+        if (format === 'csv') {
+            exportQuizHistoryToCSV(attempts, currentUser);
+        } else if (format === 'pdf') {
+            exportQuizHistoryToPDF(attempts, currentUser);
+        } else if (format === 'json') {
+            exportQuizHistoryToJSON(attempts, currentUser);
+        }
+    };
+
+    const handleExportSingleAttempt = async (attempt: AttemptData, format: 'pdf' | 'csv') => {
+        setExportingAttemptId(attempt.attemptId);
+        setExportingFormat(format);
+        try {
+            // Build detailed fallback
+            const questions = attempt.attemptQuestions || [];
+            const breakdown = questions.map((q, idx) => {
+                const userAns = attempt.answers?.[idx] ?? attempt.answers?.[q.id];
+                let selected = undefined;
+                let isCorrect = false;
+                if (typeof userAns === 'object' && userAns !== null) {
+                    selected = (userAns as { selected?: unknown }).selected;
+                    isCorrect = Boolean((userAns as { isCorrect?: boolean }).isCorrect);
+                } else {
+                    selected = userAns;
+                    isCorrect = selected !== undefined && (
+                        Number(selected) === Number(q.correctAnswer) ||
+                        String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
+                    );
+                }
+                return {
+                    questionId: q.id ?? idx + 1,
+                    questionIndex: idx,
+                    question: q.question,
+                    options: q.options || [],
+                    correctAnswer: q.correctAnswer,
+                    explanation: q.explanation || '',
+                    points: q.points || 10,
+                    type: q.type || 'multiple-choice',
+                    studentAnswer: selected,
+                    isCorrect,
+                    isAnswered: selected !== undefined && selected !== null && selected !== ''
+                };
+            });
+
+            const detailedData = {
+                ...attempt,
+                userName: currentUser.name,
+                userEmail: currentUser.email,
+                questionsBreakdown: breakdown
+            };
+
+            if (format === 'pdf') {
+                await exportAttemptToPDF(detailedData);
+            } else {
+                exportAttemptToCSV(detailedData);
+            }
+        } catch (err) {
+            console.error('Failed to export attempt:', err);
+            setError('Failed to export attempt');
+        } finally {
+            setExportingAttemptId(null);
+            setExportingFormat(null);
+        }
+    };
 
     const handleDownloadCertificate = async (attempt: AttemptData) => {
         setDownloadingAttemptId(attempt.attemptId);
@@ -242,50 +321,147 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
 
                 {/* Recent Attempts */}
                 <div className="bg-white dark:bg-[#13141f] rounded-[2.5rem] border border-gray-200 dark:border-white/5 overflow-hidden shadow-2xl">
-                    <div className="p-8 border-b border-gray-200 dark:border-white/5 flex flex-wrap justify-between items-center gap-4 bg-gray-50 dark:bg-white/5">
+                    <div className="p-6 sm:p-8 border-b border-gray-200 dark:border-white/5 flex flex-wrap justify-between items-center gap-4 bg-gray-50 dark:bg-white/5">
                         <div className="flex items-center gap-3">
                             <History className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                            <h2 className="text-2xl font-black text-gray-900 dark:text-white">Recent Activity</h2>
+                            <div>
+                                <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">Recent Activity</h2>
+                                <p className="text-xs text-gray-400 font-bold">{attempts.length} Total Quiz Attempts</p>
+                            </div>
                         </div>
-                        {error && <span className="bg-red-500/10 text-red-600 dark:text-red-400 px-4 py-2 rounded-xl text-sm font-bold border border-red-500/20 flex items-center gap-2">
-                            <Zap className="w-4 h-4" /> {error}
-                        </span>}
+
+                        <div className="flex items-center gap-3">
+                            {error && <span className="bg-red-500/10 text-red-600 dark:text-red-400 px-3 py-1.5 rounded-xl text-xs font-bold border border-red-500/20 flex items-center gap-2">
+                                <Zap className="w-4 h-4" /> {error}
+                            </span>}
+
+                            {/* Export History Dropdown */}
+                            {attempts.length > 0 && (
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsExportHistoryMenuOpen(!isExportHistoryMenuOpen)}
+                                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        <span>Export History</span>
+                                        <ChevronDown className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    {isExportHistoryMenuOpen && (
+                                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                                            <div className="p-2 border-b border-gray-100 dark:border-white/5 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                                                Export Options
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleExportHistory('csv')}
+                                                className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2.5 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                            >
+                                                <Table className="w-4 h-4 text-emerald-500" />
+                                                <span>Excel / CSV Spreadsheet</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleExportHistory('pdf')}
+                                                className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2.5 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                            >
+                                                <FileText className="w-4 h-4 text-indigo-500" />
+                                                <span>PDF Transcript Report</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleExportHistory('json')}
+                                                className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2.5 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                            >
+                                                <FileSpreadsheet className="w-4 h-4 text-amber-500" />
+                                                <span>JSON Raw Data</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <div className="overflow-x-auto">
                         {/* Mobile View (Cards) */}
                         <div className="md:hidden">
                             {recentAttempts.map((attempt) => (
                                 <div key={attempt.attemptId} className="p-4 border-b border-gray-100 dark:border-white/5 last:border-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div>
-                                            <h4 className="font-bold text-gray-900 dark:text-white mb-1">{attempt.quizTitle}</h4>
-                                            <span className="text-xs text-gray-500 dark:text-gray-500 font-medium">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="min-w-0 flex-1 pr-2">
+                                            <h4 className="font-bold text-gray-900 dark:text-white mb-1 truncate">{attempt.quizTitle}</h4>
+                                            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                                                 {new Date(attempt.completedAt).toLocaleDateString()} • {Math.floor(attempt.timeTaken / 60)}m {attempt.timeTaken % 60}s
                                             </span>
                                         </div>
-                                        {attempt.percentage === 100 && (
-                                            <div className="bg-yellow-100 dark:bg-yellow-500/20 p-1.5 rounded-lg text-yellow-600 dark:text-yellow-400">
-                                                {downloadingAttemptId === attempt.attemptId ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                    <Download className="w-4 h-4" onClick={() => handleDownloadCertificate(attempt)} />
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center justify-between">
                                         <span
-                                            className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${attempt.percentage >= 60
+                                            className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider shrink-0 ${attempt.percentage >= 60
                                                 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                                                 : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
                                                 }`}
                                         >
                                             {attempt.score}/{attempt.totalQuestions} ({attempt.percentage}%)
                                         </span>
+                                    </div>
+
+                                    {/* Action Buttons for Mobile Card */}
+                                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-gray-100 dark:border-white/5 flex-wrap">
+                                        <button
+                                            type="button"
+                                            onClick={() => setInspectingAttempt(attempt)}
+                                            className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                            title="View question-by-question breakdown"
+                                        >
+                                            <Eye className="w-3.5 h-3.5 text-indigo-500" />
+                                            <span>Inspect</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => handleExportSingleAttempt(attempt, 'pdf')}
+                                            disabled={exportingAttemptId === attempt.attemptId}
+                                            className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                            title="Export PDF Report"
+                                        >
+                                            {exportingAttemptId === attempt.attemptId && exportingFormat === 'pdf' ? (
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                                <FileText className="w-3.5 h-3.5" />
+                                            )}
+                                            <span>PDF</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => handleExportSingleAttempt(attempt, 'csv')}
+                                            disabled={exportingAttemptId === attempt.attemptId}
+                                            className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                            title="Export CSV"
+                                        >
+                                            {exportingAttemptId === attempt.attemptId && exportingFormat === 'csv' ? (
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                                <Table className="w-3.5 h-3.5" />
+                                            )}
+                                            <span>CSV</span>
+                                        </button>
+
                                         {attempt.percentage === 100 && (
-                                            <span className="text-[10px] font-bold text-yellow-600 dark:text-yellow-500 uppercase tracking-wider flex items-center gap-1">
-                                                <Award className="w-3 h-3" /> Certified
-                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDownloadCertificate(attempt)}
+                                                disabled={downloadingAttemptId === attempt.attemptId}
+                                                className="px-2.5 py-1 rounded-lg bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-200 text-[11px] font-bold flex items-center gap-1.5 transition-colors ml-auto cursor-pointer"
+                                                title="Download Certificate"
+                                            >
+                                                {downloadingAttemptId === attempt.attemptId ? (
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                ) : (
+                                                    <Award className="w-3.5 h-3.5" />
+                                                )}
+                                                <span>Certificate</span>
+                                            </button>
                                         )}
                                     </div>
                                 </div>
@@ -305,7 +481,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                     <th className="px-8 py-5 text-left">Score</th>
                                     <th className="px-8 py-5 text-left">Time</th>
                                     <th className="px-8 py-5 text-left">Date</th>
-                                    <th className="px-8 py-5 text-right">Certificate</th>
+                                    <th className="px-8 py-5 text-right">Actions &amp; Exports</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 dark:divide-white/5">
@@ -331,25 +507,64 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                             {new Date(attempt.completedAt).toLocaleDateString()}
                                         </td>
                                         <td className="px-8 py-5 text-right">
-                                            {attempt.percentage === 100 ? (
+                                            <div className="flex items-center justify-end gap-2">
                                                 <button
-                                                    onClick={() => handleDownloadCertificate(attempt)}
-                                                    disabled={downloadingAttemptId === attempt.attemptId}
-                                                    className="inline-flex pl-3 pr-4 py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded-xl transition-all font-bold text-xs uppercase tracking-wider gap-2 items-center border border-yellow-500/20 hover:border-yellow-500/40"
-                                                    title="Download Certificate (100% Score)"
+                                                    type="button"
+                                                    onClick={() => setInspectingAttempt(attempt)}
+                                                    className="p-2 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200 rounded-xl transition-all font-bold text-xs flex items-center gap-1 cursor-pointer"
+                                                    title="Inspect Breakdown"
                                                 >
-                                                    {downloadingAttemptId === attempt.attemptId ? (
+                                                    <Eye className="w-4 h-4 text-indigo-500" />
+                                                    <span className="hidden lg:inline">Inspect</span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleExportSingleAttempt(attempt, 'pdf')}
+                                                    disabled={exportingAttemptId === attempt.attemptId}
+                                                    className="p-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-xl transition-all font-bold text-xs flex items-center gap-1 border border-indigo-500/20 cursor-pointer"
+                                                    title="Export PDF Report"
+                                                >
+                                                    {exportingAttemptId === attempt.attemptId && exportingFormat === 'pdf' ? (
                                                         <Loader2 className="w-4 h-4 animate-spin" />
                                                     ) : (
-                                                        <Download className="w-4 h-4" />
+                                                        <FileText className="w-4 h-4" />
                                                     )}
-                                                    Certificate
+                                                    <span className="hidden lg:inline">PDF</span>
                                                 </button>
-                                            ) : (
-                                                <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">
-                                                    {attempt.percentage >= 60 ? '100% required' : 'Not earned'}
-                                                </span>
-                                            )}
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleExportSingleAttempt(attempt, 'csv')}
+                                                    disabled={exportingAttemptId === attempt.attemptId}
+                                                    className="p-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl transition-all font-bold text-xs flex items-center gap-1 border border-emerald-500/20 cursor-pointer"
+                                                    title="Export Excel / CSV"
+                                                >
+                                                    {exportingAttemptId === attempt.attemptId && exportingFormat === 'csv' ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <Table className="w-4 h-4" />
+                                                    )}
+                                                    <span className="hidden lg:inline">CSV</span>
+                                                </button>
+
+                                                {attempt.percentage === 100 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDownloadCertificate(attempt)}
+                                                        disabled={downloadingAttemptId === attempt.attemptId}
+                                                        className="inline-flex pl-3 pr-4 py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded-xl transition-all font-bold text-xs uppercase tracking-wider gap-1.5 items-center border border-yellow-500/20 hover:border-yellow-500/40 cursor-pointer"
+                                                        title="Download Certificate (100% Score)"
+                                                    >
+                                                        {downloadingAttemptId === attempt.attemptId ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <Award className="w-4 h-4" />
+                                                        )}
+                                                        Certificate
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -365,6 +580,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                     </div>
                 </div>
             </div>
+
+            {/* Inspect Attempt Modal */}
+            {inspectingAttempt && (
+                <AttemptDetailsModal
+                    attempt={inspectingAttempt}
+                    onClose={() => setInspectingAttempt(null)}
+                />
+            )}
 
             {/* Hidden Certificate Component */}
             {currentCertificateAttempt && (

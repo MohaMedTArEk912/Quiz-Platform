@@ -1,5 +1,5 @@
 import React from 'react';
-import { Keyboard, X, Sparkles } from 'lucide-react';
+import { Keyboard, Sparkles } from 'lucide-react';
 import Modal from './Modal';
 
 interface KeyboardShortcutsModalProps {

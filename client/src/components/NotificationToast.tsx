@@ -38,11 +38,11 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ notification, onC
     };
 
     return (
-        <div className={`fixed top-24 right-4 z-50 p-4 rounded-xl shadow-2xl flex items-center gap-3 w-80 animate-in slide-in-from-right ${getBgColor()}`}>
-            {getIcon()}
-            <p className="flex-grow font-medium text-slate-700 dark:text-slate-200">{notification.message}</p>
-            <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors">
-                <X className="w-4 h-4 text-slate-400" />
+        <div className={`fixed top-16 sm:top-24 right-3 left-3 sm:left-auto sm:right-4 sm:w-96 max-w-[calc(100vw-1.5rem)] z-[100] p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-gray-200/60 dark:border-white/10 backdrop-blur-xl animate-in slide-in-from-top-2 sm:slide-in-from-right duration-200 ${getBgColor()}`}>
+            <div className="shrink-0">{getIcon()}</div>
+            <p className="flex-grow font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 break-words leading-relaxed">{notification.message}</p>
+            <button onClick={onClose} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors shrink-0 cursor-pointer" aria-label="Close notification">
+                <X className="w-4 h-4 text-slate-400 hover:text-slate-600 dark:hover:text-white" />
             </button>
         </div>
     );

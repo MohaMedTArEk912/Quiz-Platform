@@ -202,11 +202,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 )}
             </button>
 
+            {/* Mobile Backdrop Overlay */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 sm:hidden animate-in fade-in duration-150"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
+
             {/* Notification Popover Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 mt-3 w-80 sm:w-96 max-w-[90vw] bg-white/95 dark:bg-[#13141f]/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200 dark:border-white/10 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="fixed sm:absolute inset-x-3.5 sm:inset-x-auto top-16 sm:top-full sm:right-0 sm:mt-3 sm:w-96 max-h-[80vh] sm:max-h-[520px] bg-white/95 dark:bg-[#13141f]/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200 dark:border-white/10 z-50 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 duration-200">
                     {/* Header */}
-                    <div className="p-4 sm:p-5 border-b border-gray-200/60 dark:border-white/10 flex items-center justify-between">
+                    <div className="p-4 sm:p-5 border-b border-gray-200/60 dark:border-white/10 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-2.5">
                             <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500">
                                 <Bell className="w-4 h-4" />
@@ -235,7 +243,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                     </div>
 
                     {/* Filter Tabs */}
-                    <div className="px-4 py-2 bg-gray-50/50 dark:bg-black/20 border-b border-gray-200/40 dark:border-white/5 flex items-center gap-2">
+                    <div className="px-4 py-2 bg-gray-50/50 dark:bg-black/20 border-b border-gray-200/40 dark:border-white/5 flex items-center gap-2 shrink-0">
                         <button
                             type="button"
                             onClick={() => setFilter('all')}
@@ -261,7 +269,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                     </div>
 
                     {/* Notifications List */}
-                    <div className="max-h-[380px] overflow-y-auto custom-scrollbar divide-y divide-gray-100 dark:divide-white/5">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-gray-100 dark:divide-white/5">
                         {filteredNotifications.length === 0 ? (
                             <div className="py-12 px-4 text-center">
                                 <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-2 text-gray-400">
@@ -284,16 +292,26 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-2 mb-0.5">
-                                            <h5 className={`text-xs font-black truncate ${
+                                            <h5 className={`text-xs font-black truncate flex-1 min-w-0 ${
                                                 !notif.isRead
                                                     ? 'text-gray-900 dark:text-white'
                                                     : 'text-gray-600 dark:text-gray-300'
                                             }`}>
                                                 {notif.title}
                                             </h5>
-                                            <span className="text-[9px] font-bold text-gray-400 shrink-0">
-                                                {formatTimeAgo(notif.createdAt)}
-                                            </span>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <span className="text-[9px] font-bold text-gray-400">
+                                                    {formatTimeAgo(notif.createdAt)}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleDelete(notif.notificationId, e)}
+                                                    className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors cursor-pointer"
+                                                    title="Delete notification"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
@@ -317,18 +335,6 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                                                 <ExternalLink className="w-3 h-3" />
                                             </div>
                                         )}
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <div className="flex flex-col items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            type="button"
-                                            onClick={(e) => handleDelete(notif.notificationId, e)}
-                                            className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
-                                            title="Delete notification"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
                                     </div>
                                 </div>
                             ))

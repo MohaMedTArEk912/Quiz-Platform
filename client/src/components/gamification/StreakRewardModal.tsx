@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Flame, Sparkles, Check, Gift, Coins, Zap, Clock, Shield } from 'lucide-react';
+import { Flame, Check } from 'lucide-react';
 import Modal from '../common/Modal';
 import { MysteryLootBox, type LootReward } from './MysteryLootBox';
 import { sounds } from '../../lib/soundEffects';
@@ -132,7 +132,6 @@ export const StreakRewardModal: React.FC<StreakRewardModalProps> = ({
                         {STREAK_DAYS.map((d) => {
                             const isPast = d.day < currentStreakDay;
                             const isToday = d.day === currentStreakDay;
-                            const isFuture = d.day > currentStreakDay;
 
                             return (
                                 <div

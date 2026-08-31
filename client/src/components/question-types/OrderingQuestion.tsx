@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowUp, ArrowDown, GripVertical, Check, X } from 'lucide-react';
+import { ArrowUp, ArrowDown, Check, X } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
 
 interface OrderingQuestionProps {

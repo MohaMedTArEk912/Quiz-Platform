@@ -1,8 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Quiz, UserData, QuizResult, DetailedAnswer } from '../types';
-import { RotateCcw, Clock, Target, CheckCircle, XCircle, ArrowLeft, Trophy, Flag, AlertTriangle, List } from 'lucide-react';
+import { RotateCcw, Clock, Target, CheckCircle, XCircle, ArrowLeft, Trophy, Flag, AlertTriangle, List, Download, FileText, Table, ChevronDown, Loader2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { MathRenderer } from './common/MathRenderer';
+import {
+    exportAttemptToPDF,
+    exportAttemptToCSV,
+    exportQuizToJSON,
+    exportQuizToPDF
+} from '../lib/exportUtils';
 
 interface QuizResultsProps {
     result: QuizResult;
@@ -12,8 +18,11 @@ interface QuizResultsProps {
     onRetake: () => void;
 }
 
-const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes, onRetake }) => {
-    const [showReview, setShowReview] = React.useState(false);
+const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQuizzes, onRetake }) => {
+    const [showReview, setShowReview] = useState(false);
+    const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const [isExportingResult, setIsExportingResult] = useState(false);
+    const [isExportingQuiz, setIsExportingQuiz] = useState(false);
     const safeQuestions = (result.attemptQuestions && result.attemptQuestions.length > 0) 
         ? result.attemptQuestions 
         : (Array.isArray(quiz.questions) ? quiz.questions : []);
@@ -55,6 +64,77 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
     ).length;
 
     const incorrectCount = result.totalQuestions - correctCount;
+
+    const handleExportResult = async (format: 'pdf' | 'csv') => {
+        setIsExportingResult(true);
+        try {
+            const breakdown = safeQuestions.map((q, idx) => {
+                const ans = result.answers[idx];
+                const isDetailed = typeof ans === 'object' && ans !== null;
+                const isCorrect = isDetailed ? ans.isCorrect : (ans !== undefined && ans !== null && ans === q.correctAnswer);
+                const userAnswer = isDetailed ? ans.selected : ans;
+
+                return {
+                    questionId: q.id ?? idx + 1,
+                    questionIndex: idx,
+                    question: q.question,
+                    options: q.options || [],
+                    correctAnswer: q.correctAnswer,
+                    explanation: q.explanation || '',
+                    points: q.points || 10,
+                    type: q.type || 'multiple-choice',
+                    studentAnswer: userAnswer,
+                    isCorrect: Boolean(isCorrect),
+                    isAnswered: userAnswer !== undefined && userAnswer !== null && userAnswer !== ''
+                };
+            });
+
+            const detailedData = {
+                attemptId: (result as { attemptId?: string }).attemptId || `att_${Date.now()}`,
+                userId: user.userId,
+                userName: user.name,
+                userEmail: user.email,
+                quizId: quiz.id,
+                quizTitle: quiz.title,
+                score: result.score,
+                totalQuestions: result.totalQuestions,
+                percentage: result.percentage,
+                timeTaken: result.timeTaken,
+                completedAt: new Date().toISOString(),
+                passed: result.passed,
+                answers: result.answers,
+                attemptQuestions: safeQuestions,
+                questionsBreakdown: breakdown
+            };
+
+            if (format === 'pdf') {
+                await exportAttemptToPDF(detailedData);
+            } else {
+                exportAttemptToCSV(detailedData);
+            }
+        } catch (err) {
+            console.error('Error exporting result:', err);
+        } finally {
+            setIsExportingResult(false);
+            setIsExportMenuOpen(false);
+        }
+    };
+
+    const handleExportQuiz = async (format: 'json' | 'pdf') => {
+        setIsExportingQuiz(true);
+        try {
+            if (format === 'json') {
+                exportQuizToJSON(quiz);
+            } else {
+                await exportQuizToPDF(quiz);
+            }
+        } catch (err) {
+            console.error('Error exporting quiz:', err);
+        } finally {
+            setIsExportingQuiz(false);
+            setIsExportMenuOpen(false);
+        }
+    };
 
     return (
         <div className="h-screen bg-gray-50 dark:bg-[#080812] relative overflow-hidden flex flex-col w-full min-h-0 font-sans text-gray-900 dark:text-gray-100 transition-colors">
@@ -249,23 +329,88 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                         <div className="flex-1 min-h-[20px]" /> {/* Spacer */}
                         
                         {/* Action Buttons */}
-                        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8 landscape:mb-4 lg:landscape:mb-8 transition-all">
+                        <div className="flex flex-col sm:flex-row items-center gap-3 mb-8 landscape:mb-4 lg:landscape:mb-8 transition-all">
                             <button
                                 onClick={onRetake}
-                                className="w-full sm:w-1/2 group flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-all font-black text-gray-700 dark:text-gray-200 shadow-sm"
+                                className="w-full sm:flex-1 group flex items-center justify-center gap-2 px-5 py-4 rounded-2xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-all font-black text-gray-700 dark:text-gray-200 shadow-sm cursor-pointer text-sm"
                             >
-                                <RotateCcw className="w-5 h-5 text-indigo-500 dark:text-indigo-400 group-hover:-rotate-180 transition-transform duration-700" />
-                                {result.poolProgress
-                                    ? ((result.poolProgress.remainingCount || 0) > 0
-                                        ? `Complete Remaining (${result.poolProgress.remainingCount} Left)`
-                                        : 'Start Next Cycle')
-                                    : 'Retake Quiz'}
+                                <RotateCcw className="w-4 h-4 text-indigo-500 dark:text-indigo-400 group-hover:-rotate-180 transition-transform duration-700" />
+                                <span>
+                                    {result.poolProgress
+                                        ? ((result.poolProgress.remainingCount || 0) > 0
+                                            ? `Remaining (${result.poolProgress.remainingCount})`
+                                            : 'Next Cycle')
+                                        : 'Retake'}
+                                </span>
                             </button>
+
+                            {/* Export Result & Quiz Menu */}
+                            <div className="relative w-full sm:w-auto">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-4 rounded-2xl bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 border border-gray-200 dark:border-white/10 transition-all font-black text-gray-700 dark:text-gray-200 shadow-sm cursor-pointer text-sm"
+                                >
+                                    <Download className="w-4 h-4 text-indigo-500" />
+                                    <span>Export</span>
+                                    <ChevronDown className="w-3.5 h-3.5" />
+                                </button>
+
+                                {isExportMenuOpen && (
+                                    <div className="absolute left-0 sm:left-auto sm:right-0 bottom-full mb-2 w-56 bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 text-left">
+                                        <div className="p-2 border-b border-gray-100 dark:border-white/5 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                                            Export Result
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleExportResult('pdf')}
+                                            disabled={isExportingResult}
+                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                        >
+                                            {isExportingResult ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5 text-indigo-500" />}
+                                            <span>Assessment PDF</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleExportResult('csv')}
+                                            disabled={isExportingResult}
+                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                        >
+                                            {isExportingResult ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Table className="w-3.5 h-3.5 text-emerald-500" />}
+                                            <span>Result CSV / Excel</span>
+                                        </button>
+
+                                        <div className="p-2 border-t border-b border-gray-100 dark:border-white/5 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                                            Export Quiz Data
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleExportQuiz('json')}
+                                            disabled={isExportingQuiz}
+                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                        >
+                                            <Download className="w-3.5 h-3.5 text-emerald-500" />
+                                            <span>JSON (Like Admin)</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleExportQuiz('pdf')}
+                                            disabled={isExportingQuiz}
+                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                        >
+                                            {isExportingQuiz ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5 text-orange-500" />}
+                                            <span>Study Sheet PDF</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
                             <button
                                 onClick={onBackToQuizzes}
-                                className="w-full sm:w-1/2 group flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all hover:-translate-y-1 font-black text-white"
+                                className="w-full sm:flex-1 group flex items-center justify-center gap-2 px-5 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all hover:-translate-y-0.5 font-black text-white cursor-pointer text-sm"
                             >
-                                Continue <Target className="w-5 h-5" />
+                                <span>Continue</span>
+                                <Target className="w-4 h-4" />
                             </button>
                         </div>
 
@@ -332,8 +477,8 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, onBackToQuizzes
                                                                 <span className="text-xs font-bold uppercase tracking-widest text-gray-400 w-24">Correct</span>
                                                                 <span className="font-semibold text-gray-800 dark:text-gray-200">
                                                                     {q.type === 'multiple-choice' || !q.type 
-                                                                        ? (q.options ? q.options[q.correctAnswer as number] : q.correctAnswer) 
-                                                                        : q.correctAnswer?.toString()}
+                                                                        ? (q.options ? q.options[q.correctAnswer as number] : String(q.correctAnswer ?? '')) 
+                                                                        : (typeof q.correctAnswer === 'object' ? JSON.stringify(q.correctAnswer) : String(q.correctAnswer ?? ''))}
                                                                 </span>
                                                             </div>
                                                         )}

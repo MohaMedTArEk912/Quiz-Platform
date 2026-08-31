@@ -29,16 +29,20 @@ export interface Quiz {
 
 export interface Question {
     id: number;
-    type?: 'multiple-choice' | 'text';
+    type?: 'multiple-choice' | 'text' | 'ordering' | 'matching' | 'code-output';
     part: string;
     question: string;
     options?: string[];
-    correctAnswer?: number | string;
+    correctAnswer?: any;
     explanation: string;
     points: number;
     imageUrl?: string;
     codeSnippet?: string;
     audioUrl?: string;
+    videoUrl?: string;
+    videoTimestamp?: number;
+    orderingItems?: string[];
+    matchingPairs?: { left: string; right: string }[];
     isCompiler?: boolean;
     compilerConfig?: CompilerConfig;
     shuffleOptions?: boolean;
@@ -740,7 +744,7 @@ export interface AttemptQuestionBreakdown {
     questionIndex: number;
     question: string;
     options: string[];
-    correctAnswer?: number | string;
+    correctAnswer?: any;
     explanation?: string;
     points: number;
     imageUrl?: string;

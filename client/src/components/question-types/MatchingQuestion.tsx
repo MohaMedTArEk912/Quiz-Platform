@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link2, Check, X, RotateCcw } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
 
 export interface MatchingPair {

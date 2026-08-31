@@ -33,7 +33,8 @@ import {
     Terminal,
     Lock,
     Clipboard,
-    Send
+    Send,
+    Download
 } from 'lucide-react';
 import Navbar from './Navbar.tsx';
 import UserRoadmapView from './UserRoadmapView';
@@ -47,6 +48,7 @@ import { useNotification } from '../context/NotificationContext';
 import { api } from '../lib/api';
 import { getQuizIconOption } from '../utils/quizIcons';
 import { getQuizPoolStatus, calculateSubjectProgress } from '../utils/poolUtils';
+import { exportQuizToJSON, exportQuizToPDF } from '../lib/exportUtils';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
     'BookOpen': <BookOpen className="w-8 h-8" />,
@@ -112,6 +114,17 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
     const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
     const [isLivePlayerOpen, setIsLivePlayerOpen] = useState(false);
     const [liveHostQuiz, setLiveHostQuiz] = useState<Quiz | null>(null);
+    const [activeExportQuizId, setActiveExportQuizId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const handleClickOutside = () => setActiveExportQuizId(null);
+        if (activeExportQuizId) {
+            document.addEventListener('click', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [activeExportQuizId]);
 
     // Derive selected state from URL so refresh / back button work correctly
     const selectedSubjectId = searchParams.get('subject');
@@ -1093,38 +1106,100 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                         )}
                                                     </div>
 
-                                                    <button
-                                                        disabled={locked}
-                                                        className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${
-                                                            locked
-                                                                ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
-                                                                : poolStatus.isPool
-                                                                    ? poolStatus.hasStarted && !poolStatus.isFullyCompleted
-                                                                        ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/25'
-                                                                        : poolStatus.isFullyCompleted
+                                                    <div className="flex items-center gap-2 mt-auto">
+                                                        <button
+                                                            disabled={locked}
+                                                            onClick={(e) => {
+                                                                if (!locked) {
+                                                                    e.stopPropagation();
+                                                                    onSelectQuiz(quiz);
+                                                                }
+                                                            }}
+                                                            className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${
+                                                                locked
+                                                                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
+                                                                    : poolStatus.isPool
+                                                                        ? poolStatus.hasStarted && !poolStatus.isFullyCompleted
+                                                                            ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/25'
+                                                                            : poolStatus.isFullyCompleted
+                                                                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
+                                                                                : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500'
+                                                                        : attempted
                                                                             ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
                                                                             : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500'
-                                                                    : attempted
-                                                                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
-                                                                        : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500'
-                                                        }`}
-                                                    >
-                                                        {locked ? (
-                                                            <><Lock className="w-4 h-4" /> Locked</>
-                                                        ) : poolStatus.isPool ? (
-                                                            poolStatus.hasStarted && !poolStatus.isFullyCompleted ? (
-                                                                <><Play className="w-4 h-4 fill-white" /> Complete Remaining ({poolStatus.remainingCount} Left)</>
-                                                            ) : poolStatus.isFullyCompleted ? (
-                                                                <><RefreshCw className="w-4 h-4" /> Retake (Start Next Cycle)</>
+                                                            }`}
+                                                        >
+                                                            {locked ? (
+                                                                <><Lock className="w-4 h-4" /> Locked</>
+                                                            ) : poolStatus.isPool ? (
+                                                                poolStatus.hasStarted && !poolStatus.isFullyCompleted ? (
+                                                                    <><Play className="w-4 h-4 fill-white" /> Complete Remaining ({poolStatus.remainingCount} Left)</>
+                                                                ) : poolStatus.isFullyCompleted ? (
+                                                                    <><RefreshCw className="w-4 h-4" /> Retake (Start Next Cycle)</>
+                                                                ) : (
+                                                                    <><Play className="w-4 h-4 fill-white" /> Start Pool</>
+                                                                )
+                                                            ) : attempted ? (
+                                                                <><RefreshCw className="w-4 h-4" /> Retake</>
                                                             ) : (
-                                                                <><Play className="w-4 h-4 fill-white" /> Start Pool</>
-                                                            )
-                                                        ) : attempted ? (
-                                                            <><RefreshCw className="w-4 h-4" /> Retake</>
-                                                        ) : (
-                                                            <><Play className="w-4 h-4 fill-white" /> Start</>
+                                                                <><Play className="w-4 h-4 fill-white" /> Start</>
+                                                            )}
+                                                        </button>
+
+                                                        {!locked && (
+                                                            <div className="relative">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setActiveExportQuizId(activeExportQuizId === quizId ? null : quizId);
+                                                                    }}
+                                                                    className="p-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 rounded-2xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
+                                                                    title="Export Quiz"
+                                                                >
+                                                                    <Download className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                                                                </button>
+
+                                                                {activeExportQuizId === quizId && (
+                                                                    <div
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                        className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 text-left"
+                                                                    >
+                                                                        <div className="p-2 border-b border-gray-100 dark:border-white/5 text-[9px] font-black uppercase tracking-wider text-gray-400">
+                                                                            Export Quiz
+                                                                        </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                exportQuizToJSON(quiz);
+                                                                                setActiveExportQuizId(null);
+                                                                                showNotification('success', `Quiz "${quiz.title}" exported as JSON!`);
+                                                                            }}
+                                                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                                                        >
+                                                                            <Download className="w-3.5 h-3.5 text-emerald-500" />
+                                                                            <span>JSON (Like Admin)</span>
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={async (e) => {
+                                                                                e.stopPropagation();
+                                                                                setActiveExportQuizId(null);
+                                                                                showNotification('info', 'Generating Study PDF...');
+                                                                                await exportQuizToPDF(quiz);
+                                                                                showNotification('success', 'Study PDF downloaded!');
+                                                                            }}
+                                                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                                                        >
+                                                                            <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                                                                            <span>PDF Study Sheet</span>
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         )}
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
@@ -1302,38 +1377,100 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                         )}
                                                     </div>
 
-                                                    <button
-                                                        disabled={locked}
-                                                        className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${
-                                                            locked
-                                                                ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
-                                                                : poolStatus.isPool
-                                                                    ? poolStatus.hasStarted && !poolStatus.isFullyCompleted
-                                                                        ? 'bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 hover:from-orange-500 hover:to-pink-500 text-white shadow-lg shadow-orange-500/25'
-                                                                        : poolStatus.isFullyCompleted
-                                                                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
-                                                                            : 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-500'
-                                                                    : attempted
-                                                                        ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-500'
-                                                                        : 'bg-red-600 text-white shadow-lg shadow-red-500/20 hover:bg-red-500'
-                                                        }`}
-                                                    >
-                                                        {locked ? (
-                                                            <><Lock className="w-4 h-4" /> Locked</>
-                                                        ) : poolStatus.isPool ? (
-                                                            poolStatus.hasStarted && !poolStatus.isFullyCompleted ? (
-                                                                <><Play className="w-4 h-4 fill-white" /> Complete Remaining ({poolStatus.remainingCount} Left)</>
-                                                            ) : poolStatus.isFullyCompleted ? (
-                                                                <><RefreshCw className="w-4 h-4" /> Retake (Start Next Cycle)</>
+                                                    <div className="flex items-center gap-2 mt-auto">
+                                                        <button
+                                                            disabled={locked}
+                                                            onClick={(e) => {
+                                                                if (!locked) {
+                                                                    e.stopPropagation();
+                                                                    onSelectQuiz(quiz);
+                                                                }
+                                                            }}
+                                                            className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${
+                                                                locked
+                                                                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
+                                                                    : poolStatus.isPool
+                                                                        ? poolStatus.hasStarted && !poolStatus.isFullyCompleted
+                                                                            ? 'bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 hover:from-orange-500 hover:to-pink-500 text-white shadow-lg shadow-orange-500/25'
+                                                                            : poolStatus.isFullyCompleted
+                                                                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
+                                                                                : 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-500'
+                                                                        : attempted
+                                                                            ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-500'
+                                                                            : 'bg-red-600 text-white shadow-lg shadow-red-500/20 hover:bg-red-500'
+                                                            }`}
+                                                        >
+                                                            {locked ? (
+                                                                <><Lock className="w-4 h-4" /> Locked</>
+                                                            ) : poolStatus.isPool ? (
+                                                                poolStatus.hasStarted && !poolStatus.isFullyCompleted ? (
+                                                                    <><Play className="w-4 h-4 fill-white" /> Complete Remaining ({poolStatus.remainingCount} Left)</>
+                                                                ) : poolStatus.isFullyCompleted ? (
+                                                                    <><RefreshCw className="w-4 h-4" /> Retake (Start Next Cycle)</>
+                                                                ) : (
+                                                                    <><Play className="w-4 h-4 fill-white" /> Start Exam Pool</>
+                                                                )
+                                                            ) : attempted ? (
+                                                                <><RefreshCw className="w-4 h-4" /> Retake</>
                                                             ) : (
-                                                                <><Play className="w-4 h-4 fill-white" /> Start Exam Pool</>
-                                                            )
-                                                        ) : attempted ? (
-                                                            <><RefreshCw className="w-4 h-4" /> Retake</>
-                                                        ) : (
-                                                            <><Play className="w-4 h-4 fill-white" /> Start</>
+                                                                <><Play className="w-4 h-4 fill-white" /> Start</>
+                                                            )}
+                                                        </button>
+
+                                                        {!locked && (
+                                                            <div className="relative">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setActiveExportQuizId(activeExportQuizId === quizId ? null : quizId);
+                                                                    }}
+                                                                    className="p-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 rounded-2xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
+                                                                    title="Export Exam"
+                                                                >
+                                                                    <Download className="w-4 h-4 text-orange-500 dark:text-orange-400" />
+                                                                </button>
+
+                                                                {activeExportQuizId === quizId && (
+                                                                    <div
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                        className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 text-left"
+                                                                    >
+                                                                        <div className="p-2 border-b border-gray-100 dark:border-white/5 text-[9px] font-black uppercase tracking-wider text-gray-400">
+                                                                            Export Exam
+                                                                        </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                exportQuizToJSON(quiz);
+                                                                                setActiveExportQuizId(null);
+                                                                                showNotification('success', `Exam "${quiz.title}" exported as JSON!`);
+                                                                            }}
+                                                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                                                        >
+                                                                            <Download className="w-3.5 h-3.5 text-emerald-500" />
+                                                                            <span>JSON (Like Admin)</span>
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={async (e) => {
+                                                                                e.stopPropagation();
+                                                                                setActiveExportQuizId(null);
+                                                                                showNotification('info', 'Generating Study PDF...');
+                                                                                await exportQuizToPDF(quiz);
+                                                                                showNotification('success', 'Study PDF downloaded!');
+                                                                            }}
+                                                                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
+                                                                        >
+                                                                            <FileText className="w-3.5 h-3.5 text-orange-500" />
+                                                                            <span>PDF Study Sheet</span>
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         )}
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );

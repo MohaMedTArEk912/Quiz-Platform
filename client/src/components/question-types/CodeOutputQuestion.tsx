@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Terminal, Check, X, Code } from 'lucide-react';
-import { MathRenderer } from '../common/MathRenderer';
+import { Check, X } from 'lucide-react';
 
 interface CodeOutputQuestionProps {
     codeSnippet?: string;

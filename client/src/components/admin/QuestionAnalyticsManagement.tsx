@@ -11,7 +11,6 @@ import {
     TrendingDown,
     Flame,
     BookOpen,
-    Download,
     Table
 } from 'lucide-react';
 import type { UserData, Quiz, QuestionAnalyticsItem, QuestionAnalyticsSummary } from '../../types';

@@ -1,15 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Users,
-    Play,
     Trophy,
-    CheckCircle2,
-    XCircle,
-    Clock,
-    Sparkles,
-    ArrowRight,
-    QrCode,
-    RefreshCw,
     X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -49,7 +41,7 @@ export const LiveHostMode: React.FC<LiveHostModeProps> = ({
     ]);
     const [answerCounts, setAnswerCounts] = useState<number[]>([0, 0, 0, 0]);
 
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const questions = quiz.questions || [];
     const currentQ: Question | undefined = questions[currentQuestionIndex];
 
@@ -286,8 +278,8 @@ export const LiveHostMode: React.FC<LiveHostModeProps> = ({
                                                 style={{ height: `${Math.max(15, count * 25)}%` }}
                                             />
                                         </div>
-                                        <div className="text-xs font-bold truncate max-w-full">
-                                            {isCorrect ? '✓ Correct Answer' : `Option ${String.fromCharCode(65 + optIdx)}`}
+                                        <div className="text-xs font-bold truncate max-w-full" title={opt}>
+                                            {isCorrect ? `✓ ${opt}` : `${String.fromCharCode(65 + optIdx)}. ${opt}`}
                                         </div>
                                     </div>
                                 );

@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import type { DetailedAttemptData, QuestionAnalyticsItem, QuestionAnalyticsSummary } from '../types';
+import type { DetailedAttemptData, QuestionAnalyticsItem, QuestionAnalyticsSummary, Quiz, AttemptData, UserData } from '../types';
 
 /**
  * Clean CSV cell value and escape quotes / commas.
@@ -341,9 +341,9 @@ export const exportQuestionAnalyticsToCSV = (
     lines.push(`Generated Date,${escapeCSV(new Date().toLocaleString())}`);
     if (summary) {
         lines.push(`Total Questions Analyzed,${escapeCSV(summary.totalQuestionsAnalyzed)}`);
-        lines.push(`High Failure Questions Count,${escapeCSV(summary.highFailureQuestionsCount)}`);
-        lines.push(`Average Accuracy,${escapeCSV(summary.averageAccuracy + '%')}`);
-        lines.push(`Average Failure Rate,${escapeCSV(summary.averageFailureRate + '%')}`);
+        lines.push(`Total Attempts Analyzed,${escapeCSV(summary.totalAttemptsAnalyzed)}`);
+        lines.push(`Average Accuracy,${escapeCSV(summary.avgAccuracy + '%')}`);
+        lines.push(`Average Failure Rate,${escapeCSV(summary.avgFailureRate + '%')}`);
     }
     lines.push('');
 
@@ -385,3 +385,444 @@ export const exportQuestionAnalyticsToCSV = (
     const filename = `Question_Analytics_Report_${Date.now()}.csv`;
     downloadFile(lines.join('\r\n'), filename);
 };
+
+/**
+ * Export any quiz to a standalone JSON file (identical structure to admin export).
+ */
+export const exportQuizToJSON = (quiz: Quiz): void => {
+    const dataStr = JSON.stringify(quiz, null, 2);
+    const safeTitle = (quiz.id || quiz.title || 'quiz').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '');
+    const filename = `${safeTitle || 'quiz'}.json`;
+    downloadFile(dataStr, filename, 'application/json;charset=utf-8;');
+};
+
+/**
+ * Export a quiz into a printable PDF Assessment / Study Guide.
+ */
+export const exportQuizToPDF = async (quiz: Quiz): Promise<void> => {
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 14;
+    const contentWidth = pageWidth - margin * 2;
+    let y = margin;
+
+    const checkPageBreak = (neededHeight: number) => {
+        if (y + neededHeight > pageHeight - margin) {
+            doc.addPage();
+            y = margin;
+            renderPageHeader(false);
+        }
+    };
+
+    const renderPageHeader = (isFirstPage: boolean) => {
+        if (isFirstPage) {
+            // Header Top Gradient Bar
+            doc.setFillColor(79, 70, 229); // Indigo 600
+            doc.rect(margin, y, contentWidth, 22, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
+            doc.text('QUIZ ASSESSMENT & STUDY GUIDE', margin + 6, y + 9);
+
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Category: ${quiz.category || 'General'}  •  Difficulty: ${quiz.difficulty || 'Medium'}  •  Questions: ${quiz.questions?.length || 0}`, margin + 6, y + 16);
+            y += 28;
+        } else {
+            // Continuation Header
+            doc.setFillColor(243, 244, 246);
+            doc.rect(margin, y, contentWidth, 8, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(107, 114, 128);
+            doc.text(`${quiz.title || 'Quiz'} — Study Sheet`, margin + 4, y + 5.5);
+            y += 12;
+        }
+    };
+
+    renderPageHeader(true);
+
+    // Summary Box
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(margin, y, contentWidth, 26, 3, 3, 'FD');
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(quiz.title || 'Untitled Quiz', margin + 6, y + 8);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(71, 85, 105);
+    const descText = quiz.description || 'Practice assessment and study guide.';
+    const splitDesc = doc.splitTextToSize(descText, contentWidth - 12);
+    doc.text(splitDesc, margin + 6, y + 14);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(99, 102, 241);
+    const timeLimitText = quiz.timeLimit === 0 ? 'Unlimited Time' : `${quiz.timeLimit} Minutes`;
+    doc.text(`Time Limit: ${timeLimitText}  |  Passing Score: ${quiz.passingScore || 70}%  |  Rewards: ${quiz.coinsReward || 10} Coins, ${quiz.xpReward || 50} XP`, margin + 6, y + 21);
+
+    y += 32;
+
+    const questions = quiz.questions || [];
+
+    questions.forEach((q, idx) => {
+        checkPageBreak(35);
+
+        const startY = y;
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 232, 240);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.setTextColor(79, 70, 229);
+        doc.text(`Question ${idx + 1} (${q.points || 10} pts)`, margin + 4, y + 6);
+        y += 10;
+
+        // Question text
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(30, 41, 59);
+        const splitQuestion = doc.splitTextToSize(q.question, contentWidth - 8);
+        doc.text(splitQuestion, margin + 4, y);
+        y += splitQuestion.length * 4.2 + 2;
+
+        // Code snippet if any
+        if (q.codeSnippet) {
+            checkPageBreak(20);
+            doc.setFillColor(241, 245, 249);
+            doc.setDrawColor(203, 213, 225);
+            const snippetLines = doc.splitTextToSize(q.codeSnippet, contentWidth - 16);
+            const snippetBoxHeight = snippetLines.length * 3.5 + 4;
+            doc.roundedRect(margin + 4, y, contentWidth - 8, snippetBoxHeight, 2, 2, 'FD');
+            doc.setFont('courier', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(30, 41, 59);
+            doc.text(snippetLines, margin + 8, y + 4);
+            y += snippetBoxHeight + 3;
+        }
+
+        // Options if multiple choice
+        if (Array.isArray(q.options) && q.options.length > 0) {
+            q.options.forEach((opt, optIdx) => {
+                checkPageBreak(8);
+                const letter = String.fromCharCode(65 + optIdx);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.setTextColor(71, 85, 105);
+                const splitOpt = doc.splitTextToSize(`[   ]  ${letter}. ${opt}`, contentWidth - 10);
+                doc.text(splitOpt, margin + 6, y);
+                y += splitOpt.length * 3.8 + 1;
+            });
+            y += 2;
+        }
+
+        const cardHeight = y - startY + 2;
+        doc.roundedRect(margin, startY, contentWidth, cardHeight, 2, 2, 'D');
+        y += 5;
+    });
+
+    // Answer Key Section on a fresh page
+    doc.addPage();
+    y = margin;
+    doc.setFillColor(15, 23, 42); // Dark slate header
+    doc.rect(margin, y, contentWidth, 14, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('ANSWER KEY & EXPLANATIONS', margin + 6, y + 9);
+    y += 20;
+
+    questions.forEach((q, idx) => {
+        checkPageBreak(25);
+        const correctOptIndex = typeof q.correctAnswer === 'number'
+            ? q.correctAnswer
+            : (typeof q.correctAnswer === 'string' && !isNaN(Number(q.correctAnswer)) ? Number(q.correctAnswer) : null);
+        const correctLetter = correctOptIndex !== null ? String.fromCharCode(65 + correctOptIndex) : '';
+        const correctText = correctOptIndex !== null && Array.isArray(q.options) && q.options[correctOptIndex]
+            ? q.options[correctOptIndex]
+            : String(q.correctAnswer ?? 'N/A');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(16, 185, 129);
+        doc.text(`Q${idx + 1}: ${correctLetter ? `(${correctLetter}) ` : ''}${correctText}`, margin + 4, y);
+        y += 4.5;
+
+        if (q.explanation) {
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            const splitExp = doc.splitTextToSize(`Explanation: ${q.explanation}`, contentWidth - 8);
+            doc.text(splitExp, margin + 6, y);
+            y += splitExp.length * 3.5 + 2;
+        }
+        y += 2;
+    });
+
+    // Page numbers
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(156, 163, 175);
+        doc.text(
+            `Page ${i} of ${totalPages} — Quiz Platform Study Sheet`,
+            pageWidth / 2,
+            pageHeight - 6,
+            { align: 'center' }
+        );
+    }
+
+    const safeTitle = (quiz.title || 'Quiz').replace(/[^a-zA-Z0-9_-]/g, '_');
+    doc.save(`${safeTitle}_Study_Sheet.pdf`);
+};
+
+/**
+ * Export a user's entire quiz history / attempts to Excel-ready CSV.
+ */
+export const exportQuizHistoryToCSV = (attempts: AttemptData[], user?: UserData | null): void => {
+    const lines: string[] = [];
+
+    // UTF-8 BOM
+    lines.push('\uFEFF');
+
+    // Section 1: User Profile & History Summary
+    lines.push('QUIZ PLATFORM — COMPLETE ASSESSMENT HISTORY');
+    lines.push(`Export Date,${escapeCSV(new Date().toLocaleString())}`);
+    if (user) {
+        lines.push(`Student Name,${escapeCSV(user.name)}`);
+        lines.push(`Student Email,${escapeCSV(user.email)}`);
+        lines.push(`Level,${escapeCSV(user.level || 1)}`);
+        lines.push(`Total XP,${escapeCSV(user.xp || 0)}`);
+        lines.push(`Current Streak,${escapeCSV((user.streak || 0) + ' days')}`);
+    }
+    lines.push(`Total Quiz Attempts,${escapeCSV(attempts.length)}`);
+
+    const passedCount = attempts.filter(a => a.passed || a.percentage >= 70).length;
+    const avgScore = attempts.length > 0
+        ? Math.round(attempts.reduce((sum, a) => sum + (a.percentage || 0), 0) / attempts.length)
+        : 0;
+
+    lines.push(`Quizzes Passed,${escapeCSV(passedCount)}`);
+    lines.push(`Average Score,${escapeCSV(avgScore + '%')}`);
+    lines.push(''); // Blank row
+
+    // Section 2: Attempts Table
+    lines.push([
+        '#',
+        'Quiz Title',
+        'Score',
+        'Total Questions',
+        'Percentage (%)',
+        'Outcome',
+        'Duration',
+        'Date Completed',
+        'Attempt ID'
+    ].map(escapeCSV).join(','));
+
+    const sortedAttempts = [...attempts].sort((a, b) =>
+        new Date(b.completedAt || 0).getTime() - new Date(a.completedAt || 0).getTime()
+    );
+
+    sortedAttempts.forEach((att, idx) => {
+        const isPassed = att.passed !== undefined ? att.passed : (att.percentage >= 70);
+        lines.push([
+            escapeCSV(idx + 1),
+            escapeCSV(att.quizTitle || 'Quiz'),
+            escapeCSV(att.score ?? 0),
+            escapeCSV(att.totalQuestions ?? 0),
+            escapeCSV((att.percentage ?? 0) + '%'),
+            escapeCSV(isPassed ? 'PASSED' : 'FAILED'),
+            escapeCSV(formatDuration(att.timeTaken || 0)),
+            escapeCSV(att.completedAt ? new Date(att.completedAt).toLocaleString() : 'N/A'),
+            escapeCSV(att.attemptId || 'N/A')
+        ].join(','));
+    });
+
+    const safeName = (user?.name || 'User').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${safeName}_Quiz_History.csv`;
+    downloadFile(lines.join('\r\n'), filename);
+};
+
+/**
+ * Export a user's entire quiz history as a structured PDF Academic Transcript.
+ */
+export const exportQuizHistoryToPDF = async (attempts: AttemptData[], user?: UserData | null): Promise<void> => {
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 14;
+    const contentWidth = pageWidth - margin * 2;
+    let y = margin;
+
+    const checkPageBreak = (neededHeight: number) => {
+        if (y + neededHeight > pageHeight - margin) {
+            doc.addPage();
+            y = margin;
+            renderPageHeader(false);
+        }
+    };
+
+    const renderPageHeader = (isFirstPage: boolean) => {
+        if (isFirstPage) {
+            doc.setFillColor(79, 70, 229); // Indigo 600
+            doc.rect(margin, y, contentWidth, 22, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
+            doc.text('OFFICIAL QUIZ & ASSESSMENT TRANSCRIPT', margin + 6, y + 9);
+
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generated: ${new Date().toLocaleString()}`, margin + 6, y + 16);
+            y += 28;
+        } else {
+            doc.setFillColor(243, 244, 246);
+            doc.rect(margin, y, contentWidth, 8, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(107, 114, 128);
+            doc.text(`Academic Transcript — ${user?.name || 'Student'}`, margin + 4, y + 5.5);
+            y += 12;
+        }
+    };
+
+    renderPageHeader(true);
+
+    // Summary Box
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(margin, y, contentWidth, 32, 3, 3, 'FD');
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(user?.name || 'Student Profile', margin + 6, y + 8);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Email: ${user?.email || 'N/A'}  •  Level: ${user?.level || 1}  •  XP: ${user?.xp || 0}  •  Streak: ${user?.streak || 0} Days`, margin + 6, y + 15);
+
+    const passedCount = attempts.filter(a => a.passed || a.percentage >= 70).length;
+    const avgScore = attempts.length > 0
+        ? Math.round(attempts.reduce((sum, a) => sum + (a.percentage || 0), 0) / attempts.length)
+        : 0;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(79, 70, 229);
+    doc.text(`Total Attempts: ${attempts.length}  |  Passed: ${passedCount}  |  Average Score: ${avgScore}%`, margin + 6, y + 24);
+
+    y += 38;
+
+    // Table Header
+    doc.setFillColor(241, 245, 249);
+    doc.rect(margin, y, contentWidth, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(51, 65, 85);
+    doc.text('QUIZ TITLE', margin + 3, y + 5.5);
+    doc.text('SCORE', margin + 95, y + 5.5);
+    doc.text('RESULT', margin + 120, y + 5.5);
+    doc.text('TIME', margin + 145, y + 5.5);
+    doc.text('DATE', margin + 165, y + 5.5);
+    y += 10;
+
+    const sortedAttempts = [...attempts].sort((a, b) =>
+        new Date(b.completedAt || 0).getTime() - new Date(a.completedAt || 0).getTime()
+    );
+
+    sortedAttempts.forEach((att, idx) => {
+        checkPageBreak(10);
+        const isPassed = att.passed !== undefined ? att.passed : (att.percentage >= 70);
+
+        if (idx % 2 === 1) {
+            doc.setFillColor(248, 250, 252);
+            doc.rect(margin, y - 3.5, contentWidth, 7.5, 'F');
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(15, 23, 42);
+        const splitTitle = doc.splitTextToSize(att.quizTitle || 'Quiz', 88);
+        doc.text(splitTitle[0] || 'Quiz', margin + 3, y + 1);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(71, 85, 105);
+        doc.text(`${att.score}/${att.totalQuestions} (${att.percentage}%)`, margin + 95, y + 1);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(isPassed ? 16 : 220, isPassed ? 185 : 38, isPassed ? 129 : 38);
+        doc.text(isPassed ? 'PASSED' : 'FAILED', margin + 120, y + 1);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 116, 139);
+        doc.text(formatDuration(att.timeTaken || 0), margin + 145, y + 1);
+        doc.text(att.completedAt ? new Date(att.completedAt).toLocaleDateString() : 'Recent', margin + 165, y + 1);
+
+        y += 7.5;
+    });
+
+    // Page numbering
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(156, 163, 175);
+        doc.text(
+            `Page ${i} of ${totalPages} — Official Academic Record`,
+            pageWidth / 2,
+            pageHeight - 6,
+            { align: 'center' }
+        );
+    }
+
+    const safeName = (user?.name || 'Student').replace(/[^a-zA-Z0-9_-]/g, '_');
+    doc.save(`${safeName}_Quiz_History_Transcript.pdf`);
+};
+
+/**
+ * Export user quiz history as a JSON dataset.
+ */
+export const exportQuizHistoryToJSON = (attempts: AttemptData[], user?: UserData | null): void => {
+    const data = {
+        exportedAt: new Date().toISOString(),
+        student: user ? {
+            name: user.name,
+            email: user.email,
+            level: user.level,
+            xp: user.xp,
+            streak: user.streak,
+            totalAttempts: user.totalAttempts
+        } : null,
+        totalAttempts: attempts.length,
+        attempts
+    };
+
+    const dataStr = JSON.stringify(data, null, 2);
+    const safeName = (user?.name || 'User').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${safeName}_Quiz_History.json`;
+    downloadFile(dataStr, filename, 'application/json;charset=utf-8;');
+};
+

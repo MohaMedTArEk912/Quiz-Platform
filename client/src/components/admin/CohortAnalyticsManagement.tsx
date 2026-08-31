@@ -4,15 +4,12 @@ import {
     TrendingUp,
     TrendingDown,
     Award,
-    CheckCircle2,
     AlertTriangle,
     RefreshCw,
     Search,
     BookOpen,
     Layers,
-    UserCheck,
-    ChevronDown,
-    ChevronUp
+    UserCheck
 } from 'lucide-react';
 import type { CohortAnalyticsResponse } from '../../types';
 import { api } from '../../lib/api';
@@ -241,6 +238,18 @@ const CohortAnalyticsManagement: React.FC<CohortAnalyticsManagementProps> = ({
                             High Performers ({performanceTiers?.high?.count ?? 0})
                         </button>
                     </div>
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative">
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search student by name or email in this tier..."
+                        className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    />
                 </div>
 
                 {/* Tier Student List */}
