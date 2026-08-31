@@ -409,7 +409,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
             {/* Mobile Bottom Sheet Overlay (< 640px) */}
             {isOpen && (
                 <div
-                    className="sm:hidden fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+                    className="sm:hidden fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
                     onClick={() => setIsOpen(false)}
                 >
                     <div

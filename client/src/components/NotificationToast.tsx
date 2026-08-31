@@ -284,7 +284,10 @@ export const NotificationToastContainer: React.FC<NotificationToastContainerProp
         <div
             aria-live="polite"
             aria-atomic="false"
-            className="fixed top-3 left-3 right-3 sm:left-auto sm:right-6 sm:top-6 sm:w-[380px] z-[9999] pointer-events-none flex flex-col gap-2.5 pt-safe"
+            style={{
+                top: 'max(64px, calc(env(safe-area-inset-top, 0px) + 16px))'
+            }}
+            className="fixed left-3 right-3 sm:left-auto sm:right-6 sm:!top-6 sm:w-[380px] z-[9999] pointer-events-none flex flex-col gap-2.5"
         >
             {notifications.map((notif) => (
                 <ToastCard key={notif.id} notification={notif} onClose={onClose} />
@@ -303,7 +306,12 @@ const NotificationToast: React.FC<{ notification: Notification; onClose: () => v
         ...notification
     };
     return (
-        <div className="fixed top-3 left-3 right-3 sm:left-auto sm:right-6 sm:top-6 sm:w-[380px] z-[9999] pointer-events-none pt-safe">
+        <div
+            style={{
+                top: 'max(64px, calc(env(safe-area-inset-top, 0px) + 16px))'
+            }}
+            className="fixed left-3 right-3 sm:left-auto sm:right-6 sm:!top-6 sm:w-[380px] z-[9999] pointer-events-none"
+        >
             <ToastCard notification={item} onClose={onClose} />
         </div>
     );
