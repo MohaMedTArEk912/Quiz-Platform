@@ -62,7 +62,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
         return () => clearInterval(interval);
     }, [fetchNotifications]);
 
-    // Close on click outside (for desktop dropdown)
+    // Close on click outside or Escape key
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -70,23 +70,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
             }
         };
 
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setIsOpen(false);
+            }
+        };
+
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('keydown', handleKeyDown);
         }
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen]);
-
-    // Lock body scroll on mobile bottom-sheet open
-    useEffect(() => {
-        if (isOpen && window.innerWidth < 640) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
-        return () => {
-            document.body.style.overflow = '';
+            document.removeEventListener('keydown', handleKeyDown);
         };
     }, [isOpen]);
 
@@ -220,48 +216,48 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     const renderContent = () => (
         <>
             {/* Header */}
-            <div className="p-4 sm:p-5 border-b border-gray-200/60 dark:border-white/10 flex items-center justify-between">
+            <div className="p-3.5 sm:p-5 border-b border-gray-200/60 dark:border-white/10 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2.5">
-                    <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-600 dark:text-indigo-400">
-                        <Bell className="w-5 h-5" />
+                    <div className="p-2 sm:p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-600 dark:text-indigo-400">
+                        <Bell className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
                     </div>
                     <div>
-                        <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                        <h3 className="text-xs sm:text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">
                             Notifications
                         </h3>
-                        <div className="text-[11px] font-bold text-gray-400">
+                        <div className="text-[10px] sm:text-[11px] font-bold text-gray-400">
                             {unreadCount} unread alert{unreadCount !== 1 ? 's' : ''}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                     {unreadCount > 0 && (
                         <button
                             type="button"
                             onClick={handleMarkAllAsRead}
                             disabled={isLoading}
-                            className="px-2.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-[11px] font-black text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
+                            className="px-2.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-[10px] sm:text-[11px] font-black text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
                         >
                             <CheckCheck className="w-3.5 h-3.5" />
-                            <span>Mark all read</span>
+                            <span>Mark read</span>
                         </button>
                     )}
 
-                    {/* Mobile Close Icon */}
+                    {/* Close Icon (Visible on all screen sizes) */}
                     <button
                         type="button"
                         onClick={() => setIsOpen(false)}
-                        className="sm:hidden p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                        className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
                         aria-label="Close notifications"
                     >
-                        <X className="w-5 h-5" />
+                        <X className="w-4.5 h-4.5" />
                     </button>
                 </div>
             </div>
 
             {/* Filter Tabs */}
-            <div className="px-3.5 sm:px-4 py-2.5 bg-gray-50/70 dark:bg-black/30 border-b border-gray-200/40 dark:border-white/5 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <div className="px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50/70 dark:bg-black/30 border-b border-gray-200/40 dark:border-white/5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
                 {(['all', 'unread', 'quizzes', 'requests'] as FilterCategory[]).map((tab) => {
                     const count = tab === 'all'
                         ? notifications.length
@@ -276,7 +272,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                             key={tab}
                             type="button"
                             onClick={() => setFilter(tab)}
-                            className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
                                 filter === tab
                                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
                                     : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200/70 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'
@@ -294,16 +290,16 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
             </div>
 
             {/* Notifications List */}
-            <div className="flex-1 max-h-[60vh] sm:max-h-[380px] overflow-y-auto custom-scrollbar divide-y divide-gray-100 dark:divide-white/5">
+            <div className="flex-1 min-h-0 max-h-[calc(100dvh-180px)] sm:max-h-[380px] overflow-y-auto custom-scrollbar divide-y divide-gray-100 dark:divide-white/5">
                 {filteredNotifications.length === 0 ? (
-                    <div className="py-12 px-6 text-center">
-                        <div className="w-14 h-14 rounded-3xl bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center mx-auto mb-3 text-indigo-500">
-                            <Bell className="w-6 h-6 opacity-60" />
+                    <div className="py-10 sm:py-12 px-6 text-center">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-3xl bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center mx-auto mb-3 text-indigo-500">
+                            <Bell className="w-5 h-5 sm:w-6 sm:h-6 opacity-60" />
                         </div>
-                        <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight mb-1">
+                        <h4 className="text-xs sm:text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight mb-1">
                             {filter === 'unread' ? 'All Caught Up!' : 'No Notifications'}
                         </h4>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+                        <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
                             {filter === 'unread' 
                                 ? 'You have read all your alerts. New challenges and quiz updates will appear here.'
                                 : 'When you receive quiz invites, review feedback, or track approvals, they will show up here.'}
@@ -314,13 +310,13 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                         <div
                             key={notif.notificationId}
                             onClick={() => handleItemClick(notif)}
-                            className={`p-3.5 sm:p-4 transition-all flex items-start gap-3 cursor-pointer group hover:bg-gray-50/80 dark:hover:bg-white/5 relative ${
+                            className={`p-3 sm:p-4 transition-all flex items-start gap-3 cursor-pointer group hover:bg-gray-50/80 dark:hover:bg-white/5 relative ${
                                 !notif.isRead ? 'bg-indigo-500/5 dark:bg-indigo-500/10' : ''
                             }`}
                         >
                             {/* Unread Glow Indicator */}
                             {!notif.isRead && (
-                                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-full bg-gradient-to-b from-indigo-500 to-purple-600" />
+                                <span className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-full bg-gradient-to-b from-indigo-500 to-purple-600" />
                             )}
 
                             {getIcon(notif.type)}
@@ -334,7 +330,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                                     }`}>
                                         {notif.title}
                                     </h4>
-                                    <span className="text-[10px] font-bold text-gray-400 shrink-0">
+                                    <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 shrink-0">
                                         {formatTimeAgo(notif.createdAt)}
                                     </span>
                                 </div>
@@ -362,7 +358,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                                 )}
                             </div>
 
-                            {/* Action Buttons - Always visible with nice opacity on mobile */}
+                            {/* Action Buttons */}
                             <div className="flex flex-col items-center gap-1 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
                                 <button
                                     type="button"
@@ -399,30 +395,30 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 )}
             </button>
 
-            {/* Notification Popover (Desktop >= 640px) */}
+            {/* Notification Popover (Desktop >= 640px) - Opens DOWNWARD from the bell */}
             {isOpen && (
-                <div className="hidden sm:block absolute right-0 mt-3 w-96 max-w-[90vw] bg-white/95 dark:bg-[#12131f]/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200 dark:border-white/10 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="hidden sm:flex flex-col absolute right-0 top-full mt-2 w-96 max-w-[calc(100vw-32px)] bg-white/95 dark:bg-[#12131f]/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200 dark:border-white/10 z-[100] overflow-hidden max-h-[min(580px,calc(100vh-100px))] animate-in fade-in slide-in-from-top-2 duration-200 origin-top-right">
                     {renderContent()}
                 </div>
             )}
 
-            {/* Mobile Bottom Sheet Overlay (< 640px) */}
+            {/* Mobile Top Dropdown & Backdrop (< 640px) - Opens DOWNWARD from the header */}
             {isOpen && (
-                <div
-                    className="sm:hidden fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
-                    onClick={() => setIsOpen(false)}
-                >
+                <>
+                    {/* Backdrop */}
                     <div
-                        className="fixed inset-x-0 bottom-0 max-h-[85vh] bg-white dark:bg-[#12131f] border-t border-gray-200 dark:border-white/10 rounded-t-[32px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 pb-safe"
+                        className="sm:hidden fixed inset-0 z-[9998] bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
+                        onClick={() => setIsOpen(false)}
+                    />
+
+                    {/* Popover Card dropping DOWN from top header */}
+                    <div
+                        className="sm:hidden fixed top-[58px] left-2.5 right-2.5 max-w-[420px] mx-auto z-[9999] bg-white/95 dark:bg-[#12131f]/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200/80 dark:border-white/10 overflow-hidden flex flex-col max-h-[calc(100dvh-75px)] animate-in fade-in slide-in-from-top-3 duration-200"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Pull Bar Indicator */}
-                        <div className="pt-3 pb-1 flex justify-center">
-                            <div className="w-12 h-1.5 bg-gray-300 dark:bg-white/20 rounded-full" />
-                        </div>
                         {renderContent()}
                     </div>
-                </div>
+                </>
             )}
         </div>
     );

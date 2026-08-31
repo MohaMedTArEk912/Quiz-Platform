@@ -211,7 +211,7 @@ export const ToastCard: React.FC<ToastCardProps> = ({ notification, onClose }) =
                 opacity: isDismissing ? 0 : 1 - Math.abs(touchOffsetX) / 200,
                 transition: touchOffsetX === 0 ? 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)' : 'none'
             }}
-            className={`pointer-events-auto relative overflow-hidden bg-white/95 dark:bg-[#12131f]/95 backdrop-blur-2xl border ${config.borderColor} rounded-2xl sm:rounded-3xl shadow-2xl ${config.glow} p-3.5 sm:p-4 w-full transition-all duration-200 ring-1 ring-black/5 dark:ring-white/10`}
+            className={`pointer-events-auto relative overflow-hidden bg-white/95 dark:bg-[#12131f]/95 backdrop-blur-2xl border ${config.borderColor} rounded-2xl sm:rounded-3xl shadow-2xl ${config.glow} p-3.5 sm:p-4 w-full transition-all duration-200 ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in slide-in-from-top-3 duration-300`}
         >
             <div className="flex items-start gap-3">
                 {/* Left Icon with rounded soft gradient container */}
