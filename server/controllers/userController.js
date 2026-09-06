@@ -317,3 +317,20 @@ export const updateUserRoadmapProgress = async (req, res) => {
         res.status(500).json({ message: 'Error updating user progress', error: error.message });
     }
 };
+
+export const getPublicLeaderboard = async (req, res) => {
+    try {
+        const users = await User.find(
+            { role: { $ne: 'admin' }, isAdmin: { $ne: true } },
+            'userId name totalScore totalAttempts xp level streak lastLoginDate badges role avatar'
+        )
+            .sort({ totalScore: -1 })
+            .limit(100)
+            .lean();
+
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching public leaderboard:', error);
+        res.status(500).json({ message: 'Error fetching leaderboard', error: error.message });
+    }
+};

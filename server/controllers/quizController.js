@@ -41,7 +41,7 @@ const loadStaticQuizzes = async () => {
  * @param {string} quizId - Quiz ID for logging purposes
  * @returns {Array} Sanitized questions array
  */
-const sanitizeQuestions = (questions, quizId = 'unknown') => {
+export const sanitizeQuestions = (questions, quizId = 'unknown') => {
   if (!questions || !Array.isArray(questions)) {
     return questions;
   }

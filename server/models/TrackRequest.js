@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const trackRequestSchema = new mongoose.Schema({
-  requestId: { type: String, required: true, unique: true, index: true },
+  requestId: { type: String, required: true, unique: true },
   userId: { type: String, required: true, index: true },
   userName: { type: String, required: true },
   userEmail: { type: String, required: true },

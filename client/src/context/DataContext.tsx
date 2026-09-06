@@ -42,38 +42,53 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [loadingData, setLoadingData] = useState(false);
     const [loadingQuizzes, setLoadingQuizzes] = useState(true);
 
-    // Load Quizzes
+    // Load Foundation Data (Available for all users, including guests)
     useEffect(() => {
-        const loadQuizzes = async () => {
+        const loadPublicData = async () => {
             setLoadingQuizzes(true);
             try {
-                const quizzes = isAdmin
-                    ? await api.getQuizzes(undefined, true)
-                    : await api.getQuizzes();
+                const [quizzesRes, subjectsRes, tracksRes, cardsRes, leaderboardRes] = await Promise.allSettled([
+                    isAdmin ? api.getQuizzes(undefined, true) : api.getQuizzes(),
+                    api.getSubjects(),
+                    api.getSkillTracks(),
+                    api.getStudyCards(),
+                    api.getLeaderboard()
+                ]);
 
-                console.log('[DataContext] Loaded quizzes:', quizzes.length, quizzes);
-                setAvailableQuizzes(Array.isArray(quizzes) ? quizzes : []);
+                if (quizzesRes.status === 'fulfilled' && Array.isArray(quizzesRes.value)) {
+                    setAvailableQuizzes(quizzesRes.value);
+                }
+                if (subjectsRes.status === 'fulfilled' && Array.isArray(subjectsRes.value)) {
+                    setSubjects(subjectsRes.value);
+                }
+                if (tracksRes.status === 'fulfilled' && Array.isArray(tracksRes.value)) {
+                    setSkillTracks(tracksRes.value);
+                }
+                if (cardsRes.status === 'fulfilled' && Array.isArray(cardsRes.value)) {
+                    setStudyCards(cardsRes.value);
+                }
+                if (leaderboardRes.status === 'fulfilled' && Array.isArray(leaderboardRes.value)) {
+                    setAllUsers(prev => (prev.length > 0 ? prev : leaderboardRes.value));
+                }
             } catch (error) {
-                console.error('[DataContext] Failed to load quizzes:', error);
-                setAvailableQuizzes([]);
+                console.error('[DataContext] Failed to load foundation data:', error);
             } finally {
                 setLoadingQuizzes(false);
             }
         };
 
-        if (currentUser) {
-            loadQuizzes();
-        }
-    }, [currentUser, isAdmin]);
+        loadPublicData();
+    }, [isAdmin]);
 
     // Load User Data (Authenticated)
     const refreshData = useCallback(async () => {
-        if (!currentUser) return;
+        const uid = currentUser?.userId;
+        if (!uid) return;
         setLoadingData(true);
         try {
             if (isAdmin) {
                 // Admin fetches everything
-                const { users, attempts, badges, subjects: adminSubjects } = await api.getData(currentUser.userId);
+                const { users, attempts, badges, subjects: adminSubjects } = await api.getData(uid);
 
                 // Admins also need skill tracks and study cards
                 try {
@@ -94,7 +109,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setChallenges([]);
             } else {
                 // Regular user fetches optimized set
-                const { attempts, badges, users, challenges: userChallenges } = await api.getUserData(currentUser.userId);
+                const { attempts, badges, users, challenges: userChallenges } = await api.getUserData(uid);
 
                 // Also fetch skill tracks, study cards, and subjects for regular users
                 try {
@@ -120,10 +135,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } finally {
             setLoadingData(false);
         }
-    }, [currentUser, isAdmin]);
+    }, [currentUser?.userId, isAdmin]);
 
     useEffect(() => {
-        if (currentUser) {
+        if (currentUser?.userId) {
             refreshData();
         } else {
             // Clear data on logout
@@ -132,7 +147,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setChallenges([]);
             setSubjects([]);
         }
-    }, [currentUser, isAdmin, refreshData]);
+    }, [currentUser?.userId, isAdmin, refreshData]);
 
     const userWithRank = useMemo(() => {
         if (!currentUser) return null;

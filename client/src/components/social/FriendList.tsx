@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import type { UserData, ChallengeData } from '../../types';
 import { api } from '../../lib/api';
-import { Users, UserPlus, Search, Check, X, Shield, Trophy, MessageCircle } from 'lucide-react';
+import { Users, UserPlus, Search, Check, X, Shield, Trophy, MessageCircle, Zap, Star, Swords } from 'lucide-react';
 import Avatar from '../Avatar';
 import { DirectChat } from './DirectChat';
+import { useTheme } from '../../context/ThemeContext';
 
 
 interface FriendListProps {
@@ -24,6 +25,7 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
     const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [activeChatFriend, setActiveChatFriend] = useState<UserData | null>(null);
+    const { isBento } = useTheme();
 
     // Build a comprehensive friend ID set from:
     // 1. The explicit friends array
@@ -90,49 +92,102 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
         }
     };
 
+    // Bento color rotation for friend cards
+    const bentoCardColors = ['#bef264', '#fde047', '#bae6fd', '#ddd6fe'];
+    const getBentoColor = (index: number) => bentoCardColors[index % bentoCardColors.length];
+
+    const tabConfig = [
+        { id: 'friends', label: 'Friends', count: friendsList.length, icon: Users, bentoColor: '#bef264' },
+        { id: 'requests', label: 'Requests', count: requestList.length, icon: Shield, bentoColor: '#fde047' },
+        { id: 'challenges', label: 'Challenges', count: challenges.length, icon: Swords, bentoColor: '#bae6fd' },
+        { id: 'add', label: 'Add Friend', count: null, icon: UserPlus, bentoColor: '#ddd6fe' }
+    ];
+
     return (
-        <div className="bg-white dark:bg-[#13141f] rounded-[2rem] border border-gray-200 dark:border-white/5 shadow-2xl overflow-hidden min-h-[600px] flex flex-col relative select-none">
-            {/* Top Shine */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-purple-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className={`social-hub-container min-h-[600px] flex flex-col relative select-none ${
+            isBento
+                ? 'bg-white rounded-[2rem] border-[3px] border-black shadow-[6px_6px_0px_#000]'
+                : 'bg-white dark:bg-[#13141f] rounded-[2rem] border border-gray-200 dark:border-white/5 shadow-2xl'
+        } overflow-hidden`}>
+
+            {/* Decorative Corner Elements (Bento Only) */}
+            {isBento && (
+                <>
+                    <div className="absolute top-4 right-4 w-8 h-8 bg-[#fde047] border-[2.5px] border-black rounded-full shadow-[2px_2px_0px_#000] z-20 flex items-center justify-center">
+                        <Star className="w-4 h-4 text-black" fill="black" />
+                    </div>
+                    <div className="absolute top-4 right-16 w-6 h-6 bg-[#bef264] border-[2px] border-black rounded-lg shadow-[2px_2px_0px_#000] z-20 rotate-12" />
+                    <div className="absolute bottom-4 left-4 w-5 h-5 bg-[#bae6fd] border-[2px] border-black rotate-45 shadow-[2px_2px_0px_#000] z-20" />
+                </>
+            )}
+
+            {/* Top Shine (light/dark only) */}
+            {!isBento && (
+                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-purple-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+            )}
 
             {/* Header */}
-            <div className="p-8 border-b border-gray-200 dark:border-white/5 relative z-10">
-                <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                        <Users className="w-5 h-5 text-white" />
+            <div className={`p-8 relative z-10 ${
+                isBento
+                    ? 'border-b-[3px] border-black bg-[#bef264]'
+                    : 'border-b border-gray-200 dark:border-white/5'
+            }`}>
+                <h2 className={`text-3xl font-black flex items-center gap-3 ${
+                    isBento ? 'text-black' : 'text-gray-900 dark:text-white'
+                }`}>
+                    <div className={`w-10 h-10 flex items-center justify-center ${
+                        isBento
+                            ? 'rounded-xl bg-white border-[2.5px] border-black shadow-[3px_3px_0px_#000]'
+                            : 'rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-lg'
+                    }`}>
+                        <Users className={`w-5 h-5 ${isBento ? 'text-black' : 'text-white'}`} />
                     </div>
                     SOCIAL HUB
+                    {isBento && <span className="text-sm font-black tracking-widest bg-black text-white px-3 py-1 rounded-full ml-auto border-[2px] border-black">🎯 SQUAD</span>}
                 </h2>
             </div>
 
             {/* Tabs */}
-            <div className="flex p-4 gap-2 overflow-x-auto relative z-10">
-                {[
-                    { id: 'friends', label: 'Friends', count: friendsList.length },
-                    { id: 'requests', label: 'Requests', count: requestList.length },
-                    { id: 'challenges', label: 'Challenges', count: challenges.length },
-                    { id: 'add', label: 'Add Friend', count: null }
-                ].map((tab) => (
+            <div className={`flex p-4 gap-2 overflow-x-auto relative z-10 ${
+                isBento ? 'border-b-[2.5px] border-black bg-white' : ''
+            }`}>
+                {tabConfig.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as 'friends' | 'requests' | 'challenges' | 'add')}
-                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id
-                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20'
-                            : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'
-                            }`}
+                        className={`flex-1 py-3 px-4 text-sm font-bold transition-all whitespace-nowrap flex items-center justify-center gap-2 ${
+                            isBento
+                                ? `rounded-xl border-[2.5px] border-black ${
+                                    activeTab === tab.id
+                                        ? `bg-[${tab.bentoColor}] shadow-[3px_3px_0px_#000] -translate-y-0.5`
+                                        : 'bg-white hover:bg-gray-50 shadow-[2px_2px_0px_#000] hover:-translate-y-0.5'
+                                } text-black`
+                                : `rounded-xl ${activeTab === tab.id
+                                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20'
+                                    : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'
+                                }`
+                        }`}
+                        style={isBento && activeTab === tab.id ? { backgroundColor: tab.bentoColor } : undefined}
                     >
-                        {tab.label} {tab.count !== null && <span className="ml-1 opacity-70">({tab.count})</span>}
+                        <tab.icon className="w-4 h-4" />
+                        {tab.label} {tab.count !== null && <span className={`ml-1 ${isBento ? 'bg-black text-white text-[10px] px-1.5 py-0.5 rounded-full font-black' : 'opacity-70'}`}>{isBento ? tab.count : `(${tab.count})`}</span>}
                     </button>
                 ))}
             </div>
 
-            {/* Content Content */}
+            {/* Content */}
             <div className="flex-1 p-6 relative z-10 overflow-y-auto custom-scrollbar">
                 {message && (
-                    <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 backdrop-blur-md animate-in fade-in slide-in-from-top-2 ${message.type === 'success'
-                        ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-                        : 'bg-red-500/10 border border-red-500/20 text-red-400'
-                        }`}>
+                    <div className={`mb-6 p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${
+                        isBento
+                            ? `rounded-xl border-[2.5px] border-black shadow-[3px_3px_0px_#000] font-black ${
+                                message.type === 'success' ? 'bg-[#bef264] text-black' : 'bg-[#fde047] text-black'
+                            }`
+                            : `rounded-2xl backdrop-blur-md ${message.type === 'success'
+                                ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                                : 'bg-red-500/10 border border-red-500/20 text-red-400'
+                            }`
+                    }`}>
                         {message.type === 'success' ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
                         <span className="font-bold">{message.text}</span>
                     </div>
@@ -141,26 +196,50 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                 {activeTab === 'friends' && (
                     <div className="space-y-3">
                         {friendsList.length === 0 && (
-                            <div className="text-center py-12">
-                                <Users className="w-16 h-16 text-gray-700 mx-auto mb-4" />
-                                <p className="text-gray-500 font-medium">Your squad is empty. Add some friends!</p>
+                            <div className={`text-center py-12 ${
+                                isBento ? 'bg-[#fde047]/30 rounded-2xl border-[2.5px] border-black border-dashed p-8' : ''
+                            }`}>
+                                <div className={`mx-auto mb-4 flex items-center justify-center ${
+                                    isBento ? 'w-20 h-20 bg-white rounded-2xl border-[2.5px] border-black shadow-[4px_4px_0px_#000]' : ''
+                                }`}>
+                                    <Users className={`${isBento ? 'w-10 h-10' : 'w-16 h-16'} text-gray-700`} />
+                                </div>
+                                <p className={`font-medium ${isBento ? 'text-black font-black text-lg' : 'text-gray-500'}`}>
+                                    {isBento ? 'NO SQUAD YET! 🚀' : 'Your squad is empty. Add some friends!'}
+                                </p>
+                                {isBento && <p className="text-sm text-gray-600 mt-1 font-semibold">Hit "Add Friend" and find your crew!</p>}
                             </div>
                         )}
-                        {friendsList.map(friend => (
-                            <div key={friend.userId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl border border-gray-200 dark:border-white/5 transition-colors group">
+                        {friendsList.map((friend, index) => (
+                            <div key={friend.userId} className={`flex items-center justify-between p-4 transition-all group ${
+                                isBento
+                                    ? 'bg-white rounded-xl border-[2.5px] border-black shadow-[4px_4px_0px_#000] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#000]'
+                                    : 'bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl border border-gray-200 dark:border-white/5 transition-colors'
+                            }`}>
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-inner overflow-hidden">
+                                    <div className={`w-12 h-12 flex items-center justify-center text-lg font-black overflow-hidden ${
+                                        isBento
+                                            ? 'rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000]'
+                                            : 'rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-inner'
+                                    }`} style={isBento ? { backgroundColor: getBentoColor(index) } : undefined}>
                                         {friend.avatar ? (
                                             <Avatar config={friend.avatar} size="md" className="w-full h-full" />
                                         ) : (
-                                            friend.name.charAt(0)
+                                            <span className={isBento ? 'text-black' : 'text-white'}>{friend.name.charAt(0)}</span>
                                         )}
                                     </div>
                                     <div>
-                                        <div className="font-bold text-gray-900 dark:text-white text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{friend.name}</div>
-                                        <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider flex items-center gap-2">
+                                        <div className={`font-bold text-lg ${
+                                            isBento
+                                                ? 'text-black font-black'
+                                                : 'text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors'
+                                        }`}>{friend.name}</div>
+                                        <div className={`text-xs font-semibold uppercase tracking-wider flex items-center gap-2 ${
+                                            isBento ? 'text-gray-700' : 'text-gray-500'
+                                        }`}>
+                                            {isBento && <Zap className="w-3 h-3" />}
                                             <span>Rank #{friend.rank || '-'}</span>
-                                            <span className="w-1 h-1 bg-gray-400 dark:bg-gray-600 rounded-full" />
+                                            <span className={`w-1 h-1 rounded-full ${isBento ? 'bg-black' : 'bg-gray-400 dark:bg-gray-600'}`} />
                                             <span>Level {friend.level || 1}</span>
                                         </div>
                                     </div>
@@ -168,7 +247,11 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setActiveChatFriend(friend)}
-                                        className="p-3 rounded-xl bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors border border-violet-500/20"
+                                        className={`p-3 transition-all ${
+                                            isBento
+                                                ? 'rounded-xl bg-[#bae6fd] border-[2.5px] border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 text-black'
+                                                : 'rounded-xl bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 border border-violet-500/20'
+                                        }`}
                                         title="Chat & Challenge"
                                     >
                                         <MessageCircle className="w-5 h-5" />
@@ -200,29 +283,62 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                 {activeTab === 'requests' && (
                     <div className="space-y-3">
                         {requestList.length === 0 && (
-                            <div className="text-center py-12">
-                                <Shield className="w-16 h-16 text-gray-700 mx-auto mb-4" />
-                                <p className="text-gray-500 font-medium">No pending requests.</p>
+                            <div className={`text-center py-12 ${
+                                isBento ? 'bg-[#bae6fd]/30 rounded-2xl border-[2.5px] border-black border-dashed p-8' : ''
+                            }`}>
+                                <div className={`mx-auto mb-4 flex items-center justify-center ${
+                                    isBento ? 'w-20 h-20 bg-white rounded-2xl border-[2.5px] border-black shadow-[4px_4px_0px_#000]' : ''
+                                }`}>
+                                    <Shield className={`${isBento ? 'w-10 h-10' : 'w-16 h-16'} text-gray-700`} />
+                                </div>
+                                <p className={`font-medium ${isBento ? 'text-black font-black text-lg' : 'text-gray-500'}`}>
+                                    {isBento ? 'ALL CLEAR! ✅' : 'No pending requests.'}
+                                </p>
+                                {isBento && <p className="text-sm text-gray-600 mt-1 font-semibold">No friend requests waiting.</p>}
                             </div>
                         )}
-                        {requestList.map(({ request, user }) => (
-                            <div key={request.createdAt} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
+                        {requestList.map(({ request, user }, index) => (
+                            <div key={request.createdAt} className={`flex items-center justify-between p-4 ${
+                                isBento
+                                    ? 'bg-white rounded-xl border-[2.5px] border-black shadow-[4px_4px_0px_#000]'
+                                    : 'bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5'
+                            }`}>
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-black text-lg overflow-hidden">
+                                    <div className={`w-12 h-12 flex items-center justify-center text-lg font-black overflow-hidden ${
+                                        isBento
+                                            ? 'rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000]'
+                                            : 'rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 text-white'
+                                    }`} style={isBento ? { backgroundColor: getBentoColor(index + 1) } : undefined}>
                                         {user?.avatar ? (
                                             <Avatar config={user.avatar} size="md" className="w-full h-full" />
                                         ) : (
-                                            user?.name.charAt(0) || '?'
+                                            <span className={isBento ? 'text-black' : 'text-white'}>{user?.name.charAt(0) || '?'}</span>
                                         )}
                                     </div>
                                     <div>
-                                        <div className="font-bold text-gray-900 dark:text-white text-lg">{user?.name || 'Unknown'}</div>
-                                        <div className="text-xs text-gray-500 font-semibold">Wants to act friendly</div>
+                                        <div className={`font-bold text-lg ${isBento ? 'text-black font-black' : 'text-gray-900 dark:text-white'}`}>{user?.name || 'Unknown'}</div>
+                                        <div className={`text-xs font-semibold ${isBento ? 'text-gray-700' : 'text-gray-500'}`}>
+                                            {isBento ? '⚡ WANTS TO JOIN YOUR SQUAD' : 'Wants to act friendly'}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button onClick={() => respond(request.from, 'accept')} className="p-3 bg-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/30 border border-emerald-500/30"><Check className="w-5 h-5" /></button>
-                                    <button onClick={() => respond(request.from, 'reject')} className="p-3 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 border border-red-500/30"><X className="w-5 h-5" /></button>
+                                    <button
+                                        onClick={() => respond(request.from, 'accept')}
+                                        className={`p-3 ${
+                                            isBento
+                                                ? 'bg-[#bef264] text-black rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-y-0.5'
+                                                : 'bg-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/30 border border-emerald-500/30'
+                                        }`}
+                                    ><Check className="w-5 h-5" /></button>
+                                    <button
+                                        onClick={() => respond(request.from, 'reject')}
+                                        className={`p-3 ${
+                                            isBento
+                                                ? 'bg-[#fde047] text-black rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-y-0.5'
+                                                : 'bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 border border-red-500/30'
+                                        }`}
+                                    ><X className="w-5 h-5" /></button>
                                 </div>
                             </div>
                         ))}
@@ -233,68 +349,108 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                     <div>
                         <form onSubmit={handleSearch} className="flex gap-3 mb-8">
                             <div className="relative flex-1 group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 w-5 h-5 transition-colors" />
+                                <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${
+                                    isBento ? 'text-black' : 'text-gray-500 group-focus-within:text-purple-400'
+                                }`} />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Find users by name..."
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-medium"
+                                    className={`w-full pl-12 pr-4 py-4 font-medium transition-all ${
+                                        isBento
+                                            ? 'bg-white border-[2.5px] border-black rounded-xl text-black placeholder-gray-500 focus:outline-none focus:shadow-[4px_4px_0px_#000] shadow-[2px_2px_0px_#000]'
+                                            : 'bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50'
+                                    }`}
                                 />
                             </div>
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="px-6 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-bold transition-all shadow-lg hover:shadow-purple-500/25 disabled:opacity-50"
+                                className={`px-6 font-bold transition-all disabled:opacity-50 ${
+                                    isBento
+                                        ? 'bg-[#bef264] text-black rounded-xl border-[2.5px] border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-y-0.5 active:shadow-[1px_1px_0px_#000] active:translate-y-0.5'
+                                        : 'bg-purple-600 hover:bg-purple-500 text-white rounded-2xl shadow-lg hover:shadow-purple-500/25'
+                                }`}
                             >
-                                {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Search className="w-5 h-5" />}
+                                {isLoading ? <div className={`w-5 h-5 border-2 rounded-full animate-spin ${isBento ? 'border-black/30 border-t-black' : 'border-white/30 border-t-white'}`} /> : <Search className="w-5 h-5" />}
                             </button>
                         </form>
 
                         <div className="space-y-3">
-                            {searchResults.filter(u => u.userId !== currentUser.userId).map(user => {
+                            {searchResults.filter(u => u.userId !== currentUser.userId).map((user, index) => {
                                 const relationship = user.relationship;
                                 const isFriend = relationship === 'friend' || currentUser.friends?.includes(user.userId!);
                                 const sentRequest = relationship === 'pending_outgoing' || currentUser.friendRequests?.find(r => r.to === user.userId && r.status === 'pending');
                                 const receivedRequest = relationship === 'pending_incoming' || currentUser.friendRequests?.find(r => r.from === user.userId && r.status === 'pending');
 
                                 return (
-                                    <div key={user.userId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
+                                    <div key={user.userId} className={`flex items-center justify-between p-4 ${
+                                        isBento
+                                            ? 'bg-white rounded-xl border-[2.5px] border-black shadow-[4px_4px_0px_#000]'
+                                            : 'bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5'
+                                    }`}>
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-white font-bold text-lg border border-white/10 overflow-hidden">
+                                            <div className={`w-12 h-12 flex items-center justify-center text-lg font-bold overflow-hidden ${
+                                                isBento
+                                                    ? 'rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000]'
+                                                    : 'rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 text-white border border-white/10'
+                                            }`} style={isBento ? { backgroundColor: getBentoColor(index + 2) } : undefined}>
                                                 {user.avatar ? (
                                                     <Avatar config={user.avatar} size="md" className="w-full h-full" />
                                                 ) : (
-                                                    user.name?.charAt(0)
+                                                    <span className={isBento ? 'text-black font-black' : ''}>{user.name?.charAt(0)}</span>
                                                 )}
                                             </div>
                                             <div>
-                                                <div className="font-bold text-gray-900 dark:text-white text-lg">{user.name}</div>
-                                                <div className="text-xs text-gray-500 font-medium">{user.email}</div>
+                                                <div className={`font-bold text-lg ${isBento ? 'text-black font-black' : 'text-gray-900 dark:text-white'}`}>{user.name}</div>
+                                                <div className={`text-xs font-medium ${isBento ? 'text-gray-600' : 'text-gray-500'}`}>{user.email}</div>
                                             </div>
                                         </div>
                                         <div>
                                             {isFriend ? (
-                                                <button disabled className="px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 font-bold text-sm cursor-default flex items-center gap-2">
+                                                <button disabled className={`px-4 py-2 font-bold text-sm cursor-default flex items-center gap-2 ${
+                                                    isBento
+                                                        ? 'bg-[#bef264] text-black rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000]'
+                                                        : 'bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20'
+                                                }`}>
                                                     <Check className="w-4 h-4" /> Friends
                                                 </button>
                                             ) : sentRequest ? (
-                                                <button disabled className="px-4 py-2 bg-yellow-500/10 text-yellow-500 rounded-xl border border-yellow-500/20 font-bold text-sm cursor-default">
+                                                <button disabled className={`px-4 py-2 font-bold text-sm cursor-default ${
+                                                    isBento
+                                                        ? 'bg-[#fde047] text-black rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000]'
+                                                        : 'bg-yellow-500/10 text-yellow-500 rounded-xl border border-yellow-500/20'
+                                                }`}>
                                                     Request Sent
                                                 </button>
                                             ) : receivedRequest ? (
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => respond(user.userId!, 'accept')} className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/30 border border-emerald-500/30"><Check className="w-4 h-4" /></button>
-                                                    <button onClick={() => respond(user.userId!, 'reject')} className="p-2 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 border border-red-500/30"><X className="w-4 h-4" /></button>
+                                                    <button onClick={() => respond(user.userId!, 'accept')} className={`p-2 ${
+                                                        isBento
+                                                            ? 'bg-[#bef264] text-black rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000]'
+                                                            : 'bg-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/30 border border-emerald-500/30'
+                                                    }`}><Check className="w-4 h-4" /></button>
+                                                    <button onClick={() => respond(user.userId!, 'reject')} className={`p-2 ${
+                                                        isBento
+                                                            ? 'bg-[#fde047] text-black rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000]'
+                                                            : 'bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 border border-red-500/30'
+                                                    }`}><X className="w-4 h-4" /></button>
                                                 </div>
                                             ) : (
                                                 <button
                                                     onClick={() => sendRequest(user.userId!)}
                                                     disabled={processingIds.has(user.userId!)}
-                                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${processingIds.has(user.userId!)
-                                                        ? 'bg-gray-100 text-gray-400 cursor-wait'
-                                                        : 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 border border-purple-500/30'
-                                                        }`}
+                                                    className={`flex items-center gap-2 px-4 py-2 font-bold text-sm transition-all ${
+                                                        isBento
+                                                            ? `rounded-xl border-[2.5px] border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-y-0.5 ${
+                                                                processingIds.has(user.userId!) ? 'bg-gray-200 cursor-wait' : 'bg-[#ddd6fe] text-black'
+                                                            }`
+                                                            : `rounded-xl ${processingIds.has(user.userId!)
+                                                                ? 'bg-gray-100 text-gray-400 cursor-wait'
+                                                                : 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 border border-purple-500/30'
+                                                            }`
+                                                    }`}
                                                 >
                                                     {processingIds.has(user.userId!) ? (
                                                         <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -315,12 +471,21 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                 {activeTab === 'challenges' && (
                     <div className="space-y-3">
                         {challenges.length === 0 && (
-                            <div className="text-center py-12">
-                                <Trophy className="w-16 h-16 text-gray-700 mx-auto mb-4" />
-                                <p className="text-gray-500 font-medium">No active challenges.</p>
+                            <div className={`text-center py-12 ${
+                                isBento ? 'bg-[#ddd6fe]/30 rounded-2xl border-[2.5px] border-black border-dashed p-8' : ''
+                            }`}>
+                                <div className={`mx-auto mb-4 flex items-center justify-center ${
+                                    isBento ? 'w-20 h-20 bg-white rounded-2xl border-[2.5px] border-black shadow-[4px_4px_0px_#000]' : ''
+                                }`}>
+                                    <Trophy className={`${isBento ? 'w-10 h-10' : 'w-16 h-16'} text-gray-700`} />
+                                </div>
+                                <p className={`font-medium ${isBento ? 'text-black font-black text-lg' : 'text-gray-500'}`}>
+                                    {isBento ? 'NO BATTLES YET! ⚔️' : 'No active challenges.'}
+                                </p>
+                                {isBento && <p className="text-sm text-gray-600 mt-1 font-semibold">Challenge a friend to show your skills!</p>}
                             </div>
                         )}
-                        {challenges.map((challenge) => {
+                        {challenges.map((challenge, index) => {
                             const isCreator = challenge.fromId === currentUser.userId;
                             const hasPlayed = isCreator ? !!challenge.fromResult : !!challenge.toResult;
                             const opponentId = isCreator ? challenge.toId : challenge.fromId;
@@ -330,22 +495,42 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                 : hasPlayed ? 'Waiting for opponent' : 'Pending';
 
                             return (
-                                <div key={challenge.token} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
+                                <div key={challenge.token} className={`flex items-center justify-between p-4 ${
+                                    isBento
+                                        ? 'bg-white rounded-xl border-[2.5px] border-black shadow-[4px_4px_0px_#000]'
+                                        : 'bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5'
+                                }`}>
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-black text-lg p-0.5 shadow-md overflow-hidden">
-                                            <div className="w-full h-full bg-white dark:bg-[#13141f] rounded-[10px] flex items-center justify-center overflow-hidden">
-                                                {opponentUser?.avatar ? (
+                                        <div className={`w-12 h-12 flex items-center justify-center text-lg font-black overflow-hidden ${
+                                            isBento
+                                                ? 'rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000] p-0.5'
+                                                : 'rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-white p-0.5 shadow-md'
+                                        }`} style={isBento ? { backgroundColor: getBentoColor(index) } : undefined}>
+                                            {isBento ? (
+                                                opponentUser?.avatar ? (
                                                     <Avatar config={opponentUser.avatar} size="md" className="w-full h-full" />
                                                 ) : (
-                                                    <span className="text-gray-900 dark:text-white">{opponentUser?.name.charAt(0) || '?'}</span>
-                                                )}
-                                            </div>
+                                                    <span className="text-black">{opponentUser?.name.charAt(0) || '?'}</span>
+                                                )
+                                            ) : (
+                                                <div className="w-full h-full bg-white dark:bg-[#13141f] rounded-[10px] flex items-center justify-center overflow-hidden">
+                                                    {opponentUser?.avatar ? (
+                                                        <Avatar config={opponentUser.avatar} size="md" className="w-full h-full" />
+                                                    ) : (
+                                                        <span className="text-gray-900 dark:text-white">{opponentUser?.name.charAt(0) || '?'}</span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                         <div>
-                                            <div className="font-bold text-gray-900 dark:text-white text-lg">vs {opponentUser?.name || 'Unknown'}</div>
-                                            <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider flex items-center gap-2">
-                                                <span className={`${hasPlayed ? 'text-yellow-600 dark:text-yellow-500' : 'text-emerald-600 dark:text-emerald-400'}`}>{statusLabel}</span>
-                                                <span className="w-1 h-1 bg-gray-400 dark:bg-gray-600 rounded-full" />
+                                            <div className={`font-bold text-lg ${isBento ? 'text-black font-black' : 'text-gray-900 dark:text-white'}`}>vs {opponentUser?.name || 'Unknown'}</div>
+                                            <div className={`text-xs font-semibold uppercase tracking-wider flex items-center gap-2 ${isBento ? 'text-gray-700' : 'text-gray-500'}`}>
+                                                <span className={`${
+                                                    isBento
+                                                        ? (hasPlayed ? 'text-black' : 'text-black')
+                                                        : (hasPlayed ? 'text-yellow-600 dark:text-yellow-500' : 'text-emerald-600 dark:text-emerald-400')
+                                                }`}>{statusLabel}</span>
+                                                <span className={`w-1 h-1 rounded-full ${isBento ? 'bg-black' : 'bg-gray-400 dark:bg-gray-600'}`} />
                                                 <span>Quiz ID: {challenge.quizId.slice(0, 4)}...</span>
                                             </div>
                                         </div>
@@ -354,10 +539,19 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                         <button
                                             onClick={() => onStartChallenge(challenge)}
                                             disabled={hasPlayed}
-                                            className={`px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all border ${hasPlayed
-                                                ? 'bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed'
-                                                : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
-                                                }`}
+                                            className={`px-5 py-2.5 text-sm font-black uppercase tracking-wider transition-all ${
+                                                isBento
+                                                    ? `rounded-xl border-[2.5px] border-black ${
+                                                        hasPlayed
+                                                            ? 'bg-gray-200 text-gray-500 shadow-[2px_2px_0px_#000] cursor-not-allowed'
+                                                            : 'bg-[#bef264] text-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-y-0.5'
+                                                    }`
+                                                    : `rounded-xl border ${
+                                                        hasPlayed
+                                                            ? 'bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed'
+                                                            : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
+                                                    }`
+                                            }`}
                                         >
                                             {hasPlayed ? 'DONE' : 'PLAY'}
                                         </button>

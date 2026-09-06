@@ -3,10 +3,13 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { generateQuiz, aiHealth, getAICoachHint, translateQuestionContent } from '../controllers/aiController.js';
+import { generateQuiz, aiHealth, getAICoachHint, translateQuestionContent, getDailyQuote } from '../controllers/aiController.js';
 import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// Daily inspirational AI quote for learners (publicly accessible)
+router.get('/daily-quote', getDailyQuote);
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({

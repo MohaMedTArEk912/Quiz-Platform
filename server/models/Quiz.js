@@ -59,7 +59,6 @@ const quizSchema = new mongoose.Schema({
 });
 
 // Performance indexes for frequent filtering and sorting
-quizSchema.index({ id: 1 }, { unique: true });
 quizSchema.index({ subjectId: 1 });
 quizSchema.index({ category: 1, difficulty: 1 });
 quizSchema.index({ quizType: 1 });

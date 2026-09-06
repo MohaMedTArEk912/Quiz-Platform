@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm --prefix client run dev\"",
     "client": "npm --prefix client run dev",
-    "server": "node --watch server/index.js",
+    "server": "node --watch --watch-path=server server/index.js",
     "start": "node server/index.js",
     "seed": "node scripts/seedDatabase.js",
     "seed:all": "node scripts/seedDatabase.js",

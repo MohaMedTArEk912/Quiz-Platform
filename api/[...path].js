@@ -12,7 +12,7 @@ const TIMEOUT = 15000; // 15 seconds
 
 // MongoDB Atlas connection string (both Koyeb and Vercel use same DB)
 // This ensures data consistency across both deployments
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI || process.env.ATLAS_MONGODB_URI;
 
 // Endpoints that should NOT be proxied (internal operations)
 const BLOCKED_ENDPOINTS = [

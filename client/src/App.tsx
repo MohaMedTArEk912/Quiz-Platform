@@ -92,25 +92,28 @@ const App: React.FC = () => {
                       </AdminRoute>
                     } />
 
-                    {/* Protected User Routes wrapped in MainLayout */}
-                    <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+                    {/* User Routes wrapped in MainLayout */}
+                    <Route element={<MainLayout />}>
+                      {/* Public Browsing Routes */}
                       <Route path="/" element={<DashboardPage />} />
-                      <Route path="/profile" element={<ProfilePage />} />
                       <Route path="/leaderboard" element={<LeaderboardPage />} />
-                      <Route path="/shop" element={<ShopPage />} />
-                      <Route path="/social" element={<SocialPage />} />
-                      <Route path="/analytics" element={<AnalyticsPage />} />
-                      <Route path="/tournaments" element={<TournamentsPage />} />
                       <Route path="/tracks" element={<SkillTracksPage />} />
-                      <Route path="/daily" element={<DailyChallengePage />} />
                       <Route path="/study" element={<StudyModePage />} />
-
-                      <Route path="/quiz/:quizId" element={<QuizTakingPage />} />
-                      <Route path="/results" element={<QuizResultsPage />} />
-                      <Route path="/game/vs" element={<VsGamePage />} />
+                      <Route path="/tournaments" element={<TournamentsPage />} />
                       <Route path="/badge-tree/:treeId" element={<BadgeTreeDetailPage />} />
-                      <Route path="/clans" element={<ClanPage />} />
+
+                      {/* Protected Routes (require login) */}
+                      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                      <Route path="/quiz/:quizId" element={<ProtectedRoute><QuizTakingPage /></ProtectedRoute>} />
+                      <Route path="/results" element={<ProtectedRoute><QuizResultsPage /></ProtectedRoute>} />
+                      <Route path="/game/vs" element={<ProtectedRoute><VsGamePage /></ProtectedRoute>} />
+                      <Route path="/shop" element={<ProtectedRoute><ShopPage /></ProtectedRoute>} />
+                      <Route path="/social" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
+                      <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+                      <Route path="/daily" element={<ProtectedRoute><DailyChallengePage /></ProtectedRoute>} />
+                      <Route path="/clans" element={<ProtectedRoute><ClanPage /></ProtectedRoute>} />
                     </Route>
+
 
                     {/* Catch all redirect */}
                     <Route path="*" element={<Navigate to="/" replace />} />

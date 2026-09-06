@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const attemptSchema = new mongoose.Schema({
-  attemptId: { type: String, required: true, unique: true, index: true },
+  attemptId: { type: String, required: true, unique: true },
   userId: { type: String, required: true },
   userName: { type: String, required: true },
   userEmail: { type: String, required: true },
@@ -42,7 +42,6 @@ const attemptSchema = new mongoose.Schema({
 });
 
 // Indexes for quick filtering, sorting, and user activity lookups
-attemptSchema.index({ attemptId: 1 }, { unique: true });
 attemptSchema.index({ userId: 1, completedAt: -1 });
 attemptSchema.index({ quizId: 1, completedAt: -1 });
 attemptSchema.index({ userId: 1, quizId: 1 });

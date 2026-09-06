@@ -52,7 +52,6 @@ const clanSchema = new mongoose.Schema({
 });
 
 clanSchema.index({ totalXP: -1 });
-clanSchema.index({ name: 1 });
 clanSchema.index({ 'members.userId': 1 });
 clanSchema.index({ leaderId: 1 });
 

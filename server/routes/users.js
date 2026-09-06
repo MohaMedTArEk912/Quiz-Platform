@@ -17,6 +17,7 @@ router.put('/users/:userId', userController.updateUser); // Note: Original was /
 // So line 350 did NOT have verifyUser.
 
 router.delete('/users/:userId', verifyAdmin, userController.deleteUser);
+router.get('/leaderboard', userController.getPublicLeaderboard);
 router.get('/user/data', verifyUser, userController.getUserData);
 router.get('/users/search', verifyUser, userController.searchUsers);
 router.post('/friends/request', verifyUser, userController.sendFriendRequest);

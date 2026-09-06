@@ -40,7 +40,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
     };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-[#0a0a0b] flex relative overflow-hidden selection:bg-pink-500/30">
+        <div className="min-h-dvh bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex relative overflow-hidden selection:bg-indigo-500/25">
             {/* Ambient Background */}
             <AmbientBackground />
 
@@ -50,10 +50,10 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
             </div>
 
             {/* Left Column - Mascot & Branding (Hidden on Mobile) */}
-            <div className="hidden lg:flex flex-col flex-[1.2] relative z-10 bg-gray-50/50 dark:bg-white/[0.02] backdrop-blur-xl border-r border-gray-200/50 dark:border-white/10 items-center justify-center p-12">
+            <div className="hidden lg:flex flex-col flex-[1.2] relative z-10 bg-slate-100/40 dark:bg-white/[0.02] backdrop-blur-xl border-r border-slate-200/80 dark:border-white/[0.06] items-center justify-center p-12 login-mascot-col">
                 <div className="w-full max-w-lg flex flex-col items-center">
                     {/* Character/Mascot Container */}
-                    <div className="w-[400px] h-[400px] flex items-center justify-center mb-4">
+                    <div className="w-[340px] sm:w-[380px] h-[340px] sm:h-[380px] flex items-center justify-center mb-6 mascot-card-wrapper transition-all">
                         <AnimatedCharacter 
                             isEmailFocused={isEmailFocused} 
                             isPasswordFocused={isPasswordFocused} 
@@ -61,70 +61,76 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                         />
                     </div>
                     
-                    <div className="text-center space-y-4">
-                        <h1 className="text-5xl font-black text-gray-900 dark:text-white transform tracking-tighter">
-                            Join the ranks
+                    <div className="text-center space-y-2">
+                        <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                            Join the <span className="bento-highlight">ranks</span>
                         </h1>
-                        <p className="text-xl text-gray-500 dark:text-gray-400 font-medium max-w-sm mx-auto leading-relaxed">
-                            Create your account and start your journey to the top of the leaderboard!
+                        <p className="text-slate-500 dark:text-slate-400 text-base max-w-sm mx-auto">
+                            Create your learner profile and begin climbing the global leaderboard today.
                         </p>
+                        {/* Neo-Brutalist Sticker Badges */}
+                        <div className="flex flex-wrap items-center justify-center gap-2 pt-2 select-none">
+                            <span className="bento-badge-tag bg-[#fde047] text-black -rotate-1">"NEW COHORT"</span>
+                            <span className="bento-badge-tag bg-[#8b5cf6] text-white rotate-1">"EARN BADGES"</span>
+                            <span className="bento-badge-tag bg-[#bef264] text-black -rotate-1">"DUEL LIVE"</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Right Column - Form */}
-            <div className="flex-1 flex flex-col justify-center items-center p-6 lg:p-8 relative z-10 w-full animate-in fade-in duration-700">
-                <div className="w-full max-w-lg space-y-6">
+            <div className="flex-1 flex flex-col justify-center items-center p-6 lg:p-10 relative z-10 w-full animate-in fade-in duration-500">
+                <div className="w-full max-w-md space-y-6">
                     {/* Mobile Logo & Heading (Visible only when Mascot is hidden) */}
-                    <div className="lg:hidden text-center mb-6">
-                        <div className="w-24 h-24 mx-auto mb-6 relative flex items-center justify-center animate-bounce-slow">
-                            <TransparentLogo src="/icon.png" className="w-full h-full object-contain drop-shadow-[0_0_20px_rgba(236,72,153,0.4)]" threshold={40} />
+                    <div className="lg:hidden text-center mb-4">
+                        <div className="w-16 h-16 mx-auto mb-3 relative flex items-center justify-center">
+                            <TransparentLogo src="/icon.png" className="w-full h-full object-contain" threshold={40} />
                         </div>
-                        <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter">
+                        <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                             Create Account
                         </h1>
                     </div>
 
-                    <div className="text-left space-y-3 hidden lg:block">
-                        <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Register</h2>
-                        <p className="text-gray-500 dark:text-gray-400 font-medium text-lg text-balance">
-                            Welcome! Let's get you set up and ready to play.
+                    <div className="text-left space-y-1.5 hidden lg:block">
+                        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Create Account</h2>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm">
+                            Sign up to start tracking your quiz mastery.
                         </p>
                     </div>
 
                     {error && (
-                        <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl flex items-center gap-3 animate-shake">
-                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                            <span className="font-bold text-sm tracking-wide">{error}</span>
+                        <div className="p-3.5 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center gap-2.5 text-xs font-semibold animate-shake">
+                            <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                            <span>{error}</span>
                         </div>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2 group">
-                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-400 ml-1 transition-colors group-focus-within:text-pink-600">
+                        <div className="space-y-1.5 group">
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 ml-1 transition-colors group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400">
                                 Full Name
                             </label>
                             <div className="relative">
-                                <User className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-all w-5 h-5" />
+                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors w-4.5 h-4.5" />
                                 <input
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="Your full name"
+                                    placeholder="Your name"
                                     disabled={isLoading}
-                                    className="w-full pl-14 pr-4 py-4.5 bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 rounded-[1.25rem] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-pink-500/50 focus:ring-4 focus:ring-pink-500/10 transition-all font-semibold disabled:opacity-50 shadow-sm"
+                                    className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#0f1422] border border-slate-200 dark:border-white/10 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-all text-sm font-medium disabled:opacity-50 shadow-sm"
                                     autoComplete="name"
                                     required
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-2 group">
-                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-400 ml-1 transition-colors group-focus-within:text-pink-600">
+                        <div className="space-y-1.5 group">
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 ml-1 transition-colors group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400">
                                 Email Address
                             </label>
                             <div className="relative">
-                                <Mail className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-all w-5 h-5" />
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors w-4.5 h-4.5" />
                                 <input
                                     type="email"
                                     value={email}
@@ -133,19 +139,19 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                                     onBlur={() => setIsEmailFocused(false)}
                                     placeholder="your@email.com"
                                     disabled={isLoading}
-                                    className="w-full pl-14 pr-4 py-4.5 bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 rounded-[1.25rem] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-pink-500/50 focus:ring-4 focus:ring-pink-500/10 transition-all font-semibold disabled:opacity-50 shadow-sm"
+                                    className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#0f1422] border border-slate-200 dark:border-white/10 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-all text-sm font-medium disabled:opacity-50 shadow-sm"
                                     autoComplete="email"
                                     required
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-2 group">
-                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-400 ml-1 transition-colors group-focus-within:text-pink-600">
+                        <div className="space-y-1.5 group">
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 ml-1 transition-colors group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400">
                                 Password
                             </label>
                             <div className="relative">
-                                <Lock className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-all w-5 h-5" />
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors w-4.5 h-4.5" />
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
@@ -154,7 +160,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                                     onBlur={() => setIsPasswordFocused(false)}
                                     placeholder="••••••••"
                                     disabled={isLoading}
-                                    className="w-full pl-14 pr-14 py-4.5 bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 rounded-[1.25rem] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-pink-500/50 focus:ring-4 focus:ring-pink-500/10 transition-all font-semibold disabled:opacity-50 shadow-sm"
+                                    className="w-full pl-11 pr-11 py-3 bg-white dark:bg-[#0f1422] border border-slate-200 dark:border-white/10 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-all text-sm font-medium disabled:opacity-50 shadow-sm"
                                     autoComplete="new-password"
                                     required
                                 />
@@ -162,10 +168,10 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
                                     disabled={isLoading}
-                                    className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors p-1"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-500 transition-colors p-1"
                                     title={showPassword ? "Hide password" : "Show password"}
                                 >
-                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                 </button>
                             </div>
                         </div>
@@ -173,34 +179,30 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-gray-900 dark:bg-pink-600 hover:bg-black dark:hover:bg-pink-500 text-white py-5 rounded-[1.25rem] font-black text-lg transition-all shadow-xl shadow-pink-500/20 active:scale-[0.98] disabled:opacity-50 flex justify-center items-center gap-2 group/btn relative overflow-hidden"
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-2xl font-bold text-sm transition-all shadow-md shadow-indigo-600/20 active:scale-[0.985] disabled:opacity-50 flex justify-center items-center gap-2 cursor-pointer mt-2"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                             {isLoading ? (
-                                <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
                             ) : (
-                                <>
-                                    <span>Create Account</span>
-                                    <div className="w-1.5 h-1.5 rounded-full bg-pink-400 opacity-0 group-hover:opacity-100 transition-all" />
-                                </>
+                                <span>Create Account</span>
                             )}
                         </button>
                     </form>
 
-                    <div className="relative py-2">
+                    <div className="relative py-1">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-100 dark:border-white/5"></div>
+                            <div className="w-full border-t border-slate-200 dark:border-white/[0.08]"></div>
                         </div>
                     </div>
 
-                    <p className="text-center text-gray-500 dark:text-gray-400 font-bold text-sm">
-                        Back to{' '}
+                    <p className="text-center text-slate-500 dark:text-slate-400 font-medium text-xs">
+                        Already have an account?{' '}
                         <button
                             onClick={onSwitchToLogin}
-                            className="text-pink-600 dark:text-pink-400 hover:text-pink-500 hover:underline transition-all font-black uppercase tracking-wider ml-1"
+                            className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold ml-1 cursor-pointer"
                         >
                             Sign In
                         </button>

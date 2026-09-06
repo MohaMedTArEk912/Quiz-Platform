@@ -126,7 +126,7 @@ function protectMathAndCode(text: string): { protectedText: string; tokens: Map<
     let tokenIndex = 0;
 
     // 1. Math formulas ($$...$$, $...$, \\[...\\])
-    const mathRegex = /(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$|\\\[[\s\S]*?\\\]|\\\(.+?\\\)|\\[a-zA-Z]+(?:\{[^\}]*\})*)/g;
+    const mathRegex = /(\$\$[\s\S]*?\$\$|\$[^$\n]+?\$|\\\[[\s\S]*?\\\]|\\\(.+?\\\)|\\[a-zA-Z]+(?:\{[^}]*\})*)/g;
     let protectedText = text.replace(mathRegex, (match) => {
         const key = `__MTKN_${tokenIndex++}__`;
         tokens.set(key, match);
@@ -204,7 +204,7 @@ export async function translateText(
         if (res.ok) {
             const data = await res.json();
             if (Array.isArray(data) && Array.isArray(data[0])) {
-                rawTranslated = data[0].map((seg: any) => seg[0]).join('');
+                rawTranslated = (data[0] as unknown[][]).map((seg) => String(seg[0] || '')).join('');
             }
         }
     } catch (gErr) {

@@ -8,7 +8,7 @@ const resultSchema = new mongoose.Schema({
 }, { _id: false });
 
 const challengeSchema = new mongoose.Schema({
-  token: { type: String, required: true, unique: true, index: true },
+  token: { type: String, required: true, unique: true },
   quizId: { type: String, required: true },
   fromId: { type: String, required: true },
   toId: { type: String, required: true },

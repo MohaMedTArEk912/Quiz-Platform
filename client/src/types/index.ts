@@ -34,7 +34,7 @@ export interface Question {
     part: string;
     question: string;
     options?: string[];
-    correctAnswer?: any;
+    correctAnswer?: string | number | string[] | Record<string, string> | unknown;
     explanation: string;
     points: number;
     imageUrl?: string;
@@ -57,7 +57,7 @@ export interface CompilerConfig {
 }
 
 export interface DetailedAnswer {
-    selected: string | number;
+    selected: string | number | string[] | Record<string, string> | null | undefined;
     isCorrect: boolean;
     type: string;
 }
@@ -752,7 +752,7 @@ export interface AttemptQuestionBreakdown {
     questionIndex: number;
     question: string;
     options: string[];
-    correctAnswer?: any;
+    correctAnswer?: unknown;
     explanation?: string;
     points: number;
     imageUrl?: string;

@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 
-// Load environment variables (.env files won't override already set deployment env vars)
-dotenv.config();
+// Load environment variables with override: true so changes in .env take effect immediately
+dotenv.config({ override: true });
 
 // Provider and key presence checks (non-fatal)
 if (!process.env.GROQ_API_KEY || !String(process.env.GROQ_API_KEY).trim()) {
@@ -148,18 +148,35 @@ app.use(helmet({
   },
 }));
 
-// Rate Limiting
+// Rate Limiting (Completely disabled when running on local/development or from localhost)
+const isLocalEnv = process.env.NODE_ENV !== 'production' || process.env.LOCAL_DEV === 'true';
+
 const limiter = rateLimit({
   windowMs: 3 * 60 * 1000, // 3 minutes
-  max: process.env.NODE_ENV === 'production' ? 500 : 3000, // Increased limits: 500 reqs / 3 min in prod
+  max: 500,
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again after 3 minutes'
   },
   standardHeaders: true, 
   legacyHeaders: false,
+  skip: (req) => {
+    if (isLocalEnv) return true;
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    const host = req.hostname || req.headers.host || '';
+    return (
+      ip === '127.0.0.1' ||
+      ip === '::1' ||
+      ip === '::ffff:127.0.0.1' ||
+      host.includes('localhost') ||
+      host.includes('127.0.0.1')
+    );
+  }
 });
-app.use('/api', limiter);
+
+if (!isLocalEnv) {
+  app.use('/api', limiter);
+}
 
 // Data Sanitization & Protection
 // Note: mongo-sanitize and xss-clean are often incompatible with Express 5

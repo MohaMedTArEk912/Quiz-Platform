@@ -132,13 +132,20 @@
     
     <!-- Remove loading screen when app loads -->
     <script>
-      window.addEventListener('load', function() {
+      function dismissLoadingScreen() {
         const loadingScreen = document.getElementById('loading-screen');
-        if (loadingScreen) {
+        if (loadingScreen && !loadingScreen.classList.contains('loaded')) {
           loadingScreen.classList.add('loaded');
           setTimeout(() => loadingScreen.remove(), 300);
         }
-      });
+      }
+      if (document.readyState === 'complete') {
+        dismissLoadingScreen();
+      } else {
+        window.addEventListener('load', dismissLoadingScreen);
+        // Safety timeout: never block UI for more than 1.2 seconds under any circumstance
+        setTimeout(dismissLoadingScreen, 1200);
+      }
     </script>
   </body>
 </html>

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const badgeTreeSchema = new mongoose.Schema({
-  treeId: { type: String, required: true, unique: true, index: true },
+  treeId: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   description: { type: String },
   type: { 

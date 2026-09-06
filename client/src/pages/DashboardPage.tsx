@@ -1,17 +1,20 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import UserRoads from '../components/UserRoads';
-import InstallPWA from '../components/InstallPWA';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../context/NotificationContext';
+import { LoginPromptModal } from '../components/LoginPromptModal';
+import { GUEST_USER } from '../constants/appDefaults';
 
 const DashboardPage: React.FC = () => {
-    const { logout, refreshUser } = useAuth();
+    const { logout, refreshUser, currentUser } = useAuth();
     const { availableQuizzes, userWithRank, allAttempts, subjects, skillTracks, studyCards, refreshData } = useData();
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
     const { showNotification } = useNotification();
+
+    const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+    const [loginPromptRedirect, setLoginPromptRedirect] = useState<string | undefined>(undefined);
 
     // Defensive fallbacks to avoid runtime crashes when backend returns unexpected shapes
     const safeQuizzes = Array.isArray(availableQuizzes) ? availableQuizzes : [];
@@ -20,50 +23,68 @@ const DashboardPage: React.FC = () => {
     const safeStudyCards = Array.isArray(studyCards) ? studyCards : [];
     const safeAttempts = Array.isArray(allAttempts) ? allAttempts : [];
 
-    // Refresh user data and all data when component mounts to get latest admin updates
-    useEffect(() => {
-        const loadLatestData = async () => {
-            try {
-                await Promise.all([refreshUser(), refreshData()]);
-            } catch (error) {
-                console.error('Failed to refresh data:', error);
-            }
-        };
-        loadLatestData();
-    }, [refreshUser, refreshData]);
+    const activeUser = userWithRank || currentUser || GUEST_USER;
+    const userAttempts = currentUser ? safeAttempts.filter(a => a.userId === currentUser.userId) : [];
 
-    if (!currentUser) return null;
+    const handleSelectQuiz = (quiz: any) => {
+        const quizId = quiz.id || quiz._id;
+        if (!quizId) {
+            console.error('Quiz missing ID:', quiz);
+            showNotification('error', 'This quiz is missing an ID and cannot be opened. Please contact an administrator.');
+            return;
+        }
+
+        const encodedId = encodeURIComponent(quizId);
+        const quizPath = `/quiz/${encodedId}`;
+
+        if (!currentUser) {
+            setLoginPromptRedirect(quizPath);
+            setIsLoginPromptOpen(true);
+            return;
+        }
+
+        navigate(quizPath);
+    };
+
+    const handleViewProfile = () => {
+        if (!currentUser) {
+            setLoginPromptRedirect('/profile');
+            setIsLoginPromptOpen(true);
+            return;
+        }
+        navigate('/profile');
+    };
 
     return (
         <>
-            <InstallPWA />
             <UserRoads
                 quizzes={safeQuizzes}
                 subjects={safeSubjects}
                 skillTracks={safeSkillTracks}
                 studyCards={safeStudyCards}
-                user={userWithRank || currentUser}
-                attempts={safeAttempts.filter(a => a.userId === currentUser.userId)}
+                user={activeUser}
+                attempts={userAttempts}
                 onRefreshData={async () => {
-                    await Promise.all([refreshUser(), refreshData()]);
-                }}
-                onSelectQuiz={(quiz) => {
-                    const quizId = quiz.id || quiz._id;
-                    if (!quizId) {
-                        console.error('Quiz missing ID:', quiz);
-                        showNotification('error', 'This quiz is missing an ID and cannot be opened. Please contact an administrator.');
-                        return;
+                    if (currentUser) {
+                        await Promise.all([refreshUser(), refreshData()]);
+                    } else {
+                        await refreshData();
                     }
-                    // Encode the quiz ID to handle special characters like slashes
-                    const encodedId = encodeURIComponent(quizId);
-                    navigate(`/quiz/${encodedId}`);
                 }}
-                onViewProfile={() => navigate('/profile')}
+                onSelectQuiz={handleSelectQuiz}
+                onViewProfile={handleViewProfile}
                 onViewLeaderboard={() => navigate('/leaderboard')}
                 onLogout={logout}
+            />
+
+            <LoginPromptModal
+                isOpen={isLoginPromptOpen}
+                onClose={() => setIsLoginPromptOpen(false)}
+                redirectPath={loginPromptRedirect}
             />
         </>
     );
 };
 
 export default DashboardPage;
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Bot, Sparkles, X, Lightbulb, RefreshCw } from 'lucide-react';
 import { MathRenderer } from './MathRenderer';
 import { api } from '../../lib/api';
@@ -22,7 +22,7 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({
     const [hint, setHint] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchHint = async () => {
+    const fetchHint = useCallback(async () => {
         setIsLoading(true);
         sounds.playPowerUp();
         try {
@@ -42,7 +42,7 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [question, options, category]);
 
     useEffect(() => {
         if (isOpen) {
@@ -50,7 +50,7 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({
         } else {
             setHint(null);
         }
-    }, [isOpen, question]);
+    }, [isOpen, fetchHint]);
 
     if (!isOpen) return null;
 

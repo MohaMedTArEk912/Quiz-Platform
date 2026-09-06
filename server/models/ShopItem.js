@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const shopItemSchema = new mongoose.Schema({
-  itemId: { type: String, required: true, unique: true, index: true },
+  itemId: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   description: { type: String, default: '' },
   type: { type: String, enum: ['power-up', 'cosmetic', 'boost'], default: 'power-up' },

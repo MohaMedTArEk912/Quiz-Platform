@@ -40,7 +40,9 @@ class SoundEffectsEngine {
         if (typeof navigator !== 'undefined' && 'vibrate' in navigator && !this.isMuted) {
             try {
                 navigator.vibrate(pattern);
-            } catch {}
+            } catch {
+                // Ignore vibration errors on unsupported hardware
+            }
         }
     }
 

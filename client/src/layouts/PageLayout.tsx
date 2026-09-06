@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { AmbientBackground } from '../components/AmbientBackground';
+import { useTheme } from '../context/ThemeContext';
 
 interface PageLayoutProps {
     children: React.ReactNode;
@@ -14,16 +15,20 @@ interface PageLayoutProps {
 const PageLayout: React.FC<PageLayoutProps> = ({ children, title, showBack, onBack }) => {
     const { currentUser, logout } = useAuth();
     const navigate = useNavigate();
-
-    if (!currentUser) return null;
+    const { isBento } = useTheme();
 
     const handleLogout = () => {
         logout();
         navigate('/login', { replace: true });
     };
 
+
     return (
-        <div className="min-h-screen bg-white dark:bg-[#0a0a0b] transition-colors duration-300 relative overflow-hidden">
+        <div className={`min-h-dvh transition-colors duration-200 relative selection:bg-indigo-500/25 ${
+            isBento
+                ? 'bg-transparent text-black'
+                : 'bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100'
+        }`}>
             <AmbientBackground />
             <Navbar
                 user={currentUser}
@@ -35,9 +40,9 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, title, showBack, onBa
                 onBack={onBack}
                 showActions={true}
             />
-            <div className="min-h-[calc(100vh-64px)] relative z-10">
+            <main className="min-h-[calc(100dvh-64px)] relative z-10">
                 {children}
-            </div>
+            </main>
         </div>
     );
 };

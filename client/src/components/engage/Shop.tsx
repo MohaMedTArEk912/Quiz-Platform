@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { UserData, ShopItem } from '../../types';
 import { api } from '../../lib/api';
+import { useTheme } from '../../context/ThemeContext';
 import { ShoppingBag, Coins, Zap, Clock, Target, CheckCircle2, AlertCircle, Sparkles, TrendingUp, Shield } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { SHOP_ITEM_GRADIENTS, DEFAULT_SHOP_LOADING_MESSAGE, PURCHASE_SUCCESS_MESSAGE } from '../../constants/shopDefaults';
@@ -11,6 +12,7 @@ interface ShopProps {
 }
 
 const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
+  const { isBento } = useTheme();
   const [items, setItems] = useState<ShopItem[]>([]);
   const [activeTab, setActiveTab] = useState<'powerups' | 'style'>('powerups');
   const [loading, setLoading] = useState(true);
@@ -137,22 +139,43 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
   }
 
   return (
-    <div className="p-6">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {/* Header with Coin Balance */}
-      <div className="max-w-7xl mx-auto mb-8">
-        <div className="bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 rounded-3xl p-6 shadow-2xl">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="mb-8">
+        <div className={`rounded-3xl p-6 sm:p-8 relative overflow-hidden transition-all ${
+          isBento
+            ? 'bg-[#fde047] text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+            : 'glass-panel border border-slate-200/80 dark:border-white/10 shadow-sm'
+        }`}>
+          <div className="flex items-center justify-between flex-wrap gap-4 relative z-10">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg animate-pulse">
-                <Coins className="w-8 h-8 text-white" />
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+                isBento
+                  ? 'bg-white text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                  : 'bg-amber-500/15 border border-amber-500/30 text-amber-500 shadow-lg shadow-amber-500/10'
+              }`}>
+                <Coins className={`w-7 h-7 ${isBento ? 'text-black' : 'text-amber-500'}`} />
               </div>
               <div>
-                <p className="text-white/80 text-sm font-semibold">Your Balance</p>
-                <p className="text-4xl font-black text-white">{user.coins || 0} Coins</p>
+                <p className={`text-xs uppercase tracking-wider mb-0.5 ${
+                  isBento ? 'text-black/80 font-black' : 'text-slate-500 dark:text-slate-400 font-semibold'
+                }`}>Your Treasury</p>
+                <div className="flex items-baseline gap-2">
+                  <span className={`font-tabular text-3xl sm:text-4xl font-black ${
+                    isBento ? 'text-black' : 'text-slate-900 dark:text-white'
+                  }`}>{(user.coins || 0).toLocaleString()}</span>
+                  <span className={`text-xs uppercase tracking-wider font-black ${
+                    isBento ? 'text-black/70' : 'text-amber-500 font-bold'
+                  }`}>Coins</span>
+                </div>
               </div>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm px-6 py-3 rounded-2xl">
-              <p className="text-white/80 text-xs font-semibold">Earn more by completing quizzes!</p>
+            <div className={`px-4 py-2 rounded-xl text-xs font-black ${
+              isBento
+                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                : 'glass-card border border-slate-200/80 dark:border-white/10 text-slate-600 dark:text-slate-300 font-semibold'
+            }`}>
+              ✨ Earn rewards by completing daily quizzes & skill modules
             </div>
           </div>
         </div>
@@ -160,161 +183,181 @@ const Shop: React.FC<ShopProps> = ({ user, onUserUpdate }) => {
 
       {/* Messages */}
       {message && (
-        <div className="max-w-7xl mx-auto mb-6">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-4 rounded-2xl shadow-lg flex items-center gap-3 animate-bounce">
-            <CheckCircle2 className="w-6 h-6" />
-            <span className="font-semibold text-lg">{message}</span>
-          </div>
+        <div className={`mb-6 px-5 py-3.5 rounded-2xl flex items-center gap-2.5 text-sm font-black ${
+          isBento
+            ? 'bg-[#bbf7d0] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+            : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold'
+        }`}>
+          <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+          <span>{message}</span>
         </div>
       )}
 
       {error && (
-        <div className="max-w-7xl mx-auto mb-6">
-          <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-4 rounded-2xl shadow-lg flex items-center gap-3">
-            <AlertCircle className="w-6 h-6" />
-            <span className="font-semibold">{error}</span>
-          </div>
+        <div className={`mb-6 px-5 py-3.5 rounded-2xl flex items-center gap-2.5 text-sm font-black ${
+          isBento
+            ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+            : 'bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold'
+        }`}>
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
       {/* Shop Items Grid */}
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-          <ShoppingBag className="w-8 h-8" />
-          {activeTab === 'powerups' ? 'Power-Ups Shop' : 'Style Shop'}
-        </h2>
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h2 className={`text-2xl font-black tracking-tight flex items-center gap-2.5 ${
+            isBento ? 'text-black uppercase' : 'text-slate-900 dark:text-white font-extrabold'
+          }`}>
+            <ShoppingBag className={`w-6 h-6 ${isBento ? 'text-black' : 'text-indigo-500'}`} />
+            {activeTab === 'powerups' ? 'Power-Ups & Boosters' : 'Style & Cosmetics'}
+          </h2>
 
-        {/* Tabs */}
-        <div className="flex gap-4 mb-8">
-          <button
-            onClick={() => setActiveTab('powerups')}
-            className={`px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'powerups'
-              ? 'bg-indigo-600 text-white shadow-lg'
-              : 'bg-white dark:bg-white/5 text-gray-500 hover:text-indigo-500'}`}
-          >
-            Power-Ups
-          </button>
-          <button
-            onClick={() => setActiveTab('style')}
-            className={`px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'style'
-              ? 'bg-purple-600 text-white shadow-lg'
-              : 'bg-white dark:bg-white/5 text-gray-500 hover:text-purple-500'}`}
-          >
-            Style Shop
-          </button>
+          {/* Segmented Tabs */}
+          <div className={`p-1.5 rounded-2xl flex gap-1.5 self-start sm:self-auto transition-all ${
+            isBento
+              ? 'bg-white border-3 border-black shadow-[4px_4px_0px_#000]'
+              : 'glass-panel shadow-sm'
+          }`}>
+            <button
+              onClick={() => setActiveTab('powerups')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                activeTab === 'powerups'
+                  ? isBento
+                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                    : 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : isBento
+                    ? 'text-black/70 hover:bg-black/5'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
+            >
+              Power-Ups
+            </button>
+            <button
+              onClick={() => setActiveTab('style')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                activeTab === 'style'
+                  ? isBento
+                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                    : 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : isBento
+                    ? 'text-black/70 hover:bg-black/5'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
+            >
+              Style Shop
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {items.filter(i => activeTab === 'powerups' ? (i.type === 'power-up' || i.type === 'boost') : i.type === 'cosmetic').map((item, index) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {items.filter(i => activeTab === 'powerups' ? (i.type === 'power-up' || i.type === 'boost') : i.type === 'cosmetic').map((item) => {
             const canAfford = (user.coins || 0) >= item.price;
             const isPurchasing = purchasingId === item.itemId;
             const gradient = getItemGradient(item.name);
-
-            // Check if already owned
             const isOwned = user.unlockedItems?.includes(item.itemId);
 
             return (
               <div
                 key={item.itemId}
-                className="group relative bg-white dark:bg-slate-800/50 backdrop-blur-xl rounded-3xl overflow-hidden border border-gray-200 dark:border-slate-700/50 hover:border-purple-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl dark:shadow-none hover:shadow-purple-500/10 dark:hover:shadow-purple-500/20"
-                style={{
-                  animationDelay: `${index * 100}ms`,
-                  animation: 'fadeInUp 0.6s ease-out forwards'
-                }}
+                className={`group relative rounded-3xl transition-all duration-200 overflow-hidden flex flex-col p-6 ${
+                  isBento
+                    ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[3px_3px_0px_#000]'
+                    : 'glass-card border border-slate-200/80 dark:border-white/10 hover:border-indigo-500/40 shadow-sm hover:shadow-md'
+                }`}
               >
-                {/* Animated gradient background */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
-
-                {/* Shine effect */}
-                <div className="absolute top-0 -left-full w-1/2 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 group-hover:left-full transition-all duration-1000"></div>
-
                 {/* Content */}
-                <div className="relative z-10 p-8">
-                  {/* Icon with glow */}
-                  <div className="relative mb-6">
-                    <div className={`absolute inset-0 bg-gradient-to-br ${gradient} blur-xl opacity-50 group-hover:opacity-75 transition-opacity`}></div>
-                    <div className={`relative w-24 h-24 bg-gradient-to-br ${gradient} rounded-3xl flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 mx-auto`}>
+                <div className="relative z-10 flex flex-col flex-1">
+                  {/* Icon */}
+                  <div className="mb-4 text-center">
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-105 transition-transform duration-300 ${
+                      isBento
+                        ? 'bg-[#ddd6fe] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                        : `bg-gradient-to-br ${gradient} shadow-md`
+                    }`}>
                       {getItemIcon(item.name)}
                     </div>
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-3 text-center group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-500 group-hover:to-pink-500 group-hover:bg-clip-text transition-all duration-300">
+                  <h3 className={`text-lg font-black mb-1.5 text-center ${
+                    isBento ? 'text-black uppercase tracking-tight' : 'text-slate-900 dark:text-white'
+                  }`}>
                     {item.name}
                   </h3>
 
                   {/* Description */}
-                  <p className="text-gray-600 dark:text-slate-400 text-sm mb-6 text-center leading-relaxed min-h-[60px]">
+                  <p className={`text-xs mb-6 text-center leading-relaxed flex-1 ${
+                    isBento ? 'text-black/70 font-semibold' : 'text-slate-500 dark:text-slate-400'
+                  }`}>
                     {item.description}
                   </p>
 
-                  {/* Divider */}
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-slate-600 to-transparent mb-6"></div>
-
                   {/* Price and Button */}
-                  <div className="space-y-4">
+                  <div className={`space-y-3 pt-4 ${
+                    isBento ? 'border-t-2 border-black' : 'border-t border-slate-200/60 dark:border-white/[0.06]'
+                  }`}>
                     {/* Price Tag */}
-                    <div className="flex items-center justify-center gap-3 bg-gray-50 dark:bg-slate-900/50 backdrop-blur-sm px-6 py-3 rounded-2xl border border-gray-200 dark:border-slate-700/50">
-                      <Coins className="w-6 h-6 text-yellow-500 dark:text-yellow-400 animate-pulse" />
-                      <span className="text-3xl font-black text-gray-900 dark:text-white">{item.price}</span>
-                      <span className="text-gray-500 dark:text-slate-400 text-sm">coins</span>
+                    <div className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl ${
+                      isBento
+                        ? 'bg-[#fef9c3] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                        : 'bg-slate-100/60 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/[0.06]'
+                    }`}>
+                      <Coins className={`w-4 h-4 ${isBento ? 'text-black' : 'text-amber-500'}`} />
+                      <span className={`font-tabular text-xl font-black ${
+                        isBento ? 'text-black' : 'text-slate-900 dark:text-white font-extrabold'
+                      }`}>{item.price?.toLocaleString() || 0}</span>
+                      <span className={`text-xs font-black uppercase ${isBento ? 'text-black/70' : 'text-slate-400'}`}>coins</span>
                     </div>
 
                     {/* Buy Button */}
                     <button
                       onClick={() => purchase(item.itemId, item.name)}
                       disabled={!canAfford || isPurchasing || isOwned}
-                      className={`w-full px-8 py-4 rounded-2xl font-black text-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl ${canAfford && !isOwned
-                        ? `bg-gradient-to-r ${gradient} hover:shadow-2xl hover:shadow-purple-500/50 text-white`
-                        : 'bg-gray-200 dark:bg-slate-700 text-gray-400 dark:text-slate-400'
-                        }`}
+                      className={`w-full py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-[0.985] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+                        isBento
+                          ? isOwned
+                            ? 'bg-[#e2e8f0] text-black border-2 border-black shadow-[2px_2px_0px_#000] cursor-default'
+                            : canAfford
+                              ? 'bg-[#bef264] hover:bg-[#a3e635] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0px_#000]'
+                              : 'bg-slate-200 text-black/50 border-2 border-black/30'
+                          : isOwned
+                            ? 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400'
+                            : canAfford
+                              ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20'
+                              : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                      }`}
                     >
                       {isPurchasing ? (
-                        <span className="flex items-center justify-center gap-3">
-                          <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Purchasing...
+                        <span className="flex items-center justify-center gap-2">
+                          <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                          Processing...
                         </span>
                       ) : isOwned ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <CheckCircle2 className="w-5 h-5" />
+                        <span className="flex items-center justify-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-black">
+                          <CheckCircle2 className="w-4 h-4" />
                           Owned
                         </span>
                       ) : canAfford ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <ShoppingBag className="w-5 h-5" />
-                          Buy Now
+                        <span className="flex items-center justify-center gap-1.5 font-black">
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                          Purchase
                         </span>
                       ) : (
-                        <span className="flex items-center justify-center gap-2">
-                          <Coins className="w-5 h-5" />
-                          Not Enough Coins
+                        <span className="flex items-center justify-center gap-1.5 font-black">
+                          <Coins className="w-3.5 h-3.5" />
+                          Insufficient Coins
                         </span>
                       )}
                     </button>
                   </div>
                 </div>
-
-                {/* Corner accent */}
-                <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${gradient} opacity-20 blur-2xl`}></div>
               </div>
             );
           })}
         </div>
       </div>
-
-      {/* CSS Animation */}
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 };

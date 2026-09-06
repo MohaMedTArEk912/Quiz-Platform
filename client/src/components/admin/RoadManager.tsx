@@ -15,6 +15,7 @@ import RoadList from './road-components/RoadList';
 import RoadModals from './road-components/RoadModals';
 import RoadOverview from './road-components/RoadOverview';
 import RoadQuizzes from './road-components/RoadQuizzes';
+import ImportRoadBundleModal from './road-components/ImportRoadBundleModal';
 
 type RoadTab = 'overview' | 'resources' | 'quizzes' | 'roadmap' | 'study';
 
@@ -52,6 +53,10 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
     // Quiz Creation States
     const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
     const [quizToEdit, setQuizToEdit] = useState<Quiz | null>(null);
+
+    // Bundle Import / Export States
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Tab State for Detail View
     const [activeTab, setActiveTab] = useState<RoadTab>('overview');
@@ -94,6 +99,28 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
             loadRoads();
         }
     }, [currentUser?.userId, loadRoads]);
+
+    const handleExportBundle = async (subjectId?: string) => {
+        setIsExporting(true);
+        try {
+            const { blob, filename } = await api.exportRoadmapBundle(currentUser.userId, subjectId);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            onNotification('success', `Exported "${filename}" successfully!`);
+        } catch (e) {
+            console.error('Export error:', e);
+            const msg = e instanceof Error ? e.message : 'Failed to export roadmap bundle';
+            onNotification('error', msg);
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     const handleAssignQuiz = async (quiz: Quiz, assign: boolean) => {
         if (!selectedRoad) return;
@@ -284,6 +311,10 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                 selectedRoad={selectedRoad}
                 onBack={handleBack}
                 onCreate={() => setIsCreateModalOpen(true)}
+                onExportAll={() => handleExportBundle()}
+                onExportRoad={(road) => handleExportBundle(road._id)}
+                onOpenImport={() => setIsImportModalOpen(true)}
+                isExporting={isExporting}
                 onEdit={(road) => {
                     setRoadToEdit(road);
                     setIsEditModalOpen(true);
@@ -301,6 +332,7 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                         isLoading={isLoading}
                         roads={roads}
                         onSelectRoad={handleSelectRoad}
+                        onExportRoad={(road) => handleExportBundle(road._id)}
                     />
                 </div>
             )}
@@ -417,6 +449,17 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                     setQuizToEdit(null);
                 }}
                 onSave={handleSaveQuiz}
+                onNotification={onNotification}
+            />
+
+            <ImportRoadBundleModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                adminId={currentUser.userId}
+                onSuccess={() => {
+                    loadRoads();
+                    loadQuizzes();
+                }}
                 onNotification={onNotification}
             />
         </div>

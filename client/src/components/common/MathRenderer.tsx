@@ -20,7 +20,7 @@ declare global {
 let isKatexLoaded = typeof window !== 'undefined' && Boolean(window.katex);
 let katexLoadPromise: Promise<boolean> | null = null;
 
-export const loadKatex = (): Promise<boolean> => {
+const loadKatex = (): Promise<boolean> => {
     if (typeof window === 'undefined') return Promise.resolve(false);
     if (window.katex) {
         isKatexLoaded = true;

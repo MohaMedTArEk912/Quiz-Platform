@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
 import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins, Keyboard, WifiOff, Bot, Globe } from 'lucide-react';
-import type { Quiz, UserData, QuizResult, AttemptAnswers, PoolProgressData, IntegrityTelemetry, IntegrityTelemetryEvent } from '../types';
+import type { Quiz, Question, UserData, QuizResult, AttemptAnswers, PoolProgressData, IntegrityTelemetry, IntegrityTelemetryEvent } from '../types';
 import { api } from '../lib/api';
 import { AmbientBackground } from './AmbientBackground';
 import { MathRenderer } from './common/MathRenderer';
@@ -36,7 +36,7 @@ interface QuizTakingProps {
 type SavedQuizState = {
     quizId: string;
     currentQuestion: number;
-    answers: Record<number, string | number>;
+    answers: Record<number, string | number | string[] | Record<string, string>>;
     timeLeft: number;
     lastUpdated: number;
     questionOrder?: number[];
@@ -60,7 +60,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 }) => {
     // --- STATE MANAGEMENT ---
     const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [answers, setAnswers] = useState<Record<number, string | number>>({});
+    const [answers, setAnswers] = useState<Record<number, string | number | string[] | Record<string, string>>>({});
     const [timeLeft, setTimeLeft] = useState(countUpTimer ? 0 : quiz.timeLimit * 60);
     const startTimeRef = useRef(Date.now());
 
@@ -394,7 +394,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         : currentQuestion === quiz.questions.length - 1;
 
     // Helper for checking correctness
-    const checkComplexAnswer = useCallback((q: { type?: string; isCompiler?: boolean; compilerConfig?: { referenceCode?: string }; correctAnswer?: string | number }, ans: string | number | undefined): boolean => {
+    const checkComplexAnswer = useCallback((q: Question | { type?: string; isCompiler?: boolean; compilerConfig?: { referenceCode?: string }; correctAnswer?: unknown }, ans: unknown): boolean => {
         if (q.type === 'text') return false;
         if (q.isCompiler) {
             if (q.compilerConfig?.referenceCode && ans) {
@@ -402,6 +402,12 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 return norm(String(ans)) === norm(q.compilerConfig.referenceCode);
             }
             return false;
+        }
+        if (Array.isArray(q.correctAnswer) && Array.isArray(ans)) {
+            return JSON.stringify(q.correctAnswer) === JSON.stringify(ans);
+        }
+        if (typeof q.correctAnswer === 'object' && q.correctAnswer !== null && typeof ans === 'object' && ans !== null) {
+            return JSON.stringify(q.correctAnswer) === JSON.stringify(ans);
         }
         return ans === q.correctAnswer;
     }, []);
@@ -511,7 +517,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             telemetry
         });
 
-    }, [answers, delayedValidation, isSubmitting, onComplete, onProgress, questionOrder, quiz.questions, quiz.passingScore, storageKey, timeLeft, countUpTimer, checkComplexAnswer]);
+    }, [answers, delayedValidation, isSubmitting, onComplete, onProgress, questionOrder, quiz.questions, quiz.passingScore, storageKey, timeLeft, countUpTimer, checkComplexAnswer, currentQuestion]);
 
     const nextQuestion = useCallback(() => {
         if (isSubmitting) return;
@@ -541,7 +547,9 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         setSelectedLanguage(langCode);
         try {
             localStorage.setItem('quiz_pref_lang', langCode);
-        } catch {}
+        } catch {
+            // Ignore storage access errors
+        }
 
         if (langCode === 'original') {
             setIsTranslated(false);
@@ -559,7 +567,9 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             const next = !prev;
             try {
                 localStorage.setItem('quiz_pref_auto_trans', String(next));
-            } catch {}
+            } catch {
+                // Ignore storage access errors
+            }
             return next;
         });
     }, []);
@@ -601,7 +611,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         };
     }, [currentQuestion, selectedLanguage, isTranslated, getActualQuestionIndex, quiz.questions, translatedCache]);
 
-    const handleAnswer = useCallback((answer: string | number, isKeyboard = false) => {
+    const handleAnswer = useCallback((answer: string | number | string[] | Record<string, string>, isKeyboard = false) => {
         if (isSubmitting) return;
 
         const actualIndex = getActualQuestionIndex();
@@ -675,7 +685,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 nextQuestion();
             }, 300);
         }
-    }, [isSubmitting, getActualQuestionIndex, quiz.questions, mustAnswerCorrectly, delayedValidation, answers, quiz.reviewMode, onProgress, checkComplexAnswer, nextQuestion]);
+    }, [isSubmitting, getActualQuestionIndex, quiz.questions, mustAnswerCorrectly, delayedValidation, answers, quiz.reviewMode, onProgress, checkComplexAnswer, nextQuestion, currentQuestion]);
 
 
     const submitQuestion = useCallback(() => {
@@ -832,8 +842,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         }
         else if (type === 'skip') {
             // Auto complete as correct
-            if (q.correctAnswer !== undefined) {
-                handleAnswer(q.correctAnswer);
+            if (q.correctAnswer !== undefined && q.correctAnswer !== null) {
+                handleAnswer(q.correctAnswer as string | number | string[] | Record<string, string>);
             } else if (q.isCompiler && q.compilerConfig?.referenceCode) {
                 handleAnswer(q.compilerConfig.referenceCode);
             } else {
@@ -1051,43 +1061,42 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
             {/* --- TOP BAR (Full width) --- */}
             {!embedded && (
-                <header className="flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 bg-[#e0e7ff]/60 dark:bg-[#0d0d1c]/80 border-b border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-20 shadow-sm pt-safe pl-safe pr-safe">
+                <header className="flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 glass-panel border-b border-slate-200/80 dark:border-white/10 z-20 shadow-sm pt-safe pl-safe pr-safe">
                     <div className="flex items-center gap-3 sm:gap-4">
-                        <button onClick={onBack} className="flex items-center gap-2 p-1.5 sm:p-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-gray-600 dark:text-slate-400 transition-all border border-gray-200 dark:border-white/10">
+                        <button onClick={onBack} className="flex items-center gap-2 p-1.5 sm:p-2 rounded-xl glass-card hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 transition-all border border-slate-200 dark:border-white/10 cursor-pointer">
                             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                         <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-[10px] sm:text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate max-w-[120px] sm:max-w-xs px-2 sm:px-3 py-1 sm:py-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg border border-indigo-100 dark:border-indigo-500/20">
+                            <span className="text-[10px] sm:text-xs font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider truncate max-w-[120px] sm:max-w-xs px-2.5 py-1 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
                                 {retryMode ? '⚠ Retry' : quiz.title}
                             </span>
                             {(user?.role === 'admin' || user?.isAdmin) && (
-                                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-purple-500/15 text-purple-600 dark:text-purple-300 rounded-lg border border-purple-500/30">
-                                    <span>🛡️</span> Admin View • Unranked
+                                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 bg-purple-500/15 text-purple-600 dark:text-purple-300 rounded-lg border border-purple-500/30">
+                                    <span>🛡️</span> Admin
                                 </span>
                             )}
                             {poolProgress && (
-                                <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-500/20">
+                                <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-500/20 font-tabular">
                                     <span>📦</span> Bank: {poolProgress.seenCount}/{poolProgress.totalCount} ({poolProgress.percentage}%)
-                                    {poolProgress.cycle > 0 && <span className="opacity-75">• Cycle {poolProgress.cycle + 1}</span>}
                                 </span>
                             )}
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2.5 sm:gap-3">
                         {/* AI Study Coach Button */}
                         <button
                             type="button"
                             onClick={() => setIsAICoachOpen(true)}
-                            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-500/15 to-purple-500/15 hover:from-indigo-500/25 hover:to-purple-500/25 text-indigo-600 dark:text-indigo-400 font-black text-xs uppercase tracking-wider rounded-xl border border-indigo-500/30 transition-all cursor-pointer shadow-sm hover:scale-105"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase tracking-wider border border-indigo-500/25 transition-all cursor-pointer shadow-sm active:scale-[0.985]"
                         >
-                            <Bot className="w-4 h-4 text-indigo-500 animate-pulse" />
+                            <Bot className="w-4 h-4 text-indigo-500" />
                             <span className="hidden sm:inline">AI Coach</span>
                         </button>
 
                         {/* Shop Button */}
                         {!hidePowerUps && (
-                            <button onClick={() => setShowShop(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-500/20 dark:hover:bg-yellow-500/30 text-yellow-700 dark:text-yellow-400 font-bold rounded-xl border border-yellow-200 dark:border-yellow-500/30 transition-all">
+                            <button onClick={() => setShowShop(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider border border-amber-500/25 transition-all cursor-pointer shadow-sm active:scale-[0.985]">
                                 <ShoppingBag className="w-4 h-4" />
                                 <span className="hidden sm:inline">Store</span>
                             </button>
@@ -1097,12 +1106,12 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         {(() => {
                             const urgent = !countUpTimer && timeLeft < 30 && !isUnlimitedTime;
                             return (
-                                <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono font-black border transition-all ${urgent
-                                    ? 'bg-red-50 border-red-300 text-red-600 dark:bg-red-500/20 dark:border-red-500/40 dark:text-red-300 animate-pulse'
-                                    : 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-white/[0.05] dark:border-white/[0.08] dark:text-white'
+                                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-tabular font-extrabold border transition-all ${urgent
+                                    ? 'bg-rose-500/15 border-rose-500/40 text-rose-600 dark:text-rose-400 animate-pulse'
+                                    : 'glass-card border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200'
                                     }`}>
-                                    <Clock className={`w-4 h-4 ${urgent ? 'animate-spin' : ''}`} />
-                                    <span className="tabular-nums text-base">
+                                    <Clock className={`w-3.5 h-3.5 ${urgent ? 'animate-spin' : 'text-slate-400'}`} />
+                                    <span className="tabular-nums text-xs sm:text-sm">
                                         {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                                     </span>
                                 </div>
@@ -1114,22 +1123,22 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
             {/* --- HORIZONTAL SPLIT LAYOUT --- */}
             <div className={`flex-1 flex flex-col landscape:flex-row lg:flex-row w-full ${embedded ? '' : 'z-10'} overflow-y-auto landscape:overflow-hidden lg:overflow-hidden`}>
-                      {/* --- LEFT SIDE: Question Context --- */}
-                <div className="w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col bg-slate-100/80 dark:bg-[#111827]/95 backdrop-blur-3xl border-b landscape:border-b-0 landscape:border-r lg:border-r border-gray-200 dark:border-gray-800/50 dark:landscape:border-white/[0.08] dark:lg:border-white/[0.08] relative z-20 landscape:sticky landscape:top-0 lg:sticky lg:top-0 landscape:overflow-y-auto lg:overflow-y-auto no-scrollbar shadow-xl landscape:shadow-2xl">
+                {/* --- LEFT SIDE: Question Context --- */}
+                <div className="w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col bg-white/70 dark:bg-white/[0.02] backdrop-blur-xl border-b landscape:border-b-0 landscape:border-r lg:border-r border-slate-200/80 dark:border-white/[0.06] relative z-20 landscape:sticky landscape:top-0 lg:sticky lg:top-0 landscape:overflow-y-auto lg:overflow-y-auto no-scrollbar">
                     
                     {/* Progress Header */}
-                    <div className="flex items-center justify-between p-4 px-5 sm:p-6 landscape:p-2 landscape:px-5 pb-2">
+                    <div className="flex items-center justify-between p-4 px-5 sm:p-6 pb-2">
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest">Question</span>
-                            <span className="text-base sm:text-lg landscape:text-sm lg:landscape:text-lg font-black text-gray-900 dark:text-white">{currentQuestion + 1} / {quiz.questions.length}</span>
+                            <span className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Question</span>
+                            <span className="font-tabular text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">{currentQuestion + 1} / {quiz.questions.length}</span>
                         </div>
-                        <div className="font-black text-sm sm:text-base landscape:text-xs lg:landscape:text-base text-indigo-600 dark:text-indigo-400">{Math.round(progressPercentage)}%</div>
+                        <div className="font-tabular font-extrabold text-xs sm:text-sm text-indigo-600 dark:text-indigo-400">{Math.round(progressPercentage)}%</div>
                     </div>
 
                     {/* Progress Bar Line */}
-                    <div className="px-5 sm:px-6 pb-3 sm:pb-6 landscape:pb-1 lg:landscape:pb-6 border-b border-gray-100 dark:border-gray-800/50">
-                        <div className="h-1 sm:h-2 landscape:h-1 lg:landscape:h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden flex shadow-inner">
-                            <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
+                    <div className="px-5 sm:px-6 pb-3 sm:pb-4 border-b border-slate-200/60 dark:border-white/[0.06]">
+                        <div className="h-1.5 w-full bg-slate-200/60 dark:bg-white/10 rounded-full overflow-hidden flex">
+                            <div className="h-full bg-indigo-600 rounded-full transition-all duration-300" style={{ width: `${progressPercentage}%` }}></div>
                         </div>
                     </div>
 
@@ -1251,23 +1260,23 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 items={activeTranslation?.orderingItems || q.orderingItems || q.options || []}
                                 correctOrder={q.orderingItems || q.options}
                                 submitted={questionSubmitted && !delayedValidation}
-                                onChange={(ordered) => handleAnswer(ordered as any)}
+                                onChange={(ordered) => handleAnswer(ordered)}
                                 readOnly={isSubmitting}
                             />
                         ) : q.type === 'matching' ? (
                             <MatchingQuestion
                                 pairs={activeTranslation?.matchingPairs || q.matchingPairs || []}
                                 submitted={questionSubmitted && !delayedValidation}
-                                onChange={(matches) => handleAnswer(matches as any)}
+                                onChange={(matches) => handleAnswer(matches)}
                                 readOnly={isSubmitting}
                             />
                         ) : q.type === 'code-output' ? (
                             <CodeOutputQuestion
                                 codeSnippet={q.codeSnippet}
                                 options={activeTranslation?.options || q.options}
-                                correctAnswer={q.correctAnswer as any}
+                                correctAnswer={q.correctAnswer as string | number}
                                 submitted={questionSubmitted && !delayedValidation}
-                                userAnswer={answers[actualIndex] as any}
+                                userAnswer={answers[actualIndex] as string | number | undefined}
                                 onChange={(val) => handleAnswer(val)}
                                 readOnly={isSubmitting}
                             />
@@ -1290,26 +1299,26 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 const label = letters[visualIndex] || (visualIndex + 1);
 
                                 // Dynamic classes based on state
-                                const baseClass = "group relative flex items-center p-4 sm:p-5 lg:p-6 rounded-[1.25rem] cursor-pointer transition-all duration-300 w-full text-left border-2 shadow-sm font-semibold mb-1 focus-visible:ring-4 focus-visible:ring-indigo-500 focus-visible:outline-none";
-                                let stateClass = "bg-white dark:bg-[#1f2937] border-gray-100 dark:border-[#374151] hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]";
-                                let textClass = "text-gray-800 dark:text-gray-200";
-                                let badgeClass = "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 group-hover:text-indigo-600 dark:group-hover:text-indigo-400";
+                                const baseClass = "group relative flex items-center p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all duration-200 w-full text-left border shadow-sm font-semibold mb-1 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none glass-card";
+                                let stateClass = "bg-white/80 dark:bg-white/[0.03] border-slate-200/80 dark:border-white/10 hover:border-indigo-500/40 hover:bg-slate-100/60 dark:hover:bg-white/[0.06] text-slate-800 dark:text-slate-200 active:scale-[0.99]";
+                                let textClass = "text-slate-800 dark:text-slate-200";
+                                let badgeClass = "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400 group-hover:bg-indigo-500/15 group-hover:text-indigo-600 dark:group-hover:text-indigo-400";
                                 
                                 if (showSuccess) {
-                                    stateClass = "bg-green-50/50 border-2 lg:border-none border-green-500 lg:ring-2 lg:ring-green-500 shadow-xl shadow-green-500/10 dark:bg-green-900/30 dark:border-green-500 scale-[1.02] z-10";
-                                    badgeClass = "bg-green-500 text-white";
-                                    textClass = "text-green-800 dark:text-green-200 font-bold";
+                                    stateClass = "bg-emerald-500/10 border-emerald-500 ring-2 ring-emerald-500/40 shadow-lg shadow-emerald-500/10 text-emerald-900 dark:text-emerald-200 scale-[1.01] z-10";
+                                    badgeClass = "bg-emerald-500 text-white";
+                                    textClass = "text-emerald-900 dark:text-emerald-200 font-bold";
                                 } else if (showWrong) {
-                                    stateClass = "bg-red-50/50 border-2 lg:border-none border-red-500 lg:ring-2 lg:ring-red-500 shadow-xl shadow-red-500/10 dark:bg-red-900/30 dark:border-red-500 scale-[1.02] z-10";
-                                    badgeClass = "bg-red-500 text-white";
-                                    textClass = "text-red-800 dark:text-red-200";
+                                    stateClass = "bg-rose-500/10 border-rose-500 ring-2 ring-rose-500/40 shadow-lg shadow-rose-500/10 text-rose-900 dark:text-rose-200 scale-[1.01] z-10";
+                                    badgeClass = "bg-rose-500 text-white";
+                                    textClass = "text-rose-900 dark:text-rose-200";
                                 } else if (showCorrect) {
-                                    stateClass = "bg-green-50/30 border-2 lg:border-none border-green-500/50 lg:ring-2 lg:ring-green-500/50 dark:bg-green-900/10 dark:border-green-500/50";
-                                    badgeClass = "bg-green-400 text-white";
-                                    textClass = "text-green-700 dark:text-green-300";
+                                    stateClass = "bg-emerald-500/5 border-emerald-500/60 text-emerald-800 dark:text-emerald-300";
+                                    badgeClass = "bg-emerald-500 text-white";
+                                    textClass = "text-emerald-800 dark:text-emerald-300";
                                 } else if (isSelected) {
-                                    stateClass = "bg-indigo-50/80 border-2 lg:border-none border-indigo-600 lg:ring-2 lg:ring-indigo-600 shadow-xl shadow-indigo-600/10 dark:bg-indigo-900/40 dark:border-indigo-500 scale-[1.02] z-10";
-                                    badgeClass = "bg-indigo-600 text-white dark:bg-indigo-500";
+                                    stateClass = "bg-indigo-500/10 border-indigo-600 dark:border-indigo-500 ring-2 ring-indigo-500/40 shadow-lg shadow-indigo-500/10 text-indigo-900 dark:text-white scale-[1.01] z-10";
+                                    badgeClass = "bg-indigo-600 text-white";
                                     textClass = "text-indigo-900 dark:text-indigo-100 font-bold";
                                 }
 
@@ -1325,12 +1334,12 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                         disabled={isSubmitting || (questionSubmitted && !delayedValidation)}
                                         className={`${baseClass} ${stateClass} disabled:opacity-75 disabled:cursor-default`}
                                     >
-                                        <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center font-bold text-base lg:text-lg ${isCurrentRtl ? 'ml-4 lg:ml-6' : 'mr-4 lg:mr-6'} transition-colors shrink-0 ${badgeClass}`}>
-                                            {showSuccess || showCorrect ? <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6" /> : showWrong ? <XCircle className="w-5 h-5 lg:w-6 lg:h-6"/> : label}
+                                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-extrabold text-sm ${isCurrentRtl ? 'ml-3 sm:ml-4' : 'mr-3 sm:mr-4'} transition-colors shrink-0 ${badgeClass} font-tabular`}>
+                                            {showSuccess || showCorrect ? <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" /> : showWrong ? <XCircle className="w-4 h-4 sm:w-5 sm:h-5"/> : label}
                                         </div>
-                                        <MathRenderer text={option} className={`flex-1 text-base lg:text-lg ${isCurrentRtl ? 'text-right' : 'text-left'} leading-relaxed ${textClass}`} />
+                                        <MathRenderer text={option} className={`flex-1 text-sm sm:text-base ${isCurrentRtl ? 'text-right' : 'text-left'} leading-relaxed ${textClass}`} />
                                         <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                                            <kbd className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-[10px] font-mono text-gray-500 dark:text-gray-400">
+                                            <kbd className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-[10px] font-mono text-slate-400">
                                                 {visualIndex + 1}
                                             </kbd>
                                         </div>
@@ -1348,25 +1357,25 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             </div>
 
             {/* Bottom Action Footer Overlay */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-5 lg:p-5 bg-slate-100/85 dark:bg-[#0d0d1c]/90 border-t border-gray-200 dark:border-white/[0.08] backdrop-blur-2xl z-30 w-full shadow-lg flex items-center justify-between pointer-events-auto pb-safe pl-safe pr-safe">
+            <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 glass-panel border-t border-slate-200/80 dark:border-white/10 z-30 w-full shadow-lg flex items-center justify-between pointer-events-auto pb-safe pl-safe pr-safe">
                 {!isMobileDevice && (
-                    <div className="hidden lg:flex text-gray-500 dark:text-slate-400 font-medium items-center gap-2 bg-gray-50 dark:bg-white/[0.03] px-4 py-2.5 rounded-xl border border-gray-200/50 dark:border-white/5">
+                    <div className="hidden lg:flex text-slate-500 dark:text-slate-400 font-medium items-center gap-2 bg-slate-100/60 dark:bg-white/[0.03] px-3.5 py-2 rounded-xl border border-slate-200/60 dark:border-white/5 text-xs">
                         {q && q.options && !q.isCompiler && (
                             <>
-                                <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">1-{q.options.length}</span>
-                                <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">A-{String.fromCharCode(65 + q.options.length - 1)}</span> 
-                                <span className="text-xs">select,</span> 
+                                <span className="px-2 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-[10px] font-bold text-slate-600 dark:text-slate-400 font-tabular">1-{q.options.length}</span>
+                                <span className="px-2 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-[10px] font-bold text-slate-600 dark:text-slate-400">A-{String.fromCharCode(65 + q.options.length - 1)}</span> 
+                                <span>select,</span> 
                             </>
                         )}
-                        <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">←</span> <span className="text-xs">back,</span>
-                        <span className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-600 dark:text-slate-400 shadow-sm">Enter ↵</span> <span className="text-xs">advance</span>
+                        <span className="px-2 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-[10px] font-bold text-slate-600 dark:text-slate-400">←</span> <span>back,</span>
+                        <span className="px-2 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-[10px] font-bold text-slate-600 dark:text-slate-400">Enter ↵</span> <span>advance</span>
                         <button
                             type="button"
                             onClick={() => setShowKeyboardShortcuts(true)}
                             className="ml-2 text-indigo-600 dark:text-indigo-400 hover:underline text-xs font-bold flex items-center gap-1 cursor-pointer"
                         >
                             <Keyboard className="w-3.5 h-3.5" />
-                            <span>Shortcuts [?]</span>
+                            <span>Shortcuts</span>
                         </button>
                     </div>
                 )}
@@ -1375,37 +1384,37 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 {!isOnline && (
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold">
                         <WifiOff className="w-3.5 h-3.5" />
-                        <span>Offline (Cached)</span>
+                        <span>Offline</span>
                     </div>
                 )}
                 
-                <div className="flex w-full sm:w-auto gap-4 pointer-events-auto">
+                <div className="flex w-full sm:w-auto gap-2.5 sm:gap-3 pointer-events-auto">
                     <button
                         onClick={previousQuestion}
                         disabled={currentQuestion === 0 || isSubmitting}
-                        className="flex-1 sm:flex-none px-6 py-4 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:text-gray-500 text-gray-800 dark:text-gray-100 font-black text-lg rounded-xl border border-gray-300 dark:border-gray-700 shadow-md transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
+                        className="flex-1 sm:flex-none px-5 py-2.5 glass-card hover:bg-slate-100/80 dark:hover:bg-white/[0.08] disabled:opacity-40 text-slate-700 dark:text-slate-200 font-bold text-xs uppercase tracking-wider rounded-xl border border-slate-200 dark:border-white/10 shadow-sm transition-all active:scale-[0.985] flex items-center justify-center gap-2 cursor-pointer"
                     >
-                        <span className="text-xl">←</span>
+                        <span>←</span>
                         Previous
                     </button>
                     {!isLastQuestion && (
                         <button
                             onClick={nextQuestion}
                             disabled={answers[actualIndex] === undefined || (quiz.reviewMode !== false && !delayedValidation && !questionSubmitted)}
-                            className="flex-1 sm:flex-none px-8 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 text-white font-black text-lg rounded-xl shadow-xl shadow-indigo-600/20 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
+                            className="flex-1 sm:flex-none px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/25 transition-all active:scale-[0.985] flex items-center justify-center gap-2 cursor-pointer"
                         >
-                            {questionSubmitted && !delayedValidation ? 'Continue' : 'Next Question'}
-                            <span className="text-xl">→</span>
+                            <span>{questionSubmitted && !delayedValidation ? 'Continue' : 'Next Question'}</span>
+                            <span>→</span>
                         </button>
                     )}
                     {isLastQuestion && (
                         <button
                             onClick={handleQuizComplete}
                             disabled={answers[actualIndex] === undefined}
-                            className="flex-1 sm:flex-none px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 text-white font-black text-lg rounded-xl shadow-xl shadow-green-600/30 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
+                            className="flex-1 sm:flex-none px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-600/25 transition-all active:scale-[0.985] flex items-center justify-center gap-2 cursor-pointer"
                         >
-                            {isSubmitting ? 'Submitting...' : 'Finish Quiz'}
-                            <Target className="w-5 h-5"/>
+                            <span>{isSubmitting ? 'Submitting...' : 'Finish Quiz'}</span>
+                            <Target className="w-4 h-4"/>
                         </button>
                     )}
                 </div>

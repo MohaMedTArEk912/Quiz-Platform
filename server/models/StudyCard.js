@@ -13,7 +13,6 @@ const studyCardSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
-studyCardSchema.index({ id: 1 }, { unique: true });
 studyCardSchema.index({ subjectId: 1 });
 studyCardSchema.index({ createdBy: 1 });
 studyCardSchema.index({ category: 1 });

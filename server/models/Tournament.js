@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const tournamentSchema = new mongoose.Schema({
-  tournamentId: { type: String, required: true, unique: true, index: true },
+  tournamentId: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   startsAt: { type: Date, required: true },
   endsAt: { type: Date, required: true },

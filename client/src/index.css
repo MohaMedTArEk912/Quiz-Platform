@@ -1,30 +1,49 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background-light: #f9fafb;
-  --color-background-dark: #111827;
-  --color-text-light: #111827;
-  --color-text-dark: #f3f4f6;
+  --color-background-light: #f8fafc;
+  --color-background-dark: #090d16;
+  --color-surface-light: #ffffff;
+  --color-surface-dark: #0f1422;
+  --color-text-light: #0f172a;
+  --color-text-dark: #f1f5f9;
   --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 @variant dark (&:where(.dark, .dark *));
 
-/* Core fixes - minimal interference with Tailwind */
+/* Core typography and rendering enhancements */
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
-  font-family: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
 }
 
-/* Chrome/Safari Autofill Fix - Ensure it doesn't turn white in dark mode */
+/* Tabular figures for numbers, timers, scores, and statistics */
+.tabular-nums, .font-tabular {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Balanced text for display headings */
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* Chrome/Safari Autofill Fix - Harmonized with dark slate palette */
 .dark input:-webkit-autofill,
 .dark input:-webkit-autofill:hover, 
 .dark input:-webkit-autofill:focus, 
 .dark input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 40px #000000 inset !important;
-  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 40px #0f1422 inset !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -32,8 +51,8 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus, 
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 40px #f9fafb inset !important;
-  -webkit-text-fill-color: #111827 !important;
+  -webkit-box-shadow: 0 0 0 40px #f8fafc inset !important;
+  -webkit-text-fill-color: #0f172a !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -51,15 +70,63 @@ input:-webkit-autofill:active {
 body {
   background-color: var(--color-background-light);
   color: var(--color-text-light);
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color 0.25s ease, color 0.25s ease;
   overflow-x: hidden;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 :root.dark body,
 html.dark body {
   background-color: var(--color-background-dark);
   color: var(--color-text-dark);
+}
+
+/* High-end glassmorphic and surface elevation classes (optimized for GPU) */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  transform: translateZ(0);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 20, 34, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  transform: translateZ(0);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 2px 12px -2px rgba(15, 23, 42, 0.04);
+  transform: translateZ(0);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .glass-card {
+  background: rgba(15, 20, 34, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  transform: translateZ(0);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.dark .glass-card:hover {
+  border-color: rgba(129, 140, 248, 0.3);
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
 }
 
 /* Custom gradient backgrounds */
@@ -162,3 +229,1089 @@ button, a {
   scrollbar-width: none;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Neo-Brutalist Pop Theme System (LinkUp Aesthetic: Green, Yellow, Blue, White) */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  /* Neo-Brutalist Design Tokens */
+  --bento-bg: #f5f3ec;
+  --bento-black: #000000;
+  --bento-border: 2.5px solid #000000;
+  --bento-border-sm: 2px solid #000000;
+  --bento-border-lg: 3px solid #000000;
+  
+  --bento-radius: 1.25rem;
+  --bento-radius-sm: 0.75rem;
+  --bento-radius-pill: 9999px;
+
+  --bento-shadow: 5px 5px 0px #000000;
+  --bento-shadow-sm: 3px 3px 0px #000000;
+  --bento-shadow-lg: 7px 7px 0px #000000;
+  --bento-shadow-hover: 7px 7px 0px #000000;
+  --bento-shadow-active: 1.5px 1.5px 0px #000000;
+
+  /* Solid Pop Colors (No glass, completely opaque) */
+  --bento-green: #bef264;      /* Punchy Lime Green */
+  --bento-green-dark: #15803d;
+  --bento-yellow: #fde047;     /* Bright Sunflower / Lemon Yellow */
+  --bento-yellow-dark: #a16207;
+  --bento-blue: #bae6fd;       /* Vibrant Sky Blue */
+  --bento-purple: #8b5cf6;     /* Electric LinkUp Purple */
+  --bento-white: #ffffff;      /* Crisp Pure White */
+  --bento-gap: 1.25rem;
+}
+
+/* 1. Substrate Canvas: Warm Vintage Paper Cream with Black Dot Matrix Grid */
+[data-layout="bento"],
+[data-theme="bento"] {
+  background-color: var(--bento-bg) !important;
+  background-image: radial-gradient(#000000 1.25px, transparent 1.25px) !important;
+  background-size: 24px 24px !important;
+  background-attachment: fixed !important;
+  color: #000000 !important;
+  min-height: 100vh;
+}
+
+/* Force ALL page-level wrappers transparent so dotted bg shows through globally */
+[data-theme="bento"] > .bg-slate-50,
+[data-theme="bento"] > .bg-white,
+[data-theme="bento"] > .bg-gray-50,
+[data-layout="bento"] > .bg-slate-50,
+[data-layout="bento"] > .bg-white,
+[data-layout="bento"] > .bg-gray-50,
+[data-theme="bento"] .min-h-dvh,
+[data-layout="bento"] .min-h-dvh,
+[data-theme="bento"] .min-h-screen,
+[data-layout="bento"] .min-h-screen {
+  background-color: transparent !important;
+}
+
+[data-layout="bento"] body,
+[data-theme="bento"] body {
+  background-color: transparent !important;
+  color: #000000 !important;
+}
+
+/* Hide ambient glass/aurora meshes in Neo-Brutalist mode */
+[data-layout="bento"] .fixed.inset-0.pointer-events-none,
+[data-theme="bento"] .fixed.inset-0.pointer-events-none {
+  display: none !important;
+}
+
+/* 2. Global High-Contrast Typography */
+[data-layout="bento"] h1,
+[data-layout="bento"] h2,
+[data-layout="bento"] h3,
+[data-layout="bento"] h4,
+[data-layout="bento"] h5,
+[data-layout="bento"] h6,
+[data-theme="bento"] h1,
+[data-theme="bento"] h2,
+[data-theme="bento"] h3,
+[data-theme="bento"] h4,
+[data-theme="bento"] h5,
+[data-theme="bento"] h6 {
+  color: #000000 !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.025em !important;
+}
+
+[data-layout="bento"] p,
+[data-theme="bento"] p {
+  color: #1e293b !important;
+}
+
+/* 3. Solid Component Cards (NOT Glass! Solid Opaque with Chunky Black Borders & Hard Shadows) */
+[data-layout="bento"] .card,
+[data-layout="bento"] .glass-card,
+[data-theme="bento"] .card,
+[data-theme="bento"] .glass-card {
+  position: relative;
+  background: var(--bento-white) !important;
+  border: var(--bento-border) !important;
+  border-radius: var(--bento-radius) !important;
+  box-shadow: var(--bento-shadow) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  overflow: hidden;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease !important;
+}
+
+[data-layout="bento"] .card:hover,
+[data-layout="bento"] .glass-card:hover,
+[data-theme="bento"] .card:hover,
+[data-theme="bento"] .glass-card:hover {
+  transform: translate(-2px, -2px) !important;
+  box-shadow: var(--bento-shadow-hover) !important;
+}
+
+[data-layout="bento"] .card:active,
+[data-layout="bento"] .glass-card:active,
+[data-theme="bento"] .card:active,
+[data-theme="bento"] .glass-card:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: var(--bento-shadow-active) !important;
+}
+
+/* 4. Modular 4-Color Whole-Component System (Green, Yellow, Blue, White) */
+
+/* 4.1 GREEN MODULES (Entire Component: background, border, shadow, icon, progress) */
+[data-layout="bento"] .card:nth-child(4n+1),
+[data-layout="bento"] .glass-card:nth-child(4n+1),
+[data-theme="bento"] .card:nth-child(4n+1),
+[data-theme="bento"] .glass-card:nth-child(4n+1) {
+  background: var(--bento-green) !important;
+  border: var(--bento-border) !important;
+  box-shadow: var(--bento-shadow) !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+1) h3,
+[data-layout="bento"] .glass-card:nth-child(4n+1) h4,
+[data-theme="bento"] .glass-card:nth-child(4n+1) h3,
+[data-theme="bento"] .glass-card:nth-child(4n+1) h4 {
+  color: #000000 !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+1) .w-12,
+[data-layout="bento"] .glass-card:nth-child(4n+1) .w-13,
+[data-layout="bento"] .glass-card:nth-child(4n+1) .w-9,
+[data-theme="bento"] .glass-card:nth-child(4n+1) .w-12,
+[data-theme="bento"] .glass-card:nth-child(4n+1) .w-13,
+[data-theme="bento"] .glass-card:nth-child(4n+1) .w-9 {
+  background: #ffffff !important;
+  border: var(--bento-border-sm) !important;
+  box-shadow: var(--bento-shadow-sm) !important;
+  color: #000000 !important;
+  border-radius: var(--bento-radius-sm) !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+1) .w-full.h-2,
+[data-theme="bento"] .glass-card:nth-child(4n+1) .w-full.h-2 {
+  background: #ffffff !important;
+  border: 1.5px solid #000000 !important;
+  border-radius: 9999px !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+1) .w-full.h-2 > div,
+[data-theme="bento"] .glass-card:nth-child(4n+1) .w-full.h-2 > div {
+  background: var(--bento-green-dark) !important;
+  border-right: 1.5px solid #000000 !important;
+  border-radius: 9999px 0 0 9999px !important;
+}
+
+/* 4.2 YELLOW MODULES */
+[data-layout="bento"] .card:nth-child(4n+2),
+[data-layout="bento"] .glass-card:nth-child(4n+2),
+[data-theme="bento"] .card:nth-child(4n+2),
+[data-theme="bento"] .glass-card:nth-child(4n+2) {
+  background: var(--bento-yellow) !important;
+  border: var(--bento-border) !important;
+  box-shadow: var(--bento-shadow) !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+2) h3,
+[data-layout="bento"] .glass-card:nth-child(4n+2) h4,
+[data-theme="bento"] .glass-card:nth-child(4n+2) h3,
+[data-theme="bento"] .glass-card:nth-child(4n+2) h4 {
+  color: #000000 !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+2) .w-12,
+[data-layout="bento"] .glass-card:nth-child(4n+2) .w-13,
+[data-layout="bento"] .glass-card:nth-child(4n+2) .w-9,
+[data-theme="bento"] .glass-card:nth-child(4n+2) .w-12,
+[data-theme="bento"] .glass-card:nth-child(4n+2) .w-13,
+[data-theme="bento"] .glass-card:nth-child(4n+2) .w-9 {
+  background: #ffffff !important;
+  border: var(--bento-border-sm) !important;
+  box-shadow: var(--bento-shadow-sm) !important;
+  color: #000000 !important;
+  border-radius: var(--bento-radius-sm) !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+2) .w-full.h-2,
+[data-theme="bento"] .glass-card:nth-child(4n+2) .w-full.h-2 {
+  background: #ffffff !important;
+  border: 1.5px solid #000000 !important;
+  border-radius: 9999px !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+2) .w-full.h-2 > div,
+[data-theme="bento"] .glass-card:nth-child(4n+2) .w-full.h-2 > div {
+  background: var(--bento-yellow-dark) !important;
+  border-right: 1.5px solid #000000 !important;
+  border-radius: 9999px 0 0 9999px !important;
+}
+
+/* 4.3 BLUE MODULES */
+[data-layout="bento"] .card:nth-child(4n+3),
+[data-layout="bento"] .glass-card:nth-child(4n+3),
+[data-theme="bento"] .card:nth-child(4n+3),
+[data-theme="bento"] .glass-card:nth-child(4n+3) {
+  background: var(--bento-blue) !important;
+  border: var(--bento-border) !important;
+  box-shadow: var(--bento-shadow) !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+3) h3,
+[data-layout="bento"] .glass-card:nth-child(4n+3) h4,
+[data-theme="bento"] .glass-card:nth-child(4n+3) h3,
+[data-theme="bento"] .glass-card:nth-child(4n+3) h4 {
+  color: #000000 !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+3) .w-12,
+[data-layout="bento"] .glass-card:nth-child(4n+3) .w-13,
+[data-layout="bento"] .glass-card:nth-child(4n+3) .w-9,
+[data-theme="bento"] .glass-card:nth-child(4n+3) .w-12,
+[data-theme="bento"] .glass-card:nth-child(4n+3) .w-13,
+[data-theme="bento"] .glass-card:nth-child(4n+3) .w-9 {
+  background: #ffffff !important;
+  border: var(--bento-border-sm) !important;
+  box-shadow: var(--bento-shadow-sm) !important;
+  color: #000000 !important;
+  border-radius: var(--bento-radius-sm) !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+3) .w-full.h-2,
+[data-theme="bento"] .glass-card:nth-child(4n+3) .w-full.h-2 {
+  background: #ffffff !important;
+  border: 1.5px solid #000000 !important;
+  border-radius: 9999px !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+3) .w-full.h-2 > div,
+[data-theme="bento"] .glass-card:nth-child(4n+3) .w-full.h-2 > div {
+  background: #0284c7 !important;
+  border-right: 1.5px solid #000000 !important;
+  border-radius: 9999px 0 0 9999px !important;
+}
+
+/* 4.4 WHITE MODULES */
+[data-layout="bento"] .card:nth-child(4n+4),
+[data-layout="bento"] .glass-card:nth-child(4n+4),
+[data-theme="bento"] .card:nth-child(4n+4),
+[data-theme="bento"] .glass-card:nth-child(4n+4) {
+  background: var(--bento-white) !important;
+  border: var(--bento-border) !important;
+  box-shadow: var(--bento-shadow) !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+4) h3,
+[data-layout="bento"] .glass-card:nth-child(4n+4) h4,
+[data-theme="bento"] .glass-card:nth-child(4n+4) h3,
+[data-theme="bento"] .glass-card:nth-child(4n+4) h4 {
+  color: #000000 !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+4) .w-12,
+[data-layout="bento"] .glass-card:nth-child(4n+4) .w-13,
+[data-layout="bento"] .glass-card:nth-child(4n+4) .w-9,
+[data-theme="bento"] .glass-card:nth-child(4n+4) .w-12,
+[data-theme="bento"] .glass-card:nth-child(4n+4) .w-13,
+[data-theme="bento"] .glass-card:nth-child(4n+4) .w-9 {
+  background: #f1f5f9 !important;
+  border: var(--bento-border-sm) !important;
+  box-shadow: var(--bento-shadow-sm) !important;
+  color: #000000 !important;
+  border-radius: var(--bento-radius-sm) !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+4) .w-full.h-2,
+[data-theme="bento"] .glass-card:nth-child(4n+4) .w-full.h-2 {
+  background: #f1f5f9 !important;
+  border: 1.5px solid #000000 !important;
+  border-radius: 9999px !important;
+}
+[data-layout="bento"] .glass-card:nth-child(4n+4) .w-full.h-2 > div,
+[data-theme="bento"] .glass-card:nth-child(4n+4) .w-full.h-2 > div {
+  background: #000000 !important;
+  border-right: 1.5px solid #000000 !important;
+  border-radius: 9999px 0 0 9999px !important;
+}
+
+/* 5. Dashboard Progression Hero Card (Solid White with Yellow Level Tag & Lime Progress) */
+[data-layout="bento"] .lg\:col-span-7.glass-card,
+[data-theme="bento"] .lg\:col-span-7.glass-card {
+  background: var(--bento-white) !important;
+  border: var(--bento-border-lg) !important;
+  box-shadow: var(--bento-shadow-lg) !important;
+}
+[data-layout="bento"] .lg\:col-span-7.glass-card h3,
+[data-theme="bento"] .lg\:col-span-7.glass-card h3 {
+  color: #000000 !important;
+}
+/* Level Badge Pill (LinkUp Cairo-style tag) */
+[data-layout="bento"] .lg\:col-span-7.glass-card .bg-indigo-500\/10,
+[data-layout="bento"] .lg\:col-span-7.glass-card .dark\:bg-indigo-500\/20,
+[data-theme="bento"] .lg\:col-span-7.glass-card .bg-indigo-500\/10,
+[data-theme="bento"] .lg\:col-span-7.glass-card .dark\:bg-indigo-500\/20 {
+  background: var(--bento-yellow) !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+/* Icon Wrapper */
+[data-layout="bento"] .lg\:col-span-7.glass-card .w-12,
+[data-theme="bento"] .lg\:col-span-7.glass-card .w-12 {
+  background: var(--bento-purple) !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  color: #ffffff !important;
+}
+/* Progress Bar Track & Fill */
+[data-layout="bento"] .lg\:col-span-7.glass-card .w-full.h-2\.5,
+[data-theme="bento"] .lg\:col-span-7.glass-card .w-full.h-2\.5 {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  border-radius: 9999px !important;
+  padding: 0 !important;
+}
+[data-layout="bento"] .lg\:col-span-7.glass-card .h-full.bg-gradient-to-r,
+[data-theme="bento"] .lg\:col-span-7.glass-card .h-full.bg-gradient-to-r {
+  background: var(--bento-green) !important;
+  border-right: 2px solid #000000 !important;
+  border-radius: 9999px 0 0 9999px !important;
+  box-shadow: none !important;
+}
+
+/* 6. Dashboard Metric Trio (Yellow, Blue, Green Solid Neo-Brutalist Cards) */
+
+/* 6.1 Rank Card (Yellow) */
+[data-layout="bento"] .lg\:col-span-5 > div:nth-child(1),
+[data-theme="bento"] .lg\:col-span-5 > div:nth-child(1) {
+  background: var(--bento-yellow) !important;
+  border: var(--bento-border) !important;
+  box-shadow: var(--bento-shadow) !important;
+}
+[data-layout="bento"] .lg\:col-span-5 > div:nth-child(1) .w-9,
+[data-theme="bento"] .lg\:col-span-5 > div:nth-child(1) .w-9 {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  color: #000000 !important;
+}
+[data-layout="bento"] .lg\:col-span-5 > div:nth-child(1) .font-tabular,
+[data-theme="bento"] .lg\:col-span-5 > div:nth-child(1) .font-tabular {
+  color: #000000 !important;
+  font-weight: 900 !important;
+}
+
+/* 6.2 Total Score Card (Blue) */
+[data-layout="bento"] .lg\:col-span-5 > div:nth-child(2),
+[data-theme="bento"] .lg\:col-span-5 > div:nth-child(2) {
+  background: var(--bento-blue) !important;
+  border: var(--bento-border) !important;
+  box-shadow: var(--bento-shadow) !important;
+}
+[data-layout="bento"] .lg\:col-span-5 > div:nth-child(2) .w-9,
+[data-theme="bento"] .lg\:col-span-5 > div:nth-child(2) .w-9 {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  color: #000000 !important;
+}
+[data-layout="bento"] .lg\:col-span-5 > div:nth-child(2) .font-tabular,
+[data-theme="bento"] .lg\:col-span-5 > div:nth-child(2) .font-tabular {
+  color: #000000 !important;
+  font-weight: 900 !important;
+}
+
+/* 6.3 Total Quizzes Card (Green) */
+[data-layout="bento"] .lg\:col-span-5 > div:nth-child(3),
+[data-theme="bento"] .lg\:col-span-5 > div:nth-child(3) {
+  background: var(--bento-green) !important;
+  border: var(--bento-border) !important;
+  box-shadow: var(--bento-shadow) !important;
+}
+[data-layout="bento"] .lg\:col-span-5 > div:nth-child(3) .w-9,
+[data-theme="bento"] .lg\:col-span-5 > div:nth-child(3) .w-9 {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  color: #000000 !important;
+}
+[data-layout="bento"] .lg\:col-span-5 > div:nth-child(3) .font-tabular,
+[data-theme="bento"] .lg\:col-span-5 > div:nth-child(3) .font-tabular {
+  color: #000000 !important;
+  font-weight: 900 !important;
+}
+
+/* 7. Daily Streak & Live Arena Cards */
+
+/* Daily Streak Card (Yellow with Purple Action Button) */
+[data-layout="bento"] .grid.md\:grid-cols-2 > div:nth-child(1).glass-card,
+[data-theme="bento"] .grid.md\:grid-cols-2 > div:nth-child(1).glass-card {
+  background: var(--bento-yellow) !important;
+  border: var(--bento-border) !important;
+  box-shadow: var(--bento-shadow) !important;
+}
+[data-layout="bento"] .grid.md\:grid-cols-2 > div:nth-child(1).glass-card .w-11,
+[data-theme="bento"] .grid.md\:grid-cols-2 > div:nth-child(1).glass-card .w-11 {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  color: #000000 !important;
+}
+/* Streak Claim Button */
+[data-layout="bento"] .grid.md\:grid-cols-2 > div:nth-child(1).glass-card .rounded-xl:last-child,
+[data-theme="bento"] .grid.md\:grid-cols-2 > div:nth-child(1).glass-card .rounded-xl:last-child {
+  background: var(--bento-purple) !important;
+  color: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+  font-weight: 800 !important;
+}
+
+/* Live Arena Card (Blue with Lime Action Button) */
+[data-layout="bento"] .grid.md\:grid-cols-2 > div:nth-child(2).glass-card,
+[data-theme="bento"] .grid.md\:grid-cols-2 > div:nth-child(2).glass-card {
+  background: var(--bento-blue) !important;
+  border: var(--bento-border) !important;
+  box-shadow: var(--bento-shadow) !important;
+}
+[data-layout="bento"] .grid.md\:grid-cols-2 > div:nth-child(2).glass-card .w-11,
+[data-theme="bento"] .grid.md\:grid-cols-2 > div:nth-child(2).glass-card .w-11 {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  color: #000000 !important;
+}
+/* Join Button */
+[data-layout="bento"] .grid.md\:grid-cols-2 > div:nth-child(2).glass-card .bg-indigo-600,
+[data-theme="bento"] .grid.md\:grid-cols-2 > div:nth-child(2).glass-card .bg-indigo-600 {
+  background: var(--bento-green) !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+  font-weight: 800 !important;
+}
+
+/* 8. Top Navigation Bar (Neo-Brutalist Solid Header) */
+[data-layout="bento"] header.glass-panel,
+[data-theme="bento"] header.glass-panel,
+[data-layout="bento"] .glass-panel,
+[data-theme="bento"] .glass-panel {
+  background: var(--bento-bg) !important;
+  border-bottom: var(--bento-border) !important;
+  border-image: none !important;
+  box-shadow: 0 4px 0px #000000 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Logo Badge */
+[data-layout="bento"] header .bg-indigo-600,
+[data-theme="bento"] header .bg-indigo-600 {
+  background: var(--bento-purple) !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  border-radius: 10px !important;
+}
+
+/* Nav Pill Group Container */
+[data-layout="bento"] header nav,
+[data-theme="bento"] header nav {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+  border-radius: 1rem !important;
+}
+
+/* Nav Pill Items */
+[data-layout="bento"] header nav button,
+[data-theme="bento"] header nav button {
+  color: #000000 !important;
+  border-radius: 0.75rem !important;
+  font-weight: 800 !important;
+  transition: all 0.15s ease !important;
+}
+[data-layout="bento"] header nav button:hover,
+[data-theme="bento"] header nav button:hover {
+  background: var(--bento-yellow) !important;
+  color: #000000 !important;
+}
+
+/* Active Nav Pill */
+[data-layout="bento"] header nav button.bg-white,
+[data-layout="bento"] header nav button.dark\:bg-indigo-600,
+[data-theme="bento"] header nav button.bg-white,
+[data-theme="bento"] header nav button.dark\:bg-indigo-600 {
+  background: var(--bento-green) !important;
+  border: 1.5px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  color: #000000 !important;
+}
+
+/* Navbar Action Buttons (Rankings, Profile, Theme Switcher Trigger) */
+[data-layout="bento"] header button.bg-slate-100\/80,
+[data-layout="bento"] header button.dark\:bg-white\/5,
+[data-layout="bento"] header button.bg-slate-100,
+[data-theme="bento"] header button.bg-slate-100\/80,
+[data-theme="bento"] header button.dark\:bg-white\/5,
+[data-theme="bento"] header button.bg-slate-100 {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+  border-radius: 0.75rem !important;
+}
+[data-layout="bento"] header button:hover,
+[data-theme="bento"] header button:hover {
+  transform: translate(-1px, -1px) !important;
+  box-shadow: 3.5px 3.5px 0px #000000 !important;
+}
+[data-layout="bento"] header button:active,
+[data-theme="bento"] header button:active {
+  transform: translate(1.5px, 1.5px) !important;
+  box-shadow: 1px 1px 0px #000000 !important;
+}
+
+/* Sign Up Button in Navbar */
+[data-layout="bento"] header .bg-indigo-600.hover\:bg-indigo-700,
+[data-theme="bento"] header .bg-indigo-600.hover\:bg-indigo-700 {
+  background: var(--bento-purple) !important;
+  color: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+  font-weight: 800 !important;
+}
+
+/* 9. Road Navigation Tabs */
+[data-layout="bento"] .flex.items-center.gap-1.p-1.bg-slate-100\/80,
+[data-theme="bento"] .flex.items-center.gap-1.p-1.bg-slate-100\/80 {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+  border-radius: 1rem !important;
+}
+[data-layout="bento"] .flex.items-center.gap-1.p-1.bg-slate-100\/80 button,
+[data-theme="bento"] .flex.items-center.gap-1.p-1.bg-slate-100\/80 button {
+  color: #000000 !important;
+  font-weight: 800 !important;
+  border-radius: 0.75rem !important;
+}
+[data-layout="bento"] .flex.items-center.gap-1.p-1.bg-slate-100\/80 button.bg-white,
+[data-theme="bento"] .flex.items-center.gap-1.p-1.bg-slate-100\/80 button.bg-white {
+  background: var(--bento-yellow) !important;
+  border: 1.5px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+}
+
+/* 10. Inputs, Search Bars & General Buttons */
+[data-layout="bento"] input,
+[data-theme="bento"] input,
+[data-layout="bento"] select,
+[data-theme="bento"] select {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+  color: #000000 !important;
+  border-radius: 0.75rem !important;
+  font-weight: 700 !important;
+}
+[data-layout="bento"] input:focus,
+[data-theme="bento"] input:focus {
+  box-shadow: 5px 5px 0px #000000 !important;
+  outline: none !important;
+}
+
+/* Primary Buttons across the app (LinkUp purple/green) */
+[data-layout="bento"] button.bg-indigo-600,
+[data-theme="bento"] button.bg-indigo-600 {
+  background: var(--bento-purple) !important;
+  color: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 3.5px 3.5px 0px #000000 !important;
+  font-weight: 800 !important;
+  border-radius: 0.75rem !important;
+}
+[data-layout="bento"] button.bg-indigo-600:hover,
+[data-theme="bento"] button.bg-indigo-600:hover {
+  transform: translate(-1px, -1px) !important;
+  box-shadow: 5px 5px 0px #000000 !important;
+}
+[data-layout="bento"] button.bg-indigo-600:active,
+[data-theme="bento"] button.bg-indigo-600:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 1px 1px 0px #000000 !important;
+}
+
+/* 11. Dropdown Menus & Modals (Solid White with Chunky Black Borders & Shadows) */
+[data-layout="bento"] [role="menu"],
+[data-theme="bento"] [role="menu"],
+[data-layout="bento"] .animate-in.fade-in.zoom-in-95,
+[data-theme="bento"] .animate-in.fade-in.zoom-in-95 {
+  background: #ffffff !important;
+  border: var(--bento-border) !important;
+  box-shadow: 6px 6px 0px #000000 !important;
+  border-radius: 1rem !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+[data-layout="bento"] [role="menu"] button,
+[data-theme="bento"] [role="menu"] button,
+[data-layout="bento"] .animate-in.fade-in.zoom-in-95 button,
+[data-theme="bento"] .animate-in.fade-in.zoom-in-95 button {
+  color: #000000 !important;
+}
+
+/* Modals Backdrops & Panels */
+[data-layout="bento"] .fixed.inset-0.bg-black\/60,
+[data-theme="bento"] .fixed.inset-0.bg-black\/60,
+[data-layout="bento"] .fixed.inset-0.bg-slate-900\/50,
+[data-theme="bento"] .fixed.inset-0.bg-slate-900\/50 {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-layout="bento"] .fixed.inset-0 .bg-white,
+[data-theme="bento"] .fixed.inset-0 .bg-white,
+[data-layout="bento"] .fixed.inset-0 .dark\:bg-slate-900,
+[data-theme="bento"] .fixed.inset-0 .dark\:bg-slate-900 {
+  border: var(--bento-border-lg) !important;
+  box-shadow: 8px 8px 0px #000000 !important;
+  border-radius: 1.5rem !important;
+}
+
+/* 12. Badges and Sticker Tags */
+[data-layout="bento"] .rounded-full.text-\[9px\],
+[data-theme="bento"] .rounded-full.text-\[9px\],
+[data-layout="bento"] .rounded-md.text-\[10px\],
+[data-theme="bento"] .rounded-md.text-\[10px\] {
+  border: 1.5px solid #000000 !important;
+  box-shadow: 1.5px 1.5px 0px #000000 !important;
+  font-weight: 800 !important;
+}
+
+/* 13. Responsive Bento Grid Spans */
+[data-layout="bento"] .dashboard-container,
+[data-layout="bento"] .bento-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--bento-gap);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  [data-layout="bento"] .dashboard-container,
+  [data-layout="bento"] .bento-container {
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: minmax(180px, auto);
+  }
+
+  [data-layout="bento"] .bento-hero {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  [data-layout="bento"] .bento-tall {
+    grid-column: span 1;
+    grid-row: span 2;
+  }
+
+  [data-layout="bento"] .bento-wide {
+    grid-column: span 2;
+    grid-row: span 1;
+  }
+
+  [data-layout="bento"] .bento-standard {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+}
+
+
+/* 14. Neo-Brutalist Mascot & Auth Layout */
+[data-layout="bento"] .login-mascot-col,
+[data-theme="bento"] .login-mascot-col {
+  background-color: var(--bento-bg) !important;
+  background-image: radial-gradient(#000000 1.25px, transparent 1.25px) !important;
+  background-size: 24px 24px !important;
+  border-right: 3px solid #000000 !important;
+}
+
+[data-layout="bento"] .mascot-card-wrapper,
+[data-theme="bento"] .mascot-card-wrapper {
+  background: #ffffff !important;
+  border: 3px solid #000000 !important;
+  box-shadow: 7px 7px 0px #000000 !important;
+  border-radius: 2rem !important;
+  padding: 1.5rem !important;
+  position: relative !important;
+}
+
+[data-layout="bento"] .mascot-card-wrapper::before,
+[data-theme="bento"] .mascot-card-wrapper::before {
+  content: "STUDY BUDDY 🐾";
+  position: absolute;
+  top: -14px;
+  right: 24px;
+  background: var(--bento-green);
+  color: #000000;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  padding: 3px 12px;
+  border-radius: 9999px;
+  border: 2px solid #000000;
+  box-shadow: 2.5px 2.5px 0px #000000;
+  z-index: 20;
+}
+
+[data-layout="bento"] .bento-highlight,
+[data-theme="bento"] .bento-highlight {
+  background: var(--bento-yellow) !important;
+  color: #000000 !important;
+  padding: 0.1em 0.35em !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+  border-radius: 0.5rem !important;
+  display: inline-block !important;
+  transform: rotate(-1.5deg) !important;
+}
+
+.bento-badge-tag {
+  display: none;
+}
+
+[data-layout="bento"] .bento-badge-tag,
+[data-theme="bento"] .bento-badge-tag {
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 4px 12px !important;
+  border-radius: 9999px !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+  display: inline-block !important;
+}
+
+/* 15. Neo-Brutalist Profile & Gamification */
+[data-layout="bento"] .profile-hero-card,
+[data-theme="bento"] .profile-hero-card {
+  background: #ffffff !important;
+  border: 3px solid #000000 !important;
+  box-shadow: 6px 6px 0px #000000 !important;
+  border-radius: 2rem !important;
+}
+
+[data-layout="bento"] .profile-section-card,
+[data-theme="bento"] .profile-section-card {
+  background: #ffffff !important;
+  border: 3px solid #000000 !important;
+  box-shadow: 6px 6px 0px #000000 !important;
+  border-radius: 2rem !important;
+}
+
+[data-layout="bento"] .profile-stat-card-yellow,
+[data-theme="bento"] .profile-stat-card-yellow {
+  background: #fef08a !important;
+  border: 2.5px solid #000000 !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+  color: #000000 !important;
+  border-radius: 1.5rem !important;
+}
+
+[data-layout="bento"] .profile-stat-card-blue,
+[data-theme="bento"] .profile-stat-card-blue {
+  background: #bae6fd !important;
+  border: 2.5px solid #000000 !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+  color: #000000 !important;
+  border-radius: 1.5rem !important;
+}
+
+[data-layout="bento"] .profile-stat-card-purple,
+[data-theme="bento"] .profile-stat-card-purple {
+  background: #ddd6fe !important;
+  border: 2.5px solid #000000 !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+  color: #000000 !important;
+  border-radius: 1.5rem !important;
+}
+
+[data-layout="bento"] .profile-stat-card-green,
+[data-theme="bento"] .profile-stat-card-green {
+  background: #d9f99d !important;
+  border: 2.5px solid #000000 !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+  color: #000000 !important;
+  border-radius: 1.5rem !important;
+}
+
+/* 16. Neo-Brutalist Learning Roads (Curated Pathways) */
+.learning-road-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 1.75rem;
+  padding: 1.75rem;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+}
+
+/* Light / Dark default styles */
+.learning-road-card.unlocked-road {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .learning-road-card.unlocked-road {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.3);
+}
+
+.learning-road-card.restricted-road {
+  background: rgba(248, 250, 252, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+}
+
+.dark .learning-road-card.restricted-road {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(245, 158, 11, 0.25);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.25);
+}
+
+.learning-road-card:hover {
+  transform: translateY(-3px);
+}
+
+/* BENTO / NEO-BRUTALIST OVERRIDES */
+[data-theme="bento"] .learning-road-card,
+[data-layout="bento"] .learning-road-card {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 2.5px solid #000000 !important;
+  box-shadow: 5px 5px 0px #000000 !important;
+  border-radius: 1.75rem !important;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease !important;
+}
+
+[data-theme="bento"] .learning-road-card:hover,
+[data-layout="bento"] .learning-road-card:hover {
+  transform: translate(-3px, -3px) !important;
+  box-shadow: 8px 8px 0px #000000 !important;
+}
+
+[data-theme="bento"] .learning-road-card:active,
+[data-layout="bento"] .learning-road-card:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+}
+
+/* Unlocked Card in Bento: Solid crisp white with high-contrast typography */
+[data-theme="bento"] .learning-road-card.unlocked-road,
+[data-layout="bento"] .learning-road-card.unlocked-road {
+  background: #ffffff !important;
+}
+
+/* Restricted Card in Bento: Solid clean slate-white */
+[data-theme="bento"] .learning-road-card.restricted-road,
+[data-layout="bento"] .learning-road-card.restricted-road {
+  background: #fafafa !important;
+}
+
+/* Neo-Brutalist Road Card Details */
+[data-theme="bento"] .learning-road-card h3,
+[data-layout="bento"] .learning-road-card h3 {
+  color: #000000 !important;
+  font-weight: 900 !important;
+}
+
+[data-theme="bento"] .learning-road-card p,
+[data-layout="bento"] .learning-road-card p {
+  color: #334155 !important;
+}
+
+/* 17. Bento Floating Shape Animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(var(--tw-rotate, 0deg)); }
+  50% { transform: translateY(-8px) rotate(var(--tw-rotate, 0deg)); }
+}
+
+/* ==========================================================================
+   NEO-BRUTALIST / BENTO ICON ENHANCEMENTS
+   ========================================================================== */
+
+/* Universal heavy stroke and crisp graphic linework for all Lucide SVG icons in Bento mode */
+[data-theme="bento"] svg,
+[data-theme="bento"] svg.lucide,
+[data-layout="bento"] svg,
+[data-layout="bento"] svg.lucide {
+  stroke-width: 2.25px !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+[data-theme="bento"] button svg,
+[data-theme="bento"] button svg.lucide,
+[data-layout="bento"] button svg,
+[data-layout="bento"] button svg.lucide {
+  stroke-width: 2.5px !important;
+}
+
+/* Specific icon containers & badges in Bento mode */
+[data-theme="bento"] .icon-container,
+[data-theme="bento"] .icon-badge,
+[data-layout="bento"] .icon-container,
+[data-layout="bento"] .icon-badge {
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+}
+
+/* Transform all translucent and colored icon boxes across all components into punchy solid pop containers */
+[data-theme="bento"] [class*="bg-indigo-"]:has(> svg),
+[data-layout="bento"] [class*="bg-indigo-"]:has(> svg) {
+  background-color: #bef264 !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+}
+
+[data-theme="bento"] [class*="bg-blue-"]:has(> svg),
+[data-layout="bento"] [class*="bg-blue-"]:has(> svg) {
+  background-color: #93c5fd !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+}
+
+[data-theme="bento"] [class*="bg-sky-"]:has(> svg),
+[data-theme="bento"] [class*="bg-cyan-"]:has(> svg),
+[data-layout="bento"] [class*="bg-sky-"]:has(> svg),
+[data-layout="bento"] [class*="bg-cyan-"]:has(> svg) {
+  background-color: #7dd3fc !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+}
+
+[data-theme="bento"] [class*="bg-amber-"]:has(> svg),
+[data-theme="bento"] [class*="bg-yellow-"]:has(> svg),
+[data-layout="bento"] [class*="bg-amber-"]:has(> svg),
+[data-layout="bento"] [class*="bg-yellow-"]:has(> svg) {
+  background-color: #fde047 !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+}
+
+[data-theme="bento"] [class*="bg-emerald-"]:has(> svg),
+[data-theme="bento"] [class*="bg-green-"]:has(> svg),
+[data-theme="bento"] [class*="bg-lime-"]:has(> svg),
+[data-layout="bento"] [class*="bg-emerald-"]:has(> svg),
+[data-layout="bento"] [class*="bg-green-"]:has(> svg),
+[data-layout="bento"] [class*="bg-lime-"]:has(> svg) {
+  background-color: #bef264 !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+}
+
+[data-theme="bento"] [class*="bg-rose-"]:has(> svg),
+[data-theme="bento"] [class*="bg-red-"]:has(> svg),
+[data-layout="bento"] [class*="bg-rose-"]:has(> svg),
+[data-layout="bento"] [class*="bg-red-"]:has(> svg) {
+  background-color: #fecdd3 !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+}
+
+[data-theme="bento"] [class*="bg-purple-"]:has(> svg),
+[data-theme="bento"] [class*="bg-violet-"]:has(> svg),
+[data-theme="bento"] [class*="bg-fuchsia-"]:has(> svg),
+[data-layout="bento"] [class*="bg-purple-"]:has(> svg),
+[data-layout="bento"] [class*="bg-violet-"]:has(> svg),
+[data-layout="bento"] [class*="bg-fuchsia-"]:has(> svg) {
+  background-color: #ddd6fe !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+}
+
+[data-theme="bento"] [class*="bg-orange-"]:has(> svg),
+[data-layout="bento"] [class*="bg-orange-"]:has(> svg) {
+  background-color: #fed7aa !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+}
+
+[data-theme="bento"] [class*="bg-teal-"]:has(> svg),
+[data-layout="bento"] [class*="bg-teal-"]:has(> svg) {
+  background-color: #99f6e4 !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+}
+
+[data-theme="bento"] [class*="bg-pink-"]:has(> svg),
+[data-layout="bento"] [class*="bg-pink-"]:has(> svg) {
+  background-color: #fbcfe8 !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+}
+
+[data-theme="bento"] [class*="bg-slate-"]:has(> svg),
+[data-theme="bento"] [class*="bg-gray-"]:has(> svg),
+[data-theme="bento"] [class*="bg-zinc-"]:has(> svg),
+[data-layout="bento"] [class*="bg-slate-"]:has(> svg),
+[data-layout="bento"] [class*="bg-gray-"]:has(> svg),
+[data-layout="bento"] [class*="bg-zinc-"]:has(> svg) {
+  background-color: #e2e8f0 !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+}
+
+/* Ensure SVG strokes inside colored containers stay pure crisp black */
+[data-theme="bento"] [class*="bg-"]:has(> svg) > svg,
+[data-layout="bento"] [class*="bg-"]:has(> svg) > svg {
+  color: #000000 !important;
+  stroke: #000000 !important;
+}
+
+/* Single-icon circular and square action buttons in Bento mode */
+[data-theme="bento"] button:has(> svg:only-child):not(.btn-unstyled),
+[data-layout="bento"] button:has(> svg:only-child):not(.btn-unstyled) {
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-theme="bento"] button:has(> svg:only-child):not(.btn-unstyled):hover,
+[data-layout="bento"] button:has(> svg:only-child):not(.btn-unstyled):hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #000000 !important;
+}
+
+[data-theme="bento"] button:has(> svg:only-child):not(.btn-unstyled):active,
+[data-layout="bento"] button:has(> svg:only-child):not(.btn-unstyled):active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #000000 !important;
+}
+
+/* Theme Toggle Trigger Button in Bento mode */
+[data-theme="bento"] .theme-toggle-btn,
+[data-layout="bento"] .theme-toggle-btn {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+[data-theme="bento"] .theme-toggle-btn:hover,
+[data-layout="bento"] .theme-toggle-btn:hover {
+  transform: translate(-1px, -1px) !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+}
+
+[data-theme="bento"] .theme-toggle-btn:active,
+[data-layout="bento"] .theme-toggle-btn:active {
+  transform: translate(1px, 1px) !important;
+  box-shadow: 1px 1px 0px #000000 !important;
+}

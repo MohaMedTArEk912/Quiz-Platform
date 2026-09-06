@@ -1198,6 +1198,12 @@ export const api = {
         return response.json();
     },
 
+    async getLeaderboard(): Promise<UserData[]> {
+        const response = await fetchWithFallback('/users/leaderboard');
+        if (!response.ok) throw new Error('Failed to fetch leaderboard');
+        return response.json();
+    },
+
     async updateClan(clanId: string, updates: Partial<Clan>, userId: string) {
         const response = await fetchWithFallback(`/clans/${clanId}`, {
             method: 'PUT',
@@ -1391,6 +1397,62 @@ export const api = {
             const error = await response.json();
             throw new Error(error.message || 'Failed to update subject');
         }
+        return response.json();
+    },
+
+    // Export Roadmap(s) and Quizzes as ZIP
+    async exportRoadmapBundle(adminId: string, subjectId?: string): Promise<{ blob: Blob; filename: string }> {
+        const headers = getHeaders(adminId);
+        const url = `/subjects/export-bundle${subjectId ? `?subjectId=${encodeURIComponent(subjectId)}` : ''}`;
+        const response = await fetchWithFallback(url, {
+            headers
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to export roadmap bundle');
+        }
+
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename="?([^";]+)"?/i);
+        const filename = match ? match[1] : (subjectId ? `road-bundle-${subjectId}.zip` : 'all-roads-bundle.zip');
+
+        const blob = await response.blob();
+        return { blob, filename };
+    },
+
+    // Import Roadmap(s) and Quizzes from ZIP or JSON package
+    async importRoadmapBundle(file: File, replaceExisting: boolean, adminId: string): Promise<{
+        success: boolean;
+        message: string;
+        stats: {
+            subjectsCreated: number;
+            subjectsUpdated: number;
+            tracksCreated: number;
+            tracksUpdated: number;
+            quizzesCreated: number;
+            quizzesUpdated: number;
+            errors: string[];
+        };
+    }> {
+        const headers = getHeaders(adminId);
+        delete headers['Content-Type']; // Let browser set multipart boundary
+
+        const formData = new FormData();
+        formData.append('bundleFile', file);
+        formData.append('replaceExisting', String(replaceExisting));
+
+        const response = await fetchWithFallback('/subjects/import-bundle', {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to import roadmap bundle');
+        }
+
         return response.json();
     },
 
@@ -1698,6 +1760,18 @@ export const api = {
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
             throw new Error(error.message || 'Failed to fetch streak status');
+        }
+        return response.json();
+    },
+
+    // Daily AI Motivational Quote API
+    async getDailyQuote(force = false): Promise<{ success: boolean; data: { quote: string; author: string; topic: string; date: string; isAI: boolean }; cached?: boolean }> {
+        const response = await fetchWithFallback(`/ai/daily-quote${force ? '?force=true' : ''}`, {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch daily quote');
         }
         return response.json();
     }

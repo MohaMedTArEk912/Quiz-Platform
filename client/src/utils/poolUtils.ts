@@ -80,30 +80,46 @@ export const getQuizPoolStatus = (
     );
     const latestAttempt = sortedAttempts[0];
 
+    // Check if the user has EVER achieved 100% completion on this pool
+    const hasEverCompletedPool = quizAttempts.some(a => 
+        Boolean(
+            a.poolProgress?.justCompletedPool ||
+            (a.poolProgress?.percentage !== undefined && a.poolProgress.percentage >= 100) ||
+            ((a.poolProgress?.cycle ?? 0) > 0)
+        )
+    );
+
+    const maxCycle = Math.max(0, ...quizAttempts.map(a => a.poolProgress?.cycle || 0));
+
     if (isPool) {
         // If latest attempt has explicit poolProgress
         if (latestAttempt?.poolProgress) {
             const p = latestAttempt.poolProgress;
             const seenCount = p.seenCount ?? 0;
             const totalCount = p.totalCount || totalQuestions;
-            const cycle = p.cycle ?? 0;
+            const cycle = Math.max(p.cycle ?? 0, maxCycle);
             const remainingCount = p.remainingCount !== undefined
                 ? p.remainingCount
                 : Math.max(0, totalCount - seenCount);
-            const percentage = p.percentage !== undefined
-                ? p.percentage
-                : (totalCount > 0 ? Math.round((seenCount / totalCount) * 100) : 0);
-            const isFullyCompleted = Boolean(
+
+            // A pool is fully completed if it was ever completed, or if current cycle has seen all questions
+            const isCurrentCycleFinished = Boolean(
                 p.justCompletedPool ||
                 (seenCount >= totalCount && totalCount > 0) ||
                 (remainingCount === 0 && seenCount > 0)
             );
+            const isFullyCompleted = Boolean(hasEverCompletedPool || isCurrentCycleFinished);
+
+            // When a pool has been completed, overall pool progress is 100% and 0 remaining
+            const percentage = isFullyCompleted
+                ? 100
+                : (p.percentage !== undefined ? p.percentage : (totalCount > 0 ? Math.round((seenCount / totalCount) * 100) : 0));
 
             return {
                 isPool: true,
                 totalQuestions: totalCount,
-                seenCount,
-                remainingCount,
+                seenCount: isFullyCompleted ? totalCount : seenCount,
+                remainingCount: isFullyCompleted ? 0 : remainingCount,
                 percentage,
                 cycle,
                 isFullyCompleted,
@@ -123,17 +139,18 @@ export const getQuizPoolStatus = (
         });
 
         const seenCount = Math.min(totalQuestions, seenSet.size);
-        const remainingCount = Math.max(0, totalQuestions - seenCount);
-        const percentage = totalQuestions > 0 ? Math.round((seenCount / totalQuestions) * 100) : 0;
-        const isFullyCompleted = totalQuestions > 0 && seenCount >= totalQuestions;
+        const isSetFinished = totalQuestions > 0 && seenCount >= totalQuestions;
+        const isFullyCompleted = hasEverCompletedPool || isSetFinished;
+        const remainingCount = isFullyCompleted ? 0 : Math.max(0, totalQuestions - seenCount);
+        const percentage = isFullyCompleted ? 100 : (totalQuestions > 0 ? Math.round((seenCount / totalQuestions) * 100) : 0);
 
         return {
             isPool: true,
             totalQuestions,
-            seenCount,
+            seenCount: isFullyCompleted ? totalQuestions : seenCount,
             remainingCount,
             percentage,
-            cycle: 0,
+            cycle: maxCycle,
             isFullyCompleted,
             hasStarted: true,
             questionsPerAttempt,
@@ -167,8 +184,8 @@ export const calculateSubjectProgress = (
     subjectQuizzes.forEach(quiz => {
         const poolStatus = getQuizPoolStatus(quiz, attempts);
         if (poolStatus.isPool) {
-            // For pool quizzes, progress is based on proportion of pool seen
-            totalPoints += poolStatus.percentage;
+            // For pool quizzes, award 100% if ever completed, otherwise percentage seen
+            totalPoints += poolStatus.isFullyCompleted ? 100 : poolStatus.percentage;
         } else {
             // For regular quizzes, 100% if attempted, 0% if not
             totalPoints += poolStatus.hasStarted ? 100 : 0;

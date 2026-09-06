@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const notificationSchema = new mongoose.Schema({
-  notificationId: { type: String, required: true, unique: true, index: true },
+  notificationId: { type: String, required: true, unique: true },
   recipientId: { type: String, required: true, index: true }, // userId or 'all' for broadcasts
   senderId: { type: String, default: 'system' },
   senderName: { type: String, default: 'System' },

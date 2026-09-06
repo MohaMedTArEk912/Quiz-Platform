@@ -8,6 +8,7 @@ import { useNotification } from '../../context/NotificationContext';
 import { useConfirm } from '../../hooks/useConfirm';
 import ConfirmDialog from '../ConfirmDialog';
 import { useSocket } from '../../context/SocketContext';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ClanHubProps {
     user: UserData;
@@ -15,6 +16,7 @@ interface ClanHubProps {
 }
 
 export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
+    const { isBento } = useTheme();
     const { showNotification } = useNotification();
     const { confirm, confirmState, handleCancel } = useConfirm();
     const { socket } = useSocket();
@@ -368,24 +370,32 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
 
         return (
             <div className="space-y-6 relative">
-                <div className="bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-white/5 shadow-sm overflow-hidden">
+                <div className={`rounded-[2.5rem] overflow-hidden ${
+                    isBento
+                        ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                        : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm'
+                }`}>
                     {/* Clan Header */}
                     <div className="relative bg-gradient-to-r from-violet-600 to-indigo-600 p-8 text-white overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
                         <div className="absolute top-4 right-4 flex gap-2 z-10">
                             {isLeader && (
-                                <button onClick={() => setShowEdit(true)} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur-sm transition-colors text-white/80 hover:text-white" title="Edit Clan">
+                                <button onClick={() => setShowEdit(true)} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur-sm transition-colors text-white/80 hover:text-white cursor-pointer" title="Edit Clan">
                                     <Edit2 className="w-5 h-5" />
                                 </button>
                             )}
-                            <button onClick={handleLeave} className="p-2.5 bg-white/10 hover:bg-red-500/50 rounded-xl backdrop-blur-sm transition-colors text-white/80 hover:text-white" title="Leave Clan">
+                            <button onClick={handleLeave} className="p-2.5 bg-white/10 hover:bg-red-500/50 rounded-xl backdrop-blur-sm transition-colors text-white/80 hover:text-white cursor-pointer" title="Leave Clan">
                                 <LogOut className="w-5 h-5" />
                             </button>
                         </div>
                         <div className="relative flex flex-col md:flex-row items-center gap-6">
-                            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-inner border border-white/30">
-                                <Shield className="w-10 h-10 text-white" />
+                            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center ${
+                                isBento
+                                    ? 'bg-white text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                                    : 'bg-white/20 backdrop-blur-md shadow-inner border border-white/30 text-white'
+                            }`}>
+                                <Shield className="w-10 h-10" />
                             </div>
                             <div className="text-center md:text-left">
                                 <h1 className="text-3xl font-black mb-2 flex items-center gap-3 justify-center md:justify-start uppercase tracking-tight">
@@ -393,15 +403,27 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                 </h1>
                                 <p className="text-white/70 max-w-xl text-sm font-medium">{clan.description || 'No description provided.'}</p>
                                 <div className="flex flex-wrap gap-2 mt-4 justify-center md:justify-start">
-                                    <span className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5">
+                                    <span className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5 ${
+                                        isBento
+                                            ? 'bg-white text-black border border-black shadow-[1px_1px_0px_#000]'
+                                            : 'bg-white/10 backdrop-blur-sm text-white'
+                                    }`}>
                                         <Trophy className="w-3.5 h-3.5 text-yellow-300" />
                                         Lvl {clan.level}
                                     </span>
-                                    <span className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5">
+                                    <span className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5 ${
+                                        isBento
+                                            ? 'bg-white text-black border border-black shadow-[1px_1px_0px_#000]'
+                                            : 'bg-white/10 backdrop-blur-sm text-white'
+                                    }`}>
                                         <Star className="w-3.5 h-3.5 text-blue-300" />
                                         {clan.totalXP.toLocaleString()} XP
                                     </span>
-                                    <span className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5">
+                                    <span className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5 ${
+                                        isBento
+                                            ? 'bg-white text-black border border-black shadow-[1px_1px_0px_#000]'
+                                            : 'bg-white/10 backdrop-blur-sm text-white'
+                                    }`}>
                                         <Users className="w-3.5 h-3.5 text-green-300" />
                                         {clan.members.length} Members
                                     </span>
@@ -663,18 +685,29 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                 </div>
 
                 {/* Floating Chat Button */}
-                {/* Floating Chat Button */}
                 <button
                     onClick={handleOpenChat}
-                    className="fixed bottom-6 right-6 p-4 bg-violet-600 text-white rounded-full shadow-2xl hover:bg-violet-700 transition-all hover:scale-110 z-50 flex items-center justify-center group"
+                    className={`fixed bottom-6 right-6 p-4 rounded-full transition-all hover:scale-110 z-50 flex items-center justify-center group cursor-pointer ${
+                        isBento
+                            ? 'bg-[#ddd6fe] text-black border-2.5 border-black shadow-[4px_4px_0px_#000]'
+                            : 'bg-violet-600 text-white hover:bg-violet-700 shadow-2xl'
+                    }`}
                 >
-                    <MessageCircle className="w-8 h-8" />
+                    <MessageCircle className={`w-8 h-8 ${isBento ? 'text-black' : 'text-white'}`} />
                     {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white dark:border-gray-900 animate-bounce">
+                        <span className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold animate-bounce ${
+                            isBento
+                                ? 'bg-[#ff6b6b] text-black border-2 border-black'
+                                : 'bg-red-500 text-white border-2 border-white dark:border-gray-900'
+                        }`}>
                             {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                     )}
-                    <span className="absolute right-full mr-3 bg-gray-900 text-white px-3 py-1 rounded-lg text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    <span className={`absolute right-full mr-3 px-3 py-1 rounded-lg text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none ${
+                        isBento
+                            ? 'bg-black text-white border border-black font-bold'
+                            : 'bg-gray-900 text-white'
+                    }`}>
                         Open Clan Chat
                     </span>
                 </button>
@@ -732,27 +765,74 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                 {
                     showEdit && (
                         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md">
-                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 w-full max-w-lg shadow-2xl border border-white/10">
-                                <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Edit Clan</h2>
+                            <div className={`rounded-3xl p-8 w-full max-w-lg shadow-2xl ${
+                                isBento
+                                    ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                                    : 'bg-white dark:bg-gray-900 border border-white/10 text-gray-900 dark:text-white'
+                            }`}>
+                                <h2 className="text-2xl font-black mb-4 uppercase tracking-tight">Edit Clan</h2>
                                 <form onSubmit={handleUpdateClan} className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-500 mb-1">Name</label>
-                                        <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10" />
+                                        <label className={`block text-xs font-black uppercase tracking-wider mb-1 ${isBento ? 'text-black' : 'text-gray-500'}`}>Name</label>
+                                        <input
+                                            value={editForm.name}
+                                            onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                                            className={`w-full p-3 rounded-xl font-bold ${
+                                                isBento
+                                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                    : 'bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white'
+                                            }`}
+                                        />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-500 mb-1">Description</label>
-                                        <textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} className="w-full p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10" />
+                                        <label className={`block text-xs font-black uppercase tracking-wider mb-1 ${isBento ? 'text-black' : 'text-gray-500'}`}>Description</label>
+                                        <textarea
+                                            value={editForm.description}
+                                            onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                                            className={`w-full p-3 rounded-xl font-bold ${
+                                                isBento
+                                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                    : 'bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white'
+                                            }`}
+                                        />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-500 mb-1">Privacy</label>
-                                        <select value={editForm.isPublic ? 'public' : 'private'} onChange={e => setEditForm({ ...editForm, isPublic: e.target.value === 'public' })} className="w-full p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10">
+                                        <label className={`block text-xs font-black uppercase tracking-wider mb-1 ${isBento ? 'text-black' : 'text-gray-500'}`}>Privacy</label>
+                                        <select
+                                            value={editForm.isPublic ? 'public' : 'private'}
+                                            onChange={e => setEditForm({ ...editForm, isPublic: e.target.value === 'public' })}
+                                            className={`w-full p-3 rounded-xl font-bold ${
+                                                isBento
+                                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                    : 'bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white'
+                                            }`}
+                                        >
                                             <option value="public">Public</option>
                                             <option value="private">Private (Invite Only)</option>
                                         </select>
                                     </div>
                                     <div className="flex gap-4 pt-4">
-                                        <button type="button" onClick={() => setShowEdit(false)} className="flex-1 py-3 bg-gray-200 dark:bg-white/10 rounded-xl font-bold">Cancel</button>
-                                        <button type="submit" className="flex-1 py-3 bg-violet-600 text-white rounded-xl font-bold">Save</button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowEdit(false)}
+                                            className={`flex-1 py-3 rounded-xl font-bold transition-all cursor-pointer ${
+                                                isBento
+                                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-gray-100'
+                                                    : 'bg-gray-200 dark:bg-white/10 text-gray-800 dark:text-white'
+                                            }`}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className={`flex-1 py-3 rounded-xl font-bold transition-all cursor-pointer ${
+                                                isBento
+                                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#a3e635]'
+                                                    : 'bg-violet-600 hover:bg-violet-700 text-white'
+                                            }`}
+                                        >
+                                            Save
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -763,34 +843,46 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                 {/* Announcement Modal */}
                 {showAnnouncementModal && (
                     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md">
-                        <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-white/10">
+                        <div className={`rounded-3xl p-8 w-full max-w-2xl shadow-2xl ${
+                            isBento
+                                ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                                : 'bg-white dark:bg-gray-900 border border-white/10 text-gray-900 dark:text-white'
+                        }`}>
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-                                        <Megaphone className="w-5 h-5 text-white" />
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                        isBento ? 'bg-[#fde047] text-black border-2 border-black' : 'bg-gradient-to-br from-orange-500 to-orange-600 text-white'
+                                    }`}>
+                                        <Megaphone className="w-5 h-5" />
                                     </div>
-                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Announcement</h2>
+                                    <h2 className="text-2xl font-black uppercase tracking-tight">Create Announcement</h2>
                                 </div>
                                 <button
                                     onClick={() => {
                                         setShowAnnouncementModal(false);
                                         setAnnouncementContent('');
                                     }}
-                                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
                                 >
                                     <X className="w-5 h-5 text-gray-400" />
                                 </button>
                             </div>
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                    <label className={`block text-xs font-black uppercase tracking-wider mb-2 ${
+                                        isBento ? 'text-black' : 'text-gray-700 dark:text-gray-300'
+                                    }`}>
                                         Announcement Content
                                     </label>
                                     <textarea
                                         value={announcementContent}
                                         onChange={(e) => setAnnouncementContent(e.target.value)}
                                         placeholder="Share important updates, events, or messages with your clan members..."
-                                        className="w-full p-4 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                                        className={`w-full p-4 rounded-xl focus:outline-none transition-all font-medium resize-none ${
+                                            isBento
+                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] focus:shadow-[3px_3px_0px_#000]'
+                                                : 'bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-500'
+                                        }`}
                                         rows={6}
                                         autoFocus
                                     />
@@ -805,7 +897,11 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                             setShowAnnouncementModal(false);
                                             setAnnouncementContent('');
                                         }}
-                                        className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                        className={`flex-1 px-4 py-3 rounded-xl font-bold transition-colors cursor-pointer ${
+                                            isBento
+                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-gray-100'
+                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
+                                        }`}
                                     >
                                         Cancel
                                     </button>
@@ -826,7 +922,11 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                 showNotification('error', msg);
                                             }
                                         }}
-                                        className="flex-1 px-4 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold hover:from-violet-700 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md"
+                                        className={`flex-1 px-4 py-3 rounded-xl font-black transition-all cursor-pointer ${
+                                            isBento
+                                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#a3e635]'
+                                                : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 shadow-sm'
+                                        }`}
                                     >
                                         Post Announcement
                                     </button>
@@ -840,21 +940,45 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                 {
                     showInvite && (
                         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md">
-                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 w-full max-w-lg shadow-2xl border border-white/10 h-[80vh] flex flex-col">
-                                <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Invite Members</h2>
+                            <div className={`rounded-3xl p-8 w-full max-w-lg shadow-2xl h-[80vh] flex flex-col ${
+                                isBento
+                                    ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                                    : 'bg-white dark:bg-gray-900 border border-white/10 text-gray-900 dark:text-white'
+                            }`}>
+                                <h2 className="text-2xl font-black mb-4 uppercase tracking-tight">Invite Members</h2>
                                 <div className="flex gap-2 mb-4">
                                     <input
                                         placeholder="Search username..."
-                                        className="flex-1 p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10"
+                                        className={`flex-1 p-3 rounded-xl font-bold ${
+                                            isBento
+                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white'
+                                        }`}
                                         value={inviteQuery}
                                         onChange={e => setInviteQuery(e.target.value)}
                                         onKeyDown={e => e.key === 'Enter' && handleInviteSearch()}
                                     />
-                                    <button onClick={handleInviteSearch} className="px-4 bg-violet-600 text-white rounded-xl font-bold">Search</button>
+                                    <button
+                                        onClick={handleInviteSearch}
+                                        className={`px-5 rounded-xl font-black cursor-pointer ${
+                                            isBento
+                                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#a3e635]'
+                                                : 'bg-violet-600 text-white'
+                                        }`}
+                                    >
+                                        Search
+                                    </button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto space-y-2">
                                     {inviteResults.map(u => (
-                                        <div key={u.userId} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-black/20 rounded-xl">
+                                        <div
+                                            key={u.userId}
+                                            className={`flex items-center justify-between p-3 rounded-xl ${
+                                                isBento
+                                                    ? 'bg-slate-100 text-black border border-black'
+                                                    : 'bg-gray-50 dark:bg-black/20'
+                                            }`}
+                                        >
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 overflow-hidden">
                                                     {u.avatar ? (
@@ -865,13 +989,31 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                         </div>
                                                     )}
                                                 </div>
-                                                <span className="font-bold text-gray-900 dark:text-white">{u.name}</span>
+                                                <span className="font-bold">{u.name}</span>
                                             </div>
-                                            <button onClick={() => sendInvite(u.userId)} className="px-3 py-1 bg-violet-600 text-white rounded-lg text-sm font-bold">Invite</button>
+                                            <button
+                                                onClick={() => sendInvite(u.userId)}
+                                                className={`px-3 py-1 rounded-lg text-sm font-black cursor-pointer ${
+                                                    isBento
+                                                        ? 'bg-[#bef264] text-black border border-black shadow-[1px_1px_0px_#000] hover:bg-[#a3e635]'
+                                                        : 'bg-violet-600 text-white'
+                                                }`}
+                                            >
+                                                Invite
+                                            </button>
                                         </div>
                                     ))}
                                 </div>
-                                <button onClick={() => setShowInvite(false)} className="mt-4 w-full py-3 bg-gray-200 dark:bg-white/10 rounded-xl font-bold">Close</button>
+                                <button
+                                    onClick={() => setShowInvite(false)}
+                                    className={`mt-4 w-full py-3 rounded-xl font-bold cursor-pointer ${
+                                        isBento
+                                            ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-gray-100'
+                                            : 'bg-gray-200 dark:bg-white/10 text-gray-800 dark:text-white'
+                                    }`}
+                                >
+                                    Close
+                                </button>
                             </div>
                         </div>
                     )
@@ -883,42 +1025,75 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
     // View: Browse / Setup
     return (
         <div className="space-y-8">
-            {/* Hero Header */}
-            <div className="text-center space-y-4 mb-4">
-                <div className="flex items-center justify-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-violet-500 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/20">
-                        <Shield className="w-6 h-6 text-white" />
-                    </div>
+            {/* Hero Header Card */}
+            <div className={`p-8 md:p-10 rounded-[2.5rem] text-center relative overflow-hidden ${
+                isBento
+                    ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                    : 'bg-white/90 dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-xl backdrop-blur-xl'
+            }`}>
+                <div className="flex items-center justify-center gap-2 mb-3">
+                    <span className={`px-3 py-1 rounded-full text-[11px] uppercase tracking-wider select-none inline-flex items-center gap-1.5 ${
+                        isBento
+                            ? 'font-black bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000] -rotate-1'
+                            : 'font-bold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20'
+                    }`}>
+                        <Shield className="w-3.5 h-3.5" />
+                        GUILDS & ALLIANCES
+                    </span>
                 </div>
-                <h1 className="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Clan Hub</h1>
-                <p className="text-gray-500 dark:text-gray-400 text-sm font-bold max-w-md mx-auto">Join forces with other players, compete in clan wars, and earn exclusive rewards.</p>
-            </div>
+                <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
+                    isBento
+                        ? 'bg-[#ddd6fe] text-black border-2.5 border-black shadow-[3px_3px_0px_#000]'
+                        : 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/30'
+                }`}>
+                    <Shield className="w-8 h-8" />
+                </div>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-2">
+                    Clan Hub
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base font-semibold max-w-lg mx-auto mb-6">
+                    Join forces with other players, compete in clan wars, and earn exclusive rewards.
+                </p>
 
-            {/* Tab Switcher - matching UserRoads pill nav */}
-            <div className="flex items-center gap-1 p-1 bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-2xl max-w-md mx-auto">
-                {([
-                    { id: 'browse', label: 'Find a Clan', icon: Search },
-                    { id: 'create', label: 'Create New Clan', icon: Shield }
-                ] as const).map(({ id, label, icon: Icon }) => (
-                    <button
-                        key={id}
-                        onClick={() => {
-                            setView(id as 'browse' | 'create');
-                            if (id === 'browse') handleSearch('');
-                        }}
-                        className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${view === id
-                            ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20'
-                            : 'text-gray-500 hover:bg-white/50 dark:hover:bg-white/10'
+                {/* Tab Switcher */}
+                <div className={`flex items-center gap-2 p-1.5 rounded-2xl max-w-md mx-auto ${
+                    isBento
+                        ? 'bg-slate-100 dark:bg-white/5 border-2 border-black shadow-[3px_3px_0px_#000]'
+                        : 'bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10'
+                }`}>
+                    {([
+                        { id: 'browse', label: 'Find a Clan', icon: Search },
+                        { id: 'create', label: 'Create New Clan', icon: Shield }
+                    ] as const).map(({ id, label, icon: Icon }) => (
+                        <button
+                            key={id}
+                            onClick={() => {
+                                setView(id as 'browse' | 'create');
+                                if (id === 'browse') handleSearch('');
+                            }}
+                            className={`flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs sm:text-sm transition-all whitespace-nowrap cursor-pointer ${
+                                view === id
+                                    ? (isBento
+                                        ? 'font-black bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'font-bold bg-violet-600 text-white shadow-md shadow-violet-500/30')
+                                    : (isBento
+                                        ? 'font-bold text-gray-700 hover:text-black hover:bg-black/5'
+                                        : 'font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white')
                             }`}
-                    >
-                        <Icon className="w-4 h-4" />
-                        {label}
-                    </button>
-                ))}
+                        >
+                            <Icon className="w-4 h-4" />
+                            {label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-center font-bold text-sm">
+                <div className={`p-4 rounded-2xl text-center font-bold text-sm ${
+                    isBento
+                        ? 'bg-[#fee2e2] text-red-900 border-2 border-black shadow-[3px_3px_0px_#000]'
+                        : 'bg-red-500/10 border border-red-500/20 text-red-500'
+                }`}>
                     {error}
                 </div>
             )}
@@ -927,25 +1102,45 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                 <div className="space-y-8">
                     {/* Pending Invites */}
                     {clanInvites.length > 0 && (
-                        <div className="relative overflow-hidden bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-6 shadow-xl">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                            <h3 className="text-xl font-black mb-6 flex items-center gap-3 relative z-10 text-white">
-                                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                        <div className={`p-6 rounded-[2rem] relative overflow-hidden ${
+                            isBento
+                                ? 'bg-[#ddd6fe] text-black border-3 border-black shadow-[5px_5px_0px_#000]'
+                                : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-xl'
+                        }`}>
+                            <h3 className="text-xl font-black mb-6 flex items-center gap-3 relative z-10">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                    isBento ? 'bg-white text-black border-2 border-black' : 'bg-white/20 backdrop-blur-sm text-white'
+                                }`}>
                                     <Bell className="w-5 h-5 animate-pulse" />
                                 </div>
                                 Clan Invitations
-                                <span className="bg-white text-violet-600 text-xs font-black px-2.5 py-1 rounded-full shadow-sm">{clanInvites.length}</span>
+                                <span className={`text-xs font-black px-2.5 py-1 rounded-full ${
+                                    isBento ? 'bg-black text-white' : 'bg-white text-violet-600 shadow-sm'
+                                }`}>
+                                    {clanInvites.length}
+                                </span>
                             </h3>
                             <div className="space-y-3 relative z-10">
                                 {clanInvites.map((invite) => (
-                                    <div key={invite.clanId} className="bg-black/20 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center justify-between group hover:bg-black/30 transition-colors text-white">
+                                    <div
+                                        key={invite.clanId}
+                                        className={`p-4 rounded-2xl flex items-center justify-between group transition-colors ${
+                                            isBento
+                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-black/20 backdrop-blur-md border border-white/10 text-white hover:bg-black/30'
+                                        }`}
+                                    >
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                                                isBento ? 'bg-[#bef264] border border-black text-black' : 'bg-white/10 border border-white/10 text-white'
+                                            }`}>
                                                 <Shield className="w-6 h-6" />
                                             </div>
                                             <div>
                                                 <div className="font-bold text-lg leading-tight">{invite.clanName}</div>
-                                                <div className="text-white/60 text-xs mt-0.5 font-medium">Invited by a clan member</div>
+                                                <div className={`text-xs mt-0.5 font-medium ${isBento ? 'text-gray-600' : 'text-white/60'}`}>
+                                                    Invited by a clan member
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
@@ -959,7 +1154,11 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                         setError(msg);
                                                     }
                                                 }}
-                                                className="px-4 py-2 bg-white text-violet-600 rounded-xl font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg"
+                                                className={`px-4 py-2 rounded-xl font-bold text-sm transition-all shadow-md cursor-pointer ${
+                                                    isBento
+                                                        ? 'bg-[#bef264] text-black border-2 border-black hover:bg-[#a3e635]'
+                                                        : 'bg-white text-violet-600 hover:scale-105 active:scale-95'
+                                                }`}
                                             >
                                                 Accept
                                             </button>
@@ -973,7 +1172,11 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                         setError(msg);
                                                     }
                                                 }}
-                                                className="px-4 py-2 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 rounded-xl font-bold text-sm transition-all"
+                                                className={`px-4 py-2 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                                                    isBento
+                                                        ? 'bg-white text-black border-2 border-black hover:bg-gray-100'
+                                                        : 'bg-white/10 backdrop-blur-sm text-white hover:bg-white/20'
+                                                }`}
                                             >
                                                 Decline
                                             </button>
@@ -984,20 +1187,30 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                         </div>
                     )}
 
-                    {/* Search Bar - matching UserRoads style */}
+                    {/* Search Bar */}
                     <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-violet-500 transition-colors" />
+                        <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${
+                            isBento ? 'text-gray-700 group-focus-within:text-black' : 'text-gray-400 group-focus-within:text-violet-500'
+                        }`} />
                         <input
                             type="text"
                             placeholder="Search clans by name or tag..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            className="w-full pl-12 pr-28 py-4 bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all font-bold text-sm"
+                            className={`w-full pl-12 pr-28 py-4 rounded-2xl focus:outline-none transition-all font-bold text-sm ${
+                                isBento
+                                    ? 'bg-white text-black placeholder:text-gray-400 border-2.5 border-black shadow-[3.5px_3.5px_0px_#000] focus:shadow-[5px_5px_0px_#000]'
+                                    : 'bg-white dark:bg-[#13141f] text-gray-900 dark:text-white placeholder:text-gray-400 border border-gray-200 dark:border-white/10 shadow-sm focus:ring-2 focus:ring-violet-500/30'
+                            }`}
                         />
                         <button
                             onClick={() => handleSearch()}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 px-5 py-2 bg-violet-500 text-white rounded-xl font-bold text-sm hover:bg-violet-600 transition-colors shadow-lg shadow-violet-500/20"
+                            className={`absolute right-3 top-1/2 -translate-y-1/2 px-5 py-2 rounded-xl text-sm transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-[#ddd6fe] text-black font-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#c4b5fd] active:translate-y-0.5'
+                                    : 'bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-md shadow-violet-500/20'
+                            }`}
                         >
                             Search
                         </button>
@@ -1007,33 +1220,62 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                     {searchResults.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {searchResults.map((clan) => (
-                                <div key={clan.clanId} className="group relative bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2rem] border border-white/20 dark:border-white/5 p-6 hover:border-violet-500/30 transition-all shadow-sm hover:shadow-2xl overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-28 h-28 bg-violet-500/5 rounded-bl-full group-hover:bg-violet-500/10 transition-colors" />
-
+                                <div
+                                    key={clan.clanId}
+                                    className={`group relative rounded-[2rem] p-6 transition-all overflow-hidden ${
+                                        isBento
+                                            ? 'bg-white text-black border-2.5 border-black shadow-[4px_4px_0px_#000] hover:shadow-[6px_6px_0px_#000] hover:-translate-y-0.5'
+                                            : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm hover:shadow-xl hover:border-violet-500/40'
+                                    }`}
+                                >
                                     <div className="relative flex items-start gap-4 mb-4">
-                                        <div className="w-14 h-14 bg-white dark:bg-white/10 rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                                            <Shield className="w-7 h-7 text-violet-500" />
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105 ${
+                                            isBento
+                                                ? 'bg-[#ddd6fe] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-violet-500/10 text-violet-500 dark:bg-white/10 dark:text-violet-400 shadow-sm'
+                                        }`}>
+                                            <Shield className="w-7 h-7" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="text-lg font-black text-gray-900 dark:text-white group-hover:text-violet-500 transition-colors truncate">
+                                            <h3 className={`text-lg font-black truncate transition-colors ${
+                                                isBento ? 'text-black group-hover:text-violet-700' : 'text-gray-900 dark:text-white group-hover:text-violet-500'
+                                            }`}>
                                                 [{clan.tag}] {clan.name}
                                             </h3>
-                                            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium line-clamp-2 mt-1">{clan.description || 'No description provided.'}</p>
+                                            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium line-clamp-2 mt-1">
+                                                {clan.description || 'No description provided.'}
+                                            </p>
                                         </div>
                                     </div>
 
                                     <div className="flex items-center gap-2 mb-5 flex-wrap">
-                                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-violet-500/10 text-violet-500 flex items-center gap-1">
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${
+                                            isBento
+                                                ? 'bg-[#fde047] text-black border border-black shadow-[1px_1px_0px_#000]'
+                                                : 'bg-violet-500/10 text-violet-500'
+                                        }`}>
                                             <Trophy className="w-3 h-3" /> Lvl {clan.level}
                                         </span>
-                                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-500 flex items-center gap-1">
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${
+                                            isBento
+                                                ? 'bg-[#93c5fd] text-black border border-black shadow-[1px_1px_0px_#000]'
+                                                : 'bg-blue-500/10 text-blue-500'
+                                        }`}>
                                             <Star className="w-3 h-3" /> {clan.totalXP?.toLocaleString() || 0} XP
                                         </span>
-                                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 flex items-center gap-1">
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${
+                                            isBento
+                                                ? 'bg-[#bef264] text-black border border-black shadow-[1px_1px_0px_#000]'
+                                                : 'bg-emerald-500/10 text-emerald-500'
+                                        }`}>
                                             <Users className="w-3 h-3" /> {clan.members?.length || '?'} Members
                                         </span>
                                         {!clan.isPublic && (
-                                            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-orange-500/10 text-orange-500 flex items-center gap-1">
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${
+                                                isBento
+                                                    ? 'bg-[#fdba74] text-black border border-black shadow-[1px_1px_0px_#000]'
+                                                    : 'bg-orange-500/10 text-orange-500'
+                                            }`}>
                                                 <Lock className="w-3 h-3" /> Private
                                             </span>
                                         )}
@@ -1041,7 +1283,11 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
 
                                     <button
                                         onClick={() => handleJoin(clan.clanId)}
-                                        className="w-full py-3 bg-violet-500 text-white rounded-xl font-bold text-sm hover:bg-violet-600 transition-all shadow-lg shadow-violet-500/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                                        className={`w-full py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                            isBento
+                                                ? 'bg-[#bef264] text-black font-black border-2 border-black shadow-[3px_3px_0px_#000] hover:bg-[#a3e635] active:translate-y-0.5'
+                                                : 'bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-lg shadow-violet-500/20 hover:scale-[1.02] active:scale-[0.98]'
+                                        }`}
                                     >
                                         <UserPlus className="w-4 h-4" />
                                         {clan.isPublic ? 'Join Clan' : 'Request to Join'}
@@ -1050,20 +1296,72 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-20 bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-white/10">
-                            <Shield className="w-12 h-12 mx-auto mb-4 opacity-20 text-gray-400" />
-                            <h3 className="text-xl font-black text-gray-400 uppercase mb-2">No clans found</h3>
-                            <p className="text-gray-500 font-medium text-sm">Try a different search or create your own clan!</p>
+                        <div className={`text-center py-16 px-6 rounded-[2.5rem] ${
+                            isBento
+                                ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                                : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-lg'
+                        }`}>
+                            <div className={`w-20 h-20 mx-auto mb-6 rounded-3xl flex items-center justify-center ${
+                                isBento
+                                    ? 'bg-[#ddd6fe] text-black border-2.5 border-black shadow-[3px_3px_0px_#000]'
+                                    : 'bg-violet-500/10 text-violet-500 dark:bg-white/10 dark:text-violet-400'
+                            }`}>
+                                <Shield className="w-10 h-10" />
+                            </div>
+                            <h3 className="text-2xl font-black uppercase tracking-tight mb-2 text-gray-900 dark:text-white">
+                                No Clans Found
+                            </h3>
+                            <p className="text-gray-600 dark:text-gray-400 font-medium text-sm max-w-md mx-auto mb-8">
+                                {searchQuery 
+                                    ? `No clan matches "${searchQuery}". Try a different keyword or create your own clan.` 
+                                    : 'No active clans have been created yet. Rally your allies, claim a unique clan tag, and build the first clan!'}
+                            </p>
+                            <div className="flex flex-wrap items-center justify-center gap-3">
+                                <button
+                                    onClick={() => setView('create')}
+                                    className={`px-6 py-3.5 rounded-xl text-sm flex items-center gap-2 transition-all cursor-pointer ${
+                                        isBento
+                                            ? 'bg-[#bef264] text-black font-black border-2 border-black shadow-[3px_3px_0px_#000] hover:bg-[#a3e635] active:translate-y-0.5'
+                                            : 'bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-lg shadow-violet-500/25 hover:scale-105 active:scale-95'
+                                    }`}
+                                >
+                                    <Shield className="w-4 h-4" />
+                                    Create Your Clan
+                                </button>
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => {
+                                            setSearchQuery('');
+                                            handleSearch('');
+                                        }}
+                                        className={`px-5 py-3.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                                            isBento
+                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-gray-100'
+                                                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
+                                        }`}
+                                    >
+                                        Clear Search
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
             )}
 
             {view === 'create' && (
-                <div className="bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-white/5 p-8 max-w-2xl mx-auto shadow-sm">
+                <div className={`rounded-[2.5rem] p-8 max-w-2xl mx-auto ${
+                    isBento
+                        ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                        : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-xl'
+                }`}>
                     <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 bg-violet-500 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
-                            <Shield className="w-5 h-5 text-white" />
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                            isBento
+                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                : 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
+                        }`}>
+                            <Shield className="w-6 h-6" />
                         </div>
                         <div>
                             <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Create Your Clan</h2>
@@ -1072,19 +1370,31 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                     </div>
                     <form onSubmit={handleCreate} className="space-y-6">
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Clan Name</label>
+                            <label className={`block text-xs font-black uppercase tracking-wider mb-2 ${
+                                isBento ? 'text-black' : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                                Clan Name
+                            </label>
                             <input
                                 type="text"
                                 required
                                 value={createForm.name}
                                 onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
-                                className="w-full p-4 bg-white/60 dark:bg-white/5 border border-white/20 dark:border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all font-bold text-sm"
+                                className={`w-full p-4 rounded-xl focus:outline-none transition-all font-bold text-sm ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] focus:shadow-[3px_3px_0px_#000]'
+                                        : 'bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-500'
+                                }`}
                                 placeholder="e.g. The Night's Watch"
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Clan Tag</label>
+                                <label className={`block text-xs font-black uppercase tracking-wider mb-2 ${
+                                    isBento ? 'text-black' : 'text-gray-500 dark:text-gray-400'
+                                }`}>
+                                    Clan Tag (2-5 Letters)
+                                </label>
                                 <input
                                     type="text"
                                     required
@@ -1092,16 +1402,28 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                     minLength={2}
                                     value={createForm.tag}
                                     onChange={e => setCreateForm({ ...createForm, tag: e.target.value.toUpperCase() })}
-                                    className="w-full p-4 bg-white/60 dark:bg-white/5 border border-white/20 dark:border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all font-bold text-sm font-mono uppercase"
+                                    className={`w-full p-4 rounded-xl focus:outline-none transition-all font-bold text-sm font-mono uppercase ${
+                                        isBento
+                                            ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] focus:shadow-[3px_3px_0px_#000]'
+                                            : 'bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-500'
+                                    }`}
                                     placeholder="NIGHT"
                                 />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Privacy</label>
+                                <label className={`block text-xs font-black uppercase tracking-wider mb-2 ${
+                                    isBento ? 'text-black' : 'text-gray-500 dark:text-gray-400'
+                                }`}>
+                                    Privacy
+                                </label>
                                 <select
                                     value={createForm.isPublic ? 'public' : 'private'}
                                     onChange={e => setCreateForm({ ...createForm, isPublic: e.target.value === 'public' })}
-                                    className="w-full p-4 bg-white/60 dark:bg-white/5 border border-white/20 dark:border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all font-bold text-sm"
+                                    className={`w-full p-4 rounded-xl focus:outline-none transition-all font-bold text-sm ${
+                                        isBento
+                                            ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                            : 'bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white'
+                                    }`}
                                 >
                                     <option value="public">Public (Anyone can join)</option>
                                     <option value="private">Private (Invite only)</option>
@@ -1109,18 +1431,30 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Description</label>
+                            <label className={`block text-xs font-black uppercase tracking-wider mb-2 ${
+                                isBento ? 'text-black' : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                                Description
+                            </label>
                             <textarea
                                 value={createForm.description}
                                 onChange={e => setCreateForm({ ...createForm, description: e.target.value })}
                                 rows={3}
-                                className="w-full p-4 bg-white/60 dark:bg-white/5 border border-white/20 dark:border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all font-bold text-sm resize-none"
+                                className={`w-full p-4 rounded-xl focus:outline-none transition-all font-bold text-sm resize-none ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] focus:shadow-[3px_3px_0px_#000]'
+                                        : 'bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-500'
+                                }`}
                                 placeholder="Tell us what your clan is about..."
                             />
                         </div>
                         <button
                             type="submit"
-                            className="w-full py-4 bg-violet-500 text-white rounded-2xl font-bold text-lg hover:bg-violet-600 transition-all shadow-lg shadow-violet-500/20 hover:scale-[1.02] active:scale-[0.98]"
+                            className={`w-full py-4 rounded-2xl text-lg font-black transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-[#bef264] text-black border-2.5 border-black shadow-[4px_4px_0px_#000] hover:bg-[#a3e635] active:translate-y-0.5'
+                                    : 'bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-lg shadow-violet-500/20 hover:scale-[1.01] active:scale-[0.99]'
+                            }`}
                         >
                             Create Clan (Free)
                         </button>

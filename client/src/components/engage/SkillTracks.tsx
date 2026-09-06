@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { SkillModule, SkillTrack, UserData, BadgeTree, BadgeNode, Badge, BadgeTreeNode } from '../../types';
 import { api } from '../../lib/api';
+import { useTheme } from '../../context/ThemeContext';
 import { Target, Lock } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import SkillTreeVisualization from '../tracks/SkillTreeVisualization';
@@ -19,6 +20,7 @@ interface ModuleNode {
 }
 
 const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
+  const { isBento } = useTheme();
   const navigate = useNavigate();
   const [tracks, setTracks] = useState<SkillTrack[]>([]);
   const [badgeTrees, setBadgeTrees] = useState<Record<string, BadgeTree>>({});
@@ -189,17 +191,27 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
   }
 
   return (
-    <div className="w-full px-4 py-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {/* Header */}
-      <div className="mb-8 text-center">
-        <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-4">Skill Progression Trees</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto">
-          Follow the learning paths, complete modules, and earn badges as you progress through each skill tree.
+      <div className={`mb-8 text-center transition-all ${
+        isBento
+          ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000] p-6 sm:p-8 rounded-3xl'
+          : ''
+      }`}>
+        <h1 className={`text-3xl sm:text-4xl font-black mb-2 tracking-tight ${
+          isBento ? 'text-black uppercase' : 'text-slate-900 dark:text-white'
+        }`}>
+          Skill Progression Trees
+        </h1>
+        <p className={`text-sm max-w-xl mx-auto ${
+          isBento ? 'text-black/70 font-semibold' : 'text-slate-500 dark:text-slate-400'
+        }`}>
+          Master competencies along structured learning paths, unlock mastery nodes, and collect credentials as you progress.
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="mb-6 flex flex-col lg:flex-row gap-3">
+      {/* Filters Bar */}
+      <div className="mb-8 flex flex-col lg:flex-row gap-3">
         {/* Search Bar */}
         <div className="flex-1">
           <input
@@ -207,60 +219,92 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
             placeholder="Search skill tracks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 md:py-3 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors shadow-sm"
+            className={`w-full px-4 py-2.5 rounded-2xl text-sm focus:outline-none transition-all ${
+              isBento
+                ? 'bg-white text-black placeholder-black/50 border-2 border-black shadow-[3px_3px_0px_#000] font-bold focus:ring-2 focus:ring-black'
+                : 'glass-card text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500/40 shadow-sm'
+            }`}
           />
         </div>
 
         {/* Filters Row */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-3">
           {/* Category Filter */}
           <div className="w-full sm:w-48">
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-2 md:py-3 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none appearance-none shadow-sm"
+              className={`w-full px-4 py-2.5 rounded-2xl text-sm focus:outline-none cursor-pointer ${
+                isBento
+                  ? 'bg-white text-black border-2 border-black shadow-[3px_3px_0px_#000] font-black focus:ring-2 focus:ring-black'
+                  : 'glass-card text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/40 shadow-sm'
+              }`}
             >
               {categories.map(category => (
-                <option key={category} value={category} className="bg-white dark:bg-gray-800">{category}</option>
+                <option key={category} value={category} className="bg-white text-black dark:bg-[#0f1422] dark:text-white font-bold">{category}</option>
               ))}
             </select>
           </div>
 
           {/* Status Filter */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <div className={`p-1.5 rounded-2xl flex gap-1.5 overflow-x-auto transition-all ${
+            isBento
+              ? 'bg-white border-2 border-black shadow-[3px_3px_0px_#000]'
+              : 'glass-panel shadow-sm'
+          }`}>
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-3 py-2 md:px-4 md:py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${statusFilter === 'all'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
-                }`}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer ${
+                statusFilter === 'all'
+                  ? isBento
+                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                    : 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : isBento
+                    ? 'text-black/70 hover:bg-black/5'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
             >
               All
             </button>
             <button
               onClick={() => setStatusFilter('in-progress')}
-              className={`px-3 py-2 md:px-4 md:py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${statusFilter === 'in-progress'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
-                }`}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer ${
+                statusFilter === 'in-progress'
+                  ? isBento
+                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                    : 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : isBento
+                    ? 'text-black/70 hover:bg-black/5'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
             >
               In Progress
             </button>
             <button
               onClick={() => setStatusFilter('completed')}
-              className={`px-3 py-2 md:px-4 md:py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${statusFilter === 'completed'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
-                }`}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer ${
+                statusFilter === 'completed'
+                  ? isBento
+                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                    : 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+                  : isBento
+                    ? 'text-black/70 hover:bg-black/5'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
             >
               Completed
             </button>
             <button
               onClick={() => setStatusFilter('not-started')}
-              className={`px-4 py-3 rounded-xl font-semibold transition-all ${statusFilter === 'not-started'
-                ? 'bg-gray-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
-                }`}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer ${
+                statusFilter === 'not-started'
+                  ? isBento
+                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                    : 'bg-slate-700 text-white'
+                  : isBento
+                    ? 'text-black/70 hover:bg-black/5'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
             >
               Not Started
             </button>
@@ -270,13 +314,17 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
 
       {/* Success/Error Messages */}
       {message && (
-        <div className="mb-6 bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-600 dark:text-green-400 text-center animate-pulse">
+        <div className={`mb-6 p-4 rounded-2xl text-center text-sm font-black ${
+          isBento
+            ? 'bg-[#bbf7d0] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+            : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold'
+        }`}>
           {message}
         </div>
       )}
 
       {/* Skill Trees */}
-      <div className="space-y-16">
+      <div className="space-y-10">
         {filteredTracks.map(track => {
           const moduleNodes = getModuleNodes(track);
           const earnedBadges = getEarnedBadgeIds();
@@ -288,8 +336,12 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
 
           if (!isUnlocked) {
             return (
-              <div key={track.trackId} className="relative bg-white dark:bg-gray-900/50 rounded-3xl p-8 border border-amber-500/20 shadow-xl overflow-hidden">
-                <div className="filter blur-[3px] opacity-40 pointer-events-none select-none">
+              <div key={track.trackId} className={`relative rounded-3xl p-6 sm:p-8 overflow-hidden transition-all ${
+                isBento
+                  ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                  : 'glass-card border border-amber-500/30 shadow-md'
+              }`}>
+                <div className="filter blur-[3px] opacity-35 pointer-events-none select-none">
                   <SkillTreeVisualization
                     trackTitle={track.title}
                     trackIcon="📚"
@@ -299,16 +351,26 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
                     earnedBadges={earnedBadges}
                   />
                 </div>
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 bg-black/40 dark:bg-black/60 backdrop-blur-[2px] rounded-3xl text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center mb-4 shadow-lg shadow-amber-500/20">
-                    <Lock className="w-8 h-8" />
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 bg-slate-950/70 backdrop-blur-sm rounded-3xl text-center">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-3 ${
+                    isBento
+                      ? 'bg-[#fde047] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                      : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-lg shadow-amber-500/20'
+                  }`}>
+                    <Lock className="w-6 h-6" />
                   </div>
-                  <span className="text-xs font-black uppercase tracking-[0.2em] text-amber-500 mb-1">Track Locked</span>
-                  <h3 className="text-xl font-black text-white uppercase tracking-tight mb-3">{track.title}</h3>
-                  <p className="text-xs text-gray-300 max-w-md mb-6">This progression path is locked. Request access from your dashboard to unlock this learning road.</p>
+                  <span className={`text-[10px] font-black uppercase tracking-widest mb-1 ${
+                    isBento ? 'text-[#fde047]' : 'text-amber-400'
+                  }`}>Track Locked</span>
+                  <h3 className="text-lg font-black text-white tracking-tight mb-2">{track.title}</h3>
+                  <p className="text-xs text-slate-300 max-w-sm mb-5">This progression path is restricted. Request access from your dashboard to unlock this track.</p>
                   <button
                     onClick={() => navigate('/')}
-                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 cursor-pointer"
+                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all cursor-pointer ${
+                      isBento
+                        ? 'bg-[#fde047] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:translate-x-0.5 hover:translate-y-0.5'
+                        : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.985] text-white shadow-lg shadow-indigo-600/25'
+                    }`}
                   >
                     Go to Roads to Request Access
                   </button>
@@ -318,7 +380,11 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
           }
 
           return (
-            <div key={track.trackId} className="bg-white dark:bg-gray-900/50 rounded-3xl p-8 border border-gray-200 dark:border-gray-800 shadow-xl dark:shadow-none">
+            <div key={track.trackId} className={`rounded-3xl p-6 sm:p-8 transition-all ${
+              isBento
+                ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                : 'glass-card border border-slate-200/80 dark:border-white/10 shadow-sm'
+            }`}>
               <SkillTreeVisualization
                 trackTitle={track.title}
                 trackIcon="📚"
@@ -332,18 +398,26 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
         })}
 
         {filteredTracks.length === 0 && tracks.length > 0 && (
-          <div className="text-center py-20 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-3xl">
-            <Target className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-500 font-bold text-lg">No tracks match your filters</p>
-            <p className="text-gray-500 dark:text-gray-600 text-sm mt-2">Try adjusting your search or filters</p>
+          <div className={`text-center py-16 rounded-3xl ${
+            isBento
+              ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+              : 'glass-card border border-dashed border-slate-300 dark:border-white/10'
+          }`}>
+            <Target className="w-12 h-12 text-slate-400 mx-auto mb-3 opacity-50" />
+            <p className={`font-black text-base ${isBento ? 'text-black' : 'text-slate-700 dark:text-slate-300'}`}>No tracks match your filters</p>
+            <p className={`text-xs mt-1 ${isBento ? 'text-black/70' : 'text-slate-500'}`}>Try adjusting your search keywords or filter pills.</p>
           </div>
         )}
 
         {tracks.length === 0 && (
-          <div className="text-center py-20 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-3xl">
-            <Target className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-500 font-bold text-lg">No skill tracks available yet</p>
-            <p className="text-gray-500 dark:text-gray-600 text-sm mt-2">Check back soon for new learning paths!</p>
+          <div className={`text-center py-16 rounded-3xl ${
+            isBento
+              ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+              : 'glass-card border border-dashed border-slate-300 dark:border-white/10'
+          }`}>
+            <Target className="w-12 h-12 text-slate-400 mx-auto mb-3 opacity-50" />
+            <p className={`font-black text-base ${isBento ? 'text-black' : 'text-slate-700 dark:text-slate-300'}`}>No skill tracks available yet</p>
+            <p className={`text-xs mt-1 ${isBento ? 'text-black/70' : 'text-slate-500'}`}>Check back soon for new learning paths!</p>
           </div>
         )}
       </div>

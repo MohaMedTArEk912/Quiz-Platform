@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { api } from '../lib/api';
 import type { UserData } from '../lib/api';
 
@@ -63,18 +63,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         verifyAndLoadSession();
     }, []);
 
-    const refreshUser = async () => {
-        if (!currentUser) return;
+    const refreshUser = useCallback(async () => {
+        const savedSession = sessionStorage.getItem('userSession');
+        let currentUserId = currentUser?.userId;
+        let currentToken = token;
+        if (!currentUserId && savedSession) {
+            try {
+                const parsed = JSON.parse(savedSession);
+                currentUserId = parsed.user?.userId;
+                currentToken = parsed.token;
+            } catch {
+                // ignore
+            }
+        }
+        if (!currentUserId) return;
         try {
-            const { user } = await api.getUserData(currentUser.userId);
-            setCurrentUser(user);
+            const { user } = await api.getUserData(currentUserId);
+            setCurrentUser(prev => {
+                if (prev && JSON.stringify(prev) === JSON.stringify(user)) {
+                    return prev;
+                }
+                return user;
+            });
             const isAdminUser = user.role === 'admin';
             setIsAdmin(isAdminUser);
-            sessionStorage.setItem('userSession', JSON.stringify({ user, token, isAdmin: isAdminUser }));
+            sessionStorage.setItem('userSession', JSON.stringify({ user, token: currentToken, isAdmin: isAdminUser }));
         } catch (error) {
             console.error('Failed to refresh user:', error);
         }
-    };
+    }, [currentUser?.userId, token]);
 
     const login = async (email: string, password: string) => {
         const normalizedEmail = email.toLowerCase().trim();

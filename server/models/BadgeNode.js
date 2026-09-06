@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const badgeNodeSchema = new mongoose.Schema({
-  badgeId: { type: String, required: true, unique: true, index: true },
+  badgeId: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   description: { type: String, required: true },
   icon: { type: String, required: true },
@@ -61,7 +61,6 @@ badgeNodeSchema.pre('save', function(next) {
   next();
 });
 
-badgeNodeSchema.index({ badgeId: 1 }, { unique: true });
 badgeNodeSchema.index({ trees: 1 });
 badgeNodeSchema.index({ rarity: 1 });
 

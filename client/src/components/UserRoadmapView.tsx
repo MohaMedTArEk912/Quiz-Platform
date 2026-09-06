@@ -487,7 +487,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                                     const qId = quiz.id || quiz._id || '';
                                                     const poolStatus = getQuizPoolStatus(quiz, attempts);
                                                     const bestAttempt = attempts.filter(a => a.quizId === qId).sort((a, b) => b.percentage - a.percentage)[0];
-                                                    const isPassed = bestAttempt && bestAttempt.percentage >= MODULE_PASSING_THRESHOLD;
+                                                    const isPassed = Boolean(poolStatus.isFullyCompleted || (bestAttempt && bestAttempt.percentage >= MODULE_PASSING_THRESHOLD));
                                                     const isPoolInProgress = poolStatus.isPool && poolStatus.hasStarted && !poolStatus.isFullyCompleted;
 
                                                     return (
@@ -518,14 +518,18 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                                                 <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-gray-500 dark:text-gray-500">
                                                                     {poolStatus.isPool ? (
                                                                         <>
-                                                                            <span className="font-semibold text-blue-600 dark:text-blue-400">
-                                                                                📦 {poolStatus.seenCount}/{poolStatus.totalQuestions} Qs ({poolStatus.percentage}%)
+                                                                            <span className={`font-semibold ${poolStatus.isFullyCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                                                                                📦 {poolStatus.isFullyCompleted ? `Bank Mastered (${poolStatus.totalQuestions} Qs)` : `${poolStatus.seenCount}/${poolStatus.totalQuestions} Qs (${poolStatus.percentage}%)`}
                                                                             </span>
-                                                                            {poolStatus.remainingCount > 0 && (
+                                                                            {poolStatus.isFullyCompleted ? (
+                                                                                <span className="text-emerald-500 font-bold">
+                                                                                    ✓ 100% Solved
+                                                                                </span>
+                                                                            ) : poolStatus.remainingCount > 0 ? (
                                                                                 <span className="text-orange-500 font-bold">
                                                                                     {poolStatus.remainingCount} Remaining
                                                                                 </span>
-                                                                            )}
+                                                                            ) : null}
                                                                         </>
                                                                     ) : (
                                                                         <span>{quiz.questions?.length} Questions</span>

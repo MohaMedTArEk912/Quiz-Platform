@@ -4,9 +4,16 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { createSubject, getSubjects, getSubjectDetails, deleteSubject, updateSubject, generateQuizFromSubject } from '../controllers/subjectController.js';
+import { exportRoadmapBundle, importRoadmapBundle } from '../controllers/bundleController.js';
 import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// Configure multer for zip / bundle uploads (in-memory parsing)
+const bundleUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 100 * 1024 * 1024 } // 100MB
+});
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -98,8 +105,17 @@ router.put('/:id', verifyUser, verifyAdmin, upload.fields([
 // Generate Quiz from Subject (with 5-minute timeout)
 router.post('/generate-quiz', verifyUser, verifyAdmin, timeoutMiddleware(300000), generateQuizFromSubject);
 
-router.get('/', verifyUser, getSubjects);
-router.get('/:id', verifyUser, getSubjectDetails);
+// Roadmap & Quiz ZIP Bundle Export / Import (Admin only)
+router.get('/export-bundle', verifyUser, verifyAdmin, exportRoadmapBundle);
+router.post('/import-bundle', verifyUser, verifyAdmin, (req, res, next) => {
+    bundleUpload.single('bundleFile')(req, res, (err) => {
+        if (err) return handleMulterError(err, req, res, next);
+        next();
+    });
+}, importRoadmapBundle);
+
+router.get('/', getSubjects);
+router.get('/:id', getSubjectDetails);
 router.delete('/:id', verifyUser, verifyAdmin, deleteSubject);
 
 export default router;

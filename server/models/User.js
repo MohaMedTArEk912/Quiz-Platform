@@ -73,8 +73,6 @@ const userSchema = new mongoose.Schema({
 });
 
 // Indexes to speed up lookups, authentication, and leaderboards
-userSchema.index({ userId: 1 }, { unique: true });
-userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ role: 1, totalScore: -1 }); // Ultra-fast leaderboard slice
 userSchema.index({ isAdmin: 1, totalScore: -1 });
 userSchema.index({ totalScore: -1 });

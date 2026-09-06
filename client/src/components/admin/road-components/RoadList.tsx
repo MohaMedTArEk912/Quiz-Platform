@@ -4,7 +4,7 @@ import {
     BookOpen, GraduationCap, Brain, Code, Atom, Calculator, Globe,
     Music, Palette, Microscope, FlaskConical, Landmark, Scale,
     Heart, Languages, History, Cpu, Database, Sparkles, Layout,
-    Eye, EyeOff, type LucideIcon
+    Eye, EyeOff, Download, type LucideIcon
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -25,9 +25,10 @@ interface RoadListProps {
     isLoading: boolean;
     roads: Subject[];
     onSelectRoad: (road: Subject) => void;
+    onExportRoad?: (road: Subject, e: React.MouseEvent) => void;
 }
 
-const RoadList: React.FC<RoadListProps> = ({ isLoading, roads, onSelectRoad }) => {
+const RoadList: React.FC<RoadListProps> = ({ isLoading, roads, onSelectRoad, onExportRoad }) => {
     if (isLoading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -77,10 +78,23 @@ const RoadList: React.FC<RoadListProps> = ({ isLoading, roads, onSelectRoad }) =
                         {road.description || "No description provided."}
                     </p>
 
-                    <div className="mt-auto flex gap-2 relative z-10">
+                    <div className="mt-auto flex items-center justify-between gap-2 relative z-10">
                         <span className="text-xs bg-white/80 dark:bg-white/10 px-3 py-1.5 rounded-lg text-gray-600 dark:text-gray-300 font-bold border border-gray-100 dark:border-white/5 group-hover:border-indigo-200 dark:group-hover:border-indigo-800 transition-colors">
                             {road.materials?.length || 0} Resources
                         </span>
+                        {onExportRoad && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onExportRoad(road, e);
+                                }}
+                                className="p-1.5 rounded-xl text-gray-400 hover:text-indigo-600 hover:bg-white dark:hover:bg-white/10 shadow-sm border border-transparent hover:border-gray-200 dark:hover:border-white/10 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                                title="Download road as ZIP (Roadmap + Quizzes)"
+                            >
+                                <Download className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
                 </div>
             ))}

@@ -96,7 +96,7 @@ export const StreakRewardModal: React.FC<StreakRewardModalProps> = ({
                 xp: res.rewards?.xp ?? (loot.type === 'xp' ? loot.amount : 100),
                 powerUp: res.rewards?.powerUp ?? (loot.type === 'powerup' ? 'hint' : undefined)
             });
-        } catch (err) {
+        } catch {
             localStorage.setItem(`streak_claimed_${user.userId}`, new Date().toISOString());
             setShowLootBox(false);
             onClaimStreak({

@@ -403,3 +403,118 @@ Respond ONLY with a JSON object in this exact format:
     }
 };
 
+const CURATED_DAILY_QUOTES = [
+    { quote: "Simplicity is prerequisite for reliability.", author: "Edsger W. Dijkstra", topic: "Architecture" },
+    { quote: "Talk is cheap. Show me the code.", author: "Linus Torvalds", topic: "Execution" },
+    { quote: "First, solve the problem. Then, write the code.", author: "John Johnson", topic: "Problem Solving" },
+    { quote: "Make it work, make it right, make it fast.", author: "Kent Beck", topic: "Craftsmanship" },
+    { quote: "The only way to learn a new programming language is by writing programs in it.", author: "Dennis Ritchie", topic: "Practice" },
+    { quote: "Any fool can write code that a computer can understand. Good programmers write code that humans can understand.", author: "Martin Fowler", topic: "Clean Code" },
+    { quote: "Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away.", author: "Antoine de Saint-Exupéry", topic: "Simplicity" },
+    { quote: "Premature optimization is the root of all evil.", author: "Donald Knuth", topic: "Optimization" },
+    { quote: "Programs must be written for people to read, and only incidentally for machines to execute.", author: "Harold Abelson", topic: "Readability" },
+    { quote: "The most dangerous phrase in the language is: We've always done it this way.", author: "Grace Hopper", topic: "Innovation" },
+    { quote: "Experience is simply the name we give our mistakes.", author: "Oscar Wilde", topic: "Growth" },
+    { quote: "Code never lies, comments sometimes do.", author: "Ron Jeffries", topic: "Truth in Code" },
+    { quote: "Before software can be reusable it first has to be usable.", author: "Ralph Johnson", topic: "Design" },
+    { quote: "The function of good software is to make the complex appear simple.", author: "Grady Booch", topic: "Simplicity" },
+    { quote: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin", topic: "Knowledge" },
+    { quote: "Live as if you were to die tomorrow. Learn as if you were to live forever.", author: "Mahatma Gandhi", topic: "Learning" },
+    { quote: "Continuous improvement is better than delayed perfection.", author: "Mark Twain", topic: "Consistency" },
+    { quote: "There are only two hard things in Computer Science: cache invalidation and naming things.", author: "Phil Karlton", topic: "Computer Science" },
+    { quote: "Small daily improvements over time lead to stunning results.", author: "Robin Sharma", topic: "Daily Habit" },
+    { quote: "The secret to getting ahead is getting started.", author: "Mark Twain", topic: "Momentum" }
+];
+
+const dailyQuoteCache = new Map();
+
+/**
+ * GET /api/ai/daily-quote
+ * Returns daily inspirational tech/learning quote generated via AI or curated fallback
+ */
+export const getDailyQuote = async (req, res) => {
+    try {
+        const force = req.query.force === 'true';
+        const todayKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+        // Return cached quote if already generated today and not forced
+        if (!force && dailyQuoteCache.has(todayKey)) {
+            const cached = dailyQuoteCache.get(todayKey);
+            return res.json({ success: true, data: cached, cached: true });
+        }
+
+        const groq = getGroqClient();
+        if (groq) {
+            try {
+                const prompt = `You are a wise mentor in computer science, software engineering, and continuous learning.
+Generate an inspiring, punchy, memorable quote for today (${todayKey}).
+It can be from a renowned computer scientist, engineer, thinker, or a sharp engineering insight.
+Theme: continuous learning, debugging, mastery, curiosity, persistence, clean code.
+
+Return ONLY valid JSON with this exact structure:
+{
+  "quote": "The quote text without quotation marks (1-2 sentences)",
+  "author": "Author Name",
+  "topic": "Mastery"
+}`;
+
+                const completion = await groq.chat.completions.create({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [{ role: 'user', content: prompt }],
+                    response_format: { type: 'json_object' },
+                    max_tokens: 300,
+                    temperature: force ? 0.9 : 0.6
+                });
+
+                const raw = completion?.choices?.[0]?.message?.content;
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed.quote && parsed.author) {
+                        const payload = {
+                            quote: parsed.quote.trim().replace(/^["']|["']$/g, ''),
+                            author: parsed.author.trim(),
+                            topic: parsed.topic ? parsed.topic.trim() : 'Learning',
+                            date: todayKey,
+                            isAI: true
+                        };
+                        dailyQuoteCache.set(todayKey, payload);
+                        return res.json({ success: true, data: payload, cached: false });
+                    }
+                }
+            } catch (aiErr) {
+                console.warn('[Daily Quote AI] Failed to generate AI quote, using curated fallback:', aiErr.message);
+            }
+        }
+
+        // Deterministic daily fallback index based on date string
+        const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+        const fallbackIndex = force 
+            ? Math.floor(Math.random() * CURATED_DAILY_QUOTES.length)
+            : (dayOfYear % CURATED_DAILY_QUOTES.length);
+
+        const fallback = {
+            ...CURATED_DAILY_QUOTES[fallbackIndex],
+            date: todayKey,
+            isAI: false
+        };
+
+        if (!force) {
+            dailyQuoteCache.set(todayKey, fallback);
+        }
+
+        return res.json({ success: true, data: fallback, cached: false });
+    } catch (err) {
+        console.error('getDailyQuote Error:', err);
+        const dayOfYear = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+        return res.json({ 
+            success: true, 
+            data: {
+                ...CURATED_DAILY_QUOTES[dayOfYear % CURATED_DAILY_QUOTES.length],
+                date: new Date().toISOString().slice(0, 10),
+                isAI: false
+            } 
+        });
+    }
+};
+
+

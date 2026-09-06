@@ -6,13 +6,12 @@ import { useAuth } from '../context/AuthContext';
 const TournamentsPage: React.FC = () => {
     const { currentUser } = useAuth();
 
-    if (!currentUser) return null;
-
     return (
         <PageLayout title="Tournaments">
-            <Tournaments userId={currentUser.userId} />
+            <Tournaments userId={currentUser?.userId} />
         </PageLayout>
     );
 };
 
 export default TournamentsPage;
+

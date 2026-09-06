@@ -1,4 +1,3 @@
-import { jsPDF } from 'jspdf';
 import type { DetailedAttemptData, QuestionAnalyticsItem, QuestionAnalyticsSummary, Quiz, AttemptData, UserData } from '../types';
 
 /**
@@ -128,6 +127,7 @@ export const exportAttemptToCSV = (attempt: DetailedAttemptData): void => {
  * Export a student's detailed quiz attempt breakdown to a professional formatted PDF.
  */
 export const exportAttemptToPDF = async (attempt: DetailedAttemptData): Promise<void> => {
+    const { jsPDF } = await import('jspdf');
     const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -410,6 +410,7 @@ export const exportQuizToJSON = (quiz: Quiz): void => {
  * Export a quiz into a printable PDF Assessment / Study Guide.
  */
 export const exportQuizToPDF = async (quiz: Quiz): Promise<void> => {
+    const { jsPDF } = await import('jspdf');
     const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -670,6 +671,7 @@ export const exportQuizHistoryToCSV = (attempts: AttemptData[], user?: UserData 
  * Export a user's entire quiz history as a structured PDF Academic Transcript.
  */
 export const exportQuizHistoryToPDF = async (attempts: AttemptData[], user?: UserData | null): Promise<void> => {
+    const { jsPDF } = await import('jspdf');
     const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
