@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MoreVertical, Download, Upload, Plus } from 'lucide-react';
 import { api } from '../lib/api';
-import type { Quiz, Subject, UserData } from '../types';
+import type { Quiz, Subject, UserData, Question } from '../types';
 import { DIFFICULTY_LEVELS } from '../constants/quizDefaults';
 
 // Custom Hooks
@@ -18,6 +18,7 @@ import StackDeleteModal from '../components/stacks/StackDeleteModal';
 import QuizEditorModal from '../components/quizzes/QuizEditorModal';
 import DeleteQuizModal from '../components/quizzes/DeleteQuizModal';
 import ShareQuizModal from '../components/quizzes/ShareQuizModal';
+import ReplaceQuizModal from '../components/quizzes/ReplaceQuizModal';
 import LiveHostMode from '../components/multiplayer/LiveHostMode';
 
 interface QuizManagerProps {
@@ -92,6 +93,17 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
     const [deleteQuizConfirmation, setDeleteQuizConfirmation] = useState<{ isOpen: boolean; id: string } | null>(null);
     const [sharingQuiz, setSharingQuiz] = useState<Quiz | null>(null);
     const [liveHostQuiz, setLiveHostQuiz] = useState<Quiz | null>(null);
+    const [quizToReplace, setQuizToReplace] = useState<Quiz | null>(null);
+    const [replacementFile, setReplacementFile] = useState<File | null>(null);
+    const [parsedReplacement, setParsedReplacement] = useState<{
+        questions: Partial<Question>[];
+        title?: string;
+        description?: string;
+        timeLimit?: number;
+        passingScore?: number;
+    } | null>(null);
+    const [isReplacing, setIsReplacing] = useState(false);
+    const replaceFileInputRef = useRef<HTMLInputElement>(null);
 
     // Import State
     const [importTargetStackId, setImportTargetStackId] = useState<string | null>(null);
@@ -250,6 +262,119 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
         onNotification('success', `Quiz "${quiz.title}" downloaded successfully`);
+    };
+
+    const handleReplaceClick = (quiz: Quiz) => {
+        setQuizToReplace(quiz);
+        setReplacementFile(null);
+        setParsedReplacement(null);
+        if (replaceFileInputRef.current) {
+            replaceFileInputRef.current.value = '';
+            replaceFileInputRef.current.click();
+        }
+    };
+
+    const handleReplacementFileSelected = async (file: File) => {
+        try {
+            const text = await file.text();
+            let json: unknown;
+            try {
+                json = JSON.parse(text);
+            } catch {
+                onNotification('error', `Failed to parse ${file.name}: Invalid JSON.`);
+                return;
+            }
+
+            let questions: Partial<Question>[] = [];
+            let metadata: { title?: string; description?: string; timeLimit?: number; passingScore?: number } = {};
+
+            if (Array.isArray(json)) {
+                const list = json as Record<string, unknown>[];
+                if (list.length > 0 && list[0]?.question && Array.isArray(list[0]?.options)) {
+                    questions = list as Partial<Question>[];
+                } else if (list.length > 0 && list[0]?.questions && Array.isArray(list[0]?.questions)) {
+                    questions = list[0].questions as Partial<Question>[];
+                    metadata = {
+                        title: typeof list[0].title === 'string' ? list[0].title : undefined,
+                        description: typeof list[0].description === 'string' ? list[0].description : undefined,
+                        timeLimit: typeof list[0].timeLimit === 'number' ? list[0].timeLimit : undefined,
+                        passingScore: typeof list[0].passingScore === 'number' ? list[0].passingScore : undefined,
+                    };
+                }
+            } else if (json && typeof json === 'object') {
+                const obj = json as Record<string, unknown>;
+                if (Array.isArray(obj.questions)) {
+                    questions = obj.questions as Partial<Question>[];
+                    metadata = {
+                        title: typeof obj.title === 'string' ? obj.title : undefined,
+                        description: typeof obj.description === 'string' ? obj.description : undefined,
+                        timeLimit: typeof obj.timeLimit === 'number' ? obj.timeLimit : undefined,
+                        passingScore: typeof obj.passingScore === 'number' ? obj.passingScore : undefined,
+                    };
+                } else if (obj.question && Array.isArray(obj.options)) {
+                    questions = [obj as Partial<Question>];
+                }
+            }
+
+            if (!questions || questions.length === 0) {
+                onNotification('error', `No questions found in "${file.name}". Please ensure the JSON contains questions.`);
+                return;
+            }
+
+            setReplacementFile(file);
+            setParsedReplacement({
+                questions,
+                ...metadata
+            });
+        } catch (err) {
+            console.error('Error reading replacement file:', err);
+            onNotification('error', 'Error reading replacement file.');
+        }
+    };
+
+    const handleConfirmReplace = async (applyMetadata: boolean) => {
+        if (!quizToReplace || !parsedReplacement || !parsedReplacement.questions.length) return;
+
+        try {
+            setIsReplacing(true);
+            const targetId = quizToReplace.id || quizToReplace._id;
+            if (!targetId) throw new Error('Quiz has no valid ID');
+
+            const validatedQuestions: Question[] = parsedReplacement.questions.map((q: Partial<Question>, idx: number) => ({
+                ...q,
+                id: q.id !== undefined && !isNaN(Number(q.id)) ? Number(q.id) : idx + 1,
+                part: q.part || 'A',
+                question: q.question || '',
+                options: Array.isArray(q.options) ? q.options : [],
+                correctAnswer: q.correctAnswer !== undefined ? q.correctAnswer : 0,
+                explanation: q.explanation || '',
+                points: q.points || 10
+            }));
+
+            const updatedQuiz: Quiz = {
+                ...quizToReplace,
+                questions: validatedQuestions,
+                ...(applyMetadata && parsedReplacement.title ? { title: parsedReplacement.title } : {}),
+                ...(applyMetadata && parsedReplacement.description !== undefined ? { description: parsedReplacement.description } : {}),
+                ...(applyMetadata && parsedReplacement.timeLimit ? { timeLimit: parsedReplacement.timeLimit } : {}),
+                ...(applyMetadata && parsedReplacement.passingScore ? { passingScore: parsedReplacement.passingScore } : {})
+            };
+
+            await api.updateQuiz(targetId, updatedQuiz, currentUser.userId);
+
+            setLocalQuizzes(prev => prev.map(q => (q.id === targetId || q._id === targetId) ? updatedQuiz : q));
+            onNotification('success', `Quiz "${updatedQuiz.title}" successfully replaced (${validatedQuestions.length} questions updated)!`);
+            setQuizToReplace(null);
+            setReplacementFile(null);
+            setParsedReplacement(null);
+            await Promise.resolve(onRefresh());
+        } catch (err) {
+            console.error('Failed to replace quiz:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Failed to replace quiz.';
+            onNotification('error', errorMessage);
+        } finally {
+            setIsReplacing(false);
+        }
     };
 
     // --- Import / Export Helpers ---
@@ -554,12 +679,42 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                     }}
                     onHost={setLiveHostQuiz}
                     onExport={handleDownloadQuiz}
+                    onReplace={handleReplaceClick}
                     onEdit={setEditingQuiz}
                     onDelete={(id) => setDeleteQuizConfirmation({ isOpen: true, id })}
                     onShare={setSharingQuiz}
                     onCreateFirstQuiz={() => setEditingQuiz(getEmptyQuiz())}
                 />
             )}
+
+            {/* Hidden file input for Replace action */}
+            <input
+                ref={replaceFileInputRef}
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                        handleReplacementFileSelected(file);
+                    }
+                }}
+            />
+
+            <ReplaceQuizModal
+                isOpen={!!quizToReplace && !!replacementFile}
+                onClose={() => {
+                    setQuizToReplace(null);
+                    setReplacementFile(null);
+                    setParsedReplacement(null);
+                }}
+                quiz={quizToReplace}
+                replacementFile={replacementFile}
+                parsedData={parsedReplacement}
+                onConfirm={handleConfirmReplace}
+                onFileSelected={handleReplacementFileSelected}
+                isLoading={isReplacing}
+            />
 
             {/* Modals */}
             <StackEditModal

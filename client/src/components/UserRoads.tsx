@@ -268,11 +268,11 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     // Defensive normalization to avoid crashes if API returns unexpected shapes
-    const quizzes = Array.isArray(quizzesProp) ? quizzesProp : [];
-    const subjects = Array.isArray(subjectsProp) ? subjectsProp : [];
-    const attempts = Array.isArray(attemptsProp) ? attemptsProp : [];
-    const skillTracks = Array.isArray(skillTracksProp) ? skillTracksProp : [];
-    const studyCards = Array.isArray(studyCardsProp) ? studyCardsProp : [];
+    const quizzes = useMemo(() => Array.isArray(quizzesProp) ? quizzesProp : [], [quizzesProp]);
+    const subjects = useMemo(() => Array.isArray(subjectsProp) ? subjectsProp : [], [subjectsProp]);
+    const attempts = useMemo(() => Array.isArray(attemptsProp) ? attemptsProp : [], [attemptsProp]);
+    const skillTracks = useMemo(() => Array.isArray(skillTracksProp) ? skillTracksProp : [], [skillTracksProp]);
+    const studyCards = useMemo(() => Array.isArray(studyCardsProp) ? studyCardsProp : [], [studyCardsProp]);
 
     const activeSubject = subjects.find(s => s._id === selectedSubjectId);
     const filteredQuizzes = useMemo(() => {
@@ -1503,7 +1503,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                     <div className="flex justify-between items-start mb-6">
                                                         <div className={`transition-transform duration-500 ${
                                                             isBento
-                                                                ? 'w-14 h-14 rounded-2xl bg-[#bef264] text-black border-2.5 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center shrink-0'
+                                                                ? 'w-14 h-14 rounded-2xl bg-[#ddd6fe] text-black border-2.5 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center shrink-0'
                                                                 : 'text-5xl text-indigo-500'
                                                         } ${locked ? '' : 'group-hover:scale-110'}`}>
                                                             {(() => {
@@ -1523,7 +1523,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                             poolStatus.isFullyCompleted ? (
                                                                 <div className={`p-2 rounded-xl ${
                                                                     isBento
-                                                                        ? 'bg-[#d9f99d] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                        ? 'bg-[#bbf7d0] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
                                                                         : 'bg-emerald-500/10 text-emerald-500'
                                                                 }`} title="Pool Completed">
                                                                     <CheckCircle className="w-5 h-5" />
@@ -1531,7 +1531,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                             ) : poolStatus.hasStarted ? (
                                                                 <div className={`px-2.5 py-1 rounded-xl text-[10px] font-black tracking-wider flex items-center gap-1.5 ${
                                                                     isBento
-                                                                        ? 'bg-[#93c5fd] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                        ? 'bg-[#ddd6fe] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
                                                                         : 'bg-blue-500/10 text-blue-500 border border-blue-500/20 shadow-sm'
                                                                 }`}>
                                                                     <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
@@ -1541,7 +1541,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                         ) : attempted ? (
                                                             <div className={`p-2 rounded-xl ${
                                                                 isBento
-                                                                    ? 'bg-[#d9f99d] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                    ? 'bg-[#bbf7d0] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
                                                                     : 'bg-emerald-500/10 text-emerald-500'
                                                             }`}>
                                                                 <CheckCircle className="w-5 h-5" />
@@ -1562,16 +1562,28 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                                 {quiz.difficulty}
                                                             </span>
                                                             {poolStatus.isPool ? (
-                                                                <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center gap-1">
+                                                                <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${
+                                                                    isBento
+                                                                        ? 'bg-blue-100 text-blue-950 border-2 border-black font-black'
+                                                                        : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                                                                }`}>
                                                                     <span>📦</span> {poolStatus.totalQuestions} Pool ({poolStatus.questionsPerAttempt}/att)
                                                                 </span>
                                                             ) : (
-                                                                <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/10">
+                                                                <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                                                                    isBento
+                                                                        ? 'bg-blue-100 text-blue-950 border-2 border-black font-black'
+                                                                        : 'bg-blue-500/10 text-blue-400 border border-blue-500/10'
+                                                                }`}>
                                                                     {quiz.questions?.length || 0} Qs
                                                                 </span>
                                                             )}
                                                             {poolStatus.isPool && poolStatus.cycle > 0 && (
-                                                                <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                                                                <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                                                                    isBento
+                                                                        ? 'bg-purple-100 text-purple-950 border-2 border-black font-black'
+                                                                        : 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20'
+                                                                }`}>
                                                                     Cycle {poolStatus.cycle + 1}
                                                                 </span>
                                                             )}
@@ -1579,24 +1591,36 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
 
                                                         {/* Pool Progress Section */}
                                                         {!locked && poolStatus.isPool && (poolStatus.hasStarted || attempted) && (
-                                                            <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5 mb-4">
+                                                            <div className={`p-4 rounded-2xl mb-4 ${
+                                                                isBento
+                                                                    ? 'bg-slate-50 dark:bg-black/20 border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                    : 'bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5'
+                                                            }`}>
                                                                 <div className="flex items-center justify-between mb-2">
                                                                     <div className="flex items-center gap-1.5">
                                                                         <span className="text-xs">📦</span>
-                                                                        <span className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                                                                        <span className={`text-[10px] font-black uppercase tracking-widest ${isBento ? 'text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                                                                             Pool Progress
                                                                         </span>
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className="text-xs font-black text-blue-600 dark:text-blue-400">
+                                                                        <span className={`text-xs font-black ${isBento ? 'text-black dark:text-white' : 'text-blue-600 dark:text-blue-400'}`}>
                                                                             {poolStatus.seenCount}/{poolStatus.totalQuestions} ({poolStatus.percentage}%)
                                                                         </span>
                                                                         {poolStatus.remainingCount > 0 ? (
-                                                                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+                                                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                                                                                isBento
+                                                                                    ? 'bg-[#fed7aa] text-black border border-black'
+                                                                                    : 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/20'
+                                                                            }`}>
                                                                                 {poolStatus.remainingCount} Remaining
                                                                             </span>
                                                                         ) : (
-                                                                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                                                                                isBento
+                                                                                    ? 'bg-[#bbf7d0] text-black border border-black'
+                                                                                    : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                                                            }`}>
                                                                                 Completed
                                                                             </span>
                                                                         )}
@@ -1604,26 +1628,30 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                                 </div>
 
                                                                 {/* Progress Bar Track */}
-                                                                <div className="w-full h-2.5 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden mb-2.5">
+                                                                <div className={`w-full h-2.5 rounded-full overflow-hidden mb-2.5 ${
+                                                                    isBento ? 'bg-white dark:bg-white/10 border border-black' : 'bg-gray-200 dark:bg-white/10'
+                                                                }`}>
                                                                     <div
                                                                         className={`h-full transition-all duration-700 rounded-full ${
-                                                                            poolStatus.isFullyCompleted
-                                                                                ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
-                                                                                : 'bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500'
+                                                                            isBento
+                                                                                ? poolStatus.isFullyCompleted ? 'bg-[#22c55e]' : 'bg-[#8b5cf6]'
+                                                                                : poolStatus.isFullyCompleted
+                                                                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                                                                                    : 'bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500'
                                                                         }`}
                                                                         style={{ width: `${poolStatus.percentage}%` }}
                                                                     />
                                                                 </div>
 
                                                                 {/* Score & Remaining footnote */}
-                                                                <div className="flex items-center justify-between text-[10px] font-bold text-gray-400 dark:text-gray-500">
+                                                                <div className={`flex items-center justify-between text-[10px] font-bold ${isBento ? 'text-black dark:text-slate-400' : 'text-gray-400 dark:text-gray-500'}`}>
                                                                     <span>
                                                                         {poolStatus.remainingCount > 0
                                                                             ? `${poolStatus.remainingCount} questions left in this cycle`
                                                                             : 'All questions in pool completed!'}
                                                                     </span>
                                                                     {bestScore !== null && (
-                                                                        <span className="text-emerald-500 font-black flex items-center gap-1">
+                                                                        <span className="text-emerald-600 dark:text-emerald-400 font-black flex items-center gap-1">
                                                                             <Target className="w-3.5 h-3.5" /> Best: {bestScore}%
                                                                         </span>
                                                                     )}
@@ -1633,9 +1661,13 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
 
                                                         {/* Non-Pool Best Score Box */}
                                                         {!locked && !poolStatus.isPool && attempted && (
-                                                            <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl flex items-center justify-between mb-4 border border-gray-100 dark:border-white/5">
+                                                            <div className={`p-4 rounded-2xl flex items-center justify-between mb-4 ${
+                                                                isBento
+                                                                    ? 'bg-slate-50 dark:bg-black/20 border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                    : 'bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5'
+                                                            }`}>
                                                                 <div>
-                                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Best Score</div>
+                                                                    <div className={`text-[10px] font-bold uppercase tracking-widest ${isBento ? 'text-black' : 'text-gray-400'}`}>Best Score</div>
                                                                     <div className="text-xl font-black text-emerald-500">{bestScore}%</div>
                                                                 </div>
                                                                 <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
@@ -1667,15 +1699,19 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                             className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${
                                                                 locked
                                                                     ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
-                                                                    : poolStatus.isPool
-                                                                        ? poolStatus.hasStarted && !poolStatus.isFullyCompleted
-                                                                            ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/25'
-                                                                            : poolStatus.isFullyCompleted
+                                                                    : isBento
+                                                                        ? poolStatus.isFullyCompleted
+                                                                            ? 'bg-[#22c55e] text-black hover:bg-[#16a34a] border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] active:translate-y-0.5 active:shadow-[1px_1px_0px_#000]'
+                                                                            : 'bg-[#8b5cf6] text-white hover:bg-[#7c3aed] border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] active:translate-y-0.5 active:shadow-[1px_1px_0px_#000]'
+                                                                        : poolStatus.isPool
+                                                                            ? poolStatus.hasStarted && !poolStatus.isFullyCompleted
+                                                                                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/25'
+                                                                                : poolStatus.isFullyCompleted
+                                                                                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
+                                                                                    : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500'
+                                                                            : attempted
                                                                                 ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
                                                                                 : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500'
-                                                                        : attempted
-                                                                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
-                                                                            : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500'
                                                             }`}
                                                         >
                                                             {locked ? (
@@ -1703,7 +1739,11 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                                         e.stopPropagation();
                                                                         setLiveHostQuiz(quiz);
                                                                     }}
-                                                                    className="px-3.5 py-4 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-sm shrink-0 cursor-pointer"
+                                                                    className={`px-3.5 py-4 rounded-2xl font-black text-xs transition-all shrink-0 cursor-pointer ${
+                                                                        isBento
+                                                                            ? 'bg-white hover:bg-purple-50 text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] active:translate-y-0.5 active:shadow-[1px_1px_0px_#000]'
+                                                                            : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 hover:scale-105 active:scale-95 shadow-sm'
+                                                                    }`}
                                                                     title="Host a Live Classroom Arena game for this quiz"
                                                                 >
                                                                     🎮
@@ -1717,10 +1757,14 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                                         await exportQuizToPDF(quiz);
                                                                         showNotification('success', 'Study PDF downloaded!');
                                                                     }}
-                                                                    className="p-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 rounded-2xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
+                                                                    className={`p-3.5 rounded-2xl transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                                                                        isBento
+                                                                            ? 'bg-white hover:bg-purple-50 text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] active:translate-y-0.5 active:shadow-[1px_1px_0px_#000]'
+                                                                            : 'bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 shadow-sm'
+                                                                    }`}
                                                                     title="Export PDF Study Sheet"
                                                                 >
-                                                                    <FileText className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                                                                    <FileText className={`w-4 h-4 ${isBento ? 'text-black' : 'text-indigo-500 dark:text-indigo-400'}`} />
                                                                 </button>
                                                             </>
                                                         )}
@@ -1766,212 +1810,280 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                             >
                                                 <div className={`absolute -inset-0.5 bg-gradient-to-br ${glowGradient} rounded-[2.5rem] ${locked ? 'opacity-0' : 'opacity-0 group-hover:opacity-20'} blur-xl transition-all duration-500`} />
 
-                                                <div className={`relative h-full bg-white dark:bg-[#11111a] rounded-[2.5rem] border border-gray-200 dark:border-white/5 p-8 flex flex-col ${locked ? 'opacity-50 blur-sm' : 'group-hover:-translate-y-2'} transition-all duration-300`}>
-                                                    <div className="flex justify-between items-start mb-6">
-                                                        <div className={`text-5xl text-orange-500 ${locked ? '' : 'group-hover:scale-110'} transition-transform duration-500`}>
-                                                            {(() => {
-                                                                const IconComponent = getQuizIconOption(quiz.icon).Icon;
-                                                                return <IconComponent className="w-12 h-12" />;
-                                                            })()}
-                                                        </div>
-                                                        {locked ? (
-                                                            <div className="bg-red-500/10 text-red-500 p-2 rounded-xl">
-                                                                <Lock className="w-5 h-5" />
-                                                            </div>
-                                                        ) : poolStatus.isPool ? (
-                                                            poolStatus.isFullyCompleted ? (
-                                                                <div className="bg-emerald-500/10 text-emerald-500 p-2 rounded-xl" title="Exam Pool Completed">
-                                                                    <CheckCircle className="w-5 h-5" />
-                                                                </div>
-                                                            ) : poolStatus.hasStarted ? (
-                                                                <div className="bg-orange-500/10 text-orange-500 px-2.5 py-1 rounded-xl text-[10px] font-black tracking-wider border border-orange-500/20 flex items-center gap-1.5 shadow-sm">
-                                                                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                                                                    <span>{poolStatus.percentage}%</span>
-                                                                </div>
-                                                            ) : null
-                                                        ) : attempted ? (
-                                                            <div className="bg-orange-500/10 text-orange-500 p-2 rounded-xl">
-                                                                <CheckCircle className="w-5 h-5" />
-                                                            </div>
-                                                        ) : null}
-                                                    </div>
+                                                <div className={`relative h-full rounded-[2.5rem] p-8 flex flex-col transition-all duration-300 ${
+                                                     isBento
+                                                         ? 'bg-white text-black border-3 border-black shadow-[5px_5px_0px_#000] hover:shadow-[7px_7px_0px_#000]'
+                                                         : 'bg-white dark:bg-[#11111a] border border-gray-200 dark:border-white/5'
+                                                 } ${locked ? 'opacity-50 blur-sm' : 'group-hover:-translate-y-2'}`}>
+                                                     <div className="flex justify-between items-start mb-6">
+                                                         <div className={`transition-transform duration-500 ${
+                                                             isBento
+                                                                 ? 'w-14 h-14 rounded-2xl bg-[#fed7aa] text-black border-2.5 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center shrink-0'
+                                                                 : 'text-5xl text-orange-500'
+                                                         } ${locked ? '' : 'group-hover:scale-110'}`}>
+                                                             {(() => {
+                                                                 const IconComponent = getQuizIconOption(quiz.icon).Icon;
+                                                                 return <IconComponent className={isBento ? "w-8 h-8 stroke-[2.5]" : "w-12 h-12"} />;
+                                                             })()}
+                                                         </div>
+                                                         {locked ? (
+                                                             <div className={`p-2 rounded-xl ${
+                                                                 isBento
+                                                                     ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                     : 'bg-red-500/10 text-red-500'
+                                                             }`}>
+                                                                 <Lock className="w-5 h-5" />
+                                                             </div>
+                                                         ) : poolStatus.isPool ? (
+                                                             poolStatus.isFullyCompleted ? (
+                                                                 <div className={`p-2 rounded-xl ${
+                                                                     isBento
+                                                                         ? 'bg-[#bbf7d0] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                         : 'bg-emerald-500/10 text-emerald-500'
+                                                                 }`} title="Exam Pool Completed">
+                                                                     <CheckCircle className="w-5 h-5" />
+                                                                 </div>
+                                                             ) : poolStatus.hasStarted ? (
+                                                                 <div className={`px-2.5 py-1 rounded-xl text-[10px] font-black tracking-wider flex items-center gap-1.5 ${
+                                                                     isBento
+                                                                         ? 'bg-[#fed7aa] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                         : 'bg-orange-500/10 text-orange-500 border border-orange-500/20 shadow-sm'
+                                                                 }`}>
+                                                                     <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                                                                     <span>{poolStatus.percentage}%</span>
+                                                                 </div>
+                                                             ) : null
+                                                         ) : attempted ? (
+                                                             <div className={`p-2 rounded-xl ${
+                                                                 isBento
+                                                                     ? 'bg-[#bbf7d0] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                     : 'bg-orange-500/10 text-orange-500'
+                                                             }`}>
+                                                                 <CheckCircle className="w-5 h-5" />
+                                                             </div>
+                                                         ) : null}
+                                                     </div>
 
-                                                    <div className="flex-grow">
-                                                        <h3 className={`text-xl font-black ${locked ? 'text-gray-500 dark:text-gray-600' : 'text-gray-900 dark:text-white'} mb-2 ${locked ? '' : 'group-hover:text-red-500'} transition-colors`}>
-                                                            {quiz.title}
-                                                        </h3>
-                                                        <p className={`${locked ? 'text-gray-400 dark:text-gray-500' : 'text-gray-500 dark:text-gray-400'} text-xs font-medium leading-relaxed line-clamp-2 mb-6`}>
-                                                            {quiz.description}
-                                                        </p>
+                                                     <div className="flex-grow">
+                                                         <h3 className={`text-xl font-black ${locked ? 'text-gray-500 dark:text-gray-600' : 'text-gray-900 dark:text-white'} mb-2 ${locked ? '' : 'group-hover:text-red-500'} transition-colors`}>
+                                                             {quiz.title}
+                                                         </h3>
+                                                         <p className={`${locked ? 'text-gray-400 dark:text-gray-500' : 'text-gray-500 dark:text-gray-400'} text-xs font-medium leading-relaxed line-clamp-2 mb-6`}>
+                                                             {quiz.description}
+                                                         </p>
 
-                                                        <div className="flex flex-wrap gap-2 mb-6">
-                                                            <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${getDifficultyBadgeBg(quiz.difficulty)}`}>
-                                                                {quiz.difficulty}
-                                                            </span>
-                                                            {poolStatus.isPool ? (
-                                                                <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/20 flex items-center gap-1">
-                                                                    <span>📦</span> {poolStatus.totalQuestions} Pool ({poolStatus.questionsPerAttempt}/att)
-                                                                </span>
-                                                            ) : (
-                                                                <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/10">
+                                                         <div className="flex flex-wrap gap-2 mb-6">
+                                                             <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${getDifficultyBadgeBg(quiz.difficulty)}`}>
+                                                                 {quiz.difficulty}
+                                                             </span>
+                                                             {poolStatus.isPool ? (
+                                                                 <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${
+                                                                     isBento
+                                                                         ? 'bg-orange-100 text-orange-950 border-2 border-black font-black'
+                                                                         : 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/20'
+                                                                 }`}>
+                                                                     <span>📦</span> {poolStatus.totalQuestions} Pool ({poolStatus.questionsPerAttempt}/att)
+                                                                 </span>
+                                                             ) : (
+                                                                <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                                                                    isBento
+                                                                        ? 'bg-blue-100 text-blue-950 border-2 border-black font-black'
+                                                                        : 'bg-blue-500/10 text-blue-400 border border-blue-500/10'
+                                                                }`}>
                                                                     {quiz.questions?.length || 0} Qs
                                                                 </span>
-                                                            )}
-                                                            {poolStatus.isPool && poolStatus.cycle > 0 && (
-                                                                <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                                                                    Cycle {poolStatus.cycle + 1}
-                                                                </span>
-                                                            )}
-                                                        </div>
+                                                             )}
+                                                             {poolStatus.isPool && poolStatus.cycle > 0 && (
+                                                                 <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                                                                     isBento
+                                                                         ? 'bg-purple-100 text-purple-950 border-2 border-black font-black'
+                                                                         : 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20'
+                                                                 }`}>
+                                                                     Cycle {poolStatus.cycle + 1}
+                                                                 </span>
+                                                             )}
+                                                         </div>
 
-                                                        {/* Pool Progress Section for Exams */}
-                                                        {!locked && poolStatus.isPool && (poolStatus.hasStarted || attempted) && (
-                                                            <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5 mb-4">
-                                                                <div className="flex items-center justify-between mb-2">
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <span className="text-xs">📦</span>
-                                                                        <span className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-                                                                            Pool Progress
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-xs font-black text-orange-600 dark:text-orange-400">
-                                                                            {poolStatus.seenCount}/{poolStatus.totalQuestions} ({poolStatus.percentage}%)
-                                                                        </span>
-                                                                        {poolStatus.remainingCount > 0 ? (
-                                                                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/20">
-                                                                                {poolStatus.remainingCount} Remaining
-                                                                            </span>
-                                                                        ) : (
-                                                                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                                                                Completed
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
+                                                         {/* Pool Progress Section for Exams */}
+                                                         {!locked && poolStatus.isPool && (poolStatus.hasStarted || attempted) && (
+                                                             <div className={`p-4 rounded-2xl mb-4 ${
+                                                                 isBento
+                                                                     ? 'bg-slate-50 dark:bg-black/20 border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                     : 'bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5'
+                                                             }`}>
+                                                                 <div className="flex items-center justify-between mb-2">
+                                                                     <div className="flex items-center gap-1.5">
+                                                                         <span className="text-xs">📦</span>
+                                                                         <span className={`text-[10px] font-black uppercase tracking-widest ${isBento ? 'text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                                             Pool Progress
+                                                                         </span>
+                                                                     </div>
+                                                                     <div className="flex items-center gap-2">
+                                                                         <span className={`text-xs font-black ${isBento ? 'text-black dark:text-white' : 'text-orange-600 dark:text-orange-400'}`}>
+                                                                             {poolStatus.seenCount}/{poolStatus.totalQuestions} ({poolStatus.percentage}%)
+                                                                         </span>
+                                                                         {poolStatus.remainingCount > 0 ? (
+                                                                             <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                                                                                 isBento
+                                                                                     ? 'bg-[#fed7aa] text-black border border-black'
+                                                                                     : 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/20'
+                                                                             }`}>
+                                                                                 {poolStatus.remainingCount} Remaining
+                                                                             </span>
+                                                                         ) : (
+                                                                             <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                                                                                 isBento
+                                                                                     ? 'bg-[#bbf7d0] text-black border border-black'
+                                                                                     : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                                                             }`}>
+                                                                                 Completed
+                                                                             </span>
+                                                                         )}
+                                                                     </div>
+                                                                 </div>
 
-                                                                {/* Progress Bar Track */}
-                                                                <div className="w-full h-2.5 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden mb-2.5">
-                                                                    <div
-                                                                        className={`h-full transition-all duration-700 rounded-full ${
-                                                                            poolStatus.isFullyCompleted
-                                                                                ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
-                                                                                : 'bg-gradient-to-r from-orange-500 via-red-500 to-pink-500'
-                                                                        }`}
-                                                                        style={{ width: `${poolStatus.percentage}%` }}
-                                                                    />
-                                                                </div>
+                                                                 {/* Progress Bar Track */}
+                                                                 <div className={`w-full h-2.5 rounded-full overflow-hidden mb-2.5 ${
+                                                                     isBento ? 'bg-white dark:bg-white/10 border border-black' : 'bg-gray-200 dark:bg-white/10'
+                                                                 }`}>
+                                                                     <div
+                                                                         className={`h-full transition-all duration-700 rounded-full ${
+                                                                             isBento
+                                                                                 ? poolStatus.isFullyCompleted ? 'bg-[#22c55e]' : 'bg-[#f97316]'
+                                                                                 : poolStatus.isFullyCompleted
+                                                                                     ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                                                                                     : 'bg-gradient-to-r from-orange-500 via-red-500 to-pink-500'
+                                                                         }`}
+                                                                         style={{ width: `${poolStatus.percentage}%` }}
+                                                                     />
+                                                                 </div>
 
-                                                                {/* Score & Remaining footnote */}
-                                                                <div className="flex items-center justify-between text-[10px] font-bold text-gray-400 dark:text-gray-500">
-                                                                    <span>
-                                                                        {poolStatus.remainingCount > 0
-                                                                            ? `${poolStatus.remainingCount} questions left in this cycle`
-                                                                            : 'All exam questions completed!'}
-                                                                    </span>
-                                                                    {bestScore !== null && (
-                                                                        <span className="text-orange-500 font-black flex items-center gap-1">
-                                                                            <Target className="w-3.5 h-3.5" /> Best: {bestScore}%
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                                 {/* Score & Remaining footnote */}
+                                                                 <div className={`flex items-center justify-between text-[10px] font-bold ${isBento ? 'text-black dark:text-slate-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                                                                     <span>
+                                                                         {poolStatus.remainingCount > 0
+                                                                             ? `${poolStatus.remainingCount} questions left in this cycle`
+                                                                             : 'All exam questions completed!'}
+                                                                     </span>
+                                                                     {bestScore !== null && (
+                                                                         <span className="text-orange-600 dark:text-orange-400 font-black flex items-center gap-1">
+                                                                             <Target className="w-3.5 h-3.5" /> Best: {bestScore}%
+                                                                         </span>
+                                                                     )}
+                                                                 </div>
+                                                             </div>
+                                                         )}
 
-                                                        {/* Non-Pool Exam Best Score */}
-                                                        {!locked && !poolStatus.isPool && attempted && (
-                                                            <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl flex items-center justify-between mb-4 border border-gray-100 dark:border-white/5">
-                                                                <div>
-                                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Best Score</div>
-                                                                    <div className="text-xl font-black text-orange-500">{bestScore}%</div>
-                                                                </div>
-                                                                <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
-                                                                    <Target className="w-5 h-5 text-orange-500" />
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                         {/* Non-Pool Exam Best Score */}
+                                                         {!locked && !poolStatus.isPool && attempted && (
+                                                             <div className={`p-4 rounded-2xl flex items-center justify-between mb-4 ${
+                                                                 isBento
+                                                                     ? 'bg-slate-50 dark:bg-black/20 border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                     : 'bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5'
+                                                             }`}>
+                                                                 <div>
+                                                                     <div className={`text-[10px] font-bold uppercase tracking-widest ${isBento ? 'text-black' : 'text-gray-400'}`}>Best Score</div>
+                                                                     <div className="text-xl font-black text-orange-500">{bestScore}%</div>
+                                                                 </div>
+                                                                 <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                                                                     <Target className="w-5 h-5 text-orange-500" />
+                                                                 </div>
+                                                             </div>
+                                                         )}
 
-                                                        {locked && (
-                                                            <div className="p-4 bg-red-500/5 dark:bg-red-500/10 rounded-2xl flex items-center justify-between mb-4 border border-red-500/20">
-                                                                <div>
-                                                                    <div className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Locked</div>
-                                                                    <div className="text-sm font-black text-red-600 dark:text-red-400">Complete roadmap</div>
-                                                                </div>
-                                                                <Lock className="w-5 h-5 text-red-500/50" />
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                                         {locked && (
+                                                             <div className="p-4 bg-red-500/5 dark:bg-red-500/10 rounded-2xl flex items-center justify-between mb-4 border border-red-500/20">
+                                                                 <div>
+                                                                     <div className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Locked</div>
+                                                                     <div className="text-sm font-black text-red-600 dark:text-red-400">Complete roadmap</div>
+                                                                 </div>
+                                                                 <Lock className="w-5 h-5 text-red-500/50" />
+                                                             </div>
+                                                         )}
+                                                     </div>
 
-                                                    <div className="flex items-center gap-2 mt-auto">
-                                                        <button
-                                                            disabled={locked}
-                                                            onClick={(e) => {
-                                                                if (!locked) {
-                                                                    e.stopPropagation();
-                                                                    onSelectQuiz(quiz);
-                                                                }
-                                                            }}
-                                                            className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${
-                                                                locked
-                                                                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
-                                                                    : poolStatus.isPool
-                                                                        ? poolStatus.hasStarted && !poolStatus.isFullyCompleted
-                                                                            ? 'bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 hover:from-orange-500 hover:to-pink-500 text-white shadow-lg shadow-orange-500/25'
-                                                                            : poolStatus.isFullyCompleted
-                                                                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
-                                                                                : 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-500'
-                                                                        : attempted
-                                                                            ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-500'
-                                                                            : 'bg-red-600 text-white shadow-lg shadow-red-500/20 hover:bg-red-500'
-                                                            }`}
-                                                        >
-                                                            {locked ? (
-                                                                <><Lock className="w-4 h-4" /> Locked</>
-                                                            ) : poolStatus.isPool ? (
-                                                                poolStatus.hasStarted && !poolStatus.isFullyCompleted ? (
-                                                                    <><Play className="w-4 h-4 fill-white" /> Complete Remaining ({poolStatus.remainingCount} Left)</>
-                                                                ) : poolStatus.isFullyCompleted ? (
-                                                                    <><RefreshCw className="w-4 h-4" /> Retake (Start Next Cycle)</>
-                                                                ) : (
-                                                                    <><Play className="w-4 h-4 fill-white" /> Start Exam Pool</>
-                                                                )
-                                                            ) : attempted ? (
-                                                                <><RefreshCw className="w-4 h-4" /> Retake</>
-                                                            ) : (
+                                                     <div className="flex items-center gap-2 mt-auto">
+                                                         <button
+                                                             disabled={locked}
+                                                             onClick={(e) => {
+                                                                 if (!locked) {
+                                                                     e.stopPropagation();
+                                                                     onSelectQuiz(quiz);
+                                                                 }
+                                                             }}
+                                                             className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${
+                                                                 locked
+                                                                     ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
+                                                                     : isBento
+                                                                         ? poolStatus.isFullyCompleted
+                                                                             ? 'bg-[#22c55e] text-black hover:bg-[#16a34a] border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] active:translate-y-0.5 active:shadow-[1px_1px_0px_#000]'
+                                                                             : 'bg-[#f97316] text-white hover:bg-[#ea580c] border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] active:translate-y-0.5 active:shadow-[1px_1px_0px_#000]'
+                                                                         : poolStatus.isPool
+                                                                             ? poolStatus.hasStarted && !poolStatus.isFullyCompleted
+                                                                                 ? 'bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 hover:from-orange-500 hover:to-pink-500 text-white shadow-lg shadow-orange-500/25'
+                                                                                 : poolStatus.isFullyCompleted
+                                                                                     ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500'
+                                                                                     : 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-500'
+                                                                             : attempted
+                                                                                 ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-500'
+                                                                                 : 'bg-red-600 text-white shadow-lg shadow-red-500/20 hover:bg-red-500'
+                                                             }`}
+                                                         >
+                                                             {locked ? (
+                                                                 <><Lock className="w-4 h-4" /> Locked</>
+                                                             ) : poolStatus.isPool ? (
+                                                                 poolStatus.hasStarted && !poolStatus.isFullyCompleted ? (
+                                                                     <><Play className="w-4 h-4 fill-white" /> Complete Remaining ({poolStatus.remainingCount} Left)</>
+                                                                 ) : poolStatus.isFullyCompleted ? (
+                                                                     <><RefreshCw className="w-4 h-4" /> Retake (Start Next Cycle)</>
+                                                                 ) : (
+                                                                     <><Play className="w-4 h-4 fill-white" /> Start Exam Pool</>
+                                                                 )
+                                                             ) : attempted ? (
+                                                                 <><RefreshCw className="w-4 h-4" /> Retake</>
+                                                             ) : (
                                                                 <><Play className="w-4 h-4 fill-white" /> Start</>
-                                                            )}
-                                                        </button>
+                                                             )}
+                                                         </button>
 
-                                                        {!locked && (
-                                                            <>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setLiveHostQuiz(quiz);
-                                                                    }}
-                                                                    className="px-3.5 py-4 rounded-2xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/20 font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-sm shrink-0 cursor-pointer"
-                                                                    title="Host a Live Classroom Arena game for this exam"
-                                                                >
-                                                                    🎮
-                                                                </button>
+                                                         {!locked && (
+                                                             <>
+                                                                 <button
+                                                                     type="button"
+                                                                     onClick={(e) => {
+                                                                         e.stopPropagation();
+                                                                         setLiveHostQuiz(quiz);
+                                                                     }}
+                                                                     className={`px-3.5 py-4 rounded-2xl font-black text-xs transition-all shrink-0 cursor-pointer ${
+                                                                         isBento
+                                                                             ? 'bg-white hover:bg-orange-50 text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] active:translate-y-0.5 active:shadow-[1px_1px_0px_#000]'
+                                                                             : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/20 hover:scale-105 active:scale-95 shadow-sm'
+                                                                     }`}
+                                                                     title="Host a Live Classroom Arena game for this exam"
+                                                                 >
+                                                                     🎮
+                                                                 </button>
 
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        showNotification('info', 'Generating Study PDF...');
-                                                                        await exportQuizToPDF(quiz);
-                                                                        showNotification('success', 'Study PDF downloaded!');
-                                                                    }}
-                                                                    className="p-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 rounded-2xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
-                                                                    title="Export PDF Study Sheet"
-                                                                >
-                                                                    <FileText className="w-4 h-4 text-orange-500 dark:text-orange-400" />
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
+                                                                 <button
+                                                                     type="button"
+                                                                     onClick={async (e) => {
+                                                                         e.stopPropagation();
+                                                                         showNotification('info', 'Generating Study PDF...');
+                                                                         await exportQuizToPDF(quiz);
+                                                                         showNotification('success', 'Study PDF downloaded!');
+                                                                     }}
+                                                                     className={`p-3.5 rounded-2xl transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                                                                         isBento
+                                                                             ? 'bg-white hover:bg-orange-50 text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] active:translate-y-0.5 active:shadow-[1px_1px_0px_#000]'
+                                                                             : 'bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 shadow-sm'
+                                                                     }`}
+                                                                     title="Export PDF Study Sheet"
+                                                                 >
+                                                                     <FileText className={`w-4 h-4 ${isBento ? 'text-black' : 'text-orange-500 dark:text-orange-400'}`} />
+                                                                 </button>
+                                                             </>
+                                                         )}
+                                                     </div>
                                                 </div>
                                             </div>
                                         );

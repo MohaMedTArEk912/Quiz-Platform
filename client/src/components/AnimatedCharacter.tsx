@@ -23,17 +23,20 @@ export const AnimatedCharacter: React.FC<AnimatedCharacterProps> = ({
 
     // Smoothed mouse tracking with requestAnimationFrame for fluid eye movement
     const updateMousePos = useCallback(() => {
-        setMousePos(prev => {
-            const lerp = 0.15; // Smooth interpolation factor
-            const newX = prev.x + (mousePosRef.current.x - prev.x) * lerp;
-            const newY = prev.y + (mousePosRef.current.y - prev.y) * lerp;
-            // Stop updating when close enough
-            if (Math.abs(newX - prev.x) < 0.01 && Math.abs(newY - prev.y) < 0.01) {
-                return mousePosRef.current;
-            }
-            rafRef.current = requestAnimationFrame(updateMousePos);
-            return { x: newX, y: newY };
-        });
+        const step = () => {
+            setMousePos(prev => {
+                const lerp = 0.15; // Smooth interpolation factor
+                const newX = prev.x + (mousePosRef.current.x - prev.x) * lerp;
+                const newY = prev.y + (mousePosRef.current.y - prev.y) * lerp;
+                // Stop updating when close enough
+                if (Math.abs(newX - prev.x) < 0.01 && Math.abs(newY - prev.y) < 0.01) {
+                    return mousePosRef.current;
+                }
+                rafRef.current = requestAnimationFrame(step);
+                return { x: newX, y: newY };
+            });
+        };
+        step();
     }, []);
 
     useEffect(() => {

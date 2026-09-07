@@ -65,11 +65,11 @@ export const aiHealth = async (req, res) => {
     }
 };
 
-// PRODUCTION MODELS
+// PRODUCTION MODELS (Updated Sep 2026 — llama-3.3-70b-versatile retired)
 const GROQ_ATTEMPT_MODELS = [
-    'llama-3.3-70b-versatile', // Strongest for following complex instructions
-    'llama-3.2-90b-text-preview',
-    'mixtral-8x7b-32768',
+    'qwen/qwen3.6-27b',       // Primary: strong instruction-following
+    'llama-3.1-8b-instant',   // Fast fallback
+    'mixtral-8x7b-32768',     // Legacy fallback
 ];
 
 async function generateContentWithFallback(prompt, jobId = `Gen-${Date.now()}`) {
@@ -298,7 +298,7 @@ ${studentAnswer ? `Student's initial thought: "${studentAnswer}"` : ''}
 Provide a concise, 1-2 sentence guided conceptual hint that activates their critical thinking WITHOUT revealing the direct answer letter or spoiling the test.`;
 
         const resp = await groq.chat.completions.create({
-            model: 'llama-3.3-70b-versatile',
+            model: 'qwen/qwen3.6-27b',
             messages: [{ role: 'user', content: prompt }],
             max_tokens: 200
         });
@@ -345,7 +345,7 @@ Respond ONLY with a JSON object in this exact format:
 }`;
 
                 const resp = await groq.chat.completions.create({
-                    model: 'llama-3.3-70b-versatile',
+                    model: 'qwen/qwen3.6-27b',
                     messages: [{ role: 'user', content: prompt }],
                     response_format: { type: 'json_object' },
                     max_tokens: 2000
@@ -459,7 +459,7 @@ Return ONLY valid JSON with this exact structure:
 }`;
 
                 const completion = await groq.chat.completions.create({
-                    model: 'llama-3.3-70b-versatile',
+                    model: 'qwen/qwen3.6-27b',
                     messages: [{ role: 'user', content: prompt }],
                     response_format: { type: 'json_object' },
                     max_tokens: 300,

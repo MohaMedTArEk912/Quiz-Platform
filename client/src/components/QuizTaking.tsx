@@ -13,6 +13,7 @@ import MediaPromptPlayer from './common/MediaPromptPlayer';
 import OrderingQuestion from './question-types/OrderingQuestion';
 import MatchingQuestion from './question-types/MatchingQuestion';
 import CodeOutputQuestion from './question-types/CodeOutputQuestion';
+import { useTheme } from '../context/ThemeContext';
 
 const CompilerQuestion = React.lazy(() => import('./question-types/CompilerQuestion'));
 
@@ -58,6 +59,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     onUserUpdate,
     poolProgress
 }) => {
+    const { isBento } = useTheme();
     // --- STATE MANAGEMENT ---
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState<Record<number, string | number | string[] | Record<string, string>>>({});
@@ -1061,22 +1063,45 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
             {/* --- TOP BAR (Full width) --- */}
             {!embedded && (
-                <header className="flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 glass-panel border-b border-slate-200/80 dark:border-white/10 z-20 shadow-sm pt-safe pl-safe pr-safe">
+                <header className={`flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 z-20 shadow-sm pt-safe pl-safe pr-safe ${
+                    isBento
+                        ? 'bg-white dark:bg-[#0f172a] border-b-2 border-black dark:border-white/20'
+                        : 'glass-panel border-b border-slate-200/80 dark:border-white/10'
+                }`}>
                     <div className="flex items-center gap-3 sm:gap-4">
-                        <button onClick={onBack} className="flex items-center gap-2 p-1.5 sm:p-2 rounded-xl glass-card hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 transition-all border border-slate-200 dark:border-white/10 cursor-pointer">
+                        <button
+                            onClick={onBack}
+                            className={`flex items-center gap-2 p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] active:translate-y-0.5'
+                                    : 'glass-card hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10'
+                            }`}
+                        >
                             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                         <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-[10px] sm:text-xs font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider truncate max-w-[120px] sm:max-w-xs px-2.5 py-1 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                            <span className={`text-[10px] sm:text-xs font-extrabold uppercase tracking-wider truncate max-w-[140px] sm:max-w-xs px-2.5 py-1 rounded-lg ${
+                                isBento
+                                    ? 'bg-purple-100 text-purple-900 border-2 border-black font-black shadow-[2px_2px_0px_#000]'
+                                    : 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border border-indigo-500/20'
+                            }`}>
                                 {retryMode ? '⚠ Retry' : quiz.title}
                             </span>
                             {(user?.role === 'admin' || user?.isAdmin) && (
-                                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 bg-purple-500/15 text-purple-600 dark:text-purple-300 rounded-lg border border-purple-500/30">
+                                <span className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg ${
+                                    isBento
+                                        ? 'bg-purple-200 text-black border-2 border-black font-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30'
+                                }`}>
                                     <span>🛡️</span> Admin
                                 </span>
                             )}
                             {poolProgress && (
-                                <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-500/20 font-tabular">
+                                <span className={`hidden md:inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg font-tabular ${
+                                    isBento
+                                        ? 'bg-blue-100 text-blue-900 border-2 border-black font-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                                }`}>
                                     <span>📦</span> Bank: {poolProgress.seenCount}/{poolProgress.totalCount} ({poolProgress.percentage}%)
                                 </span>
                             )}
@@ -1088,15 +1113,26 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         <button
                             type="button"
                             onClick={() => setIsAICoachOpen(true)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase tracking-wider border border-indigo-500/25 transition-all cursor-pointer shadow-sm active:scale-[0.985]"
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-white hover:bg-purple-50 text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] active:translate-y-0.5'
+                                    : 'glass-card hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 shadow-sm active:scale-[0.985]'
+                            }`}
                         >
-                            <Bot className="w-4 h-4 text-indigo-500" />
+                            <Bot className={`w-4 h-4 ${isBento ? 'text-black' : 'text-indigo-500'}`} />
                             <span className="hidden sm:inline">AI Coach</span>
                         </button>
 
                         {/* Shop Button */}
                         {!hidePowerUps && (
-                            <button onClick={() => setShowShop(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider border border-amber-500/25 transition-all cursor-pointer shadow-sm active:scale-[0.985]">
+                            <button
+                                onClick={() => setShowShop(true)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
+                                    isBento
+                                        ? 'bg-white hover:bg-amber-50 text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] active:translate-y-0.5'
+                                        : 'glass-card hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shadow-sm active:scale-[0.985]'
+                                }`}
+                            >
                                 <ShoppingBag className="w-4 h-4" />
                                 <span className="hidden sm:inline">Store</span>
                             </button>
@@ -1106,11 +1142,16 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         {(() => {
                             const urgent = !countUpTimer && timeLeft < 30 && !isUnlimitedTime;
                             return (
-                                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-tabular font-extrabold border transition-all ${urgent
-                                    ? 'bg-rose-500/15 border-rose-500/40 text-rose-600 dark:text-rose-400 animate-pulse'
-                                    : 'glass-card border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200'
+                                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-tabular font-extrabold border transition-all ${
+                                    urgent
+                                        ? isBento
+                                            ? 'bg-rose-200 border-2 border-black text-rose-950 shadow-[2px_2px_0px_#000] animate-pulse'
+                                            : 'bg-rose-500/15 border-rose-500/40 text-rose-600 dark:text-rose-400 animate-pulse'
+                                        : isBento
+                                            ? 'bg-white border-2 border-black text-black shadow-[2px_2px_0px_#000]'
+                                            : 'glass-card border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200'
                                     }`}>
-                                    <Clock className={`w-3.5 h-3.5 ${urgent ? 'animate-spin' : 'text-slate-400'}`} />
+                                    <Clock className={`w-3.5 h-3.5 ${urgent ? 'animate-spin' : isBento ? 'text-black' : 'text-slate-400'}`} />
                                     <span className="tabular-nums text-xs sm:text-sm">
                                         {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                                     </span>
@@ -1124,125 +1165,153 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             {/* --- HORIZONTAL SPLIT LAYOUT --- */}
             <div className={`flex-1 flex flex-col landscape:flex-row lg:flex-row w-full ${embedded ? '' : 'z-10'} overflow-y-auto landscape:overflow-hidden lg:overflow-hidden`}>
                 {/* --- LEFT SIDE: Question Context --- */}
-                <div className="w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col bg-white/70 dark:bg-white/[0.02] backdrop-blur-xl border-b landscape:border-b-0 landscape:border-r lg:border-r border-slate-200/80 dark:border-white/[0.06] relative z-20 landscape:sticky landscape:top-0 lg:sticky lg:top-0 landscape:overflow-y-auto lg:overflow-y-auto no-scrollbar">
+                <div className={`w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col ${
+                    isBento
+                        ? 'bg-white dark:bg-[#0b0f19] border-b-2 landscape:border-b-0 landscape:border-r-2 lg:border-r-2 border-black dark:border-white/20'
+                        : 'bg-white/70 dark:bg-white/[0.02] backdrop-blur-xl border-b landscape:border-b-0 landscape:border-r lg:border-r border-slate-200/80 dark:border-white/[0.06]'
+                } relative z-20 landscape:sticky landscape:top-0 lg:sticky lg:top-0 landscape:overflow-y-auto lg:overflow-y-auto no-scrollbar`}>
                     
-                    {/* Progress Header */}
-                    <div className="flex items-center justify-between p-4 px-5 sm:p-6 pb-2">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Question</span>
-                            <span className="font-tabular text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">{currentQuestion + 1} / {quiz.questions.length}</span>
-                        </div>
-                        <div className="font-tabular font-extrabold text-xs sm:text-sm text-indigo-600 dark:text-indigo-400">{Math.round(progressPercentage)}%</div>
-                    </div>
-
-                    {/* Progress Bar Line */}
-                    <div className="px-5 sm:px-6 pb-3 sm:pb-4 border-b border-slate-200/60 dark:border-white/[0.06]">
-                        <div className="h-1.5 w-full bg-slate-200/60 dark:bg-white/10 rounded-full overflow-hidden flex">
-                            <div className="h-full bg-indigo-600 rounded-full transition-all duration-300" style={{ width: `${progressPercentage}%` }}></div>
-                        </div>
-                    </div>
-
-                    {/* Real-time Language & Translation Toolbar */}
-                    <div className="px-5 sm:px-8 lg:px-12 pt-3 sm:pt-4">
-                        <QuestionTranslatorBar
-                            currentLanguage={selectedLanguage}
-                            isTranslating={isTranslating}
-                            isTranslated={isTranslated && selectedLanguage !== 'original'}
-                            autoTranslate={autoTranslate}
-                            onSelectLanguage={handleSelectLanguage}
-                            onToggleOriginal={handleToggleOriginal}
-                            onToggleAutoTranslate={handleToggleAutoTranslate}
-                        />
-                    </div>
-
-                    {/* Question Content */}
-                    <div
-                        dir={isCurrentRtl ? 'rtl' : 'ltr'}
-                        className={`flex-none landscape:flex-1 landscape:overflow-y-auto px-5 sm:px-8 lg:px-12 pb-24 landscape:pb-28 lg:landscape:pb-28 flex flex-col pt-4 sm:pt-8 landscape:pt-3 lg:landscape:pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
-                        
-                        {/* Translated Indicator Badge */}
-                        {isTranslated && selectedLanguage !== 'original' && (
-                            <div className={`flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-2 ${isCurrentRtl ? 'justify-end' : 'justify-start'}`}>
-                                <Globe className="w-3.5 h-3.5 shrink-0" />
-                                <span>Translated to {getLanguageByCode(selectedLanguage).name} ({getLanguageByCode(selectedLanguage).nativeName})</span>
+                    <div className="w-full max-w-2xl lg:ml-auto flex flex-col flex-1">
+                        {/* Progress Header */}
+                        <div className="flex items-center justify-between p-4 px-5 sm:px-8 lg:px-10 pb-2">
+                            <div className="flex items-center gap-2">
+                                <span className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider ${isBento ? 'text-slate-600 dark:text-slate-300 font-black' : 'text-slate-400'}`}>Question</span>
+                                <span className="font-tabular text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">{currentQuestion + 1} / {quiz.questions.length}</span>
                             </div>
-                        )}
+                            <div className={`font-tabular font-extrabold text-xs sm:text-sm ${isBento ? 'text-purple-700 dark:text-purple-300 font-black' : 'text-indigo-600 dark:text-indigo-400'}`}>{Math.round(progressPercentage)}%</div>
+                        </div>
 
-                        <h2 className={`text-xl sm:text-2xl lg:text-[32px] landscape:text-base lg:landscape:text-[32px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight mb-4 sm:mb-8 landscape:mb-2 lg:landscape:mb-8 ${isCurrentRtl ? 'text-right' : 'text-left'}`}>
-                            <MathRenderer text={displayQuestionText} />
-                        </h2>
-
-                        {/* Image */}
-                        {q.imageUrl && (
-                            <img src={q.imageUrl} alt="Reference" className="w-full rounded-2xl mb-8 object-cover max-h-64 shadow-lg border border-gray-100 dark:border-gray-800" />
-                        )}
-
-                        {/* Audio / Video Question Prompt */}
-                        {(q.audioUrl || q.videoUrl) && (
-                            <MediaPromptPlayer
-                                audioUrl={q.audioUrl}
-                                videoUrl={q.videoUrl}
-                                videoTimestamp={q.videoTimestamp}
-                            />
-                        )}
-
-                        {/* Code Snippet Preview */}
-                        {q.codeSnippet && q.type !== 'code-output' && (
-                            <div className="bg-[#F6F7F8] dark:bg-[#0d0d1a] border border-gray-100 dark:border-[#1f2937] rounded-2xl overflow-hidden shadow-[inset_0_2px_8px_rgba(0,0,0,0.05)] dark:shadow-inner mb-6">
-                                <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-[#1f2937] bg-white dark:bg-[#111827]">
-                                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                                </div>
-                                <pre className="p-6 font-mono text-sm lg:text-base text-indigo-600 dark:text-emerald-400 whitespace-pre-wrap font-medium overflow-x-auto leading-relaxed">
-                                    {q.codeSnippet}
-                                </pre>
-                            </div>
-                        )}
-
-                        {/* Explanation Card */}
-                        {questionSubmitted && !delayedValidation && (
-                            <div className={`mt-6 p-6 rounded-2xl border backdrop-blur-md transition-all animate-in fade-in slide-in-from-bottom-4 duration-300 ${
-                                isCurrentAnswerCorrect 
-                                ? 'bg-green-500/5 border-green-500/20 text-green-950 dark:text-green-100 shadow-lg shadow-green-500/5' 
-                                : 'bg-red-500/5 border-red-500/20 text-red-950 dark:text-red-100 shadow-lg shadow-red-500/5'
+                        {/* Progress Bar Line */}
+                        <div className="px-5 sm:px-8 lg:px-10 pb-3 sm:pb-4 border-b border-slate-200/60 dark:border-white/[0.06]">
+                            <div className={`w-full rounded-full overflow-hidden flex ${
+                                isBento
+                                    ? 'h-2.5 bg-slate-100 dark:bg-white/10 border-1.5 border-black'
+                                    : 'h-1.5 bg-slate-200/60 dark:bg-white/10'
                             }`}>
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className={`p-2 rounded-xl ${isCurrentAnswerCorrect ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                                        {isCurrentAnswerCorrect ? <CheckCircle className="w-5 h-5"/> : <XCircle className="w-5 h-5"/>}
-                                    </div>
-                                    <h4 className="text-lg font-black tracking-tight">
-                                        {isCurrentAnswerCorrect ? 'Excellent! Correct Answer' : 'Incorrect Answer'}
-                                    </h4>
-                                </div>
-
-                                {displayExplanationText ? (
-                                    <div className="pt-3 border-t border-gray-200/50 dark:border-white/5">
-                                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">
-                                            <Lightbulb className="w-3.5 h-3.5 text-yellow-500 animate-pulse"/>
-                                            <span>Explanation</span>
-                                        </div>
-                                        <MathRenderer text={displayExplanationText} className={`text-sm leading-relaxed opacity-90 font-medium ${isCurrentRtl ? 'text-right' : 'text-left'}`} />
-                                    </div>
-                                ) : (
-                                    <div className="pt-3 border-t border-gray-200/50 dark:border-white/5 text-xs text-gray-400 italic">
-                                        No explanation provided for this question.
-                                    </div>
-                                )}
+                                <div className={`h-full rounded-full transition-all duration-300 ${isBento ? 'bg-[#8b5cf6]' : 'bg-indigo-600'}`} style={{ width: `${progressPercentage}%` }}></div>
                             </div>
-                        )}
-                        
-                        <div className="flex-1 min-h-[40px]"></div> {/* Spacer */}
+                        </div>
 
+                        {/* Real-time Language & Translation Toolbar */}
+                        <div className="px-5 sm:px-8 lg:px-10 pt-3 sm:pt-4">
+                            <QuestionTranslatorBar
+                                currentLanguage={selectedLanguage}
+                                isTranslating={isTranslating}
+                                isTranslated={isTranslated && selectedLanguage !== 'original'}
+                                autoTranslate={autoTranslate}
+                                onSelectLanguage={handleSelectLanguage}
+                                onToggleOriginal={handleToggleOriginal}
+                                onToggleAutoTranslate={handleToggleAutoTranslate}
+                            />
+                        </div>
+
+                        {/* Question Content */}
+                        <div
+                            dir={isCurrentRtl ? 'rtl' : 'ltr'}
+                            className={`flex-1 landscape:overflow-y-auto px-5 sm:px-8 lg:px-10 pb-28 landscape:pb-32 lg:landscape:pb-32 flex flex-col pt-5 sm:pt-8 landscape:pt-4 lg:landscape:pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
+                            
+                            {/* Translated Indicator Badge */}
+                            {isTranslated && selectedLanguage !== 'original' && (
+                                <div className={`flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-2 ${isCurrentRtl ? 'justify-end' : 'justify-start'}`}>
+                                    <Globe className="w-3.5 h-3.5 shrink-0" />
+                                    <span>Translated to {getLanguageByCode(selectedLanguage).name} ({getLanguageByCode(selectedLanguage).nativeName})</span>
+                                </div>
+                            )}
+
+                            <h2 className={`text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] landscape:text-base lg:landscape:text-[28px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight mb-4 sm:mb-6 ${isCurrentRtl ? 'text-right' : 'text-left'}`}>
+                                <MathRenderer text={displayQuestionText} />
+                            </h2>
+
+                            {/* Image */}
+                            {q.imageUrl && (
+                                <img src={q.imageUrl} alt="Reference" className={`w-full rounded-2xl mb-8 object-cover max-h-64 ${isBento ? 'border-2 border-black shadow-[3px_3px_0px_#000]' : 'shadow-lg border border-gray-100 dark:border-gray-800'}`} />
+                            )}
+
+                            {/* Audio / Video Question Prompt */}
+                            {(q.audioUrl || q.videoUrl) && (
+                                <MediaPromptPlayer
+                                    audioUrl={q.audioUrl}
+                                    videoUrl={q.videoUrl}
+                                    videoTimestamp={q.videoTimestamp}
+                                />
+                            )}
+
+                            {/* Code Snippet Preview */}
+                            {q.codeSnippet && q.type !== 'code-output' && (
+                                <div className={`rounded-2xl overflow-hidden mb-6 ${
+                                    isBento
+                                        ? 'bg-[#f8fafc] dark:bg-[#0d0d1a] border-2 border-black shadow-[3px_3px_0px_#000]'
+                                        : 'bg-[#F6F7F8] dark:bg-[#0d0d1a] border border-gray-100 dark:border-[#1f2937] shadow-[inset_0_2px_8px_rgba(0,0,0,0.05)] dark:shadow-inner'
+                                }`}>
+                                    <div className={`flex items-center gap-2 px-4 py-3 border-b ${isBento ? 'border-black bg-white dark:bg-[#111827]' : 'border-gray-200 dark:border-[#1f2937] bg-white dark:bg-[#111827]'}`}>
+                                        <div className="w-3 h-3 rounded-full bg-red-400 border border-black/20"></div>
+                                        <div className="w-3 h-3 rounded-full bg-yellow-400 border border-black/20"></div>
+                                        <div className="w-3 h-3 rounded-full bg-green-400 border border-black/20"></div>
+                                    </div>
+                                    <pre className="p-6 font-mono text-sm lg:text-base text-indigo-600 dark:text-emerald-400 whitespace-pre-wrap font-medium overflow-x-auto leading-relaxed">
+                                        {q.codeSnippet}
+                                    </pre>
+                                </div>
+                            )}
+
+                            {/* Explanation Card */}
+                            {questionSubmitted && !delayedValidation && (
+                                <div className={`mt-6 p-6 rounded-2xl transition-all animate-in fade-in slide-in-from-bottom-4 duration-300 ${
+                                    isBento
+                                        ? isCurrentAnswerCorrect
+                                            ? 'bg-[#dcfce7] border-2 border-black shadow-[4px_4px_0px_#000] text-black'
+                                            : 'bg-[#fee2e2] border-2 border-black shadow-[4px_4px_0px_#000] text-black'
+                                        : isCurrentAnswerCorrect 
+                                            ? 'bg-green-500/5 border-green-500/20 text-green-950 dark:text-green-100 shadow-lg shadow-green-500/5 backdrop-blur-md' 
+                                            : 'bg-red-500/5 border-red-500/20 text-red-950 dark:text-red-100 shadow-lg shadow-red-500/5 backdrop-blur-md'
+                                }`}>
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className={`p-2 rounded-xl ${
+                                            isBento
+                                                ? isCurrentAnswerCorrect
+                                                    ? 'bg-emerald-500 text-white border-2 border-black font-black'
+                                                    : 'bg-rose-500 text-white border-2 border-black font-black'
+                                                : isCurrentAnswerCorrect ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+                                        }`}>
+                                            {isCurrentAnswerCorrect ? <CheckCircle className="w-5 h-5"/> : <XCircle className="w-5 h-5"/>}
+                                        </div>
+                                        <h4 className="text-lg font-black tracking-tight">
+                                            {isCurrentAnswerCorrect ? 'Excellent! Correct Answer' : 'Incorrect Answer'}
+                                        </h4>
+                                    </div>
+
+                                    {displayExplanationText ? (
+                                        <div className={`pt-3 border-t ${isBento ? 'border-black/20' : 'border-gray-200/50 dark:border-white/5'}`}>
+                                            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+                                                <Lightbulb className="w-3.5 h-3.5 text-yellow-500 animate-pulse"/>
+                                                <span>Explanation</span>
+                                            </div>
+                                            <MathRenderer text={displayExplanationText} className={`text-sm leading-relaxed opacity-90 font-medium ${isCurrentRtl ? 'text-right' : 'text-left'}`} />
+                                        </div>
+                                    ) : (
+                                        <div className="pt-3 border-t border-gray-200/50 dark:border-white/5 text-xs text-gray-400 italic">
+                                            No explanation provided for this question.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            
+                            <div className="flex-1 min-h-[40px]"></div> {/* Spacer */}
+
+                        </div>
                     </div>
                 </div>
 
                 {/* --- RIGHT SIDE: Answer Options --- */}
-                <div className="w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col bg-transparent lg:bg-white/40 dark:bg-[#0b0f19] relative z-10">
+                <div className={`w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col ${
+                    isBento 
+                        ? 'bg-[#f8fafc] dark:bg-[#030712]' 
+                        : 'bg-transparent lg:bg-white/40 dark:bg-[#0b0f19]'
+                } relative z-10 landscape:overflow-y-auto lg:overflow-y-auto no-scrollbar`}>
                     <div
                         role="radiogroup"
                         aria-label={`Options for Question ${currentQuestion + 1}`}
-                        className="flex-1 landscape:overflow-y-auto p-5 sm:p-8 lg:p-12 pt-10 sm:pt-12 landscape:pt-6 pb-24 landscape:pb-28 lg:landscape:pb-28 flex flex-col justify-start lg:justify-center gap-3 sm:gap-4 no-scrollbar"
+                        className="flex-1 w-full max-w-2xl lg:mr-auto p-5 sm:px-8 lg:px-10 pt-5 sm:pt-8 landscape:pt-4 lg:landscape:pt-8 pb-28 landscape:pb-32 lg:landscape:pb-32 flex flex-col justify-start gap-3 sm:gap-3.5 no-scrollbar"
                     >
                         {q.isCompiler ? (
                             <Suspense fallback={<div className="animate-spin w-8 h-8 border-4 border-indigo-500 rounded-full border-t-transparent mx-auto"></div>}>
@@ -1299,27 +1368,43 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 const label = letters[visualIndex] || (visualIndex + 1);
 
                                 // Dynamic classes based on state
-                                const baseClass = "group relative flex items-center p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all duration-200 w-full text-left border shadow-sm font-semibold mb-1 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none glass-card";
-                                let stateClass = "bg-white/80 dark:bg-white/[0.03] border-slate-200/80 dark:border-white/10 hover:border-indigo-500/40 hover:bg-slate-100/60 dark:hover:bg-white/[0.06] text-slate-800 dark:text-slate-200 active:scale-[0.99]";
-                                let textClass = "text-slate-800 dark:text-slate-200";
-                                let badgeClass = "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400 group-hover:bg-indigo-500/15 group-hover:text-indigo-600 dark:group-hover:text-indigo-400";
+                                const baseClass = isBento
+                                    ? "group relative flex items-center p-4 sm:p-4.5 rounded-2xl cursor-pointer transition-all duration-150 w-full text-left font-bold border-2.5 border-black dark:border-white/30 focus-visible:outline-none select-none mb-1"
+                                    : "group relative flex items-center p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all duration-200 w-full text-left border shadow-sm font-semibold mb-1 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none";
+                                
+                                let stateClass = isBento
+                                    ? "bg-white dark:bg-[#1e293b] text-black dark:text-white shadow-[4px_4px_0px_#000] hover:shadow-[5px_5px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_#000]"
+                                    : "bg-white/80 dark:bg-white/[0.03] border-slate-200/80 dark:border-white/10 hover:border-indigo-500/40 hover:bg-slate-100/60 dark:hover:bg-white/[0.06] text-slate-800 dark:text-slate-200 active:scale-[0.99]";
+                                
+                                let textClass = isBento ? "text-black dark:text-white font-bold" : "text-slate-800 dark:text-slate-200";
+                                let badgeClass = isBento
+                                    ? "bg-slate-100 text-black border-2 border-black font-black"
+                                    : "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400 group-hover:bg-indigo-500/15 group-hover:text-indigo-600 dark:group-hover:text-indigo-400";
                                 
                                 if (showSuccess) {
-                                    stateClass = "bg-emerald-500/10 border-emerald-500 ring-2 ring-emerald-500/40 shadow-lg shadow-emerald-500/10 text-emerald-900 dark:text-emerald-200 scale-[1.01] z-10";
-                                    badgeClass = "bg-emerald-500 text-white";
-                                    textClass = "text-emerald-900 dark:text-emerald-200 font-bold";
+                                    stateClass = isBento
+                                        ? "bg-[#bbf7d0] text-black border-2.5 border-black shadow-[4px_4px_0px_#000] ring-2 ring-emerald-600 scale-[1.01] z-10"
+                                        : "bg-emerald-500/10 border-emerald-500 ring-2 ring-emerald-500/40 shadow-lg shadow-emerald-500/10 text-emerald-900 dark:text-emerald-200 scale-[1.01] z-10";
+                                    badgeClass = isBento ? "bg-emerald-500 text-white border-2 border-black font-black" : "bg-emerald-500 text-white";
+                                    textClass = isBento ? "text-black font-extrabold" : "text-emerald-900 dark:text-emerald-200 font-bold";
                                 } else if (showWrong) {
-                                    stateClass = "bg-rose-500/10 border-rose-500 ring-2 ring-rose-500/40 shadow-lg shadow-rose-500/10 text-rose-900 dark:text-rose-200 scale-[1.01] z-10";
-                                    badgeClass = "bg-rose-500 text-white";
-                                    textClass = "text-rose-900 dark:text-rose-200";
+                                    stateClass = isBento
+                                        ? "bg-[#fecdd3] text-black border-2.5 border-black shadow-[4px_4px_0px_#000] ring-2 ring-rose-600 scale-[1.01] z-10"
+                                        : "bg-rose-500/10 border-rose-500 ring-2 ring-rose-500/40 shadow-lg shadow-rose-500/10 text-rose-900 dark:text-rose-200 scale-[1.01] z-10";
+                                    badgeClass = isBento ? "bg-rose-500 text-white border-2 border-black font-black" : "bg-rose-500 text-white";
+                                    textClass = isBento ? "text-black font-extrabold" : "text-rose-900 dark:text-rose-200";
                                 } else if (showCorrect) {
-                                    stateClass = "bg-emerald-500/5 border-emerald-500/60 text-emerald-800 dark:text-emerald-300";
-                                    badgeClass = "bg-emerald-500 text-white";
-                                    textClass = "text-emerald-800 dark:text-emerald-300";
+                                    stateClass = isBento
+                                        ? "bg-[#dcfce7] text-black border-2.5 border-black shadow-[3px_3px_0px_#000]"
+                                        : "bg-emerald-500/5 border-emerald-500/60 text-emerald-800 dark:text-emerald-300";
+                                    badgeClass = isBento ? "bg-emerald-500 text-white border-2 border-black font-black" : "bg-emerald-500 text-white";
+                                    textClass = isBento ? "text-black font-bold" : "text-emerald-800 dark:text-emerald-300";
                                 } else if (isSelected) {
-                                    stateClass = "bg-indigo-500/10 border-indigo-600 dark:border-indigo-500 ring-2 ring-indigo-500/40 shadow-lg shadow-indigo-500/10 text-indigo-900 dark:text-white scale-[1.01] z-10";
-                                    badgeClass = "bg-indigo-600 text-white";
-                                    textClass = "text-indigo-900 dark:text-indigo-100 font-bold";
+                                    stateClass = isBento
+                                        ? "bg-[#ddd6fe] text-black border-2.5 border-black shadow-[4px_4px_0px_#000] ring-2 ring-purple-600 scale-[1.01] z-10"
+                                        : "bg-indigo-500/10 border-indigo-600 dark:border-indigo-500 ring-2 ring-indigo-500/40 shadow-lg shadow-indigo-500/10 text-indigo-900 dark:text-white scale-[1.01] z-10";
+                                    badgeClass = isBento ? "bg-[#8b5cf6] text-white border-2 border-black font-black" : "bg-indigo-600 text-white";
+                                    textClass = isBento ? "text-black font-extrabold" : "text-indigo-900 dark:text-indigo-100 font-bold";
                                 }
 
                                 return (
@@ -1339,7 +1424,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                         </div>
                                         <MathRenderer text={option} className={`flex-1 text-sm sm:text-base ${isCurrentRtl ? 'text-right' : 'text-left'} leading-relaxed ${textClass}`} />
                                         <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                                            <kbd className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-[10px] font-mono text-slate-400">
+                                            <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isBento ? 'bg-black/10 text-black border border-black/20' : 'bg-black/5 dark:bg-white/10 text-slate-400'}`}>
                                                 {visualIndex + 1}
                                             </kbd>
                                         </div>
@@ -1357,22 +1442,32 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             </div>
 
             {/* Bottom Action Footer Overlay */}
-            <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 glass-panel border-t border-slate-200/80 dark:border-white/10 z-30 w-full shadow-lg flex items-center justify-between pointer-events-auto pb-safe pl-safe pr-safe">
+            <div className={`fixed bottom-0 left-0 right-0 p-3 sm:p-4 z-30 w-full flex items-center justify-between pointer-events-auto pb-safe pl-safe pr-safe ${
+                isBento
+                    ? 'bg-white dark:bg-[#0f172a] border-t-2 border-black dark:border-white/20 shadow-[0px_-4px_12px_rgba(0,0,0,0.06)]'
+                    : 'glass-panel border-t border-slate-200/80 dark:border-white/10 shadow-lg'
+            }`}>
                 {!isMobileDevice && (
-                    <div className="hidden lg:flex text-slate-500 dark:text-slate-400 font-medium items-center gap-2 bg-slate-100/60 dark:bg-white/[0.03] px-3.5 py-2 rounded-xl border border-slate-200/60 dark:border-white/5 text-xs">
+                    <div className={`hidden lg:flex font-medium items-center gap-2 px-3.5 py-2 rounded-xl text-xs ${
+                        isBento
+                            ? 'bg-slate-100 text-black border-2 border-black font-bold'
+                            : 'text-slate-500 dark:text-slate-400 bg-slate-100/60 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/5'
+                    }`}>
                         {q && q.options && !q.isCompiler && (
                             <>
-                                <span className="px-2 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-[10px] font-bold text-slate-600 dark:text-slate-400 font-tabular">1-{q.options.length}</span>
-                                <span className="px-2 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-[10px] font-bold text-slate-600 dark:text-slate-400">A-{String.fromCharCode(65 + q.options.length - 1)}</span> 
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-tabular ${isBento ? 'border border-black bg-white text-black' : 'border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400'}`}>1-{q.options.length}</span>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isBento ? 'border border-black bg-white text-black' : 'border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400'}`}>A-{String.fromCharCode(65 + q.options.length - 1)}</span> 
                                 <span>select,</span> 
                             </>
                         )}
-                        <span className="px-2 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-[10px] font-bold text-slate-600 dark:text-slate-400">←</span> <span>back,</span>
-                        <span className="px-2 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-[10px] font-bold text-slate-600 dark:text-slate-400">Enter ↵</span> <span>advance</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isBento ? 'border border-black bg-white text-black' : 'border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400'}`}>←</span> <span>back,</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isBento ? 'border border-black bg-white text-black' : 'border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400'}`}>Enter ↵</span> <span>advance</span>
                         <button
                             type="button"
                             onClick={() => setShowKeyboardShortcuts(true)}
-                            className="ml-2 text-indigo-600 dark:text-indigo-400 hover:underline text-xs font-bold flex items-center gap-1 cursor-pointer"
+                            className={`ml-2 text-xs font-bold flex items-center gap-1 cursor-pointer hover:underline ${
+                                isBento ? 'text-purple-700 font-black' : 'text-indigo-600 dark:text-indigo-400'
+                            }`}
                         >
                             <Keyboard className="w-3.5 h-3.5" />
                             <span>Shortcuts</span>
@@ -1392,7 +1487,11 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     <button
                         onClick={previousQuestion}
                         disabled={currentQuestion === 0 || isSubmitting}
-                        className="flex-1 sm:flex-none px-5 py-2.5 glass-card hover:bg-slate-100/80 dark:hover:bg-white/[0.08] disabled:opacity-40 text-slate-700 dark:text-slate-200 font-bold text-xs uppercase tracking-wider rounded-xl border border-slate-200 dark:border-white/10 shadow-sm transition-all active:scale-[0.985] flex items-center justify-center gap-2 cursor-pointer"
+                        className={`flex-1 sm:flex-none px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                            isBento
+                                ? 'bg-white text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_#000] disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0px_#000]'
+                                : 'glass-card hover:bg-slate-100/80 dark:hover:bg-white/[0.08] disabled:opacity-40 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 shadow-sm active:scale-[0.985]'
+                        }`}
                     >
                         <span>←</span>
                         Previous
@@ -1401,7 +1500,11 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         <button
                             onClick={nextQuestion}
                             disabled={answers[actualIndex] === undefined || (quiz.reviewMode !== false && !delayedValidation && !questionSubmitted)}
-                            className="flex-1 sm:flex-none px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/25 transition-all active:scale-[0.985] flex items-center justify-center gap-2 cursor-pointer"
+                            className={`flex-1 sm:flex-none px-6 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                                isBento
+                                    ? 'bg-[#8b5cf6] hover:bg-[#7c3aed] text-white border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_#000] disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0px_#000]'
+                                    : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white shadow-lg shadow-indigo-600/25 active:scale-[0.985]'
+                            }`}
                         >
                             <span>{questionSubmitted && !delayedValidation ? 'Continue' : 'Next Question'}</span>
                             <span>→</span>
@@ -1411,7 +1514,11 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         <button
                             onClick={handleQuizComplete}
                             disabled={answers[actualIndex] === undefined}
-                            className="flex-1 sm:flex-none px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-600/25 transition-all active:scale-[0.985] flex items-center justify-center gap-2 cursor-pointer"
+                            className={`flex-1 sm:flex-none px-6 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                                isBento
+                                    ? 'bg-[#22c55e] hover:bg-[#16a34a] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_#000] disabled:opacity-40'
+                                    : 'bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white shadow-lg shadow-emerald-600/25 active:scale-[0.985]'
+                            }`}
                         >
                             <span>{isSubmitting ? 'Submitting...' : 'Finish Quiz'}</span>
                             <Target className="w-4 h-4"/>

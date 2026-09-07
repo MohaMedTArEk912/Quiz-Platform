@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Gamepad2, X, Trophy, Flame, ArrowRight } from 'lucide-react';
 import { sounds } from '../../lib/soundEffects';
 import { useTheme } from '../../context/ThemeContext';
@@ -10,7 +10,10 @@ interface LivePlayerControllerProps {
 }
 
 export const LivePlayerController: React.FC<LivePlayerControllerProps> = ({ onBack, onClose }) => {
-    const handleClose = onClose || onBack || (() => {});
+    const handleClose = useCallback(() => {
+        if (onClose) onClose();
+        else if (onBack) onBack();
+    }, [onClose, onBack]);
     const { isBento } = useTheme();
     const { currentUser } = useAuth();
 

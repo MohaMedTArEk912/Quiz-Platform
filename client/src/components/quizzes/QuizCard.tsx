@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Edit2, Trash2, Share2, Play, Eye, EyeOff } from 'lucide-react';
+import { Download, Edit2, Trash2, Share2, Play, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import type { Quiz } from '../../types';
 import { getQuizIconOption } from '../../utils/quizIcons';
 import { useTheme } from '../../context/ThemeContext';
@@ -12,9 +12,10 @@ interface QuizCardProps {
     onShare: (quiz: Quiz) => void;
     onPlay?: (quiz: Quiz) => void;
     onHost?: (quiz: Quiz) => void;
+    onReplace?: (quiz: Quiz) => void;
 }
 
-const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, onShare, onPlay, onHost }) => {
+const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, onShare, onPlay, onHost, onReplace }) => {
     const { isBento } = useTheme();
     const quizIcon = getQuizIconOption(quiz.icon);
     const QuizIcon = quizIcon.Icon;
@@ -66,6 +67,15 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, o
                 : 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/20',
             title: 'Export this quiz'
         },
+        onReplace ? {
+            label: 'Replace',
+            icon: RefreshCw,
+            action: () => onReplace(quiz),
+            style: isBento
+                ? 'bg-[#67e8f9] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
+                : 'bg-cyan-100 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-200 dark:hover:bg-cyan-500/20 border border-cyan-500/20',
+            title: 'Replace this quiz questions & content with a JSON file'
+        } : null,
         {
             label: 'Edit',
             icon: Edit2,
@@ -98,35 +108,38 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, o
                         <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-transform group-hover:scale-105 ${
                             isBento
                                 ? 'bg-[#bef264] text-black border-2.5 border-black shadow-[3px_3px_0px_#000]'
-                                : 'bg-gradient-to-br from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20'
+                                : 'bg-gradient-to-br from-purple-500/10 to-indigo-500/10 text-purple-600 dark:text-purple-400'
                         }`}>
-                            <QuizIcon className={`h-6 w-6 ${isBento ? 'stroke-[2.5]' : ''}`} />
+                            <QuizIcon className="h-6 w-6" />
                         </div>
-                        <div className="min-w-0 flex-1">
-                            <h3 className={`truncate text-lg font-bold transition-colors ${
-                                isBento
-                                    ? 'text-black font-black group-hover:text-indigo-600'
-                                    : 'text-gray-900 group-hover:text-purple-600 dark:text-white dark:group-hover:text-purple-400'
-                            }`}>
+                        <div className="min-w-0">
+                            <h3 className={`text-base font-black truncate ${
+                                isBento ? 'text-black font-mono' : 'text-gray-900 dark:text-white'
+                            }`} title={quiz.title}>
                                 {quiz.title}
                             </h3>
-                            <p className={`mt-1 text-sm ${isBento ? 'text-slate-700 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
-                                {isPool
-                                    ? `${quiz.questions?.length || 0} Pool Qs (${quiz.questionsPerAttempt || 10} / attempt)`
-                                    : `${quiz.questions?.length || 0} Questions`} • {quiz.timeLimit === 0 ? 'Unlimited' : `${quiz.timeLimit}m`}
+                            <p className={`mt-0.5 text-xs font-semibold ${
+                                isBento ? 'text-gray-600 font-mono' : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                                {quiz.questions?.length || 0} Questions · {quiz.timeLimit}m
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex shrink-0 flex-col items-end gap-2">
-                        <div className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
-                            isBento
-                                ? (quiz.isVisible === false ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-[#d9f99d] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]')
-                                : (quiz.isVisible === false ? 'border border-red-200 bg-red-50 text-red-600 dark:border-red-800/50 dark:bg-red-500/10 dark:text-red-300' : 'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/50 dark:bg-emerald-500/10 dark:text-emerald-300')
-                        }`} title={quiz.isVisible === false ? 'Hidden from students' : 'Visible to students'}>
-                            {quiz.isVisible === false ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                            quiz.isVisible === false
+                                ? isBento
+                                    ? 'bg-gray-200 text-gray-700 border border-black'
+                                    : 'bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400'
+                                : isBento
+                                    ? 'bg-[#86efac] text-black border border-black'
+                                    : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                        }`}>
+                            {quiz.isVisible === false ? <EyeOff className="w-2.5 h-2.5" /> : <Eye className="w-2.5 h-2.5" />}
                             {quiz.isVisible === false ? 'Hidden' : 'Visible'}
-                        </div>
+                        </span>
+
                         <div className={`rounded-lg px-2.5 py-1 text-[10px] uppercase tracking-wider ${
                             isBento
                                 ? 'bg-[#fef9c3] text-black font-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
@@ -144,7 +157,7 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, o
                     </div>
                 </div>
 
-                <div className="mt-auto grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+                <div className="mt-auto grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
                     {actionButtons.map(({ label, icon: Icon, action, style, title }) => (
                         <button
                             key={label}

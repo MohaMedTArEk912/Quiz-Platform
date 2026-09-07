@@ -33,8 +33,7 @@ const getGroqClient = () => {
 const getGroqModels = () => {
   const envModel = process.env.GROQ_MODEL;
   const models = [
-    'llama-3.3-70b-versatile',
-    'llama-3.1-70b-versatile',
+    'qwen/qwen3.6-27b',
     'llama-3.1-8b-instant',
     'mixtral-8x7b-32768'
   ];

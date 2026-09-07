@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../context/NotificationContext';
 import { LoginPromptModal } from '../components/LoginPromptModal';
 import { GUEST_USER } from '../constants/appDefaults';
+import type { Quiz } from '../types';
 
 const DashboardPage: React.FC = () => {
     const { logout, refreshUser, currentUser } = useAuth();
@@ -26,7 +27,7 @@ const DashboardPage: React.FC = () => {
     const activeUser = userWithRank || currentUser || GUEST_USER;
     const userAttempts = currentUser ? safeAttempts.filter(a => a.userId === currentUser.userId) : [];
 
-    const handleSelectQuiz = (quiz: any) => {
+    const handleSelectQuiz = (quiz: Quiz) => {
         const quizId = quiz.id || quiz._id;
         if (!quizId) {
             console.error('Quiz missing ID:', quiz);
