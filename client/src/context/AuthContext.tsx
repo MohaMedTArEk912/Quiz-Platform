@@ -25,6 +25,11 @@ export const useAuth = () => {
     return context;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
+export const useOptionalAuth = () => {
+    return useContext(AuthContext);
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [currentUser, setCurrentUser] = useState<UserData | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);

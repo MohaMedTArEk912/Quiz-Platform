@@ -73,11 +73,12 @@ const ROUTE_METADATA: Record<string, RouteMetadata> = {
     }
 };
 
-import { useAuth } from '../context/AuthContext';
+import { useOptionalAuth } from '../context/AuthContext';
 
 export const usePageTitle = () => {
     const location = useLocation();
-    const { currentUser } = useAuth();
+    const auth = useOptionalAuth();
+    const currentUser = auth?.currentUser;
 
     useEffect(() => {
         const pathname = location.pathname;

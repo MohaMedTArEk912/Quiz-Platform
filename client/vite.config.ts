@@ -174,6 +174,9 @@ export default defineConfig({
     target: 'es2020',
     emptyOutDir: false,
 
+    // Disable HTML modulepreload injection to eliminate Chromium Service Worker cross-world mismatch warnings
+    modulePreload: false,
+
     // Enable minification
     minify: 'terser',
     terserOptions: {

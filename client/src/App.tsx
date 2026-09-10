@@ -75,8 +75,8 @@ const App: React.FC = () => {
     <ErrorBoundary>
       <Router>
         <ScrollToTop />
-        <PageTitleManager />
         <AuthProvider>
+          <PageTitleManager />
           <NotificationProvider>
             <SocketProvider>
               <DataProvider>
