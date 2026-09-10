@@ -662,61 +662,61 @@ button:active {
 /* 6. Dashboard Metric Trio (Yellow, Blue, Green Solid Neo-Brutalist Cards) */
 
 /* 6.1 Rank Card (Yellow) */
-[data-layout="bento"] .lg\:col-span-5 > div:nth-child(1),
-[data-theme="bento"] .lg\:col-span-5 > div:nth-child(1) {
+[data-layout="bento"] .lg\:col-span-5.grid > div:nth-child(1),
+[data-theme="bento"] .lg\:col-span-5.grid > div:nth-child(1) {
   background: var(--bento-yellow) !important;
   border: var(--bento-border) !important;
   box-shadow: var(--bento-shadow) !important;
 }
-[data-layout="bento"] .lg\:col-span-5 > div:nth-child(1) .w-9,
-[data-theme="bento"] .lg\:col-span-5 > div:nth-child(1) .w-9 {
+[data-layout="bento"] .lg\:col-span-5.grid > div:nth-child(1) .w-9,
+[data-theme="bento"] .lg\:col-span-5.grid > div:nth-child(1) .w-9 {
   background: #ffffff !important;
   border: 2px solid #000000 !important;
   box-shadow: 2px 2px 0px #000000 !important;
   color: #000000 !important;
 }
-[data-layout="bento"] .lg\:col-span-5 > div:nth-child(1) .font-tabular,
-[data-theme="bento"] .lg\:col-span-5 > div:nth-child(1) .font-tabular {
+[data-layout="bento"] .lg\:col-span-5.grid > div:nth-child(1) .font-tabular,
+[data-theme="bento"] .lg\:col-span-5.grid > div:nth-child(1) .font-tabular {
   color: #000000 !important;
   font-weight: 900 !important;
 }
 
 /* 6.2 Total Score Card (Blue) */
-[data-layout="bento"] .lg\:col-span-5 > div:nth-child(2),
-[data-theme="bento"] .lg\:col-span-5 > div:nth-child(2) {
+[data-layout="bento"] .lg\:col-span-5.grid > div:nth-child(2),
+[data-theme="bento"] .lg\:col-span-5.grid > div:nth-child(2) {
   background: var(--bento-blue) !important;
   border: var(--bento-border) !important;
   box-shadow: var(--bento-shadow) !important;
 }
-[data-layout="bento"] .lg\:col-span-5 > div:nth-child(2) .w-9,
-[data-theme="bento"] .lg\:col-span-5 > div:nth-child(2) .w-9 {
+[data-layout="bento"] .lg\:col-span-5.grid > div:nth-child(2) .w-9,
+[data-theme="bento"] .lg\:col-span-5.grid > div:nth-child(2) .w-9 {
   background: #ffffff !important;
   border: 2px solid #000000 !important;
   box-shadow: 2px 2px 0px #000000 !important;
   color: #000000 !important;
 }
-[data-layout="bento"] .lg\:col-span-5 > div:nth-child(2) .font-tabular,
-[data-theme="bento"] .lg\:col-span-5 > div:nth-child(2) .font-tabular {
+[data-layout="bento"] .lg\:col-span-5.grid > div:nth-child(2) .font-tabular,
+[data-theme="bento"] .lg\:col-span-5.grid > div:nth-child(2) .font-tabular {
   color: #000000 !important;
   font-weight: 900 !important;
 }
 
 /* 6.3 Total Quizzes Card (Green) */
-[data-layout="bento"] .lg\:col-span-5 > div:nth-child(3),
-[data-theme="bento"] .lg\:col-span-5 > div:nth-child(3) {
+[data-layout="bento"] .lg\:col-span-5.grid > div:nth-child(3),
+[data-theme="bento"] .lg\:col-span-5.grid > div:nth-child(3) {
   background: var(--bento-green) !important;
   border: var(--bento-border) !important;
   box-shadow: var(--bento-shadow) !important;
 }
-[data-layout="bento"] .lg\:col-span-5 > div:nth-child(3) .w-9,
-[data-theme="bento"] .lg\:col-span-5 > div:nth-child(3) .w-9 {
+[data-layout="bento"] .lg\:col-span-5.grid > div:nth-child(3) .w-9,
+[data-theme="bento"] .lg\:col-span-5.grid > div:nth-child(3) .w-9 {
   background: #ffffff !important;
   border: 2px solid #000000 !important;
   box-shadow: 2px 2px 0px #000000 !important;
   color: #000000 !important;
 }
-[data-layout="bento"] .lg\:col-span-5 > div:nth-child(3) .font-tabular,
-[data-theme="bento"] .lg\:col-span-5 > div:nth-child(3) .font-tabular {
+[data-layout="bento"] .lg\:col-span-5.grid > div:nth-child(3) .font-tabular,
+[data-theme="bento"] .lg\:col-span-5.grid > div:nth-child(3) .font-tabular {
   color: #000000 !important;
   font-weight: 900 !important;
 }
@@ -886,6 +886,8 @@ button:active {
 /* 10. Inputs, Search Bars & General Buttons */
 [data-layout="bento"] input,
 [data-theme="bento"] input,
+[data-layout="bento"] textarea,
+[data-theme="bento"] textarea,
 [data-layout="bento"] select,
 [data-theme="bento"] select {
   background: #ffffff !important;
@@ -896,14 +898,18 @@ button:active {
   font-weight: 700 !important;
 }
 [data-layout="bento"] input:focus,
-[data-theme="bento"] input:focus {
+[data-theme="bento"] input:focus,
+[data-layout="bento"] textarea:focus,
+[data-theme="bento"] textarea:focus {
   box-shadow: 5px 5px 0px #000000 !important;
   outline: none !important;
 }
 
 /* Primary Buttons across the app (LinkUp purple/green) */
 [data-layout="bento"] button.bg-indigo-600,
-[data-theme="bento"] button.bg-indigo-600 {
+[data-theme="bento"] button.bg-indigo-600,
+[data-layout="bento"] button[type="submit"]:not(.btn-unstyled),
+[data-theme="bento"] button[type="submit"]:not(.btn-unstyled) {
   background: var(--bento-purple) !important;
   color: #ffffff !important;
   border: 2px solid #000000 !important;
@@ -912,12 +918,16 @@ button:active {
   border-radius: 0.75rem !important;
 }
 [data-layout="bento"] button.bg-indigo-600:hover,
-[data-theme="bento"] button.bg-indigo-600:hover {
+[data-theme="bento"] button.bg-indigo-600:hover,
+[data-layout="bento"] button[type="submit"]:not(.btn-unstyled):hover,
+[data-theme="bento"] button[type="submit"]:not(.btn-unstyled):hover {
   transform: translate(-1px, -1px) !important;
   box-shadow: 5px 5px 0px #000000 !important;
 }
 [data-layout="bento"] button.bg-indigo-600:active,
-[data-theme="bento"] button.bg-indigo-600:active {
+[data-theme="bento"] button.bg-indigo-600:active,
+[data-layout="bento"] button[type="submit"]:not(.btn-unstyled):active,
+[data-theme="bento"] button[type="submit"]:not(.btn-unstyled):active {
   transform: translate(2px, 2px) !important;
   box-shadow: 1px 1px 0px #000000 !important;
 }
@@ -936,9 +946,48 @@ button:active {
 }
 [data-layout="bento"] [role="menu"] button,
 [data-theme="bento"] [role="menu"] button,
-[data-layout="bento"] .animate-in.fade-in.zoom-in-95 button,
-[data-theme="bento"] .animate-in.fade-in.zoom-in-95 button {
+[data-layout="bento"] .animate-in.fade-in.zoom-in-95 button:not(.text-white):not(.bg-indigo-600):not([type="submit"]):not([class*="bg-indigo-"]):not([class*="bg-purple-"]):not([class*="bg-black"]):not([class*="bg-emerald-"]):not([class*="bg-rose-"]):not([class*="bg-red-"]):not([class*="bg-blue-"]),
+[data-theme="bento"] .animate-in.fade-in.zoom-in-95 button:not(.text-white):not(.bg-indigo-600):not([type="submit"]):not([class*="bg-indigo-"]):not([class*="bg-purple-"]):not([class*="bg-black"]):not([class*="bg-emerald-"]):not([class*="bg-rose-"]):not([class*="bg-red-"]):not([class*="bg-blue-"]) {
   color: #000000 !important;
+}
+
+/* Explicit white text for all primary, colored, and submit buttons inside modals and dropdowns */
+[data-layout="bento"] .animate-in.fade-in.zoom-in-95 button.bg-indigo-600,
+[data-theme="bento"] .animate-in.fade-in.zoom-in-95 button.bg-indigo-600,
+[data-layout="bento"] .animate-in.fade-in.zoom-in-95 button[type="submit"],
+[data-theme="bento"] .animate-in.fade-in.zoom-in-95 button[type="submit"],
+[data-layout="bento"] .animate-in.fade-in.zoom-in-95 button.text-white,
+[data-theme="bento"] .animate-in.fade-in.zoom-in-95 button.text-white,
+[data-layout="bento"] .animate-in.fade-in.zoom-in-95 button[class*="bg-purple-"],
+[data-theme="bento"] .animate-in.fade-in.zoom-in-95 button[class*="bg-purple-"],
+[data-layout="bento"] .animate-in.fade-in.zoom-in-95 button[class*="bg-indigo-"],
+[data-theme="bento"] .animate-in.fade-in.zoom-in-95 button[class*="bg-indigo-"] {
+  color: #ffffff !important;
+}
+
+/* Secondary / Cancel buttons inside modals in Bento mode */
+[data-layout="bento"] .animate-in.fade-in.zoom-in-95 button:not(.bg-indigo-600):not([type="submit"]):not(.text-white):not([aria-label="Close dialog"]):not([class*="bg-"]):not([role="menuitem"]),
+[data-theme="bento"] .animate-in.fade-in.zoom-in-95 button:not(.bg-indigo-600):not([type="submit"]):not(.text-white):not([aria-label="Close dialog"]):not([class*="bg-"]):not([role="menuitem"]) {
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+  border-radius: 0.75rem !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-layout="bento"] .animate-in.fade-in.zoom-in-95 button:not(.bg-indigo-600):not([type="submit"]):not(.text-white):not([aria-label="Close dialog"]):not([class*="bg-"]):not([role="menuitem"]):hover,
+[data-theme="bento"] .animate-in.fade-in.zoom-in-95 button:not(.bg-indigo-600):not([type="submit"]):not(.text-white):not([aria-label="Close dialog"]):not([class*="bg-"]):not([role="menuitem"]):hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #000000 !important;
+  background-color: #f8fafc !important;
+}
+
+[data-layout="bento"] .animate-in.fade-in.zoom-in-95 button:not(.bg-indigo-600):not([type="submit"]):not(.text-white):not([aria-label="Close dialog"]):not([class*="bg-"]):not([role="menuitem"]):active,
+[data-theme="bento"] .animate-in.fade-in.zoom-in-95 button:not(.bg-indigo-600):not([type="submit"]):not(.text-white):not([aria-label="Close dialog"]):not([class*="bg-"]):not([role="menuitem"]):active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #000000 !important;
 }
 
 /* Modals Backdrops & Panels */
@@ -1429,21 +1478,21 @@ button:active {
 }
 
 /* Single-icon circular and square action buttons in Bento mode */
-[data-theme="bento"] button:has(> svg:only-child):not(.btn-unstyled),
-[data-layout="bento"] button:has(> svg:only-child):not(.btn-unstyled) {
+[data-theme="bento"] button:has(> svg:only-child):not(.btn-unstyled):not(footer button),
+[data-layout="bento"] button:has(> svg:only-child):not(.btn-unstyled):not(footer button) {
   border: 2px solid #000000 !important;
   box-shadow: 2px 2px 0px #000000 !important;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-[data-theme="bento"] button:has(> svg:only-child):not(.btn-unstyled):hover,
-[data-layout="bento"] button:has(> svg:only-child):not(.btn-unstyled):hover {
+[data-theme="bento"] button:has(> svg:only-child):not(.btn-unstyled):not(footer button):hover,
+[data-layout="bento"] button:has(> svg:only-child):not(.btn-unstyled):not(footer button):hover {
   transform: translate(-1px, -1px);
   box-shadow: 3px 3px 0px #000000 !important;
 }
 
-[data-theme="bento"] button:has(> svg:only-child):not(.btn-unstyled):active,
-[data-layout="bento"] button:has(> svg:only-child):not(.btn-unstyled):active {
+[data-theme="bento"] button:has(> svg:only-child):not(.btn-unstyled):not(footer button):active,
+[data-layout="bento"] button:has(> svg:only-child):not(.btn-unstyled):not(footer button):active {
   transform: translate(1px, 1px);
   box-shadow: 1px 1px 0px #000000 !important;
 }
@@ -1533,3 +1582,12 @@ button:active {
   box-shadow: var(--bento-shadow-sm) !important;
 }
 
+
+/* Footer text navigation links and buttons */
+[data-theme="bento"] footer button:not(.logo-btn):not([type="submit"]),
+[data-layout="bento"] footer button:not(.logo-btn):not([type="submit"]),
+[data-theme="bento"] footer .support-email-link,
+[data-layout="bento"] footer .support-email-link {
+  border: none !important;
+  box-shadow: none !important;
+}

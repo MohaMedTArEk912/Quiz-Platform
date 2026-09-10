@@ -149,19 +149,6 @@ const Footer: React.FC = () => {
                                 Next-generation gamified learning platform for computer science students, software engineers, and code enthusiasts. Master algorithms, languages, and architecture.
                             </p>
 
-                            {/* Contact Link: Direct Email Support */}
-                            <div className="pt-1">
-                                <a
-                                    href="mailto:mohaamedtariq12@gmail.com"
-                                    className={`inline-flex items-center gap-2 text-xs font-semibold transition-colors hover:text-indigo-400 ${
-                                        isBento ? 'text-black hover:text-indigo-600 font-bold' : 'text-slate-300'
-                                    }`}
-                                    title="Email Support (Mohamed Tarek)"
-                                >
-                                    <Mail className="w-3.5 h-3.5 text-indigo-500" />
-                                    <span>mohaamedtariq12@gmail.com</span>
-                                </a>
-                            </div>
                         </div>
 
                         {/* Quick Links (2 cols) */}
@@ -343,7 +330,7 @@ const Footer: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setActiveModal('support')}
-                                className="hover:text-indigo-400 transition-colors cursor-pointer flex items-center gap-1 outline-none focus:outline-none border-0"
+                                className="btn-unstyled hover:text-indigo-400 transition-colors cursor-pointer flex items-center gap-1 outline-none focus:outline-none !border-0 !shadow-none"
                             >
                                 <LifeBuoy className="w-3.5 h-3.5 text-indigo-400" />
                                 Support
@@ -427,7 +414,7 @@ const Footer: React.FC = () => {
                 icon={<LifeBuoy className="w-5 h-5 text-indigo-500" />}
                 maxWidth="max-w-xl"
             >
-                <div className="space-y-5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed max-h-[65vh] overflow-y-auto pr-1">
+                <div className="space-y-5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed max-h-[65vh] overflow-y-auto pr-1 pb-3">
                     <a
                         href="mailto:mohaamedtariq12@gmail.com"
                         className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:border-indigo-500/40 transition-colors flex items-center gap-3.5"
@@ -484,18 +471,26 @@ const Footer: React.FC = () => {
                             />
                         </div>
 
-                        <div className="flex justify-end gap-2 pt-2">
+                        <div className="flex justify-end items-center gap-3 pt-3 pb-1">
                             <button
                                 type="button"
                                 onClick={() => setActiveModal(null)}
-                                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100 active:translate-x-0.5 active:translate-y-0.5'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                                }`}
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={isSubmittingSupport}
-                                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/25 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-50 ${
+                                    isBento
+                                        ? 'bg-[#8b5cf6] !text-white border-2 border-black shadow-[3.5px_3.5px_0px_#000] hover:shadow-[5px_5px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5'
+                                        : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/25'
+                                }`}
                             >
                                 {isSubmittingSupport ? 'Submitting...' : 'Submit Support Ticket'}
                             </button>
