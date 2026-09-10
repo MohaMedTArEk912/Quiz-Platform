@@ -629,7 +629,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                 onViewProfile={onViewProfile}
                 onViewLeaderboard={onViewLeaderboard}
                 onLogout={onLogout}
-                title="Learning Roads"
+                title="Quiz Platform"
                 showActions={true}
             />
 

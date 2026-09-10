@@ -43,6 +43,8 @@ const AsyncChallengePage = lazy(() => import('./pages/AsyncChallengePage'));
 const VsGamePage = lazy(() => import('./pages/VsGamePage'));
 const BadgeTreeDetailPage = lazy(() => import('./pages/BadgeTreeDetailPage'));
 
+import ScrollToTop from './components/ScrollToTop';
+
 // Helper to keep page titles updated as route changes
 const PageTitleManager: React.FC = () => {
   usePageTitle();
@@ -72,6 +74,7 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <Router>
+        <ScrollToTop />
         <PageTitleManager />
         <AuthProvider>
           <NotificationProvider>

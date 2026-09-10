@@ -90,7 +90,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onChange, onS
                 <label className="text-xs text-gray-500 dark:text-gray-400 font-bold ml-1">Image URL (Optional)</label>
                 <input
                     type="url"
-                    placeholder="https://example.com/image.png"
+                    placeholder="https://images.unsplash.com/photo-diagram-flowchart.png"
                     value={question.imageUrl || ''}
                     onChange={e => onChange({ ...question, imageUrl: e.target.value })}
                     className="w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"

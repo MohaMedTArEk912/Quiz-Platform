@@ -1,12 +1,12 @@
 import express from 'express';
 import * as attemptController from '../controllers/attemptController.js';
-import { verifyAdmin } from '../middleware/authMiddleware.js';
+import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.post('/', attemptController.saveAttempt); // POST /api/attempts
-router.get('/:attemptId/details', attemptController.getAttemptDetails); // GET /api/attempts/:attemptId/details
-router.get('/reviews/pending', attemptController.getPendingReviews); // GET /api/attempts/reviews/pending 
+router.get('/:attemptId/details', verifyUser, attemptController.getAttemptDetails); // GET /api/attempts/:attemptId/details
+router.get('/reviews/pending', verifyUser, verifyAdmin, attemptController.getPendingReviews); // GET /api/attempts/reviews/pending (Admin) 
 // NOTE: Original was /api/reviews/pending. We will mount this router at /api/attempts? 
 // Or better, we mount it at /api/reviews for the specific reviews routes?
 // The plan said /attempts. Let's stick to /api/attempts and include reviews there?

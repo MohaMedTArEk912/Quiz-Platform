@@ -57,14 +57,16 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             footer={
                 <>
                     <button
+                        type="button"
                         onClick={onCancel}
-                        className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                        className="flex-1 min-h-[44px] py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-colors cursor-pointer touch-target"
                     >
                         {cancelText}
                     </button>
                     <button
+                        type="button"
                         onClick={onConfirm}
-                        className={`flex-1 py-3 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-transform hover:-translate-y-0.5 ${getPrimaryButtonClass()}`}
+                        className={`flex-1 min-h-[44px] py-3 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-transform hover:-translate-y-0.5 cursor-pointer touch-target ${getPrimaryButtonClass()}`}
                     >
                         {confirmText}
                     </button>

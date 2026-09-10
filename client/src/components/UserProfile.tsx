@@ -1048,8 +1048,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                             )}
                         </div>
 
-                        {/* Desktop View (Table) */}
-                        <table className="w-full hidden md:table">
+                        {/* Desktop View (Table with Responsive Wrapper) */}
+                        <div className="w-full overflow-x-auto table-responsive">
+                            <table className="w-full hidden md:table">
                             <thead>
                                 <tr className="border-b border-gray-200 dark:border-white/5 bg-gray-100 dark:bg-black/20 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <th className="px-8 py-5 text-left">Quiz &amp; Status</th>
@@ -1229,6 +1230,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                 )}
                             </tbody>
                         </table>
+                        </div>
                     </div>
 
                     {/* Pagination Controls */}

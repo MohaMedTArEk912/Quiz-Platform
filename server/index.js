@@ -1,7 +1,11 @@
 import dotenv from 'dotenv';
+import { validateEnv } from './utils/envValidator.js';
 
 // Load environment variables with override: true so changes in .env take effect immediately
 dotenv.config({ override: true });
+
+// Validate environment variables and secret entropy
+validateEnv();
 
 // Provider and key presence checks (non-fatal)
 if (!process.env.GROQ_API_KEY || !String(process.env.GROQ_API_KEY).trim()) {
@@ -19,7 +23,7 @@ import { connectToDatabase, dbMiddleware, getDbDiagnostics, getMongoUri } from '
 import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-// import mongoSanitize from 'express-mongo-sanitize'; // Conflict with Express 5
+import { mongoSanitizeMiddleware } from './middleware/mongoSanitize.js';
 import hpp from 'hpp';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -48,9 +52,7 @@ import aiStudioRoutes from './routes/aiStudio.js';
 import trackRequestRoutes from './routes/trackRequests.js';
 import notificationRoutes from './routes/notifications.js';
 
-// IMPORTANT: Vercel serverless functions are not compatible with long-lived
-// HTTP servers / Socket.IO the same way as a traditional Node process.
-// Initialize Socket.IO only for non-serverless environments.
+// Strictly whitelisted origins (No broad wildcard *.vercel.app or *.netlify.app domains)
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
@@ -60,8 +62,16 @@ const allowedOrigins = [
 ];
 
 if (process.env.CLIENT_URL) {
-  allowedOrigins.push(process.env.CLIENT_URL);
+  const customClientUrl = process.env.CLIENT_URL.trim();
+  if (!allowedOrigins.includes(customClientUrl)) {
+    allowedOrigins.push(customClientUrl);
+  }
 }
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // allow mobile apps/curl/server-to-server
+  return allowedOrigins.includes(origin);
+};
 
 const isServerless = !!process.env.VERCEL;
 
@@ -77,15 +87,11 @@ if (!isServerless) {
   httpServer.keepAliveTimeout = 300000;    // Keep-alive: 5 minutes
   httpServer.headersTimeout = 310000;      // Headers: ~5.2 minutes
 
-  // Socket.io configuration optimized for Netlify
+  // Socket.io configuration with strict CORS
   io = new Server(httpServer, {
     cors: {
       origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        const isAllowed = allowedOrigins.some(o => origin.startsWith(o)) || 
-                         origin.endsWith('.vercel.app') || 
-                         origin.endsWith('.netlify.app');
-        if (isAllowed) {
+        if (isOriginAllowed(origin)) {
           callback(null, true);
         } else {
           callback(new Error('Not allowed by CORS'));
@@ -106,34 +112,50 @@ app.set('io', io);
 
 const PORT = process.env.PORT || 5000;
 
+// Enforce HTTPS redirection in production
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    const proto = req.headers['x-forwarded-proto'];
+    if (proto && proto !== 'https') {
+      return res.redirect(301, `https://${req.hostname}${req.originalUrl}`);
+    }
+    next();
+  });
+}
 
+// Strict CORS Whitelist
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    const isAllowed = allowedOrigins.some(o => origin.startsWith(o)) || 
-                     origin.endsWith('.vercel.app') || 
-                     origin.endsWith('.netlify.app');
-                     
-    if (isAllowed) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error('Not allowed by CORS policy'));
     }
   },
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id']
 }));
-app.use(express.json({ limit: '200mb' }));
-app.use(express.urlencoded({ limit: '200mb', extended: true }));
+
+// Spend Cap: strict 2mb body parser limit to prevent payload flooding DoS
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ limit: '2mb', extended: true }));
 app.use(compression());
 
+// NoSQL Operator Injection Sanitizer (Express 5 compatible)
+app.use(mongoSanitizeMiddleware);
 
-// Security Middleware
-
+// Advanced Security Headers via Helmet
 app.use(helmet({
   crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  frameguard: {
+    action: 'deny'
+  },
+  noSniff: true,
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -148,15 +170,16 @@ app.use(helmet({
   },
 }));
 
-// Rate Limiting (Completely disabled when running on local/development or from localhost)
+// Rate Limiting
 const isLocalEnv = process.env.NODE_ENV !== 'production' || process.env.LOCAL_DEV === 'true';
 
+// Tier 1: General API limiter
 const limiter = rateLimit({
-  windowMs: 3 * 60 * 1000, // 3 minutes
-  max: 500,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300,
   message: {
     success: false,
-    message: 'Too many requests from this IP, please try again after 3 minutes'
+    message: 'Too many requests from this IP, please try again after 15 minutes'
   },
   standardHeaders: true, 
   legacyHeaders: false,
@@ -174,16 +197,47 @@ const limiter = rateLimit({
   }
 });
 
+// Tier 2: Brute-Force Auth Limiter (15 attempts / 15 minutes)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  message: {
+    success: false,
+    message: 'Too many authentication attempts. Please try again after 15 minutes.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => isLocalEnv
+});
+
+// Tier 3: Heavy Resource / Export Limiter (30 requests / 15 minutes)
+const heavyResourceLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: {
+    success: false,
+    message: 'Resource limit exceeded. Please slow down.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => isLocalEnv
+});
+
 if (!isLocalEnv) {
   app.use('/api', limiter);
 }
 
-// Data Sanitization & Protection
-// Note: mongo-sanitize and xss-clean are often incompatible with Express 5
-// Using Zod for majority of input validation (see validationMiddleware.js)
+// Attach Tier 2 & Tier 3 Rate Limiters
+app.use('/api/login', authLimiter);
+app.use('/api/register', authLimiter);
+app.use('/api/forgot-password', authLimiter);
+app.use('/api/ai-studio/generate', heavyResourceLimiter);
+app.use('/api/ai-studio/materials', heavyResourceLimiter);
+
+// Parameter Pollution Protection
 app.use(hpp());
 
-// Basic XSS Protection for all responses
+// Basic XSS Protection header
 app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   next();
@@ -624,14 +678,18 @@ app.use((error, req, res, next) => {
   let message = error.message || 'Internal server error';
 
   // Database errors
-  if (error.name === 'MongoError' || error.name === 'MongoServerError') {
+  if (error.name === 'MongoError' || error.name === 'MongoServerError' || error.name === 'MongooseError') {
     statusCode = 500;
-    message = 'Database error occurred';
+    message = process.env.NODE_ENV === 'production' 
+      ? 'A database error occurred. Please try again later.' 
+      : `Database error: ${error.message}`;
   }
 
   // Validation errors
   if (error.name === 'ValidationError') {
-    console.error('❌ Validation Error Details:', JSON.stringify(error.errors, null, 2));
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('❌ Validation Error Details:', JSON.stringify(error.errors, null, 2));
+    }
     statusCode = 400;
     message = 'Validation failed';
   }
@@ -647,10 +705,18 @@ app.use((error, req, res, next) => {
     message = 'Token expired';
   }
 
+  // Ensure generic message for 500 in production
+  if (statusCode === 500 && process.env.NODE_ENV === 'production') {
+    message = 'An unexpected internal server error occurred. Please try again later.';
+  }
+
   res.status(statusCode).json({
     success: false,
     message,
-    ...(process.env.NODE_ENV === 'development' && { error: error.message })
+    ...(process.env.NODE_ENV !== 'production' && { 
+      error: error.message,
+      stack: error.stack 
+    })
   });
 });
 

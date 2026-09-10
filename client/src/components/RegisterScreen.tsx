@@ -139,7 +139,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="Your name"
+                                    placeholder="Alex Mercer (e.g. CodeScholar)"
                                     disabled={isLoading}
                                     className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#0f1422] border border-slate-200 dark:border-white/10 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-all text-sm font-medium disabled:opacity-50 shadow-sm"
                                     autoComplete="name"
@@ -160,7 +160,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                                     onChange={(e) => setEmail(e.target.value)}
                                     onFocus={() => setIsEmailFocused(true)}
                                     onBlur={() => setIsEmailFocused(false)}
-                                    placeholder="your@email.com"
+                                    placeholder="alex.dev@quizplatform.com"
                                     disabled={isLoading}
                                     className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#0f1422] border border-slate-200 dark:border-white/10 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-all text-sm font-medium disabled:opacity-50 shadow-sm"
                                     autoComplete="email"

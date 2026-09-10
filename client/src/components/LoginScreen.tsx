@@ -220,7 +220,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onSwitchToRegister, 
                                     onChange={(e) => setEmail(e.target.value)}
                                     onFocus={() => setIsEmailFocused(true)}
                                     onBlur={() => setIsEmailFocused(false)}
-                                    placeholder="your@email.com"
+                                    placeholder="alex.dev@quizplatform.com"
                                     disabled={isLoading}
                                     className={`w-full pl-11 pr-4 py-3 text-sm font-medium disabled:opacity-50 transition-all ${
                                         isBento

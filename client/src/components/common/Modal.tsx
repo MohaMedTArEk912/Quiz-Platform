@@ -49,11 +49,11 @@ const Modal: React.FC<ModalProps> = ({
             />
 
             {/* Modal Content */}
-            <div className={`relative bg-white dark:bg-[#0f1117] rounded-3xl w-full ${maxWidth} max-h-[90vh] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-800 transform transition-all animate-in fade-in zoom-in-95 duration-200`}>
+            <div className={`relative bg-white dark:bg-[#0f1117] rounded-3xl w-full ${maxWidth} max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-2rem)] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-800 transform transition-all animate-in fade-in zoom-in-95 duration-200`}>
                 {/* Header */}
-                <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-white/5 rounded-t-3xl backdrop-blur-sm">
+                <div className="p-5 sm:p-6 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-white/5 rounded-t-3xl backdrop-blur-sm">
                     <div>
-                        <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+                        <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3">
                             {icon && (
                                 <div className="p-2 rounded-xl bg-orange-500/10 text-orange-500">
                                     {icon}
@@ -62,14 +62,16 @@ const Modal: React.FC<ModalProps> = ({
                             {title}
                         </h2>
                         {description && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 pl-1">
+                            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 pl-1">
                                 {description}
                             </p>
                         )}
                     </div>
                     <button
+                        type="button"
                         onClick={onClose}
-                        className="p-2.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-xl transition-colors text-gray-500 dark:text-gray-400"
+                        aria-label="Close dialog"
+                        className="p-2.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-xl transition-colors text-gray-500 dark:text-gray-400 cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center touch-target"
                     >
                         <X className="w-5 h-5" />
                     </button>

@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import BottomNav from '../components/BottomNav';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { AmbientBackground } from '../components/AmbientBackground';
@@ -41,10 +42,11 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, title, showBack, onBa
                 onBack={onBack}
                 showActions={true}
             />
-            <main className="flex-1 min-h-[calc(100dvh-64px)] relative z-10">
+            <main className="flex-1 min-h-[calc(100dvh-64px)] pb-16 xl:pb-0 relative z-10">
                 {children}
             </main>
             <Footer />
+            <BottomNav />
         </div>
     );
 };

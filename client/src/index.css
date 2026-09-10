@@ -104,6 +104,49 @@ pre, code, table {
   max-width: 100%;
 }
 
+/* Responsive Table Wrapper */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+/* Safe-area insets for modern mobile edge-to-edge displays */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+.mt-safe {
+  margin-top: env(safe-area-inset-top, 0px);
+}
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}
+.ml-safe {
+  margin-left: env(safe-area-inset-left, 0px);
+}
+.mr-safe {
+  margin-right: env(safe-area-inset-right, 0px);
+}
+
+/* Mobile 44px touch target compliance */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 :root.dark body,
 html.dark body {
   background-color: var(--color-background-dark);

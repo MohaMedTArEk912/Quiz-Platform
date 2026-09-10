@@ -1,6 +1,7 @@
 import { Clan } from '../models/Clan.js';
 import { User } from '../models/User.js';
 import crypto from 'crypto';
+import { escapeRegex } from '../utils/regexUtils.js';
 
 export const createClan = async (req, res) => {
   try {
@@ -93,15 +94,19 @@ export const getClan = async (req, res) => {
 export const searchClans = async (req, res) => {
   try {
     const { query } = req.query;
+    const safeQuery = escapeRegex(query, 40);
     const clans = await Clan.find({
         $or: [
-            { name: { $regex: query || '', $options: 'i' } },
-            { tag: { $regex: query || '', $options: 'i' } }
+            { name: { $regex: safeQuery, $options: 'i' } },
+            { tag: { $regex: safeQuery, $options: 'i' } }
         ]
     }).limit(20).sort({ totalXP: -1 });
     res.json(clans);
   } catch (error) {
-    res.status(500).json({ message: 'Error searching clans', error: error.message });
+    res.status(500).json({
+      message: 'Error searching clans',
+      ...(process.env.NODE_ENV !== 'production' && { error: error.message })
+    });
   }
 };
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import DOMPurify from 'dompurify';
 
 // KaTeX Global Window Interface
 declare global {
@@ -180,17 +181,18 @@ export const MathRenderer: React.FC<MathRendererProps> = ({
                     throwOnError: false,
                     errorColor: '#f43f5e'
                 });
+                const safeHtml = DOMPurify.sanitize(html);
                 return isBlock ? (
                     <div
                         key={idx}
                         className="my-2.5 overflow-x-auto custom-scrollbar py-1 text-center font-serif"
-                        dangerouslySetInnerHTML={{ __html: html }}
+                        dangerouslySetInnerHTML={{ __html: safeHtml }}
                     />
                 ) : (
                     <span
                         key={idx}
                         className="inline-block px-0.5 font-serif"
-                        dangerouslySetInnerHTML={{ __html: html }}
+                        dangerouslySetInnerHTML={{ __html: safeHtml }}
                     />
                 );
             } catch (err) {

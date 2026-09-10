@@ -73,8 +73,11 @@ const ROUTE_METADATA: Record<string, RouteMetadata> = {
     }
 };
 
+import { useAuth } from '../context/AuthContext';
+
 export const usePageTitle = () => {
     const location = useLocation();
+    const { currentUser } = useAuth();
 
     useEffect(() => {
         const pathname = location.pathname;
@@ -106,8 +109,18 @@ export const usePageTitle = () => {
             }
         }
 
+        // Apply dynamic user context
+        let finalTitle = meta.title;
+        if (currentUser && currentUser.userId !== 'guest' && currentUser.name) {
+            if (pathname === '/profile') {
+                finalTitle = `${currentUser.name}'s Profile | Quiz Platform`;
+            } else if (pathname === '/admin' && currentUser.role === 'admin') {
+                finalTitle = `Admin Console (${currentUser.name}) | Quiz Platform`;
+            }
+        }
+
         // Update document title
-        document.title = meta.title;
+        document.title = finalTitle;
 
         // Update meta description
         const metaDescription = document.querySelector('meta[name="description"]');
@@ -115,17 +128,28 @@ export const usePageTitle = () => {
             metaDescription.setAttribute('content', meta.description);
         }
 
-        // Update Open Graph tags if present
+        // Update Open Graph tags
         const ogTitle = document.querySelector('meta[property="og:title"]');
         if (ogTitle) {
-            ogTitle.setAttribute('content', meta.title);
+            ogTitle.setAttribute('content', finalTitle);
         }
 
         const ogDescription = document.querySelector('meta[property="og:description"]');
         if (ogDescription) {
             ogDescription.setAttribute('content', meta.description);
         }
-    }, [location.pathname]);
+
+        // Update Twitter Card tags
+        const twitterTitle = document.querySelector('meta[property="twitter:title"]') || document.querySelector('meta[name="twitter:title"]');
+        if (twitterTitle) {
+            twitterTitle.setAttribute('content', finalTitle);
+        }
+
+        const twitterDescription = document.querySelector('meta[property="twitter:description"]') || document.querySelector('meta[name="twitter:description"]');
+        if (twitterDescription) {
+            twitterDescription.setAttribute('content', meta.description);
+        }
+    }, [location.pathname, currentUser]);
 };
 
 export default usePageTitle;

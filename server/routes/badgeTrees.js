@@ -11,23 +11,24 @@ import {
   getUserBadgeProgress,
   getUserTreeProgress
 } from '../controllers/badgeTreeController.js';
+import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Badge tree CRUD
-router.post('/', createBadgeTree);
+// Badge tree CRUD (Public reads, Admin mutations)
 router.get('/', getAllBadgeTrees);
 router.get('/:treeId', getBadgeTree);
-router.put('/:treeId', updateBadgeTree);
-router.delete('/:treeId', deleteBadgeTree);
+router.post('/', verifyUser, verifyAdmin, createBadgeTree);
+router.put('/:treeId', verifyUser, verifyAdmin, updateBadgeTree);
+router.delete('/:treeId', verifyUser, verifyAdmin, deleteBadgeTree);
 
-// Node management
-router.post('/:treeId/nodes', addNodeToTree);
-router.put('/:treeId/nodes/:badgeId', updateNodeInTree);
-router.delete('/:treeId/nodes/:badgeId', removeNodeFromTree);
+// Node management (Admin mutations)
+router.post('/:treeId/nodes', verifyUser, verifyAdmin, addNodeToTree);
+router.put('/:treeId/nodes/:badgeId', verifyUser, verifyAdmin, updateNodeInTree);
+router.delete('/:treeId/nodes/:badgeId', verifyUser, verifyAdmin, removeNodeFromTree);
 
-// User progress
-router.get('/progress/:userId', getUserBadgeProgress);
-router.get('/progress/:userId/:treeId', getUserTreeProgress);
+// User progress (Authenticated)
+router.get('/progress/:userId', verifyUser, getUserBadgeProgress);
+router.get('/progress/:userId/:treeId', verifyUser, getUserTreeProgress);
 
 export default router;

@@ -6,19 +6,31 @@ import { ShopItem } from '../models/ShopItem.js';
 import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
 import { updateSkillTrackProgress, syncRoadmapProgress } from '../services/progressService.js';
 import { getEnrichedUser } from '../services/userService.js';
+import { escapeRegex } from '../utils/regexUtils.js';
+
 export const updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const updates = req.body;
-    
-    // SECURITY: Prevent role changes through this endpoint
-    if (updates.role !== undefined) {
-      delete updates.role;
+    const updates = { ...req.body };
+
+    // RBAC: Enforce that user can only modify their own profile unless admin
+    if (req.user && req.user.userId !== userId && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden: You can only update your own profile' });
     }
     
-    // Prevent updating userId
-    if (updates.userId !== undefined) {
-      delete updates.userId;
+    // SECURITY: Prevent privilege escalation & immutable ID tampering
+    delete updates.role;
+    delete updates.userId;
+    delete updates._id;
+
+    // For non-admin users, restrict arbitrary modification of game economy and stats
+    if (req.user?.role !== 'admin') {
+      delete updates.xp;
+      delete updates.totalScore;
+      delete updates.totalAttempts;
+      delete updates.totalTime;
+      delete updates.level;
+      delete updates.rank;
     }
     
     const user = await User.findOneAndUpdate(
@@ -33,7 +45,10 @@ export const updateUser = async (req, res) => {
     
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Error updating user', error: error.message });
+    res.status(500).json({
+      message: 'Error updating user',
+      ...(process.env.NODE_ENV !== 'production' && { error: error.message })
+    });
   }
 };
 
@@ -145,11 +160,13 @@ export const searchUsers = async (req, res) => {
             return res.json([]);
         }
         
-    const users = await User.find({
+        const safeQuery = escapeRegex(query, 40);
+        
+        const users = await User.find({
             $or: [
-                { email: { $regex: query, $options: 'i' } },
-                { name: { $regex: query, $options: 'i' } },
-                { userId: { $regex: query, $options: 'i' } }
+                { email: { $regex: safeQuery, $options: 'i' } },
+                { name: { $regex: safeQuery, $options: 'i' } },
+                { userId: { $regex: safeQuery, $options: 'i' } }
             ]
         }).limit(10).select('userId name email totalScore friends friendRequests clanId').lean();
         
