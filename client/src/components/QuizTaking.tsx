@@ -1224,7 +1224,13 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
                             {/* Image */}
                             {q.imageUrl && (
-                                <img src={q.imageUrl} alt="Reference" className={`w-full rounded-2xl mb-8 object-cover max-h-64 ${isBento ? 'border-2 border-black shadow-[3px_3px_0px_#000]' : 'shadow-lg border border-gray-100 dark:border-gray-800'}`} />
+                                <img
+                                    src={q.imageUrl}
+                                    alt="Reference"
+                                    loading="lazy"
+                                    decoding="async"
+                                    className={`w-full rounded-2xl mb-8 object-cover max-h-64 ${isBento ? 'border-2 border-black shadow-[3px_3px_0px_#000]' : 'shadow-lg border border-gray-100 dark:border-gray-800'}`}
+                                />
                             )}
 
                             {/* Audio / Video Question Prompt */}

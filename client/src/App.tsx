@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { SocketProvider } from './context/SocketContext';
@@ -8,12 +8,15 @@ import { ProtectedRoute, AdminRoute } from './components/RouteGuards';
 import MainLayout from './layouts/MainLayout';
 import PageLoader from './components/PageLoader.tsx';
 import { AiJobProvider } from './contexts/AiJobContext';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import usePageTitle from './hooks/usePageTitle';
 
 // Lazy load all pages for better code splitting and performance
 // Critical pages (login/register) loaded first, others loaded on demand
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Dashboard and core pages
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -40,6 +43,12 @@ const AsyncChallengePage = lazy(() => import('./pages/AsyncChallengePage'));
 const VsGamePage = lazy(() => import('./pages/VsGamePage'));
 const BadgeTreeDetailPage = lazy(() => import('./pages/BadgeTreeDetailPage'));
 
+// Helper to keep page titles updated as route changes
+const PageTitleManager: React.FC = () => {
+  usePageTitle();
+  return null;
+};
+
 
 const App: React.FC = () => {
 
@@ -61,70 +70,68 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <Router>
-      <AuthProvider>
-        <NotificationProvider>
-          <SocketProvider>
-            <DataProvider>
-              <AiJobProvider>
-                <Suspense fallback={<PageLoader />}>
-                  <Routes>
-                    {/* Public Routes */}
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+    <ErrorBoundary>
+      <Router>
+        <PageTitleManager />
+        <AuthProvider>
+          <NotificationProvider>
+            <SocketProvider>
+              <DataProvider>
+                <AiJobProvider>
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      {/* Public Routes */}
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route path="/register" element={<RegisterPage />} />
+                      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-                    {/* Async Challenge (Can be accessed with link) - handled by page logic wrapper? 
-                                        If user not logged in, they should login first.
-                                        Deep linking flow: /challenge/:token -> Login -> Redirect back?
-                                        For now, protect it. AsyncChallengePage checks currentUser.
-                                    */}
-                    <Route path="/challenge/:token" element={
-                      <ProtectedRoute>
-                        <AsyncChallengePage />
-                      </ProtectedRoute>
-                    } />
+                      {/* Async Challenge (Can be accessed with link) */}
+                      <Route path="/challenge/:token" element={
+                        <ProtectedRoute>
+                          <AsyncChallengePage />
+                        </ProtectedRoute>
+                      } />
 
-                    {/* Admin Route */}
-                    <Route path="/admin" element={
-                      <AdminRoute>
-                        <AdminDashboardPage />
-                      </AdminRoute>
-                    } />
+                      {/* Admin Route */}
+                      <Route path="/admin" element={
+                        <AdminRoute>
+                          <AdminDashboardPage />
+                        </AdminRoute>
+                      } />
 
-                    {/* User Routes wrapped in MainLayout */}
-                    <Route element={<MainLayout />}>
-                      {/* Public Browsing Routes */}
-                      <Route path="/" element={<DashboardPage />} />
-                      <Route path="/leaderboard" element={<LeaderboardPage />} />
-                      <Route path="/tracks" element={<SkillTracksPage />} />
-                      <Route path="/study" element={<StudyModePage />} />
-                      <Route path="/tournaments" element={<TournamentsPage />} />
-                      <Route path="/badge-tree/:treeId" element={<BadgeTreeDetailPage />} />
+                      {/* User Routes wrapped in MainLayout */}
+                      <Route element={<MainLayout />}>
+                        {/* Public Browsing Routes */}
+                        <Route path="/" element={<DashboardPage />} />
+                        <Route path="/leaderboard" element={<LeaderboardPage />} />
+                        <Route path="/tracks" element={<SkillTracksPage />} />
+                        <Route path="/study" element={<StudyModePage />} />
+                        <Route path="/tournaments" element={<TournamentsPage />} />
+                        <Route path="/badge-tree/:treeId" element={<BadgeTreeDetailPage />} />
 
-                      {/* Protected Routes (require login) */}
-                      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                      <Route path="/quiz/:quizId" element={<ProtectedRoute><QuizTakingPage /></ProtectedRoute>} />
-                      <Route path="/results" element={<ProtectedRoute><QuizResultsPage /></ProtectedRoute>} />
-                      <Route path="/game/vs" element={<ProtectedRoute><VsGamePage /></ProtectedRoute>} />
-                      <Route path="/shop" element={<ProtectedRoute><ShopPage /></ProtectedRoute>} />
-                      <Route path="/social" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
-                      <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-                      <Route path="/daily" element={<ProtectedRoute><DailyChallengePage /></ProtectedRoute>} />
-                      <Route path="/clans" element={<ProtectedRoute><ClanPage /></ProtectedRoute>} />
-                    </Route>
+                        {/* Protected Routes (require login) */}
+                        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                        <Route path="/quiz/:quizId" element={<ProtectedRoute><QuizTakingPage /></ProtectedRoute>} />
+                        <Route path="/results" element={<ProtectedRoute><QuizResultsPage /></ProtectedRoute>} />
+                        <Route path="/game/vs" element={<ProtectedRoute><VsGamePage /></ProtectedRoute>} />
+                        <Route path="/shop" element={<ProtectedRoute><ShopPage /></ProtectedRoute>} />
+                        <Route path="/social" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
+                        <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+                        <Route path="/daily" element={<ProtectedRoute><DailyChallengePage /></ProtectedRoute>} />
+                        <Route path="/clans" element={<ProtectedRoute><ClanPage /></ProtectedRoute>} />
+                      </Route>
 
-
-                    {/* Catch all redirect */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </Suspense>
-              </AiJobProvider>
-            </DataProvider>
-          </SocketProvider>
-        </NotificationProvider>
-      </AuthProvider>
-    </Router>
+                      {/* Custom 404 Not Found Route */}
+                      <Route path="*" element={<NotFoundPage />} />
+                    </Routes>
+                  </Suspense>
+                </AiJobProvider>
+              </DataProvider>
+            </SocketProvider>
+          </NotificationProvider>
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
   );
 };
 

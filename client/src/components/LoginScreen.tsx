@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import ThemeToggle from './ThemeToggle.tsx';
 import TransparentLogo from './TransparentLogo.tsx';
@@ -14,6 +15,7 @@ interface LoginScreenProps {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onSwitchToRegister, onSwitchToForgotPassword, onGoogleSignIn }) => {
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -63,6 +65,28 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onSwitchToRegister, 
                     aria-hidden="true"
                 />
             )}
+
+            {/* Top Left Clickable Logo / Back to Home */}
+            <div className="absolute top-6 left-6 z-50 mt-safe ml-safe">
+                <button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    className={`flex items-center gap-2 p-2 rounded-xl transition-all cursor-pointer active:scale-95 ${
+                        isBento
+                            ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#fde047]'
+                            : 'bg-white/80 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 hover:bg-white dark:hover:bg-white/10 text-slate-700 dark:text-slate-300'
+                    }`}
+                    title="Return to Home"
+                    aria-label="Return to Home"
+                >
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs ${
+                        isBento ? 'bg-[#fde047] text-black border border-black' : 'bg-indigo-600 text-white'
+                    }`}>
+                        Q
+                    </div>
+                    <span className="text-xs font-bold hidden sm:inline">Home</span>
+                </button>
+            </div>
 
             {/* Theme Toggle - Floating */}
             <div className="absolute top-6 right-6 z-50 mt-safe mr-safe">
@@ -140,9 +164,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onSwitchToRegister, 
                 <div className="w-full max-w-md space-y-6">
                     {/* Mobile Logo & Heading (Visible only when Mascot is hidden) */}
                     <div className="lg:hidden text-center mb-4">
-                        <div className="w-16 h-16 mx-auto mb-3 relative flex items-center justify-center">
+                        <button
+                            type="button"
+                            onClick={() => navigate('/')}
+                            className="w-16 h-16 mx-auto mb-3 relative flex items-center justify-center cursor-pointer active:scale-95 transition-transform bg-transparent border-0 p-0"
+                            aria-label="Return to Home"
+                        >
                             <TransparentLogo src="/icon.png" className="w-full h-full object-contain" threshold={40} />
-                        </div>
+                        </button>
                         <h1 className={`text-2xl font-extrabold tracking-tight ${
                             isBento ? 'text-black' : 'text-slate-900 dark:text-white'
                         }`}>

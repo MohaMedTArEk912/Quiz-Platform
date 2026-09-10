@@ -22,6 +22,8 @@ import Avatar from './Avatar';
 import AvatarEditor from './AvatarEditor';
 import { StreakRewardModal } from './gamification/StreakRewardModal';
 import { useTheme } from '../context/ThemeContext.tsx';
+import { useAuth } from '../context/AuthContext';
+import Footer from './Footer';
 
 interface UserProfileProps {
     user: UserData;
@@ -43,6 +45,7 @@ const BadgeIcon = ({ icon, className }: { icon: string, className?: string }) =>
 
 const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onBack, onUserUpdate }) => {
     const { isBento } = useTheme();
+    const { logout } = useAuth();
     const navigate = useNavigate();
     const certificateRef = useRef<HTMLDivElement>(null);
     const [downloadingAttemptId, setDownloadingAttemptId] = useState<string | null>(null);
@@ -276,10 +279,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                 onBack={onBack}
                 showBack={true}
                 title="My Profile"
-                onViewProfile={() => { }}
-                onViewLeaderboard={() => { }}
-                onLogout={() => { }}
-                showActions={false}
+                onViewProfile={() => navigate('/profile')}
+                onViewLeaderboard={() => navigate('/leaderboard')}
+                onLogout={logout}
+                showActions={true}
             />
 
             <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-10">
@@ -1357,6 +1360,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                     onClaimStreak={handleStreakClaim}
                 />
             )}
+            <Footer />
         </div>
     );
 };

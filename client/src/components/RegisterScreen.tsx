@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import ThemeToggle from './ThemeToggle.tsx';
 import TransparentLogo from './TransparentLogo.tsx';
@@ -11,6 +12,7 @@ interface RegisterScreenProps {
 }
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToLogin }) => {
+    const navigate = useNavigate();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -43,6 +45,22 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
         <div className="min-h-dvh bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex relative overflow-hidden selection:bg-indigo-500/25">
             {/* Ambient Background */}
             <AmbientBackground />
+
+            {/* Top Left Clickable Logo / Back to Home */}
+            <div className="absolute top-6 left-6 z-50 mt-safe ml-safe">
+                <button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    className="flex items-center gap-2 p-2 rounded-xl transition-all cursor-pointer active:scale-95 bg-white/80 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 hover:bg-white dark:hover:bg-white/10 text-slate-700 dark:text-slate-300"
+                    title="Return to Home"
+                    aria-label="Return to Home"
+                >
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs bg-indigo-600 text-white">
+                        Q
+                    </div>
+                    <span className="text-xs font-bold hidden sm:inline">Home</span>
+                </button>
+            </div>
 
             {/* Theme Toggle - Floating */}
             <div className="absolute top-6 right-6 z-50 mt-safe mr-safe">
@@ -83,9 +101,14 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSwitchToL
                 <div className="w-full max-w-md space-y-6">
                     {/* Mobile Logo & Heading (Visible only when Mascot is hidden) */}
                     <div className="lg:hidden text-center mb-4">
-                        <div className="w-16 h-16 mx-auto mb-3 relative flex items-center justify-center">
+                        <button
+                            type="button"
+                            onClick={() => navigate('/')}
+                            className="w-16 h-16 mx-auto mb-3 relative flex items-center justify-center cursor-pointer active:scale-95 transition-transform bg-transparent border-0 p-0"
+                            aria-label="Return to Home"
+                        >
                             <TransparentLogo src="/icon.png" className="w-full h-full object-contain" threshold={40} />
-                        </div>
+                        </button>
                         <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                             Create Account
                         </h1>

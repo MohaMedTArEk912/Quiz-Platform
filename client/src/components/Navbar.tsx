@@ -15,13 +15,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Avatar from './Avatar';
 import { NAV_ITEMS } from '../constants/appDefaults';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 interface NavbarProps {
     user?: UserData | null;
     onBack?: () => void;
-    onViewProfile: () => void;
-    onViewLeaderboard: () => void;
-    onLogout: () => void;
+    onViewProfile?: () => void;
+    onViewLeaderboard?: () => void;
+    onLogout?: () => void;
     showBack?: boolean;
     title?: string;
     showActions?: boolean;
@@ -38,6 +39,7 @@ const Navbar: React.FC<NavbarProps> = ({
     showActions = true
 }) => {
     const { isBento } = useTheme();
+    const { logout: authLogout } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
     const navigate = useNavigate();
     const location = useLocation();
@@ -45,6 +47,21 @@ const Navbar: React.FC<NavbarProps> = ({
     const isGuest = !user || user.userId === 'guest' || !user.email;
     const isRoot = location.pathname === '/' || location.pathname === '/dashboard';
     const shouldShowBack = showBack !== undefined ? showBack : !isRoot;
+
+    const handleProfileClick = () => {
+        if (onViewProfile) onViewProfile();
+        else navigate('/profile');
+    };
+
+    const handleLeaderboardClick = () => {
+        if (onViewLeaderboard) onViewLeaderboard();
+        else navigate('/leaderboard');
+    };
+
+    const handleLogoutClick = () => {
+        if (onLogout) onLogout();
+        else authLogout();
+    };
 
     const handleBack = () => {
         if (onBack) {
@@ -106,39 +123,44 @@ const Navbar: React.FC<NavbarProps> = ({
                         )}
 
                         <div className="shrink-0">
-                            {title === "Quiz Platform" ? (
-                                <div
-                                    onClick={() => !isRoot && navigate('/')}
-                                    className={`flex items-center gap-2 ${!isRoot ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
-                                >
-                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${
-                                        isBento
-                                            ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
-                                            : 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25'
-                                    }`}>
-                                        Q
-                                    </div>
-                                    <div>
-                                        <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
-                                            <span>Quiz Platform</span>
-                                            <span className={`w-1.5 h-1.5 rounded-full animate-pulse hidden sm:inline-block ${isBento ? 'bg-black' : 'bg-indigo-500'}`} />
-                                        </h1>
-                                        {!shouldShowBack && (
-                                            <p className={`hidden sm:block text-[11px] truncate ${isBento ? 'text-slate-700 font-bold' : 'text-slate-500 dark:text-slate-400 font-medium'}`}>
-                                                {isGuest ? (
-                                                    <>Explore & test your knowledge</>
-                                                ) : (
-                                                    <>Welcome back, <span className={`${isBento ? 'text-black font-black' : 'text-slate-800 dark:text-slate-200 font-semibold'}`}>{user?.name || 'Explorer'}</span></>
-                                                )}
-                                            </p>
-                                        )}
-                                    </div>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/')}
+                                className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity text-left bg-transparent border-0 p-0"
+                                aria-label="Quiz Platform Home"
+                            >
+                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm shrink-0 transition-transform active:scale-95 ${
+                                    isBento
+                                        ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25'
+                                }`}>
+                                    Q
                                 </div>
-                            ) : (
-                                <h1 className={`text-base sm:text-lg font-extrabold tracking-tight whitespace-nowrap ${isBento ? 'text-black font-black' : 'text-slate-900 dark:text-white'}`}>
-                                    {title}
-                                </h1>
-                            )}
+                                <div className="flex items-center gap-2">
+                                    <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
+                                        <span className={title !== "Quiz Platform" ? "hidden md:inline" : ""}>Quiz Platform</span>
+                                        {title !== "Quiz Platform" ? (
+                                            <>
+                                                <span className="text-slate-300 dark:text-slate-600 hidden md:inline">/</span>
+                                                <span className={`text-sm sm:text-base font-bold tracking-tight truncate max-w-[140px] sm:max-w-xs ${isBento ? 'text-black font-black' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                                                    {title}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <span className={`w-1.5 h-1.5 rounded-full animate-pulse hidden sm:inline-block ${isBento ? 'bg-black' : 'bg-indigo-500'}`} />
+                                        )}
+                                    </h1>
+                                    {!shouldShowBack && title === "Quiz Platform" && (
+                                        <p className={`hidden lg:block text-[11px] truncate ml-1 ${isBento ? 'text-slate-700 font-bold' : 'text-slate-500 dark:text-slate-400 font-medium'}`}>
+                                            {isGuest ? (
+                                                <>Explore & test your knowledge</>
+                                            ) : (
+                                                <>Welcome back, <span className={`${isBento ? 'text-black font-black' : 'text-slate-800 dark:text-slate-200 font-semibold'}`}>{user?.name || 'Explorer'}</span></>
+                                            )}
+                                        </p>
+                                    )}
+                                </div>
+                            </button>
                         </div>
                     </div>
 
@@ -182,7 +204,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         {showActions && (
                             <>
                                 <button
-                                    onClick={onViewLeaderboard}
+                                    onClick={handleLeaderboardClick}
                                     className={`h-8 flex items-center gap-1.5 px-2.5 rounded-lg transition-all font-semibold text-xs active:scale-95 cursor-pointer shrink-0 ${
                                         isBento
                                             ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] font-black uppercase'
@@ -197,7 +219,7 @@ const Navbar: React.FC<NavbarProps> = ({
                                 {!isGuest ? (
                                     <>
                                         <button
-                                            onClick={onViewProfile}
+                                            onClick={handleProfileClick}
                                             className={`h-8 flex items-center gap-2 px-2.5 rounded-lg transition-all font-semibold text-xs active:scale-95 cursor-pointer shrink-0 ${
                                                 isBento
                                                     ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#fef9c3] font-black'
@@ -220,7 +242,7 @@ const Navbar: React.FC<NavbarProps> = ({
                                         </button>
 
                                         <button
-                                            onClick={onLogout}
+                                            onClick={handleLogoutClick}
                                             className={`h-8 w-8 flex items-center justify-center rounded-lg transition-all cursor-pointer active:scale-95 shrink-0 ${
                                                 isBento
                                                     ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
@@ -268,19 +290,17 @@ const Navbar: React.FC<NavbarProps> = ({
                     <div className="flex xl:hidden items-center gap-2 shrink-0">
                         <NotificationCenter currentUser={user} />
                         <ThemeToggle />
-                        {showActions && (
-                            <button
-                                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                className={`p-2 rounded-xl transition-all cursor-pointer active:scale-95 ${
-                                    isBento
-                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
-                                        : 'text-slate-700 dark:text-white bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10'
-                                }`}
-                                aria-label="Toggle navigation menu"
-                            >
-                                {isMenuOpen ? <X className={`w-5 h-5 ${isBento ? 'stroke-[2.5]' : ''}`} /> : <Menu className={`w-5 h-5 ${isBento ? 'stroke-[2.5]' : ''}`} />}
-                            </button>
-                        )}
+                        <button
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className={`p-2 rounded-xl transition-all cursor-pointer active:scale-95 ${
+                                isBento
+                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                    : 'text-slate-700 dark:text-white bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10'
+                            }`}
+                            aria-label="Toggle navigation menu"
+                        >
+                            {isMenuOpen ? <X className={`w-5 h-5 ${isBento ? 'stroke-[2.5]' : ''}`} /> : <Menu className={`w-5 h-5 ${isBento ? 'stroke-[2.5]' : ''}`} />}
+                        </button>
                     </div>
                 </div>
 
@@ -321,108 +341,109 @@ const Navbar: React.FC<NavbarProps> = ({
                         </div>
 
                         {/* User Actions */}
-                        {showActions && (
-                            <div className={`space-y-3 pt-3 ${isBento ? 'border-t-2 border-black' : 'border-t border-slate-200 dark:border-white/5'}`}>
-                                {!isGuest ? (
-                                    <>
-                                        <div className={`flex items-center gap-3 p-2.5 rounded-2xl ${
-                                            isBento
-                                                ? 'bg-[#fef9c3] border-2 border-black shadow-[2px_2px_0px_#000]'
-                                                : 'bg-slate-50 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/5'
+                        <div className={`space-y-3 pt-3 ${isBento ? 'border-t-2 border-black' : 'border-t border-slate-200 dark:border-white/5'}`}>
+                            {!isGuest ? (
+                                <>
+                                    <div className={`flex items-center gap-3 p-2.5 rounded-2xl ${
+                                        isBento
+                                            ? 'bg-[#fef9c3] border-2 border-black shadow-[2px_2px_0px_#000]'
+                                            : 'bg-slate-50 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/5'
+                                    }`}>
+                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs overflow-hidden shrink-0 ${
+                                            isBento ? 'border-2 border-black bg-white' : 'bg-white dark:bg-[#090d16] border border-slate-200 dark:border-white/10 text-white'
                                         }`}>
-                                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs overflow-hidden shrink-0 ${
-                                                isBento ? 'border-2 border-black bg-white' : 'bg-white dark:bg-[#090d16] border border-slate-200 dark:border-white/10 text-white'
-                                            }`}>
-                                                {user?.avatar ? (
-                                                    <Avatar config={user.avatar} size="sm" className="w-full h-full" />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-                                                        {user?.name?.charAt(0).toUpperCase() || 'U'}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className={`text-[10px] uppercase font-bold tracking-wider ${isBento ? 'text-slate-600' : 'text-slate-400'}`}>Signed in as</p>
-                                                <p className={`text-xs truncate ${isBento ? 'font-black text-black' : 'font-semibold text-slate-900 dark:text-white'}`}>{user?.name || 'User'}</p>
-                                            </div>
+                                            {user?.avatar ? (
+                                                <Avatar config={user.avatar} size="sm" className="w-full h-full" />
+                                            ) : (
+                                                <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                                                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                                                </div>
+                                            )}
                                         </div>
-
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button
-                                                onClick={() => {
-                                                    onViewLeaderboard();
-                                                    setIsMenuOpen(false);
-                                                }}
-                                                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer active:scale-95 ${
-                                                    isBento
-                                                        ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000] font-black'
-                                                        : 'bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10'
-                                                }`}
-                                            >
-                                                <Award className={`w-4 h-4 ${isBento ? 'text-black stroke-[2.5]' : 'text-indigo-500'}`} />
-                                                Rankings
-                                            </button>
-
-                                            <button
-                                                onClick={() => {
-                                                    onViewProfile();
-                                                    setIsMenuOpen(false);
-                                                }}
-                                                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer active:scale-95 ${
-                                                    isBento
-                                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] font-black'
-                                                        : 'bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10'
-                                                }`}
-                                            >
-                                                <User className={`w-4 h-4 ${isBento ? 'text-black stroke-[2.5]' : 'text-indigo-500'}`} />
-                                                Profile
-                                            </button>
+                                        <div className="min-w-0 flex-1">
+                                            <p className={`text-[10px] uppercase font-bold tracking-wider ${isBento ? 'text-slate-600' : 'text-slate-400'}`}>Signed in as</p>
+                                            <p className={`text-xs truncate ${isBento ? 'font-black text-black' : 'font-semibold text-slate-900 dark:text-white'}`}>{user?.name || 'User'}</p>
                                         </div>
+                                    </div>
 
-                                        <button
-                                            onClick={onLogout}
-                                            className={`w-full flex items-center justify-center gap-2 p-2.5 rounded-xl transition-all font-semibold text-xs cursor-pointer active:scale-95 ${
-                                                isBento
-                                                    ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[2px_2px_0px_#000] font-black'
-                                                    : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-rose-500/10'
-                                            }`}
-                                        >
-                                            <LogOut className={`w-4 h-4 ${isBento ? 'stroke-[2.5]' : ''}`} />
-                                            Logout
-                                        </button>
-                                    </>
-                                ) : (
-                                    <div className="space-y-2">
+                                    <div className="grid grid-cols-2 gap-2">
                                         <button
                                             onClick={() => {
-                                                navigate('/login');
+                                                handleLeaderboardClick();
                                                 setIsMenuOpen(false);
                                             }}
-                                            className={`w-full py-2.5 font-bold text-xs rounded-xl transition-all text-center cursor-pointer ${
+                                            className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer active:scale-95 ${
                                                 isBento
-                                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] font-black'
-                                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
+                                                    ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000] font-black'
+                                                    : 'bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10'
                                             }`}
                                         >
-                                            Log In
+                                            <Award className={`w-4 h-4 ${isBento ? 'text-black stroke-[2.5]' : 'text-indigo-500'}`} />
+                                            Rankings
                                         </button>
+
                                         <button
                                             onClick={() => {
-                                                navigate('/register');
+                                                handleProfileClick();
                                                 setIsMenuOpen(false);
                                             }}
-                                            className={`w-full py-2.5 font-bold text-xs rounded-xl transition-all text-center cursor-pointer ${
+                                            className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer active:scale-95 ${
                                                 isBento
                                                     ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] font-black'
-                                                    : 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200'
+                                                    : 'bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10'
                                             }`}
                                         >
-                                            Create Free Account
+                                            <User className={`w-4 h-4 ${isBento ? 'text-black stroke-[2.5]' : 'text-indigo-500'}`} />
+                                            Profile
                                         </button>
                                     </div>
-                                )}
-                            </div>
-                        )}
+
+                                    <button
+                                        onClick={() => {
+                                            handleLogoutClick();
+                                            setIsMenuOpen(false);
+                                        }}
+                                        className={`w-full flex items-center justify-center gap-2 p-2.5 rounded-xl transition-all font-semibold text-xs cursor-pointer active:scale-95 ${
+                                            isBento
+                                                ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[2px_2px_0px_#000] font-black'
+                                                : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-rose-500/10'
+                                        }`}
+                                    >
+                                        <LogOut className={`w-4 h-4 ${isBento ? 'stroke-[2.5]' : ''}`} />
+                                        Logout
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="space-y-2">
+                                    <button
+                                        onClick={() => {
+                                            navigate('/login');
+                                            setIsMenuOpen(false);
+                                        }}
+                                        className={`w-full py-2.5 font-bold text-xs rounded-xl transition-all text-center cursor-pointer ${
+                                            isBento
+                                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] font-black'
+                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
+                                        }`}
+                                    >
+                                        Log In
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            navigate('/register');
+                                            setIsMenuOpen(false);
+                                        }}
+                                        className={`w-full py-2.5 font-bold text-xs rounded-xl transition-all text-center cursor-pointer ${
+                                            isBento
+                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] font-black'
+                                                : 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200'
+                                        }`}
+                                    >
+                                        Create Free Account
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

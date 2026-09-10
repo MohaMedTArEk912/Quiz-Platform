@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { UserData } from '../types/index.ts';
 import { Trophy, Medal, Star, TrendingUp, Users, Crown, Shield } from 'lucide-react';
 import Navbar from './Navbar.tsx';
+import Footer from './Footer.tsx';
 import Avatar from './Avatar.tsx';
 import { AmbientBackground } from './AmbientBackground';
 import { api } from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 
 interface ClanLeaderboardEntry {
@@ -28,6 +31,8 @@ interface LeaderboardProps {
 }
 
 const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack }) => {
+    const navigate = useNavigate();
+    const { logout } = useAuth();
     const { isBento } = useTheme();
     const [activeTab, setActiveTab] = useState<'players' | 'clans'>('players');
     const [clanLeaderboard, setClanLeaderboard] = useState<ClanLeaderboardEntry[]>([]);
@@ -144,10 +149,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                 onBack={onBack}
                 showBack={true}
                 title="Global Leaderboard"
-                onViewProfile={() => { }}
-                onViewLeaderboard={() => { }}
-                onLogout={() => { }}
-                showActions={false}
+                onViewProfile={() => navigate('/profile')}
+                onViewLeaderboard={() => navigate('/leaderboard')}
+                onLogout={logout}
+                showActions={true}
             />
 
             {/* Tab Navigation */}
@@ -562,6 +567,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                     </div>
                 )}
             </main>
+            <Footer />
         </div>
     );
 };

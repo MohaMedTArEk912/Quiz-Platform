@@ -40,6 +40,7 @@ import {
     Quote
 } from 'lucide-react';
 import Navbar from './Navbar.tsx';
+import Footer from './Footer.tsx';
 import UserRoadmapView from './UserRoadmapView';
 import InitialTrackSelectionModal from './tracks/InitialTrackSelectionModal';
 import RequestTrackAccessModal from './tracks/RequestTrackAccessModal';
@@ -2228,6 +2229,9 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                     onClose={() => setLiveHostQuiz(null)}
                 />
             )}
+
+            {/* Global Footer */}
+            <Footer />
         </div>
     );
 };

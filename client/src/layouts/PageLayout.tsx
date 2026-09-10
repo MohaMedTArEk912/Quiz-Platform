@@ -1,5 +1,6 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { AmbientBackground } from '../components/AmbientBackground';
@@ -24,7 +25,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, title, showBack, onBa
 
 
     return (
-        <div className={`min-h-dvh transition-colors duration-200 relative selection:bg-indigo-500/25 ${
+        <div className={`min-h-dvh flex flex-col justify-between transition-colors duration-200 relative selection:bg-indigo-500/25 ${
             isBento
                 ? 'bg-transparent text-black'
                 : 'bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100'
@@ -40,9 +41,10 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, title, showBack, onBa
                 onBack={onBack}
                 showActions={true}
             />
-            <main className="min-h-[calc(100dvh-64px)] relative z-10">
+            <main className="flex-1 min-h-[calc(100dvh-64px)] relative z-10">
                 {children}
             </main>
+            <Footer />
         </div>
     );
 };

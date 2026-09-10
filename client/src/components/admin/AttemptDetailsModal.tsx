@@ -629,7 +629,7 @@ const AttemptDetailsModal: React.FC<AttemptDetailsModalProps> = ({
                                     {/* Question Image if present */}
                                     {q.imageUrl && (
                                         <div className="mb-4 rounded-2xl overflow-hidden max-h-60 max-w-md border border-gray-200 dark:border-white/10">
-                                            <img src={q.imageUrl} alt="Question context" className="w-full h-auto object-cover" />
+                                            <img src={q.imageUrl} alt="Question context" loading="lazy" decoding="async" className="w-full h-auto object-cover" />
                                         </div>
                                     )}
 
