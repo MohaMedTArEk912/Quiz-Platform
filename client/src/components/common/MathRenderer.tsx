@@ -74,6 +74,7 @@ interface MathRendererProps {
     text: string | number | null | undefined;
     className?: string;
     inline?: boolean;
+    dir?: 'ltr' | 'rtl' | 'auto';
 }
 
 interface Segment {
@@ -143,7 +144,8 @@ const parseMathSegments = (input: string): Segment[] => {
 export const MathRenderer: React.FC<MathRendererProps> = ({
     text,
     className = '',
-    inline = false
+    inline = false,
+    dir
 }) => {
     const [katexReady, setKatexReady] = useState(isKatexLoaded);
 
@@ -164,7 +166,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({
     // Fast path: if no math markers are in text, render clean text
     const hasMath = stringContent.includes('$') || stringContent.includes('\\(') || stringContent.includes('\\[');
     if (!hasMath) {
-        return <span className={className}>{stringContent}</span>;
+        return <span className={className} dir={dir}>{stringContent}</span>;
     }
 
     const renderSegment = (seg: Segment, idx: number) => {
@@ -221,7 +223,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({
     const Container = inline ? 'span' : 'div';
 
     return (
-        <Container className={className}>
+        <Container className={className} dir={dir}>
             {segments.map(renderSegment)}
         </Container>
     );

@@ -121,7 +121,7 @@ const Footer: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => handleFooterNav('/')}
-                                className="flex items-center gap-2.5 group cursor-pointer text-left"
+                                className="flex items-center gap-2.5 group cursor-pointer text-left outline-none focus:outline-none border-0"
                                 aria-label="Quiz Platform Home"
                             >
                                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-base transition-transform group-hover:scale-105 ${
@@ -147,10 +147,6 @@ const Footer: React.FC = () => {
                                 isBento ? 'text-slate-800 font-medium' : 'text-slate-400'
                             }`}>
                                 Next-generation gamified learning platform for computer science students, software engineers, and code enthusiasts. Master algorithms, languages, and architecture.
-                            </p>
-
-                            <p className={`text-xs ${isBento ? 'text-slate-900 font-bold' : 'text-slate-400'}`}>
-                                Made by <span className={`font-bold ${isBento ? 'text-black underline decoration-2' : 'text-indigo-400'}`}>Mohamed Tarek</span>
                             </p>
 
                             {/* Contact Link: Direct Email Support */}
@@ -180,7 +176,7 @@ const Footer: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleFooterNav('/')}
-                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer"
+                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer outline-none focus:outline-none border-0"
                                     >
                                         Home Dashboard
                                     </button>
@@ -189,7 +185,7 @@ const Footer: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleFooterNav('/tracks')}
-                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer"
+                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer outline-none focus:outline-none border-0"
                                     >
                                         Skill Tracks
                                     </button>
@@ -198,7 +194,7 @@ const Footer: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleFooterNav('/study')}
-                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer"
+                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer outline-none focus:outline-none border-0"
                                     >
                                         Study Flashcards
                                     </button>
@@ -207,7 +203,7 @@ const Footer: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleFooterNav('/tournaments')}
-                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer"
+                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer outline-none focus:outline-none border-0"
                                     >
                                         Tournaments
                                     </button>
@@ -216,7 +212,7 @@ const Footer: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleFooterNav('/daily')}
-                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer"
+                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer outline-none focus:outline-none border-0"
                                     >
                                         Daily Challenge
                                     </button>
@@ -236,7 +232,7 @@ const Footer: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleFooterNav('/leaderboard')}
-                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer"
+                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer outline-none focus:outline-none border-0"
                                     >
                                         Global Rankings
                                     </button>
@@ -245,7 +241,7 @@ const Footer: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleFooterNav('/clans')}
-                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer"
+                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer outline-none focus:outline-none border-0"
                                     >
                                         Clans & Guilds
                                     </button>
@@ -254,7 +250,7 @@ const Footer: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleFooterNav('/social')}
-                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer"
+                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer outline-none focus:outline-none border-0"
                                     >
                                         1v1 Live Duels
                                     </button>
@@ -263,7 +259,7 @@ const Footer: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleFooterNav('/shop')}
-                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer"
+                                        className="hover:text-indigo-400 transition-colors text-left cursor-pointer outline-none focus:outline-none border-0"
                                     >
                                         Power-Up Shop
                                     </button>
@@ -333,21 +329,21 @@ const Footer: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setActiveModal('privacy')}
-                                className="hover:text-indigo-400 transition-colors cursor-pointer"
+                                className="hover:text-indigo-400 transition-colors cursor-pointer outline-none focus:outline-none border-0"
                             >
                                 Privacy Policy
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setActiveModal('terms')}
-                                className="hover:text-indigo-400 transition-colors cursor-pointer"
+                                className="hover:text-indigo-400 transition-colors cursor-pointer outline-none focus:outline-none border-0"
                             >
                                 Terms of Service
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setActiveModal('support')}
-                                className="hover:text-indigo-400 transition-colors cursor-pointer flex items-center gap-1"
+                                className="hover:text-indigo-400 transition-colors cursor-pointer flex items-center gap-1 outline-none focus:outline-none border-0"
                             >
                                 <LifeBuoy className="w-3.5 h-3.5 text-indigo-400" />
                                 Support
@@ -355,7 +351,7 @@ const Footer: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setActiveModal('status')}
-                                className="hover:text-indigo-400 transition-colors cursor-pointer flex items-center gap-1.5"
+                                className="hover:text-indigo-400 transition-colors cursor-pointer flex items-center gap-1.5 outline-none focus:outline-none border-0"
                             >
                                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                 System Status
@@ -363,7 +359,7 @@ const Footer: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setActiveModal('faq')}
-                                className="hover:text-indigo-400 transition-colors cursor-pointer"
+                                className="hover:text-indigo-400 transition-colors cursor-pointer outline-none focus:outline-none border-0"
                             >
                                 FAQ &amp; Help
                             </button>

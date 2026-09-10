@@ -71,7 +71,7 @@ const Modal: React.FC<ModalProps> = ({
                         type="button"
                         onClick={onClose}
                         aria-label="Close dialog"
-                        className="p-2.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-xl transition-colors text-gray-500 dark:text-gray-400 cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center touch-target"
+                        className="p-2.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-xl transition-colors text-gray-500 dark:text-gray-400 cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center touch-target outline-none focus:outline-none border-0"
                     >
                         <X className="w-5 h-5" />
                     </button>

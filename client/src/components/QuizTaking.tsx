@@ -1212,14 +1212,14 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             
                             {/* Translated Indicator Badge */}
                             {isTranslated && selectedLanguage !== 'original' && (
-                                <div className={`flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-2 ${isCurrentRtl ? 'justify-end' : 'justify-start'}`}>
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-2">
                                     <Globe className="w-3.5 h-3.5 shrink-0" />
                                     <span>Translated to {getLanguageByCode(selectedLanguage).name} ({getLanguageByCode(selectedLanguage).nativeName})</span>
                                 </div>
                             )}
 
                             <h2 className={`text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] landscape:text-base lg:landscape:text-[28px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight mb-4 sm:mb-6 ${isCurrentRtl ? 'text-right' : 'text-left'}`}>
-                                <MathRenderer text={displayQuestionText} />
+                                <MathRenderer text={displayQuestionText} dir={isCurrentRtl ? 'rtl' : 'ltr'} />
                             </h2>
 
                             {/* Image */}
@@ -1417,7 +1417,6 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                     <button
                                         key={originalIndex}
                                         role="radio"
-                                        dir={isCurrentRtl ? 'rtl' : 'ltr'}
                                         aria-checked={isSelected}
                                         aria-label={`Option ${label}: ${option}`}
                                         tabIndex={0}
@@ -1425,10 +1424,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                         disabled={isSubmitting || (questionSubmitted && !delayedValidation)}
                                         className={`${baseClass} ${stateClass} disabled:opacity-75 disabled:cursor-default`}
                                     >
-                                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-extrabold text-sm ${isCurrentRtl ? 'ml-3 sm:ml-4' : 'mr-3 sm:mr-4'} transition-colors shrink-0 ${badgeClass} font-tabular`}>
+                                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-extrabold text-sm mr-3 sm:mr-4 transition-colors shrink-0 ${badgeClass} font-tabular`}>
                                             {showSuccess || showCorrect ? <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" /> : showWrong ? <XCircle className="w-4 h-4 sm:w-5 sm:h-5"/> : label}
                                         </div>
-                                        <MathRenderer text={option} className={`flex-1 text-sm sm:text-base ${isCurrentRtl ? 'text-right' : 'text-left'} leading-relaxed ${textClass}`} />
+                                        <MathRenderer text={option} className={`flex-1 text-sm sm:text-base text-left leading-relaxed ${textClass}`} dir={isCurrentRtl ? 'auto' : undefined} />
                                         <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
                                             <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isBento ? 'bg-black/10 text-black border border-black/20' : 'bg-black/5 dark:bg-white/10 text-slate-400'}`}>
                                                 {visualIndex + 1}

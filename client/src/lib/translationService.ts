@@ -141,6 +141,14 @@ function protectMathAndCode(text: string): { protectedText: string; tokens: Map<
         return key;
     });
 
+    // 3. Code functions and method calls (e.g. print(), input(), len(), math.sqrt())
+    const funcRegex = /\b[a-zA-Z_][a-zA-Z0-9_.]*\(\)/g;
+    protectedText = protectedText.replace(funcRegex, (match) => {
+        const key = `__MTKN_${tokenIndex++}__`;
+        tokens.set(key, match);
+        return key;
+    });
+
     return { protectedText, tokens };
 }
 

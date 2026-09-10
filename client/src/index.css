@@ -274,6 +274,11 @@ button, a {
   touch-action: manipulation;
 }
 
+button:focus,
+button:active {
+  outline: none;
+}
+
 /* Custom scrollbar utility for scrollable panels */
 .custom-scrollbar::-webkit-scrollbar {
   display: block;
