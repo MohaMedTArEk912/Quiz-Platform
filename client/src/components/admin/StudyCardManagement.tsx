@@ -5,6 +5,7 @@ import type { StudyCard, UserData } from '../../types/index';
 import { api } from '../../lib/api';
 import { useConfirm } from '../../hooks/useConfirm';
 import ConfirmDialog from '../ConfirmDialog';
+import { useTheme } from '../../context/ThemeContext';
 
 interface StudyManagementProps {
     currentUser: UserData;
@@ -13,6 +14,7 @@ interface StudyManagementProps {
 }
 
 const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNotification, subjectId }) => {
+    const { isBento } = useTheme();
     const { confirm, confirmState, handleCancel } = useConfirm();
     const [studyCards, setStudyCards] = useState<StudyCard[]>([]);
     const [editingStudyCard, setEditingStudyCard] = useState<Partial<StudyCard> | null>(null);
@@ -384,24 +386,40 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
                     <div className="relative" ref={studyMenuRef}>
                         <button
                             onClick={() => setShowStudyMenu(!showStudyMenu)}
-                            className="p-3 bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl hover:bg-white dark:hover:bg-white/10 text-gray-500 dark:text-gray-300 rounded-xl font-bold transition-all border border-white/20 dark:border-white/5 shadow-sm hover:shadow-md"
+                            className={`p-3 rounded-xl font-bold transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100 active:translate-x-0.5 active:translate-y-0.5'
+                                    : 'bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl hover:bg-white dark:hover:bg-white/10 text-gray-500 dark:text-gray-300 border border-white/20 dark:border-white/5 shadow-sm hover:shadow-md'
+                            }`}
                         >
                             <MoreVertical className="w-5 h-5" />
                         </button>
                         {showStudyMenu && (
-                            <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#0f0f1a] backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                            <div className={`absolute right-0 top-full mt-2 w-56 rounded-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${
+                                isBento
+                                    ? 'bg-white text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                                    : 'bg-white dark:bg-[#0f0f1a] backdrop-blur-xl border border-gray-200 dark:border-gray-800 shadow-2xl'
+                            }`}>
                                 <button
                                     onClick={() => { handleDownloadSampleCsv(); setShowStudyMenu(false); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-white/10 text-gray-800 dark:text-gray-200 transition-colors font-medium text-sm"
+                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors font-semibold text-sm ${
+                                        isBento
+                                            ? 'hover:bg-slate-100 text-black border-b border-black'
+                                            : 'hover:bg-gray-100 dark:hover:bg-white/10 text-gray-800 dark:text-gray-200'
+                                    }`}
                                 >
-                                    <Download className="w-4 h-4 text-purple-500" />
+                                    <Download className={`w-4 h-4 ${isBento ? 'text-black' : 'text-purple-500'}`} />
                                     Sample CSV
                                 </button>
                                 <button
                                     onClick={() => { cardUploadRef.current?.click(); setShowStudyMenu(false); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-white/10 text-gray-800 dark:text-gray-200 transition-colors font-medium text-sm border-t border-gray-200 dark:border-gray-800"
+                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors font-semibold text-sm ${
+                                        isBento
+                                            ? 'hover:bg-slate-100 text-black'
+                                            : 'hover:bg-gray-100 dark:hover:bg-white/10 text-gray-800 dark:text-gray-200 border-t border-gray-200 dark:border-gray-800'
+                                    }`}
                                 >
-                                    <Upload className="w-4 h-4 text-indigo-500" />
+                                    <Upload className={`w-4 h-4 ${isBento ? 'text-black' : 'text-indigo-500'}`} />
                                     Upload CSV
                                 </button>
                             </div>
@@ -418,7 +436,11 @@ const StudyCardManagement: React.FC<StudyManagementProps> = ({ currentUser, onNo
                             subjectId: subjectId,
                             moduleId: moduleFilter !== 'all' ? moduleFilter : undefined
                         })}
-                        className="flex-1 md:flex-none px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5"
+                        className={`flex-1 md:flex-none px-6 py-3 rounded-xl font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                            isBento
+                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 uppercase tracking-wider text-sm'
+                                : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transform hover:-translate-y-0.5'
+                        }`}
                     >
                         <Plus className="w-5 h-5" /> New Card
                     </button>

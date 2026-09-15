@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Mail, Lock, ArrowLeft, Eye, EyeOff, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { api } from '../lib/api';
+import { useTheme } from '../context/ThemeContext';
 
 interface ForgotPasswordProps {
     onBack: () => void;
@@ -14,6 +15,7 @@ interface PasswordStrength {
 }
 
 const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) => {
+    const { isBento } = useTheme();
     const [step, setStep] = useState<'email' | 'reset'>('email');
     const [email, setEmail] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -57,11 +59,11 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
         if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
 
         if (score <= 2) {
-            return { score, label: 'Weak', color: 'text-red-500 dark:text-red-400' };
+            return { score, label: 'Weak', color: isBento ? 'text-red-600 font-black' : 'text-red-500 dark:text-red-400' };
         } else if (score <= 4) {
-            return { score, label: 'Medium', color: 'text-yellow-500 dark:text-yellow-400' };
+            return { score, label: 'Medium', color: isBento ? 'text-amber-600 font-black' : 'text-yellow-500 dark:text-yellow-400' };
         } else {
-            return { score, label: 'Strong', color: 'text-green-500 dark:text-green-400' };
+            return { score, label: 'Strong', color: isBento ? 'text-green-700 font-black' : 'text-green-500 dark:text-green-400' };
         }
     };
 
@@ -142,17 +144,31 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] dark:from-indigo-900 dark:via-purple-900 dark:to-pink-900 flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-300 p-safe">
+        <div className={`min-h-screen flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-300 p-safe ${
+            isBento
+                ? 'bg-[#f5f3ec]'
+                : 'bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] dark:from-indigo-900 dark:via-purple-900 dark:to-pink-900'
+        }`}>
             {/* Background Decorations */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-200/40 dark:bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-200/40 dark:bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-            </div>
+            {!isBento && (
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-200/40 dark:bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-200/40 dark:bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+                </div>
+            )}
 
-            <div className="relative z-10 bg-white dark:bg-gray-800 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-full max-w-md transition-all duration-300 border border-gray-200 dark:border-gray-700">
+            <div className={`relative z-10 p-8 w-full max-w-md transition-all duration-300 ${
+                isBento
+                    ? 'bg-white border-[3px] border-black rounded-2xl shadow-[8px_8px_0px_#000]'
+                    : 'bg-white dark:bg-gray-800 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700'
+            }`}>
                 <button
                     onClick={onBack}
-                    className="mb-4 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200"
+                    className={`mb-4 flex items-center gap-2 transition-colors duration-200 ${
+                        isBento
+                            ? 'text-black font-black hover:text-indigo-600'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
+                    }`}
                 >
                     <ArrowLeft className="w-5 h-5" />
                     Back to Login
@@ -160,23 +176,35 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
 
                 <div className="text-center mb-8">
                     <div className="text-6xl mb-4 animate-[bounce_3s_infinite]">🔐</div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mb-2">
+                    <h1 className={`text-4xl font-black mb-2 ${
+                        isBento
+                            ? 'text-black'
+                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent'
+                    }`}>
                         {step === 'email' ? 'Forgot Password' : 'Reset Password'}
                     </h1>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className={isBento ? 'text-gray-700 font-medium' : 'text-gray-600 dark:text-gray-400'}>
                         {step === 'email' ? 'Enter your email to reset your password' : 'Enter your new password'}
                     </p>
                 </div>
 
                 {error && (
-                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl flex items-center gap-2 animate-in slide-in-from-top-2">
+                    <div className={`mb-6 p-4 rounded-xl flex items-center gap-2 animate-in slide-in-from-top-2 ${
+                        isBento
+                            ? 'bg-[#fee2e2] border-2 border-black text-black font-bold shadow-[3px_3px_0px_#000]'
+                            : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
+                    }`}>
                         <XCircle className="w-5 h-5 flex-shrink-0" />
                         <span className="font-medium">{error}</span>
                     </div>
                 )}
 
                 {success && (
-                    <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-xl flex items-center gap-2 animate-in slide-in-from-top-2">
+                    <div className={`mb-6 p-4 rounded-xl flex items-center gap-2 animate-in slide-in-from-top-2 ${
+                        isBento
+                            ? 'bg-[#dcfce7] border-2 border-black text-black font-bold shadow-[3px_3px_0px_#000]'
+                            : 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
+                    }`}>
                         <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
                         <span className="font-medium">{success}</span>
                     </div>
@@ -185,15 +213,19 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
                 {step === 'email' ? (
                     <form onSubmit={handleVerifyEmail} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
+                            <label className={`block text-sm mb-2 ${isBento ? 'font-black text-black' : 'font-semibold text-gray-700 dark:text-gray-300'}`}>Email Address</label>
                             <div className="relative group">
-                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors w-5 h-5" />
+                                <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isBento ? 'text-black' : 'text-gray-400 dark:text-gray-500 group-hover:text-purple-500 dark:group-hover:text-purple-400'} transition-colors`} />
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="alex.dev@quizplatform.com"
-                                    className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 dark:focus:ring-purple-400/20 transition-all bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 hover:border-gray-300 dark:hover:border-gray-600"
+                                    className={`w-full pl-12 pr-4 py-3 rounded-xl transition-all ${
+                                        isBento
+                                            ? 'border-2 border-black bg-white text-black font-medium placeholder-gray-400 shadow-[2px_2px_0px_#000] focus:outline-none focus:ring-0 focus:border-black'
+                                            : 'border-2 border-gray-200 dark:border-gray-700 focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 dark:focus:ring-purple-400/20 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 hover:border-gray-300 dark:hover:border-gray-600'
+                                    }`}
                                     required
                                     autoComplete="email"
                                 />
@@ -203,7 +235,11 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
                         <button
                             type="submit"
                             disabled={loading || !isValidEmail(email)}
-                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 text-white py-4 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-600 dark:hover:to-purple-600 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            className={`w-full py-4 rounded-xl font-black text-lg transition-all duration-200 transform disabled:opacity-50 disabled:cursor-not-allowed ${
+                                isBento
+                                    ? 'bg-[#bef264] hover:bg-[#a3e635] text-black border-2 border-black shadow-[4px_4px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 disabled:shadow-none'
+                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 text-white hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-600 dark:hover:to-purple-600 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-purple-500/25 disabled:hover:scale-100'
+                            }`}
                         >
                             {loading ? (
                                 <span className="flex items-center justify-center gap-2">
@@ -219,22 +255,26 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
                 ) : (
                     <form onSubmit={handleResetPassword} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">New Password</label>
+                            <label className={`block text-sm mb-2 ${isBento ? 'font-black text-black' : 'font-semibold text-gray-700 dark:text-gray-300'}`}>New Password</label>
                             <div className="relative group">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors w-5 h-5" />
+                                <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isBento ? 'text-black' : 'text-gray-400 dark:text-gray-500 group-hover:text-purple-500 dark:group-hover:text-purple-400'} transition-colors`} />
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
                                     placeholder="Enter new password"
-                                    className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 dark:focus:ring-purple-400/20 transition-all bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 hover:border-gray-300 dark:hover:border-gray-600"
+                                    className={`w-full pl-12 pr-12 py-3 rounded-xl transition-all ${
+                                        isBento
+                                            ? 'border-2 border-black bg-white text-black font-medium placeholder-gray-400 shadow-[2px_2px_0px_#000] focus:outline-none focus:ring-0 focus:border-black'
+                                            : 'border-2 border-gray-200 dark:border-gray-700 focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 dark:focus:ring-purple-400/20 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 hover:border-gray-300 dark:hover:border-gray-600'
+                                    }`}
                                     required
                                     minLength={6}
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                    className={`absolute right-3 top-1/2 transform -translate-y-1/2 transition-colors ${isBento ? 'text-black hover:text-indigo-600' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
                                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                                 >
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -245,33 +285,33 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
                             {passwordStrength && passwordStrength.label && (
                                 <div className="mt-2">
                                     <div className="flex items-center justify-between mb-1">
-                                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Password Strength:</span>
-                                        <span className={`text-xs font-bold ${passwordStrength.color}`}>{passwordStrength.label}</span>
+                                        <span className={`text-xs ${isBento ? 'font-bold text-black' : 'font-medium text-gray-600 dark:text-gray-400'}`}>Password Strength:</span>
+                                        <span className={`text-xs font-black ${passwordStrength.color}`}>{passwordStrength.label}</span>
                                     </div>
-                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div className={`w-full rounded-full h-2.5 overflow-hidden ${isBento ? 'bg-gray-200 border border-black' : 'bg-gray-200 dark:bg-gray-700'}`}>
                                         <div 
-                                            className={`h-2 rounded-full transition-all duration-300 ${
+                                            className={`h-full transition-all duration-300 ${
                                                 passwordStrength.score <= 2 ? 'bg-red-500' : 
-                                                passwordStrength.score <= 4 ? 'bg-yellow-500' : 
-                                                'bg-green-500'
+                                                passwordStrength.score <= 4 ? 'bg-yellow-400' : 
+                                                'bg-[#bef264]'
                                             }`}
                                             style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
                                         ></div>
                                     </div>
                                     <div className="mt-2 space-y-1">
-                                        <p className={`text-xs flex items-center gap-1 ${newPassword.length >= 8 ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-500'}`}>
+                                        <p className={`text-xs flex items-center gap-1 ${newPassword.length >= 8 ? (isBento ? 'text-green-700 font-bold' : 'text-green-600 dark:text-green-400') : (isBento ? 'text-gray-600' : 'text-gray-500 dark:text-gray-500')}`}>
                                             {newPassword.length >= 8 ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
                                             At least 8 characters
                                         </p>
-                                        <p className={`text-xs flex items-center gap-1 ${/[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-500'}`}>
+                                        <p className={`text-xs flex items-center gap-1 ${/[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) ? (isBento ? 'text-green-700 font-bold' : 'text-green-600 dark:text-green-400') : (isBento ? 'text-gray-600' : 'text-gray-500 dark:text-gray-500')}`}>
                                             {/[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
                                             Mix of uppercase & lowercase
                                         </p>
-                                        <p className={`text-xs flex items-center gap-1 ${/\d/.test(newPassword) ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-500'}`}>
+                                        <p className={`text-xs flex items-center gap-1 ${/\d/.test(newPassword) ? (isBento ? 'text-green-700 font-bold' : 'text-green-600 dark:text-green-400') : (isBento ? 'text-gray-600' : 'text-gray-500 dark:text-gray-500')}`}>
                                             {/\d/.test(newPassword) ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
                                             Contains number
                                         </p>
-                                        <p className={`text-xs flex items-center gap-1 ${/[!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-500'}`}>
+                                        <p className={`text-xs flex items-center gap-1 ${/[!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? (isBento ? 'text-green-700 font-bold' : 'text-green-600 dark:text-green-400') : (isBento ? 'text-gray-600' : 'text-gray-500 dark:text-gray-500')}`}>
                                             {/[!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
                                             Contains special character
                                         </p>
@@ -281,18 +321,25 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Confirm Password</label>
+                            <label className={`block text-sm mb-2 ${isBento ? 'font-black text-black' : 'font-semibold text-gray-700 dark:text-gray-300'}`}>Confirm Password</label>
                             <div className="relative group">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors w-5 h-5" />
+                                <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isBento ? 'text-black' : 'text-gray-400 dark:text-gray-500 group-hover:text-purple-500 dark:group-hover:text-purple-400'} transition-colors`} />
                                 <input
                                     type={showConfirmPassword ? 'text' : 'password'}
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     placeholder="Confirm new password"
-                                    className={`w-full pl-12 pr-12 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 dark:focus:ring-purple-400/20 transition-all bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${
-                                        passwordsMatch === null ? 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600' :
-                                        passwordsMatch ? 'border-green-500 dark:border-green-500 focus:border-green-500' :
-                                        'border-red-500 dark:border-red-500 focus:border-red-500'
+                                    className={`w-full pl-12 pr-12 py-3 rounded-xl transition-all ${
+                                        isBento
+                                            ? `border-2 bg-white text-black font-medium placeholder-gray-400 shadow-[2px_2px_0px_#000] focus:outline-none focus:ring-0 ${
+                                                passwordsMatch === null ? 'border-black' :
+                                                passwordsMatch ? 'border-green-600' : 'border-red-600'
+                                              }`
+                                            : `border-2 focus:outline-none focus:ring-2 focus:ring-purple-500/20 dark:focus:ring-purple-400/20 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${
+                                                passwordsMatch === null ? 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600' :
+                                                passwordsMatch ? 'border-green-500 dark:border-green-500 focus:border-green-500' :
+                                                'border-red-500 dark:border-red-500 focus:border-red-500'
+                                              }`
                                     }`}
                                     required
                                     minLength={6}
@@ -300,7 +347,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
                                 <button
                                     type="button"
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                    className={`absolute right-3 top-1/2 transform -translate-y-1/2 transition-colors ${isBento ? 'text-black hover:text-indigo-600' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
                                     aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                                 >
                                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -309,7 +356,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
                             
                             {/* Password Match Indicator */}
                             {passwordsMatch !== null && (
-                                <p className={`mt-2 text-xs flex items-center gap-1 ${passwordsMatch ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                <p className={`mt-2 text-xs flex items-center gap-1 font-bold ${passwordsMatch ? (isBento ? 'text-green-700' : 'text-green-600 dark:text-green-400') : (isBento ? 'text-red-600' : 'text-red-600 dark:text-red-400')}`}>
                                     {passwordsMatch ? (
                                         <>
                                             <CheckCircle2 className="w-4 h-4" />
@@ -328,7 +375,11 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
                         <button
                             type="submit"
                             disabled={loading || !passwordsMatch || (passwordStrength !== null && passwordStrength.score <= 2)}
-                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 text-white py-4 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-600 dark:hover:to-purple-600 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            className={`w-full py-4 rounded-xl font-black text-lg transition-all duration-200 transform disabled:opacity-50 disabled:cursor-not-allowed ${
+                                isBento
+                                    ? 'bg-[#bef264] hover:bg-[#a3e635] text-black border-2 border-black shadow-[4px_4px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 disabled:shadow-none'
+                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 text-white hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-600 dark:hover:to-purple-600 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-purple-500/25 disabled:hover:scale-100'
+                            }`}
                         >
                             {loading ? (
                                 <span className="flex items-center justify-center gap-2">

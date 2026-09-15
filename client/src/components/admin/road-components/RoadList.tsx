@@ -7,13 +7,13 @@ import {
     Eye, EyeOff, Download, type LucideIcon
 } from 'lucide-react';
 
-const ICON_MAP: Record<string, LucideIcon> = {
+export const ICON_MAP: Record<string, LucideIcon> = {
     BookOpen, GraduationCap, Brain, Code, Atom, Calculator, Globe,
     Music, Palette, Microscope, FlaskConical, Landmark, Scale,
     Heart, Languages, History, Cpu, Database, Sparkles, Layout
 };
 
-const RoadIcon: React.FC<{ iconName?: string; className?: string }> = ({ iconName, className = 'w-7 h-7 text-indigo-600 dark:text-indigo-400' }) => {
+export const RoadIcon: React.FC<{ iconName?: string; className?: string }> = ({ iconName, className = 'w-7 h-7 text-indigo-600 dark:text-indigo-400' }) => {
     if (!iconName || !ICON_MAP[iconName]) {
         return <BookOpen className={className} />;
     }

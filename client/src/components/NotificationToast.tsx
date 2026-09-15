@@ -7,6 +7,7 @@ import {
     Sparkles,
     X
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 export type NotificationType = 'success' | 'error' | 'info' | 'warning' | 'update';
 
@@ -40,6 +41,7 @@ interface ToastCardProps {
 }
 
 export const ToastCard: React.FC<ToastCardProps> = ({ notification, onClose }) => {
+    const { isBento } = useTheme();
     const { id, type, message, title, duration = 4500, action } = notification;
     const [progress, setProgress] = useState(100);
     const [isPaused, setIsPaused] = useState(false);
@@ -149,47 +151,47 @@ export const ToastCard: React.FC<ToastCardProps> = ({ notification, onClose }) =
         switch (type) {
             case 'success':
                 return {
-                    icon: <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />,
-                    bgGradient: 'from-emerald-500/15 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/15',
-                    borderColor: 'border-emerald-500/30 dark:border-emerald-500/40',
-                    progressBar: 'bg-gradient-to-r from-emerald-500 to-teal-400',
-                    glow: 'shadow-emerald-500/10',
+                    icon: <CheckCircle2 className={`w-5 h-5 shrink-0 ${isBento ? 'text-black' : 'text-emerald-500'}`} />,
+                    bgGradient: isBento ? 'bg-[#bef264]' : 'from-emerald-500/15 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/15',
+                    borderColor: isBento ? 'border-black' : 'border-emerald-500/30 dark:border-emerald-500/40',
+                    progressBar: isBento ? 'bg-black' : 'bg-gradient-to-r from-emerald-500 to-teal-400',
+                    glow: isBento ? 'shadow-[5px_5px_0px_#000]' : 'shadow-emerald-500/10',
                     defaultTitle: 'Success'
                 };
             case 'error':
                 return {
-                    icon: <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />,
-                    bgGradient: 'from-rose-500/15 to-red-500/10 dark:from-rose-500/20 dark:to-red-500/15',
-                    borderColor: 'border-rose-500/30 dark:border-rose-500/40',
-                    progressBar: 'bg-gradient-to-r from-rose-500 to-red-400',
-                    glow: 'shadow-rose-500/10',
+                    icon: <AlertCircle className={`w-5 h-5 shrink-0 ${isBento ? 'text-black' : 'text-rose-500'}`} />,
+                    bgGradient: isBento ? 'bg-[#f87171]' : 'from-rose-500/15 to-red-500/10 dark:from-rose-500/20 dark:to-red-500/15',
+                    borderColor: isBento ? 'border-black' : 'border-rose-500/30 dark:border-rose-500/40',
+                    progressBar: isBento ? 'bg-black' : 'bg-gradient-to-r from-rose-500 to-red-400',
+                    glow: isBento ? 'shadow-[5px_5px_0px_#000]' : 'shadow-rose-500/10',
                     defaultTitle: 'Error'
                 };
             case 'warning':
                 return {
-                    icon: <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />,
-                    bgGradient: 'from-amber-500/15 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/15',
-                    borderColor: 'border-amber-500/30 dark:border-amber-500/40',
-                    progressBar: 'bg-gradient-to-r from-amber-500 to-orange-400',
-                    glow: 'shadow-amber-500/10',
+                    icon: <AlertTriangle className={`w-5 h-5 shrink-0 ${isBento ? 'text-black' : 'text-amber-500'}`} />,
+                    bgGradient: isBento ? 'bg-[#fde047]' : 'from-amber-500/15 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/15',
+                    borderColor: isBento ? 'border-black' : 'border-amber-500/30 dark:border-amber-500/40',
+                    progressBar: isBento ? 'bg-black' : 'bg-gradient-to-r from-amber-500 to-orange-400',
+                    glow: isBento ? 'shadow-[5px_5px_0px_#000]' : 'shadow-amber-500/10',
                     defaultTitle: 'Attention'
                 };
             case 'update':
                 return {
-                    icon: <Sparkles className="w-5 h-5 text-purple-500 shrink-0 animate-pulse" />,
-                    bgGradient: 'from-purple-500/15 to-indigo-500/10 dark:from-purple-500/20 dark:to-indigo-500/15',
-                    borderColor: 'border-purple-500/30 dark:border-purple-500/40',
-                    progressBar: 'bg-gradient-to-r from-purple-500 to-indigo-400',
-                    glow: 'shadow-purple-500/10',
+                    icon: <Sparkles className={`w-5 h-5 shrink-0 ${isBento ? 'text-black animate-pulse' : 'text-purple-500 animate-pulse'}`} />,
+                    bgGradient: isBento ? 'bg-[#ddd6fe]' : 'from-purple-500/15 to-indigo-500/10 dark:from-purple-500/20 dark:to-indigo-500/15',
+                    borderColor: isBento ? 'border-black' : 'border-purple-500/30 dark:border-purple-500/40',
+                    progressBar: isBento ? 'bg-black' : 'bg-gradient-to-r from-purple-500 to-indigo-400',
+                    glow: isBento ? 'shadow-[5px_5px_0px_#000]' : 'shadow-purple-500/10',
                     defaultTitle: 'New Update'
                 };
             default:
                 return {
-                    icon: <Info className="w-5 h-5 text-blue-500 shrink-0" />,
-                    bgGradient: 'from-blue-500/15 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/15',
-                    borderColor: 'border-blue-500/30 dark:border-blue-500/40',
-                    progressBar: 'bg-gradient-to-r from-blue-500 to-indigo-400',
-                    glow: 'shadow-blue-500/10',
+                    icon: <Info className={`w-5 h-5 shrink-0 ${isBento ? 'text-black' : 'text-blue-500'}`} />,
+                    bgGradient: isBento ? 'bg-[#bae6fd]' : 'from-blue-500/15 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/15',
+                    borderColor: isBento ? 'border-black' : 'border-blue-500/30 dark:border-blue-500/40',
+                    progressBar: isBento ? 'bg-black' : 'bg-gradient-to-r from-blue-500 to-indigo-400',
+                    glow: isBento ? 'shadow-[5px_5px_0px_#000]' : 'shadow-blue-500/10',
                     defaultTitle: 'Information'
                 };
         }
@@ -211,22 +213,34 @@ export const ToastCard: React.FC<ToastCardProps> = ({ notification, onClose }) =
                 opacity: isDismissing ? 0 : 1 - Math.abs(touchOffsetX) / 200,
                 transition: touchOffsetX === 0 ? 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)' : 'none'
             }}
-            className={`pointer-events-auto relative overflow-hidden bg-white/95 dark:bg-[#12131f]/95 backdrop-blur-2xl border ${config.borderColor} rounded-2xl sm:rounded-3xl shadow-2xl ${config.glow} p-3.5 sm:p-4 w-full transition-all duration-200 ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in slide-in-from-top-3 duration-300`}
+            className={`pointer-events-auto relative overflow-hidden p-3.5 sm:p-4 w-full transition-all duration-200 animate-in fade-in slide-in-from-top-3 duration-300 ${
+                isBento
+                    ? 'bg-white border-[2.5px] border-black rounded-2xl shadow-[5px_5px_0px_#000]'
+                    : `bg-white/95 dark:bg-[#12131f]/95 backdrop-blur-2xl border ${config.borderColor} rounded-2xl sm:rounded-3xl shadow-2xl ${config.glow} ring-1 ring-black/5 dark:ring-white/10`
+            }`}
         >
             <div className="flex items-start gap-3">
-                {/* Left Icon with rounded soft gradient container */}
-                <div className={`p-2 rounded-xl sm:rounded-2xl bg-gradient-to-br ${config.bgGradient} flex items-center justify-center shrink-0 shadow-inner`}>
+                {/* Left Icon with rounded container */}
+                <div className={`p-2 rounded-xl shrink-0 flex items-center justify-center ${
+                    isBento
+                        ? `${config.bgGradient} border-2 border-black shadow-[2px_2px_0px_#000]`
+                        : `sm:rounded-2xl bg-gradient-to-br ${config.bgGradient} shadow-inner`
+                }`}>
                     {config.icon}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0 pt-0.5">
                     {title && (
-                        <h4 className="text-xs sm:text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight mb-0.5 truncate">
+                        <h4 className={`text-xs sm:text-sm font-black uppercase tracking-tight mb-0.5 truncate ${
+                            isBento ? 'text-black' : 'text-gray-900 dark:text-white'
+                        }`}>
                             {title}
                         </h4>
                     )}
-                    <p className="text-xs sm:text-[13px] font-medium text-gray-700 dark:text-gray-200 leading-snug break-words">
+                    <p className={`text-xs sm:text-[13px] leading-snug break-words ${
+                        isBento ? 'text-black font-bold' : 'font-medium text-gray-700 dark:text-gray-200'
+                    }`}>
                         {message}
                     </p>
 
@@ -238,18 +252,26 @@ export const ToastCard: React.FC<ToastCardProps> = ({ notification, onClose }) =
                                 action.onClick();
                                 handleDismiss();
                             }}
-                            className="mt-2 inline-flex items-center px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+                            className={`mt-2 inline-flex items-center px-3 py-1 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-[#bef264] hover:bg-[#a3e635] text-black font-black border-2 border-black shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
+                                    : 'bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-md shadow-indigo-500/20'
+                            }`}
                         >
                             {action.label}
                         </button>
                     )}
                 </div>
 
-                {/* Close Button with generous touch hit area */}
+                {/* Close Button */}
                 <button
                     type="button"
                     onClick={handleDismiss}
-                    className="p-1.5 -mr-1 -mt-1 text-gray-400 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl transition-colors cursor-pointer shrink-0"
+                    className={`p-1.5 -mr-1 -mt-1 rounded-xl transition-all cursor-pointer shrink-0 ${
+                        isBento
+                            ? 'border-2 border-black bg-white hover:bg-[#fed7aa] text-black shadow-[1.5px_1.5px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
+                            : 'text-gray-400 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10'
+                    }`}
                     aria-label="Close notification"
                 >
                     <X className="w-4 h-4" />
@@ -258,7 +280,9 @@ export const ToastCard: React.FC<ToastCardProps> = ({ notification, onClose }) =
 
             {/* Visual countdown progress bar at bottom */}
             {duration > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-white/5 overflow-hidden">
+                <div className={`absolute bottom-0 left-0 right-0 overflow-hidden ${
+                    isBento ? 'h-1.5 bg-gray-200 border-t-2 border-black' : 'h-1 bg-gray-100 dark:bg-white/5'
+                }`}>
                     <div
                         className={`h-full ${config.progressBar} transition-all duration-75 ease-linear`}
                         style={{ width: `${progress}%` }}

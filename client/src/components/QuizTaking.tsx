@@ -1534,37 +1534,62 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
             {/* --- SHOP OVERLAY (Feature 9) --- */}
             {showShop && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-end bg-black/40 backdrop-blur-sm p-0 sm:p-6 transition-all animate-in fade-in">
-                    <div className="bg-white dark:bg-[#111827] w-full max-w-md h-full sm:h-auto sm:max-h-[90vh] sm:rounded-3xl shadow-2xl flex flex-col border border-gray-200 dark:border-gray-800 animate-in slide-in-from-right sm:slide-in-from-bottom-8 overflow-hidden">
+                <div className={`fixed inset-0 z-[100] flex items-center justify-end p-0 sm:p-6 transition-all animate-in fade-in ${
+                    isBento ? 'bg-black/60' : 'bg-black/40 backdrop-blur-sm'
+                }`}>
+                    <div className={`w-full max-w-md h-full sm:h-auto sm:max-h-[90vh] flex flex-col animate-in slide-in-from-right sm:slide-in-from-bottom-8 overflow-hidden ${
+                        isBento
+                            ? 'bg-white border-[3px] border-black sm:rounded-2xl shadow-[8px_8px_0px_#000]'
+                            : 'bg-white dark:bg-[#111827] sm:rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800'
+                    }`}>
                         
                         {/* Shop Header */}
-                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#0d0d1c]">
+                        <div className={`p-6 flex justify-between items-center ${
+                            isBento
+                                ? 'bg-[#fde047] border-b-[2.5px] border-black'
+                                : 'p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#0d0d1c]'
+                        }`}>
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-yellow-100 dark:bg-yellow-500/20 rounded-lg">
-                                    <ShoppingBag className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                                <div className={`p-2 rounded-lg ${
+                                    isBento
+                                        ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000] text-black'
+                                        : 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'
+                                }`}>
+                                    <ShoppingBag className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-black text-gray-900 dark:text-white leading-none">Item Shop</h2>
-                                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-1">Mid-Quiz Boosters</p>
+                                    <h2 className={`text-xl font-black leading-none ${isBento ? 'text-black' : 'text-gray-900 dark:text-white'}`}>Item Shop</h2>
+                                    <p className={`text-xs font-bold mt-1 ${isBento ? 'text-black/70' : 'text-gray-500 dark:text-gray-400'}`}>Mid-Quiz Boosters</p>
                                 </div>
                             </div>
-                            <button onClick={() => setShowShop(false)} className="p-2 rounded-xl bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition shrink-0">
+                            <button
+                                onClick={() => setShowShop(false)}
+                                className={`p-2 rounded-xl transition shrink-0 ${
+                                    isBento
+                                        ? 'border-2 border-black bg-white text-black hover:bg-[#fed7aa] shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
+                                        : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300'
+                                }`}
+                            >
                                 <XCircle className="w-6 h-6" />
                             </button>
                         </div>
 
                         {/* Balance */}
                         <div className="p-6 pb-4 text-center">
-                            <div className="inline-flex items-center gap-3 bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 px-6 py-3 rounded-2xl shadow-inner">
-                                <Coins className="w-6 h-6 text-yellow-500" />
-                                <span className="text-3xl font-black text-yellow-600 dark:text-yellow-400">{localCoins}</span>
+                            <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl ${
+                                isBento
+                                    ? 'bg-[#fef08a] border-2 border-black shadow-[3px_3px_0px_#000]'
+                                    : 'bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 shadow-inner'
+                            }`}>
+                                <Coins className={`w-6 h-6 ${isBento ? 'text-black' : 'text-yellow-500'}`} />
+                                <span className={`text-3xl font-black ${isBento ? 'text-black' : 'text-yellow-600 dark:text-yellow-400'}`}>{localCoins}</span>
                             </div>
                         </div>
 
                         {/* Owned Inventory Quick Access inside Store */}
                         {localPowerUps.some(p => p.quantity > 0) && (
-                            <div className="px-6 pb-4 border-b border-gray-100 dark:border-gray-800">
-                                <div className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 text-left">Your Inventory</div>
+                            <div className={`px-6 pb-4 border-b ${isBento ? 'border-black' : 'border-gray-100 dark:border-gray-800'}`}>
+                                <div className={`text-xs font-black uppercase tracking-wider mb-2 text-left ${isBento ? 'text-black' : 'text-gray-400 dark:text-gray-500'}`}>Your Inventory</div>
                                 <div className="flex gap-2 flex-wrap justify-start">
                                     {localPowerUps.map(p => p.quantity > 0 && (
                                         <button
@@ -1573,12 +1598,16 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                                 handleUseOwnedItem(p.type);
                                                 setShowShop(false);
                                             }}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r ${getPowerUpColor(p.type)} text-white font-extrabold text-xs shadow-md hover:scale-105 transition-transform`}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-black text-xs transition-all ${
+                                                isBento
+                                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
+                                                    : `bg-gradient-to-r ${getPowerUpColor(p.type)} text-white font-extrabold shadow-md hover:scale-105`
+                                            }`}
                                             title={`Use ${p.type}`}
                                         >
                                             {getPowerUpIcon(p.type, "w-3.5 h-3.5")}
                                             <span className="capitalize">{p.type}</span>
-                                            <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{p.quantity}</span>
+                                            <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${isBento ? 'bg-black text-white font-black' : 'bg-white/20'}`}>{p.quantity}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -1586,7 +1615,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         )}
 
                         {/* Shop Items List */}
-                        <div className="flex-1 overflow-y-auto p-6 pt-2 flex flex-col gap-4 bg-white dark:bg-transparent">
+                        <div className={`flex-1 overflow-y-auto p-6 pt-2 flex flex-col gap-4 ${isBento ? 'bg-white' : 'bg-white dark:bg-transparent'}`}>
                             {[
                                 { type: 'hint', name: '50/50 Hint', desc: 'Disables two wrong answers to boost your chances.', price: 75, icon: 'hint' },
                                 { type: 'skip', name: 'Skip Pass', desc: 'Automatically marks current question correct and advances.', price: 150, icon: 'skip' },
@@ -1602,26 +1631,42 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 const apiId = actualItemIdMap[item.type];
 
                                 return (
-                                    <div key={item.type} className="flex flex-row items-center gap-4 bg-gray-50 dark:bg-[#1f2937] p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm relative overflow-hidden group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md transition-all">
+                                    <div key={item.type} className={`flex flex-row items-center gap-4 p-4 rounded-2xl relative overflow-hidden transition-all ${
+                                        isBento
+                                            ? 'bg-[#f5f3ec] border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[5px_5px_0px_#000]'
+                                            : 'bg-gray-50 dark:bg-[#1f2937] border border-gray-200 dark:border-gray-700 shadow-sm group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md'
+                                    }`}>
                                         
-                                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br ${getPowerUpColor(item.icon)} shadow-lg shrink-0 text-white transform group-hover:scale-105 transition-transform`}>
+                                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-transform ${
+                                            isBento
+                                                ? 'bg-[#bae6fd] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : `bg-gradient-to-br ${getPowerUpColor(item.icon)} shadow-lg text-white group-hover:scale-105`
+                                        }`}>
                                             {getPowerUpIcon(item.icon, "w-7 h-7")}
                                         </div>
                                         
                                         <div className="flex-1">
                                             <div className="flex justify-between items-start">
-                                                <h3 className="font-bold text-gray-900 dark:text-white text-base leading-tight mb-0.5">{item.name}</h3>
+                                                <h3 className={`font-black text-base leading-tight mb-0.5 ${isBento ? 'text-black' : 'text-gray-900 dark:text-white font-bold'}`}>{item.name}</h3>
                                                 {ownedQuantity > 0 && (
-                                                    <span className="px-2 py-0.5 rounded-lg bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 font-extrabold text-[10px] uppercase tracking-wider">
+                                                    <span className={`px-2 py-0.5 rounded-lg font-black text-[10px] uppercase tracking-wider ${
+                                                        isBento
+                                                            ? 'bg-[#bef264] text-black border border-black shadow-[1px_1px_0px_#000]'
+                                                            : 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 font-extrabold'
+                                                    }`}>
                                                         Owned: {ownedQuantity}
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="text-xs text-gray-500 dark:text-gray-400 pr-2 leading-relaxed">{item.desc}</div>
+                                            <div className={`text-xs pr-2 leading-relaxed ${isBento ? 'text-gray-700 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>{item.desc}</div>
                                             
                                             <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
-                                                <span className={`font-black flex items-center gap-1.5 text-sm ${canAfford ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400 dark:text-gray-500'}`}>
-                                                    <Coins className="w-4 h-4"/> {item.price}
+                                                <span className={`font-black flex items-center gap-1.5 text-sm ${
+                                                    isBento
+                                                        ? 'text-black'
+                                                        : canAfford ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400 dark:text-gray-500'
+                                                }`}>
+                                                    <Coins className={`w-4 h-4 ${isBento ? 'text-yellow-500 fill-yellow-400' : ''}`}/> {item.price}
                                                 </span>
                                                 <div className="flex gap-2 ml-auto">
                                                     {ownedQuantity > 0 && (
@@ -1630,7 +1675,11 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                                                 handleUseOwnedItem(item.type);
                                                                 setShowShop(false);
                                                             }}
-                                                            className="px-3 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1"
+                                                            className={`px-3 py-2 rounded-xl text-xs transition-all active:scale-95 flex items-center gap-1 ${
+                                                                isBento
+                                                                    ? 'bg-[#67e8f9] hover:bg-[#22d3ee] text-black font-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                    : 'bg-green-600 hover:bg-green-700 text-white font-bold shadow-md'
+                                                            }`}
                                                         >
                                                             Use
                                                         </button>
@@ -1640,7 +1689,13 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                                             handleBuyItem(item.type, item.price, apiId);
                                                         }}
                                                         disabled={!canAfford}
-                                                        className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:text-gray-400 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1"
+                                                        className={`px-3.5 py-2 rounded-xl text-xs transition-all active:scale-95 flex items-center gap-1 ${
+                                                            isBento
+                                                                ? canAfford
+                                                                    ? 'bg-[#bef264] hover:bg-[#a3e635] text-black font-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                    : 'bg-gray-200 text-gray-400 border-2 border-gray-300 font-black cursor-not-allowed'
+                                                                : 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:text-gray-400 text-white font-bold shadow-md'
+                                                        }`}
                                                     >
                                                         Buy
                                                     </button>
@@ -1650,42 +1705,59 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                     </div>
                                 );
                             })}
+                        </div>
                     </div>
                 </div>
-            </div>
             )}
-
 
             {/* Resume Prompt Modal */}
             {showResumePrompt && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-                    <div className="bg-white dark:bg-[#0f0f1e] text-gray-900 dark:text-white border border-gray-200 dark:border-white/[0.10] rounded-3xl shadow-2xl p-8 max-w-md w-full animate-in fade-in zoom-in duration-200">
+                <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${
+                    isBento ? 'bg-black/60' : 'bg-black/70 backdrop-blur-md'
+                }`}>
+                    <div className={`p-8 max-w-md w-full animate-in fade-in zoom-in duration-200 ${
+                        isBento
+                            ? 'bg-white border-[3px] border-black rounded-2xl shadow-[8px_8px_0px_#000] text-black'
+                            : 'bg-white dark:bg-[#0f0f1e] text-gray-900 dark:text-white border border-gray-200 dark:border-white/[0.10] rounded-3xl shadow-2xl'
+                    }`}>
                         <div className="flex items-center gap-4 mb-6">
-                            <div className="p-3 bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-2xl text-indigo-600 dark:text-indigo-400">
+                            <div className={`p-3 rounded-2xl ${
+                                isBento
+                                    ? 'bg-[#fde047] border-2 border-black shadow-[3px_3px_0px_#000] text-black'
+                                    : 'bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400'
+                            }`}>
                                 <Clock className="w-8 h-8" />
                             </div>
                             <div>
                                 <h3 className="text-xl font-black">Resume Quiz?</h3>
-                                <p className="text-sm text-gray-500 dark:text-slate-500 mt-0.5">
+                                <p className={`text-sm mt-0.5 ${isBento ? 'text-gray-600 font-medium' : 'text-gray-500 dark:text-slate-500'}`}>
                                     Unfinished attempt from {savedState ? new Date(savedState.lastUpdated).toLocaleDateString() : ''}
                                 </p>
                             </div>
                         </div>
 
-                        <p className="text-gray-600 dark:text-slate-400 mb-8 text-sm leading-relaxed">
+                        <p className={`mb-8 text-sm leading-relaxed ${isBento ? 'text-gray-700 font-medium' : 'text-gray-600 dark:text-slate-400'}`}>
                             Continue where you left off, or start a fresh attempt from the beginning.
                         </p>
 
                         <div className="flex gap-3">
                             <button
                                 onClick={handleStartNew}
-                                className="flex-1 px-4 py-3 rounded-xl font-bold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-white/[0.05] border border-gray-200 dark:border-white/[0.08] hover:bg-gray-200 dark:hover:bg-white/[0.10] transition-all"
+                                className={`flex-1 px-4 py-3 rounded-xl font-black transition-all ${
+                                    isBento
+                                        ? 'bg-white hover:bg-[#fee2e2] text-black border-2 border-black shadow-[3px_3px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
+                                        : 'text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-white/[0.05] border border-gray-200 dark:border-white/[0.08] hover:bg-gray-200 dark:hover:bg-white/[0.10] font-bold'
+                                }`}
                             >
                                 Start Over
                             </button>
                             <button
                                 onClick={handleResume}
-                                className="flex-1 px-4 py-3 rounded-xl font-black text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/30"
+                                className={`flex-1 px-4 py-3 rounded-xl font-black transition-all ${
+                                    isBento
+                                        ? 'bg-[#bef264] hover:bg-[#a3e635] text-black border-2 border-black shadow-[3px_3px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
+                                        : 'text-white bg-indigo-600 hover:bg-indigo-500 shadow-xl shadow-indigo-600/30'
+                                }`}
                             >
                                 Resume
                             </button>

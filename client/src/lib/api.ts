@@ -1774,6 +1774,42 @@ export const api = {
             throw new Error(error.message || 'Failed to fetch daily quote');
         }
         return response.json();
+    },
+
+    // Support Desk Ticket API
+    async submitSupportTicket(data: {
+        email: string;
+        name?: string;
+        subject: string;
+        message: string;
+        category?: string;
+    }): Promise<{ success: boolean; message: string; ticketId?: string; previewUrl?: string }> {
+        const response = await fetchWithFallback('/support', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            let errorMsg = 'Failed to submit support ticket';
+            try {
+                const err = await response.json();
+                errorMsg = err.message || errorMsg;
+            } catch {
+                // Ignore parse errors
+            }
+            throw new Error(errorMsg);
+        }
+        return response.json();
+    },
+
+    async getMySupportTickets(): Promise<{ success: boolean; tickets: any[] }> {
+        const response = await fetchWithFallback('/support/my-tickets', {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch support tickets');
+        }
+        return response.json();
     }
 };
 

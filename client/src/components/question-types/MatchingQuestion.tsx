@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
+import { useTheme } from '../../context/ThemeContext';
 
 export interface MatchingPair {
     left: string;
@@ -32,12 +33,22 @@ const PAIR_COLORS = [
     'border-cyan-500 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 ring-2 ring-cyan-500/40'
 ];
 
+const BENTO_PAIR_COLORS = [
+    'border-2 border-black bg-[#fde047] text-black shadow-[3px_3px_0px_#000]',
+    'border-2 border-black bg-[#bef264] text-black shadow-[3px_3px_0px_#000]',
+    'border-2 border-black bg-[#bae6fd] text-black shadow-[3px_3px_0px_#000]',
+    'border-2 border-black bg-[#ddd6fe] text-black shadow-[3px_3px_0px_#000]',
+    'border-2 border-black bg-[#fed7aa] text-black shadow-[3px_3px_0px_#000]',
+    'border-2 border-black bg-[#fbcfe8] text-black shadow-[3px_3px_0px_#000]'
+];
+
 export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
     pairs,
     submitted = false,
     onChange,
     readOnly = false
 }) => {
+    const { isBento } = useTheme();
     const leftItems = pairs.map(p => p.left);
     const [prevPairs, setPrevPairs] = useState(pairs);
     const [shuffledRightItems, setShuffledRightItems] = useState<string[]>(() => shuffleRightSide(pairs));
@@ -97,14 +108,14 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
 
     return (
         <div className="space-y-4 w-full">
-            <div className="text-xs font-black uppercase tracking-wider text-gray-400">
+            <div className={`text-xs font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-gray-400'}`}>
                 Match each term on the left with its corresponding definition on the right:
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* LEFT COLUMN: TERMS */}
                 <div className="space-y-2">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">
+                    <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isBento ? 'text-black' : 'text-indigo-500'}`}>
                         Column A (Select to link)
                     </div>
                     {leftItems.map((left, idx) => {
@@ -113,25 +124,33 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
                         const pairColorIdx = getPairColorIndex(left);
                         const isCorrect = submitted && pairs.some(p => p.left === left && p.right === pairedRight);
 
+                        const cardStyle = isBento
+                            ? isSelected
+                                ? 'border-2 border-black bg-[#bef264] text-black shadow-[4px_4px_0px_#000] scale-[1.02]'
+                                : pairColorIdx !== null
+                                    ? BENTO_PAIR_COLORS[pairColorIdx]
+                                    : 'border-2 border-black bg-white text-black shadow-[3px_3px_0px_#000] hover:bg-[#fef9c3]'
+                            : isSelected
+                                ? 'border-indigo-600 bg-indigo-500/20 ring-2 ring-indigo-500 scale-[1.02]'
+                                : pairColorIdx !== null
+                                    ? PAIR_COLORS[pairColorIdx]
+                                    : 'bg-white/80 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:border-indigo-500/40';
+
                         return (
                             <div
                                 key={idx}
                                 onClick={() => handleLeftClick(left)}
-                                className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 shadow-sm ${
-                                    isSelected
-                                        ? 'border-indigo-600 bg-indigo-500/20 ring-2 ring-indigo-500 scale-[1.02]'
-                                        : pairColorIdx !== null
-                                            ? PAIR_COLORS[pairColorIdx]
-                                            : 'bg-white/80 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:border-indigo-500/40'
-                                }`}
+                                className={`p-4 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 ${cardStyle}`}
                             >
                                 <div className="text-sm font-bold truncate">
                                     <MathRenderer text={left} />
                                 </div>
 
                                 {pairedRight && (
-                                    <div className="flex items-center gap-1 shrink-0">
-                                        <span className="text-[10px] font-mono font-black uppercase text-gray-400">
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        <span className={`text-[9px] font-black uppercase tracking-wider ${
+                                            isBento ? 'px-2 py-0.5 rounded bg-black text-white' : 'font-mono text-gray-400'
+                                        }`}>
                                             Linked
                                         </span>
                                         {!readOnly && !submitted && (
@@ -141,7 +160,9 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
                                                     e.stopPropagation();
                                                     handleClearPair(left);
                                                 }}
-                                                className="p-1 rounded-lg text-gray-400 hover:text-red-500 transition"
+                                                className={`p-1 rounded-lg transition cursor-pointer ${
+                                                    isBento ? 'hover:bg-black hover:text-white text-black' : 'text-gray-400 hover:text-red-500'
+                                                }`}
                                             >
                                                 <X className="w-3.5 h-3.5" />
                                             </button>
@@ -160,23 +181,29 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
 
                 {/* RIGHT COLUMN: DEFINITIONS */}
                 <div className="space-y-2">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-purple-500 mb-1">
+                    <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isBento ? 'text-black' : 'text-purple-500'}`}>
                         Column B (Select to connect)
                     </div>
                     {shuffledRightItems.map((right, idx) => {
                         const pairColorIdx = getRightPairColorIndex(right);
 
+                        const rightCardStyle = isBento
+                            ? pairColorIdx !== null
+                                ? BENTO_PAIR_COLORS[pairColorIdx]
+                                : selectedLeft
+                                    ? 'border-2 border-dashed border-black bg-[#fef9c3] text-black shadow-[2px_2px_0px_#000] hover:bg-[#fde047]'
+                                    : 'border-2 border-black bg-white text-black shadow-[3px_3px_0px_#000] hover:bg-[#fef9c3]'
+                            : pairColorIdx !== null
+                                ? PAIR_COLORS[pairColorIdx]
+                                : selectedLeft
+                                    ? 'bg-white/80 dark:bg-white/5 border-dashed border-indigo-400/60 hover:bg-indigo-500/10'
+                                    : 'bg-white/80 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:border-purple-500/40';
+
                         return (
                             <div
                                 key={idx}
                                 onClick={() => handleRightClick(right)}
-                                className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 shadow-sm ${
-                                    pairColorIdx !== null
-                                        ? PAIR_COLORS[pairColorIdx]
-                                        : selectedLeft
-                                            ? 'bg-white/80 dark:bg-white/5 border-dashed border-indigo-400/60 hover:bg-indigo-500/10'
-                                            : 'bg-white/80 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:border-purple-500/40'
-                                }`}
+                                className={`p-4 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 ${rightCardStyle}`}
                             >
                                 <div className="text-sm font-medium leading-relaxed">
                                     <MathRenderer text={right} />

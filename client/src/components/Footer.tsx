@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Mail,
@@ -8,10 +8,13 @@ import {
     LifeBuoy,
     CheckCircle2,
     Clock,
-    ShieldCheck
+    ShieldCheck,
+    Loader2
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
+import { api } from '../lib/api';
 import Modal from './common/Modal';
 
 const Footer: React.FC = () => {
@@ -19,15 +22,30 @@ const Footer: React.FC = () => {
     const location = useLocation();
     const { isBento } = useTheme();
     const { showNotification } = useNotification();
+    const { currentUser } = useAuth();
 
     const [emailInput, setEmailInput] = useState('');
     const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'faq' | 'support' | 'status' | null>(null);
 
     // Support Form State
     const [supportEmail, setSupportEmail] = useState('');
+    const [supportName, setSupportName] = useState('');
+    const [supportCategory, setSupportCategory] = useState<'technical' | 'bug' | 'scoring' | 'account' | 'feature' | 'general'>('general');
     const [supportSubject, setSupportSubject] = useState('');
     const [supportMessage, setSupportMessage] = useState('');
     const [isSubmittingSupport, setIsSubmittingSupport] = useState(false);
+
+    // Auto-fill user credentials when opening support modal
+    useEffect(() => {
+        if (activeModal === 'support') {
+            if (currentUser?.email && !supportEmail) {
+                setSupportEmail(currentUser.email);
+            }
+            if (currentUser?.name && !supportName) {
+                setSupportName(currentUser.name);
+            }
+        }
+    }, [activeModal, currentUser]);
 
     /**
      * Smoothly navigates to target path and scrolls the viewport to the top of the section/page.
@@ -75,21 +93,51 @@ const Footer: React.FC = () => {
         }
     };
 
-    const handleSupportSubmit = (e: React.FormEvent) => {
+    const handleSupportSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!supportEmail || !supportEmail.includes('@') || !supportMessage.trim()) {
-            showNotification('error', 'Please provide your email and a description of the issue.');
+        const trimmedEmail = supportEmail.trim();
+        const trimmedSubject = supportSubject.trim();
+        const trimmedMessage = supportMessage.trim();
+
+        if (!trimmedEmail || !trimmedEmail.includes('@')) {
+            showNotification('error', 'Please provide a valid email address.');
             return;
         }
+        if (trimmedSubject.length < 3) {
+            showNotification('error', 'Subject must be at least 3 characters.');
+            return;
+        }
+        if (trimmedMessage.length < 5) {
+            showNotification('error', 'Please provide a description of your issue (at least 5 characters).');
+            return;
+        }
+
         setIsSubmittingSupport(true);
-        setTimeout(() => {
-            setIsSubmittingSupport(false);
-            showNotification('success', 'Ticket received! Our engineering team will respond within 24 hours.');
-            setSupportEmail('');
+        try {
+            const response = await api.submitSupportTicket({
+                email: trimmedEmail,
+                name: supportName.trim() || currentUser?.name || undefined,
+                subject: trimmedSubject,
+                category: supportCategory,
+                message: trimmedMessage
+            });
+
+            showNotification(
+                'success',
+                response.message || `Ticket #${response.ticketId || ''} dispatched! We will reply within 24 hours.`
+            );
             setSupportSubject('');
             setSupportMessage('');
             setActiveModal(null);
-        }, 600);
+        } catch (error: any) {
+            console.error('Failed to submit support ticket:', error);
+            showNotification(
+                'error',
+                error.message || 'Failed to dispatch ticket. You can email us directly at mohaamedtariq12@gmail.com.'
+            );
+        } finally {
+            setIsSubmittingSupport(false);
+        }
     };
 
     const currentYear = new Date().getFullYear();
@@ -414,38 +462,101 @@ const Footer: React.FC = () => {
                 icon={<LifeBuoy className="w-5 h-5 text-indigo-500" />}
                 maxWidth="max-w-xl"
             >
-                <div className="space-y-5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed max-h-[65vh] overflow-y-auto pr-1 pb-3">
+                <div className="space-y-5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed max-h-[70vh] overflow-y-auto pr-1 pb-3">
                     <a
                         href="mailto:mohaamedtariq12@gmail.com"
-                        className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:border-indigo-500/40 transition-colors flex items-center gap-3.5"
+                        className={`p-4 rounded-2xl transition-all flex items-center gap-3.5 ${
+                            isBento
+                                ? 'bg-[#fef08a] border-2 border-black shadow-[3px_3px_0px_#000] text-black hover:-translate-y-0.5'
+                                : 'border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:border-indigo-500/40 text-slate-900 dark:text-white'
+                        }`}
                     >
-                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                            isBento ? 'bg-black text-[#bef264] border-2 border-black' : 'bg-indigo-500/10 text-indigo-500'
+                        }`}>
                             <Mail className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Direct Support Email</p>
-                            <p className="font-bold text-slate-900 dark:text-white text-sm">mohaamedtariq12@gmail.com</p>
+                            <p className={`text-[10px] uppercase font-bold tracking-wider ${isBento ? 'text-black/70' : 'text-slate-400'}`}>Direct Support Email</p>
+                            <p className="font-extrabold text-sm">mohaamedtariq12@gmail.com</p>
                         </div>
                     </a>
 
                     <form onSubmit={handleSupportSubmit} className="space-y-3.5 pt-2 border-t border-slate-200 dark:border-white/5">
+                        {/* Category Selector Chips */}
                         <div>
-                            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                                Your Email Address
+                            <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${isBento ? 'text-black' : 'text-slate-700 dark:text-slate-300'}`}>
+                                Inquiry Category
                             </label>
-                            <input
-                                type="email"
-                                required
-                                value={supportEmail}
-                                onChange={(e) => setSupportEmail(e.target.value)}
-                                placeholder="alex.dev@quizplatform.com"
-                                className="w-full py-2.5 px-3.5 rounded-xl text-xs bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-indigo-500 transition-colors"
-                            />
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {[
+                                    { id: 'technical', label: 'Technical Issue' },
+                                    { id: 'bug', label: 'Bug Report' },
+                                    { id: 'scoring', label: 'Quiz Scoring' },
+                                    { id: 'account', label: 'Account & Auth' },
+                                    { id: 'feature', label: 'Feature Request' },
+                                    { id: 'general', label: 'General Inquiry' },
+                                ].map((cat) => (
+                                    <button
+                                        type="button"
+                                        key={cat.id}
+                                        onClick={() => setSupportCategory(cat.id as any)}
+                                        className={`py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all text-center cursor-pointer ${
+                                            supportCategory === cat.id
+                                                ? isBento
+                                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                    : 'bg-indigo-600 text-white shadow-sm'
+                                                : isBento
+                                                    ? 'bg-white text-black border border-black hover:bg-slate-100'
+                                                    : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                                        }`}
+                                    >
+                                        {cat.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Email & Name row */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1 ${isBento ? 'text-black' : 'text-slate-700 dark:text-slate-300'}`}>
+                                    Your Email Address *
+                                </label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={supportEmail}
+                                    onChange={(e) => setSupportEmail(e.target.value)}
+                                    placeholder="alex.dev@quizplatform.com"
+                                    className={`w-full py-2.5 px-3.5 rounded-xl text-xs outline-none transition-all ${
+                                        isBento
+                                            ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] focus:shadow-[4px_4px_0px_#000] focus:border-black placeholder:text-neutral-400 font-medium'
+                                            : 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500'
+                                    }`}
+                                />
+                            </div>
+                            <div>
+                                <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1 ${isBento ? 'text-black' : 'text-slate-700 dark:text-slate-300'}`}>
+                                    Your Name (Optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={supportName}
+                                    onChange={(e) => setSupportName(e.target.value)}
+                                    placeholder="Alex Dev"
+                                    className={`w-full py-2.5 px-3.5 rounded-xl text-xs outline-none transition-all ${
+                                        isBento
+                                            ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] focus:shadow-[4px_4px_0px_#000] focus:border-black placeholder:text-neutral-400 font-medium'
+                                            : 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500'
+                                    }`}
+                                />
+                            </div>
                         </div>
 
                         <div>
-                            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                                Issue Subject
+                            <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1 ${isBento ? 'text-black' : 'text-slate-700 dark:text-slate-300'}`}>
+                                Issue Subject *
                             </label>
                             <input
                                 type="text"
@@ -453,21 +564,34 @@ const Footer: React.FC = () => {
                                 value={supportSubject}
                                 onChange={(e) => setSupportSubject(e.target.value)}
                                 placeholder="Quiz question scoring, streak freeze, or bug report"
-                                className="w-full py-2.5 px-3.5 rounded-xl text-xs bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-indigo-500 transition-colors"
+                                className={`w-full py-2.5 px-3.5 rounded-xl text-xs outline-none transition-all ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] focus:shadow-[4px_4px_0px_#000] focus:border-black placeholder:text-neutral-400 font-medium'
+                                        : 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500'
+                                }`}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                                Description
-                            </label>
+                            <div className="flex justify-between items-center mb-1">
+                                <label className={`block text-[11px] font-bold uppercase tracking-wider ${isBento ? 'text-black' : 'text-slate-700 dark:text-slate-300'}`}>
+                                    Description & Details *
+                                </label>
+                                <span className={`text-[10px] ${supportMessage.length < 5 ? 'text-amber-500' : 'text-emerald-500 font-bold'}`}>
+                                    {supportMessage.length}/5000
+                                </span>
+                            </div>
                             <textarea
-                                rows={3}
+                                rows={4}
                                 required
                                 value={supportMessage}
                                 onChange={(e) => setSupportMessage(e.target.value)}
-                                placeholder="Describe what happened and how we can assist you..."
-                                className="w-full py-2.5 px-3.5 rounded-xl text-xs bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-indigo-500 transition-colors resize-none"
+                                placeholder="Please describe what happened, what you expected, and any steps to reproduce..."
+                                className={`w-full py-2.5 px-3.5 rounded-xl text-xs outline-none transition-all resize-none ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] focus:shadow-[4px_4px_0px_#000] focus:border-black placeholder:text-neutral-400 font-medium'
+                                        : 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500'
+                                }`}
                             />
                         </div>
 
@@ -486,13 +610,23 @@ const Footer: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={isSubmittingSupport}
-                                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-50 ${
+                                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center gap-2 ${
                                     isBento
                                         ? 'bg-[#8b5cf6] !text-white border-2 border-black shadow-[3.5px_3.5px_0px_#000] hover:shadow-[5px_5px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5'
                                         : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/25'
                                 }`}
                             >
-                                {isSubmittingSupport ? 'Submitting...' : 'Submit Support Ticket'}
+                                {isSubmittingSupport ? (
+                                    <>
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        <span>Dispatching Ticket...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send className="w-3.5 h-3.5" />
+                                        <span>Submit Support Ticket</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </form>

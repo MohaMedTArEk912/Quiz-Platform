@@ -6,12 +6,14 @@ import { NodeType, NodeState } from '../../types';
 import {
     Save, Zap, Star, Loader2, FileJson, Download,
     Plus, Eye, Check, BrainCircuit, Lock as LockIcon, RotateCcw,
-    Sparkles, Trophy, BookOpen, Target
+    Sparkles, Trophy, BookOpen, Target, ArrowUp, ArrowDown,
+    Copy, Trash2, Edit3, Search
 } from 'lucide-react';
 import { InspectorPanel } from './InspectorPanel';
 import { RoadmapJsonImporter } from './RoadmapJsonImporter';
 import { useConfirm } from '../../hooks/useConfirm';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { useTheme } from '../../context/ThemeContext';
 
 interface RoadmapManagementProps {
     adminId: string;
@@ -167,6 +169,9 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
     userProgress,
     onSubModuleComplete
 }) => {
+    // Theme
+    const { isBento } = useTheme();
+
     // Data state
     const [track, setTrack] = useState<SkillTrack | null>(null);
     const [modules, setModules] = useState<SkillModule[]>([]);
@@ -176,8 +181,8 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [viewMode, setViewMode] = useState<'admin' | 'user'>('admin');
-    const [draggedModuleId, setDraggedModuleId] = useState<string | null>(null);
-    const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+    const [searchQuery, setSearchQuery] = useState('');
+    const [typeFilter, setTypeFilter] = useState<string>('all');
 
     // Interaction State
 
@@ -502,334 +507,474 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
         };
     };
 
-    const sketchLayout = useMemo(() => {
-        const ordered = [...modules].sort((a, b) => (a.level || 0) - (b.level || 0) || a.title.localeCompare(b.title));
-        const xPositions = [210, 550];
-        const ySpacing = 260;
+    const getModuleTheme = (module: SkillModule) => {
+        switch (module.type) {
+            case NodeType.OPTIONAL:
+                return {
+                    Icon: Sparkles,
+                    label: 'OPTIONAL',
+                    badgeBg: isBento ? 'bg-[#6ee7b7] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+                    bannerBg: isBento ? 'bg-[#d1fae5]' : 'bg-emerald-50 dark:bg-emerald-950/20',
+                    dotColor: '#10b981'
+                };
+            case NodeType.ACHIEVEMENT:
+                return {
+                    Icon: Trophy,
+                    label: 'ACHIEVEMENT',
+                    badgeBg: isBento ? 'bg-[#fcd34d] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+                    bannerBg: isBento ? 'bg-[#fef3c7]' : 'bg-amber-50 dark:bg-amber-950/20',
+                    dotColor: '#f59e0b'
+                };
+            case NodeType.QUIZ:
+            case NodeType.EXAM:
+                return {
+                    Icon: Target,
+                    label: 'ASSESSMENT',
+                    badgeBg: isBento ? 'bg-[#fda4af] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
+                    bannerBg: isBento ? 'bg-[#ffe4e6]' : 'bg-rose-50 dark:bg-rose-950/20',
+                    dotColor: '#ef4444'
+                };
+            default:
+                return {
+                    Icon: Zap,
+                    label: 'CORE',
+                    badgeBg: isBento ? 'bg-[#c4b5fd] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20',
+                    bannerBg: isBento ? 'bg-[#ede9fe]' : 'bg-indigo-50 dark:bg-indigo-950/20',
+                    dotColor: '#6366f1'
+                };
+        }
+    };
 
-        return ordered.map((module, index) => {
-            const col = index % 2;
-            const row = Math.floor(index / 2);
-
-            // Use module's stored coordinates if available, otherwise use calculated position
-            const x = module.coordinates?.x ?? xPositions[col];
-            const y = module.coordinates?.y ?? (row * ySpacing);
-
-            return {
-                module,
-                x,
-                y,
-                col,
-                row
-            };
+    const renderSolidRoadmap = () => {
+        // Filter modules by search and type
+        const filtered = modules.filter(mod => {
+            const matchesType = typeFilter === 'all' || mod.type === typeFilter;
+            const q = searchQuery.toLowerCase().trim();
+            const matchesSearch = !q ||
+                (mod.title && mod.title.toLowerCase().includes(q)) ||
+                (mod.description && mod.description.toLowerCase().includes(q));
+            return matchesType && matchesSearch;
         });
-    }, [modules]);
 
-    const renderSketch = () => {
-        if (sketchLayout.length === 0) {
-            return (
-                <div className="flex flex-1 items-center justify-center text-sm text-gray-500 dark:text-slate-400">
-                    No modules yet.
-                </div>
-            );
+        // Always sequential by level or natural order
+        const sorted = [...filtered].sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+
+        const visibleItems = readOnly
+            ? sorted.filter(mod => {
+                const { isLocked } = computeStatus(mod);
+                return !(viewMode === 'user' && isLocked);
+            })
+            : sorted;
+
+        // Group into Milestone Stages (4 modules per stage)
+        const STAGE_SIZE = 4;
+        const totalStages = Math.ceil(visibleItems.length / STAGE_SIZE);
+        const stages: { stageNumber: number; modules: SkillModule[] }[] = [];
+        for (let i = 0; i < totalStages; i++) {
+            stages.push({
+                stageNumber: i + 1,
+                modules: visibleItems.slice(i * STAGE_SIZE, (i + 1) * STAGE_SIZE)
+            });
         }
 
-        const getModuleTheme = (module: SkillModule) => {
-            switch (module.type) {
-                case NodeType.OPTIONAL:
-                    return {
-                        Icon: Sparkles,
-                        primary: '#10b981',
-                        secondary: '#22d3ee',
-                        text: '#047857',
-                        darkText: '#6ee7b7',
-                        surface: 'rgba(16, 185, 129, 0.12)',
-                        outline: 'rgba(16, 185, 129, 0.28)',
-                        shadow: '0 28px 60px -36px rgba(16, 185, 129, 0.5)'
-                    };
-                case NodeType.ACHIEVEMENT:
-                    return {
-                        Icon: Trophy,
-                        primary: '#f59e0b',
-                        secondary: '#fb7185',
-                        text: '#b45309',
-                        darkText: '#fcd34d',
-                        surface: 'rgba(245, 158, 11, 0.12)',
-                        outline: 'rgba(245, 158, 11, 0.28)',
-                        shadow: '0 28px 60px -36px rgba(245, 158, 11, 0.45)'
-                    };
-                case NodeType.QUIZ:
-                case NodeType.EXAM:
-                    return {
-                        Icon: Target,
-                        primary: '#ef4444',
-                        secondary: '#fb7185',
-                        text: '#b91c1c',
-                        darkText: '#fda4af',
-                        surface: 'rgba(239, 68, 68, 0.12)',
-                        outline: 'rgba(239, 68, 68, 0.26)',
-                        shadow: '0 28px 60px -36px rgba(239, 68, 68, 0.45)'
-                    };
-                default:
-                    return {
-                        Icon: Zap,
-                        primary: '#6366f1',
-                        secondary: '#38bdf8',
-                        text: '#4338ca',
-                        darkText: '#a5b4fc',
-                        surface: 'rgba(99, 102, 241, 0.12)',
-                        outline: 'rgba(99, 102, 241, 0.26)',
-                        shadow: '0 28px 60px -36px rgba(79, 70, 229, 0.5)'
-                    };
+        const getStageLabel = (stageNum: number, total: number) => {
+            if (stageNum === total && total > 1) return 'Milestone ' + stageNum + ' • Capstone, Exams & Final Projects';
+            switch (stageNum) {
+                case 1: return 'Milestone 1 • Foundations & Core Basics';
+                case 2: return 'Milestone 2 • Logic, Operators & Decisions';
+                case 3: return 'Milestone 3 • Loops, Iteration & Control Flow';
+                case 4: return 'Milestone 4 • Functions, Scope & Modularity';
+                default: return `Milestone ${stageNum} • Advanced Topics & Mastery`;
             }
         };
 
-        const timelineItems = readOnly
-            ? sketchLayout.filter(item => {
-                const { isLocked } = computeStatus(item.module);
-                return !(viewMode === 'user' && isLocked);
-            })
-            : sketchLayout;
-
-        if (timelineItems.length === 0) {
-            return (
-                <div className="flex flex-1 items-center justify-center text-sm text-gray-500 dark:text-slate-400">
-                    No unlocked modules yet.
-                </div>
-            );
-        }
-
-        const cardWidth = NODE_WIDTH + 40;
-        const cardHeight = NODE_HEIGHT + 48;
-        const maxX = Math.max(...timelineItems.map(item => item.x));
-        const maxY = Math.max(...timelineItems.map(item => item.y));
-        const svgWidth = Math.max(760, maxX + cardWidth + 96);
-        const svgHeight = Math.max(460, maxY + cardHeight + 120);
-        const isEditingCanvas = !readOnly && viewMode === 'admin';
-
-        const connectors = timelineItems.slice(0, -1).map((node, idx) => {
-            const next = timelineItems[idx + 1];
-            const startX = node.x + cardWidth / 2;
-            const startY = node.y + cardHeight - 10;
-            const endX = next.x + cardWidth / 2;
-            const endY = next.y + 10;
-            const curveOffset = Math.max(56, Math.abs(endY - startY) * 0.32);
-
-            return {
-                id: `${node.module.moduleId}-${next.module.moduleId}`,
-                d: `M ${startX} ${startY} C ${startX} ${startY + curveOffset}, ${endX} ${endY - curveOffset}, ${endX} ${endY}`,
-                startX,
-                startY,
-                endX,
-                endY,
-                color: getModuleTheme(next.module).primary
-            };
-        });
-
-        const canvasBackground = {
-            backgroundImage: `
-                radial-gradient(circle at top, rgba(99, 102, 241, 0.16), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.12), transparent 24%),
-                linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0.08))
-            `
-        };
-
-        const gridPattern = {
-            backgroundImage: `
-                linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px)
-            `,
-            backgroundSize: '36px 36px'
-        };
-
         return (
-            <div className="relative w-full bg-white dark:bg-[#090d18] rounded-3xl mt-4 border border-gray-200 dark:border-white/5" style={{ ...canvasBackground, minHeight: Math.max(600, svgHeight) }}>
-                <div className="pointer-events-none absolute inset-0 opacity-40 rounded-3xl" style={gridPattern} />
-                <div className="w-full min-h-full px-3 py-6 sm:px-4 sm:py-8">
-                    <div className="mx-auto flex w-full justify-center">
-                        <div
-                            className="relative w-full mx-auto"
-                            style={{ minWidth: svgWidth, minHeight: svgHeight }}
-                            onMouseMove={isEditingCanvas ? handleMouseMove : undefined}
-                            onMouseUp={isEditingCanvas ? handleMouseUp : undefined}
-                            onMouseLeave={isEditingCanvas ? handleMouseUp : undefined}
+            <div className="flex flex-col gap-6 mt-4">
+                {/* Search, Type Filters & Quick Actions Bar */}
+                <div className={`p-3.5 sm:p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 transition-all ${
+                    isBento
+                        ? 'bg-white text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                        : 'bg-white/60 dark:bg-[#111522] border border-gray-200 dark:border-white/10 shadow-sm'
+                }`}>
+                    {/* Left: Search input */}
+                    <div className="relative flex-1 max-w-md">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="Search roadmap modules..."
+                            className={`w-full pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all focus:outline-none ${
+                                isBento
+                                    ? 'bg-slate-50 text-black border-2 border-black focus:bg-white'
+                                    : 'bg-slate-100 dark:bg-[#1a2030] text-slate-900 dark:text-white border border-slate-200 dark:border-white/10'
+                            }`}
+                        />
+                    </div>
+
+                    {/* Middle: Type Filter Pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                        {[
+                            { id: 'all', label: 'All Modules' },
+                            { id: NodeType.CORE, label: 'Core' },
+                            { id: NodeType.OPTIONAL, label: 'Optional' },
+                            { id: NodeType.QUIZ, label: 'Assessment' },
+                            { id: NodeType.ACHIEVEMENT, label: 'Achievement' },
+                        ].map(t => {
+                            const isSelected = typeFilter === t.id;
+                            return (
+                                <button
+                                    key={t.id}
+                                    type="button"
+                                    onClick={() => setTypeFilter(t.id)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all cursor-pointer ${
+                                        isSelected
+                                            ? isBento
+                                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-indigo-600 text-white shadow-sm'
+                                            : isBento
+                                                ? 'bg-slate-100 text-black border border-black hover:bg-slate-200'
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                                    }`}
+                                >
+                                    {t.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Right: Quick Re-number / Reorganize */}
+                    {!readOnly && (
+                        <button
+                            type="button"
+                            onClick={handleRedesign}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black shrink-0 flex items-center gap-1.5 transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100 active:translate-x-0.5 active:translate-y-0.5'
+                                    : 'bg-white dark:bg-[#1a2030] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 hover:bg-slate-50'
+                            }`}
+                            title="Auto-organize levels sequentially from 0 to N"
                         >
-                            <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
-                                {connectors.map(connector => (
-                                    <g key={connector.id}>
-                                        <path
-                                            d={connector.d}
-                                            fill="none"
-                                            stroke={connector.color}
-                                            strokeWidth={3}
-                                            strokeLinecap="round"
-                                            opacity={0.28}
-                                            strokeDasharray={isEditingCanvas ? '10 10' : undefined}
-                                        />
-                                        <circle cx={connector.startX} cy={connector.startY} r={4} fill={connector.color} opacity={0.28} />
-                                        <circle cx={connector.endX} cy={connector.endY} r={4} fill={connector.color} opacity={0.36} />
-                                    </g>
-                                ))}
-                            </svg>
+                            <BrainCircuit className="w-3.5 h-3.5 text-indigo-500" />
+                            <span>Re-number Levels</span>
+                        </button>
+                    )}
+                </div>
 
-                            {timelineItems.map((item) => {
-                                const { module } = item;
-                                const { status, isCompleted, isLocked } = computeStatus(module);
-                                const moduleNumber = typeof module.level === 'number'
-                                    ? module.level + 1
-                                    : (item.row * 2 + item.col + 1);
-                                const lessonCount = module.subModules?.length || 0;
-                                const quizCount = module.quizIds?.length || (module.quizId ? 1 : 0);
-                                const xpReward = module.xpReward || 0;
-                                const theme = getModuleTheme(module);
-                                const ThemeIcon = theme.Icon;
-                                const cardDescription = isLocked
-                                    ? 'Complete the required modules to unlock this step.'
-                                    : (module.description || 'Add a short description for this module.');
-                                const statusLabel = isLocked
-                                    ? 'Locked'
-                                    : isCompleted
-                                        ? 'Completed'
-                                        : status === 'available'
-                                            ? 'Ready'
-                                            : status;
-                                const statusClass = isLocked
-                                    ? 'border-gray-300 bg-gray-100 text-gray-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'
-                                    : isCompleted
-                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-300'
-                                        : 'border-white/10 bg-white/70 text-gray-700 dark:bg-white/5 dark:text-slate-200';
+                {/* Empty State */}
+                {visibleItems.length === 0 && (
+                    <div className={`p-12 text-center rounded-3xl transition-all ${
+                        isBento
+                            ? 'bg-white text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                            : 'bg-white dark:bg-[#111522] border border-gray-200 dark:border-white/10 text-slate-500'
+                    }`}>
+                        <BrainCircuit className="w-12 h-12 mx-auto mb-3 opacity-30 text-indigo-500" />
+                        <h4 className="text-lg font-black text-slate-900 dark:text-white">No Modules Found</h4>
+                        <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto">
+                            {modules.length === 0
+                                ? 'Your roadmap has no modules yet. Click "+ Add Core" above to create the first milestone.'
+                                : 'No modules match your search or filter criteria. Clear the search box to view all modules.'}
+                        </p>
+                    </div>
+                )}
 
-                                const handleModuleClick = () => {
-                                    if (readOnly) {
-                                        if (isLocked) {
-                                            onNotification('error', 'Complete previous modules to unlock this one');
+                {/* Milestone Stages */}
+                {stages.map((stage, stageIdx) => {
+                    const isLastStage = stageIdx === stages.length - 1;
+
+                    return (
+                        <div key={stage.stageNumber} className="flex flex-col gap-4">
+                            {/* Milestone Stage Header */}
+                            <div className={`p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
+                                isBento
+                                    ? 'bg-[#fef08a] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                                    : 'bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-transparent border border-indigo-500/20 text-slate-900 dark:text-white'
+                            }`}>
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-sm ${
+                                        isBento
+                                            ? 'bg-black text-white border-2 border-black'
+                                            : 'bg-indigo-600 text-white shadow-sm'
+                                    }`}>
+                                        M{stage.stageNumber}
+                                    </div>
+                                    <div>
+                                        <h4 className="font-black text-base sm:text-lg tracking-tight">
+                                            {getStageLabel(stage.stageNumber, stages.length)}
+                                        </h4>
+                                        <p className="text-xs font-semibold opacity-80">
+                                            Milestone {stage.stageNumber} of {stages.length} • {stage.modules.length} {stage.modules.length === 1 ? 'Module' : 'Modules'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs font-black">
+                                    <span className={`px-2.5 py-1 rounded-lg ${
+                                        isBento ? 'bg-white text-black border border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-white/80 dark:bg-slate-800'
+                                    }`}>
+                                        {stage.modules.reduce((sum, m) => sum + (m.subModules?.length || 0), 0)} Lessons
+                                    </span>
+                                    <span className={`px-2.5 py-1 rounded-lg ${
+                                        isBento ? 'bg-white text-black border border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-white/80 dark:bg-slate-800'
+                                    }`}>
+                                        {stage.modules.reduce((sum, m) => sum + (m.quizIds?.length || (m.quizId ? 1 : 0)), 0)} Quizzes
+                                    </span>
+                                    <span className={`px-2.5 py-1 rounded-lg ${
+                                        isBento ? 'bg-[#bef264] text-black border border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-amber-100 text-amber-800'
+                                    }`}>
+                                        +{stage.modules.reduce((sum, m) => sum + (m.xpReward || 0), 0)} XP
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Solid Modules Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+                                {stage.modules.map((mod, modIdxInStage) => {
+                                    const globalIndex = (stage.stageNumber - 1) * STAGE_SIZE + modIdxInStage;
+                                    const { isCompleted, isLocked } = computeStatus(mod);
+                                    const isSelected = selectedNodeId === mod.moduleId;
+                                    const lessonCount = mod.subModules?.length || 0;
+                                    const quizCount = mod.quizIds?.length || (mod.quizId ? 1 : 0);
+                                    const xpReward = mod.xpReward || 100;
+                                    const theme = getModuleTheme(mod);
+                                    const ThemeIcon = theme.Icon;
+
+                                    const handleCardClick = () => {
+                                        if (readOnly) {
+                                            if (isLocked) {
+                                                onNotification('error', 'Complete previous modules to unlock this one');
+                                                return;
+                                            }
+                                            setSelectedModuleForDetails(mod);
+                                            setIsModuleDetailsOpen(true);
                                             return;
                                         }
-                                        setSelectedModuleForDetails(module);
-                                        setIsModuleDetailsOpen(true);
-                                        return;
-                                    }
-
-                                    if (!draggedModuleId && viewMode === 'admin') {
-                                        setSelectedNodeId(module.moduleId);
+                                        setSelectedNodeId(mod.moduleId);
                                         setIsInspectorOpen(true);
-                                    }
-                                };
+                                    };
 
-                                return (
-                                    <div
-                                        key={module.moduleId}
-                                        className="absolute"
-                                        style={{ left: item.x, top: item.y, width: cardWidth, height: cardHeight, pointerEvents: 'auto' }}
-                                    >
+                                    return (
                                         <div
-                                            className={`relative flex h-full w-full overflow-hidden rounded-[28px] border bg-white/95 dark:bg-[#0f172a]/94 transition-all duration-200 ${
-                                                isEditingCanvas ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
-                                            } ${isLocked ? 'opacity-75' : ''} ${draggedModuleId === module.moduleId ? 'opacity-70' : ''}`}
-                                            style={{
-                                                borderColor: selectedNodeId === module.moduleId ? theme.primary : theme.outline,
-                                                boxShadow: selectedNodeId === module.moduleId
-                                                    ? `0 0 0 1px ${theme.primary}, ${theme.shadow}`
-                                                    : theme.shadow
-                                            }}
-                                            onMouseDown={(event) => {
-                                                if (isEditingCanvas) {
-                                                    handleModuleMouseDown(module.moduleId, event);
-                                                }
-                                            }}
-                                            onClick={handleModuleClick}
-                                            role="button"
-                                            aria-disabled={readOnly && isLocked}
-                                            tabIndex={readOnly && isLocked ? -1 : 0}
+                                            key={mod.moduleId}
+                                            onClick={handleCardClick}
+                                            className={`group relative rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-150 cursor-pointer ${
+                                                isBento
+                                                    ? `bg-white text-black border-2 border-black ${
+                                                        isSelected
+                                                            ? 'ring-4 ring-[#8b5cf6] shadow-[6px_6px_0px_#000] -translate-y-1'
+                                                            : 'shadow-[4px_4px_0px_#000] hover:shadow-[6px_6px_0px_#000] hover:-translate-y-0.5'
+                                                      }`
+                                                    : `bg-white dark:bg-[#161c2b] border ${
+                                                        isSelected
+                                                            ? 'border-indigo-500 shadow-md ring-2 ring-indigo-500/20'
+                                                            : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 shadow-sm'
+                                                      }`
+                                            } ${isLocked ? 'opacity-70 bg-slate-50 dark:bg-slate-900/40' : ''}`}
                                         >
-                                            <div
-                                                className="absolute inset-x-0 top-0 h-1.5"
-                                                style={{ background: `linear-gradient(90deg, ${theme.primary}, ${theme.secondary})` }}
-                                            />
-                                            <div
-                                                className="pointer-events-none absolute -right-4 top-3 text-5xl font-black tracking-tight text-gray-200/60 dark:text-white/5"
-                                                aria-hidden="true"
-                                            >
-                                                {String(moduleNumber).padStart(2, '0')}
-                                            </div>
-
-                                            <div className="flex h-full w-full flex-col p-4 sm:p-5">
-                                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                                    <div className="flex min-w-0 flex-1 items-center gap-3">
-                                                        <div
-                                                            className="flex h-10 w-10 flex-none items-center justify-center rounded-2xl border"
-                                                            style={{ backgroundColor: theme.surface, borderColor: theme.outline, color: theme.primary }}
-                                                        >
-                                                            {module.icon ? (
-                                                                <span className="text-lg">{module.icon}</span>
-                                                            ) : (
-                                                                <ThemeIcon size={18} />
-                                                            )}
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div
-                                                                className="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em]"
-                                                                style={{
-                                                                    backgroundColor: theme.surface,
-                                                                    borderColor: theme.outline,
-                                                                    color: theme.darkText
-                                                                }}
-                                                            >
-                                                                {module.type || 'core'}
-                                                            </div>
-                                                            <div className="mt-2 text-xs font-medium uppercase tracking-[0.2em] text-gray-400 dark:text-slate-500">
-                                                                Module {String(moduleNumber).padStart(2, '0')}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                                                        {isCompleted && <Check className="h-4 w-4 text-emerald-500" />}
-                                                        {isLocked && <LockIcon className="h-4 w-4 text-gray-400 dark:text-slate-500" />}
-                                                        <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${statusClass}`}>
-                                                            {statusLabel}
+                                            {/* Card Top Row: Step #, Type Badge, Status */}
+                                            <div>
+                                                <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className={`px-2 py-0.5 rounded-lg text-xs font-black ${
+                                                            isBento
+                                                                ? 'bg-[#fef08a] text-black border-2 border-black'
+                                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold'
+                                                        }`}>
+                                                            #{String(globalIndex + 1).padStart(2, '0')}
+                                                        </span>
+                                                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-1 ${theme.badgeBg}`}>
+                                                            <ThemeIcon className="w-3 h-3" />
+                                                            <span>{theme.label}</span>
                                                         </span>
                                                     </div>
+
+                                                    <div>
+                                                        {isLocked ? (
+                                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 ${
+                                                                isBento ? 'bg-slate-200 text-slate-700 border border-black' : 'bg-slate-100 text-slate-500'
+                                                            }`}>
+                                                                <LockIcon className="w-3 h-3" />
+                                                                <span>Locked</span>
+                                                            </span>
+                                                        ) : isCompleted ? (
+                                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 ${
+                                                                isBento ? 'bg-[#bef264] text-black border border-black' : 'bg-emerald-100 text-emerald-700'
+                                                            }`}>
+                                                                <Check className="w-3 h-3" />
+                                                                <span>Done</span>
+                                                            </span>
+                                                        ) : (
+                                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 ${
+                                                                isBento ? 'bg-cyan-100 text-black border border-black' : 'bg-blue-100 text-blue-700'
+                                                            }`}>
+                                                                <span>Ready</span>
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
 
-                                                <div className="mt-4 min-w-0 space-y-2.5">
-                                                    <h4 className="line-clamp-2 text-base font-semibold leading-snug text-gray-900 dark:text-white">
-                                                        {module.title}
-                                                    </h4>
-                                                    <p className={`line-clamp-3 text-sm leading-6 ${isLocked ? 'text-gray-400 dark:text-slate-500' : 'text-gray-600 dark:text-slate-300'}`}>
-                                                        {cardDescription}
-                                                    </p>
+                                                {/* Title & Description */}
+                                                <h4 className="font-black text-base text-slate-900 dark:text-white leading-snug line-clamp-2">
+                                                    {mod.title}
+                                                </h4>
+                                                <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 mt-1.5 leading-relaxed">
+                                                    {mod.description || 'Complete this curriculum step to progress through your roadmap.'}
+                                                </p>
+
+                                                {/* Prerequisites tag if any */}
+                                                {mod.prerequisites && mod.prerequisites.length > 0 && (
+                                                    <div className="mt-2.5 flex items-center gap-1 flex-wrap">
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Requires:</span>
+                                                        {mod.prerequisites.map(prereqId => {
+                                                            const prereqMod = modules.find(m => m.moduleId === prereqId);
+                                                            return (
+                                                                <span
+                                                                    key={prereqId}
+                                                                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold truncate max-w-[120px] ${
+                                                                        isBento
+                                                                            ? 'bg-slate-100 text-black border border-black'
+                                                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                                                                    }`}
+                                                                >
+                                                                    {prereqMod?.title || prereqId}
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Card Bottom: Metrics & Actions */}
+                                            <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-white/10">
+                                                <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 mb-3">
+                                                    <span className="flex items-center gap-1" title={`${lessonCount} lessons`}>
+                                                        <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+                                                        <span>{lessonCount} {lessonCount === 1 ? 'lesson' : 'lessons'}</span>
+                                                    </span>
+                                                    <span className="flex items-center gap-1" title={`${quizCount} quizzes`}>
+                                                        <Target className="w-3.5 h-3.5 text-rose-500" />
+                                                        <span>{quizCount} {quizCount === 1 ? 'quiz' : 'quizzes'}</span>
+                                                    </span>
+                                                    <span className={`px-1.5 py-0.5 rounded text-[11px] font-black ${
+                                                        isBento ? 'bg-[#bef264] text-black border border-black' : 'text-amber-600'
+                                                    }`}>
+                                                        +{xpReward} XP
+                                                    </span>
                                                 </div>
 
-                                                <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
-                                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                                                        <BookOpen size={13} />
-                                                        {lessonCount} lesson{lessonCount === 1 ? '' : 's'}
-                                                    </span>
-                                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                                                        <Target size={13} />
-                                                        {quizCount} quiz{quizCount === 1 ? '' : 'zes'}
-                                                    </span>
-                                                    <span
-                                                        className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium"
-                                                        style={{
-                                                            backgroundColor: theme.surface,
-                                                            borderColor: theme.outline,
-                                                            color: theme.darkText
-                                                        }}
+                                                {/* Action Bar */}
+                                                {!readOnly ? (
+                                                    <div className="flex items-center justify-between gap-1.5" onClick={e => e.stopPropagation()}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setSelectedNodeId(mod.moduleId);
+                                                                setIsInspectorOpen(true);
+                                                            }}
+                                                            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                                                                isBento
+                                                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000] hover:bg-[#a3e635]'
+                                                                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                                            }`}
+                                                        >
+                                                            <Edit3 className="w-3 h-3" />
+                                                            <span>Edit</span>
+                                                        </button>
+
+                                                        {/* Re-order buttons */}
+                                                        <button
+                                                            type="button"
+                                                            disabled={globalIndex === 0}
+                                                            onClick={() => handleMoveNode(mod.moduleId, 'up')}
+                                                            title="Move step earlier"
+                                                            className={`p-1.5 rounded-xl transition-all ${
+                                                                isBento
+                                                                    ? 'bg-white text-black border-2 border-black hover:bg-slate-100 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed'
+                                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 disabled:opacity-30'
+                                                            }`}
+                                                        >
+                                                            <ArrowUp className="w-3.5 h-3.5" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={globalIndex === visibleItems.length - 1}
+                                                            onClick={() => handleMoveNode(mod.moduleId, 'down')}
+                                                            title="Move step later"
+                                                            className={`p-1.5 rounded-xl transition-all ${
+                                                                isBento
+                                                                    ? 'bg-white text-black border-2 border-black hover:bg-slate-100 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed'
+                                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 disabled:opacity-30'
+                                                            }`}
+                                                        >
+                                                            <ArrowDown className="w-3.5 h-3.5" />
+                                                        </button>
+
+                                                        {/* Duplicate */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDuplicateNode(mod)}
+                                                            title="Duplicate module"
+                                                            className={`p-1.5 rounded-xl transition-all ${
+                                                                isBento
+                                                                    ? 'bg-white text-black border-2 border-black hover:bg-slate-100 cursor-pointer'
+                                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200'
+                                                            }`}
+                                                        >
+                                                            <Copy className="w-3.5 h-3.5" />
+                                                        </button>
+
+                                                        {/* Delete */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => void handleDeleteNode(mod.moduleId)}
+                                                            title="Delete module"
+                                                            className={`p-1.5 rounded-xl transition-all ${
+                                                                isBento
+                                                                    ? 'bg-red-50 text-red-700 border-2 border-black hover:bg-red-100 cursor-pointer'
+                                                                    : 'bg-red-50 dark:bg-red-950/30 text-red-600 hover:bg-red-100'
+                                                            }`}
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleCardClick}
+                                                        className={`w-full py-1.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                                            isBento
+                                                                ? 'bg-[#8b5cf6] text-white border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#7c3aed]'
+                                                                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                                        }`}
                                                     >
-                                                        <Star size={13} />
-                                                        {xpReward} XP
-                                                    </span>
-                                                </div>
+                                                        <BookOpen className="w-3.5 h-3.5" />
+                                                        <span>View Lessons & Quizzes</span>
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Milestone Bridge / Connector to Next Stage */}
+                            {!isLastStage && (
+                                <div className="flex flex-col items-center justify-center my-3">
+                                    <div className={`w-0.5 h-5 ${isBento ? 'bg-black' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                                    <div className={`px-4 py-1 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-2 ${
+                                        isBento
+                                            ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 shadow-sm'
+                                    }`}>
+                                        <span>↓</span>
+                                        <span>Next: Milestone {stage.stageNumber + 1}</span>
+                                        <span>↓</span>
                                     </div>
-                                );
-                            })}
+                                    <div className={`w-0.5 h-5 ${isBento ? 'bg-black' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                                </div>
+                            )}
                         </div>
-                    </div>
-                </div>
+                    );
+                })}
             </div>
         );
     };
@@ -837,6 +982,28 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
 
 
     // --- Node CRUD Actions ---
+    const handleMoveNode = (moduleId: string, direction: 'up' | 'down') => {
+        const sorted = [...modules].sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+        const index = sorted.findIndex(m => m.moduleId === moduleId);
+        if (index === -1) return;
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= sorted.length) return;
+
+        const temp = sorted[index];
+        sorted[index] = sorted[targetIndex];
+        sorted[targetIndex] = temp;
+
+        const updated = sorted.map((mod, i) => ({
+            ...mod,
+            level: i,
+            coordinates: {
+                x: (i % 3) * 340 + 50,
+                y: Math.floor(i / 3) * 260 + 50
+            }
+        }));
+        setModules(updated);
+    };
+
     const handleUpdateNode = (updatedNode: SkillModule) => {
         setModules(prev => prev.map(m =>
             m.moduleId === updatedNode.moduleId ? updatedNode : m
@@ -863,29 +1030,36 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
     };
 
     const handleDuplicateNode = (original: SkillModule) => {
+        const nextLevel = modules.length;
         const newNode: SkillModule = {
             ...original,
             moduleId: `mod_${Date.now()}`,
             title: `${original.title} (Copy)`,
+            level: nextLevel,
             coordinates: {
-                x: (original.coordinates?.x || 0) + 60,
-                y: (original.coordinates?.y || 0) + 60
+                x: (nextLevel % 3) * 340 + 50,
+                y: Math.floor(nextLevel / 3) * 260 + 50
             },
             status: NodeState.LOCKED
         };
         setModules(prev => [...prev, newNode]);
+        onNotification('success', `Duplicated "${original.title}"`);
     };
 
     const handleCreateNode = (type: string) => {
+        const nextLevel = modules.length;
         const newNode: SkillModule = {
             moduleId: `mod_${Date.now()}`,
             title: 'New Module',
             description: '',
-            level: modules.length,
+            level: nextLevel,
             type: type as SkillModule['type'],
             status: NodeState.LOCKED,
             xpReward: 100,
-            coordinates: { x: 100, y: 100 },
+            coordinates: {
+                x: (nextLevel % 3) * 340 + 50,
+                y: Math.floor(nextLevel / 3) * 260 + 50
+            },
             prerequisites: [],
             subModules: []
         };
@@ -962,66 +1136,18 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
     };
 
     const handleRedesign = () => {
-        // Reorganize modules: sort by level, reassign levels sequentially with 2-column layout
         const sortedModules = [...modules].sort((a, b) => (a.level || 0) - (b.level || 0));
-
-        // Apply 2-column auto layout
-        const xPositions = [210, 550];
-        const ySpacing = 260;
-
-        const redesignedModules = sortedModules.map((mod, index) => {
-            const col = index % 2;
-            const row = Math.floor(index / 2);
-
-            return {
-                ...mod,
-                level: index,
-                coordinates: {
-                    x: xPositions[col],
-                    y: row * ySpacing
-                }
-            };
-        });
+        const redesignedModules = sortedModules.map((mod, index) => ({
+            ...mod,
+            level: index,
+            coordinates: {
+                x: (index % 3) * 340 + 50,
+                y: Math.floor(index / 3) * 260 + 50
+            }
+        }));
 
         setModules(redesignedModules);
-        onNotification('success', 'Roadmap redesigned and reorganized');
-    };
-
-    const handleModuleMouseDown = (moduleId: string, e: React.MouseEvent) => {
-        if (readOnly || viewMode !== 'admin' || e.button !== 0) return; // Left click only
-
-        e.stopPropagation(); // Prevent canvas panning when dragging module
-
-        const module = modules.find(m => m.moduleId === moduleId);
-        if (!module) return;
-
-        // Store the starting position and mouse position
-        setDraggedModuleId(moduleId);
-        setDragOffset({
-            x: e.clientX - (module.coordinates?.x || 0),
-            y: e.clientY - (module.coordinates?.y || 0)
-        });
-    };
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!draggedModuleId) return;
-
-        e.stopPropagation();
-
-        // Calculate new position based on mouse movement
-        const newX = e.clientX - dragOffset.x;
-        const newY = e.clientY - dragOffset.y;
-
-        // Update module coordinates
-        setModules(prev => prev.map(m =>
-            m.moduleId === draggedModuleId
-                ? { ...m, coordinates: { x: Math.max(0, Math.round(newX)), y: Math.max(0, Math.round(newY)) } }
-                : m
-        ));
-    };
-
-    const handleMouseUp = () => {
-        setDraggedModuleId(null);
+        onNotification('success', 'Roadmap sequence reorganized & auto-numbered');
     };
 
     /**
@@ -1069,18 +1195,30 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
 
     return (
         <div className="relative flex flex-col flex-1">
-            <div className="border border-gray-200 dark:border-white/10 rounded-3xl bg-white/95 dark:bg-[#111522] px-5 py-4">
+            <div className={`rounded-3xl p-4 sm:p-5 transition-all ${
+                isBento
+                    ? 'bg-white text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                    : 'border border-gray-200 dark:border-white/10 bg-white/95 dark:bg-[#111522]'
+            }`}>
                 <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_320px]">
                     <div className="min-w-0">
                         {!readOnly ? (
-                            <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/80 dark:bg-[#0B0E1A] p-4">
+                            <div className={`rounded-2xl p-4 transition-all ${
+                                isBento
+                                    ? 'bg-slate-50/80 text-black border border-slate-200/80'
+                                    : 'border border-gray-200 dark:border-white/10 bg-gray-50/80 dark:bg-[#0B0E1A]'
+                            }`}>
                                 <div className="grid gap-4">
                                     <div className="grid gap-3 lg:grid-cols-[88px_minmax(0,1fr)]">
                                         <input
                                             type="text"
                                             value={track?.icon || '🗺️'}
                                             onChange={(event) => handleTrackFieldChange('icon', event.target.value)}
-                                            className="h-16 w-full rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] px-4 text-center text-2xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                                            className={`h-16 w-full rounded-2xl px-4 text-center text-2xl font-bold focus:outline-none transition-all ${
+                                                isBento
+                                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                    : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/40'
+                                            }`}
                                             maxLength={2}
                                             aria-label="Roadmap icon"
                                         />
@@ -1090,71 +1228,145 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
                                                 value={track?.title || ''}
                                                 onChange={(event) => handleTrackFieldChange('title', event.target.value)}
                                                 placeholder="Roadmap title"
-                                                className="h-12 w-full rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] px-4 text-lg font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                                                className={`h-12 w-full rounded-2xl px-4 text-lg font-black focus:outline-none transition-all ${
+                                                    isBento
+                                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                        : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/40'
+                                                }`}
                                             />
                                             <textarea
                                                 value={track?.description || ''}
                                                 onChange={(event) => handleTrackFieldChange('description', event.target.value)}
                                                 placeholder="Short roadmap description"
-                                                className="h-16 w-full resize-none rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] px-4 py-3 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                                                className={`h-16 w-full resize-none rounded-2xl px-4 py-3 text-sm font-medium focus:outline-none transition-all ${
+                                                    isBento
+                                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                        : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/40'
+                                                }`}
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/20 px-4 py-3">
+                                    <div className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${
+                                        isBento
+                                            ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                            : 'border border-emerald-200 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/20'
+                                    }`}>
                                         <input
                                             type="checkbox"
                                             id="trackIsVisible"
                                             checked={track?.isVisible !== false}
                                             onChange={(event) => handleTrackFieldChange('isVisible', event.target.checked)}
-                                            className="h-5 w-5 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                                            className="h-5 w-5 rounded border-2 border-black text-emerald-600 focus:ring-black cursor-pointer"
                                         />
-                                        <label htmlFor="trackIsVisible" className="cursor-pointer text-sm font-bold text-emerald-900 dark:text-emerald-100">
-                                            Visible to students
+                                        <label htmlFor="trackIsVisible" className="cursor-pointer text-sm font-black text-black dark:text-emerald-100">
+                                            Visible to students in learning catalog
                                         </label>
                                     </div>
 
                                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                        <button onClick={() => handleCreateNode(NodeType.CORE)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:border-indigo-300 dark:hover:border-indigo-500/40">
+                                        <button
+                                            onClick={() => handleCreateNode(NodeType.CORE)}
+                                            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                                                isBento
+                                                    ? 'bg-[#c4b5fd] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#b49bfb] active:translate-x-0.5 active:translate-y-0.5'
+                                                    : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] text-gray-800 dark:text-gray-100 hover:border-indigo-300'
+                                            }`}
+                                        >
                                             <Zap size={15} />
                                             Add Core
                                         </button>
-                                        <button onClick={() => handleCreateNode(NodeType.OPTIONAL)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:border-emerald-300 dark:hover:border-emerald-500/40">
+                                        <button
+                                            onClick={() => handleCreateNode(NodeType.OPTIONAL)}
+                                            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                                                isBento
+                                                    ? 'bg-[#6ee7b7] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#5eead4] active:translate-x-0.5 active:translate-y-0.5'
+                                                    : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] text-gray-800 dark:text-gray-100 hover:border-emerald-300'
+                                            }`}
+                                        >
                                             <Plus size={15} />
                                             Add Optional
                                         </button>
-                                        <button onClick={() => handleCreateNode(NodeType.ACHIEVEMENT)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:border-amber-300 dark:hover:border-amber-500/40">
+                                        <button
+                                            onClick={() => handleCreateNode(NodeType.ACHIEVEMENT)}
+                                            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                                                isBento
+                                                    ? 'bg-[#fcd34d] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#fbbf24] active:translate-x-0.5 active:translate-y-0.5'
+                                                    : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] text-gray-800 dark:text-gray-100 hover:border-amber-300'
+                                            }`}
+                                        >
                                             <Star size={15} />
                                             Add Achievement
                                         </button>
-                                        <button onClick={handleRedesign} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                        <button
+                                            onClick={handleRedesign}
+                                            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                                                isBento
+                                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100 active:translate-x-0.5 active:translate-y-0.5'
+                                                    : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] text-gray-800 dark:text-gray-100'
+                                            }`}
+                                            title="Auto-organize modules sequentially"
+                                        >
                                             <BrainCircuit size={15} />
-                                            Auto Layout
+                                            Auto Organize
                                         </button>
-                                        <button onClick={() => setIsImportModalOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                        <button
+                                            onClick={() => setIsImportModalOpen(true)}
+                                            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                                                isBento
+                                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100 active:translate-x-0.5 active:translate-y-0.5'
+                                                    : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] text-gray-800 dark:text-gray-100'
+                                            }`}
+                                        >
                                             <FileJson size={15} />
                                             Import
                                         </button>
-                                        <button onClick={handleExportRoadmap} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                        <button
+                                            onClick={handleExportRoadmap}
+                                            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                                                isBento
+                                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100 active:translate-x-0.5 active:translate-y-0.5'
+                                                    : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] text-gray-800 dark:text-gray-100'
+                                            }`}
+                                        >
                                             <Download size={15} />
                                             Export
                                         </button>
-                                        <button onClick={() => setViewMode(prev => prev === 'admin' ? 'user' : 'admin')} className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ${viewMode === 'user' ? 'bg-cyan-500 text-white' : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] text-gray-800 dark:text-gray-100'}`}>
+                                        <button
+                                            onClick={() => setViewMode(prev => prev === 'admin' ? 'user' : 'admin')}
+                                            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                                                isBento
+                                                    ? viewMode === 'user'
+                                                        ? 'bg-[#8b5cf6] text-white border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                        : 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100'
+                                                    : viewMode === 'user'
+                                                        ? 'bg-cyan-500 text-white'
+                                                        : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] text-gray-800 dark:text-gray-100'
+                                            }`}
+                                        >
                                             <Eye size={15} />
-                                            {viewMode === 'user' ? 'Preview On' : 'Preview'}
+                                            {viewMode === 'user' ? 'Preview Active' : 'Student Preview'}
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/80 dark:bg-[#0B0E1A] p-4">
+                            <div className={`rounded-2xl p-4 transition-all ${
+                                isBento
+                                    ? 'bg-slate-50/80 text-black border border-slate-200/80'
+                                    : 'border border-gray-200 dark:border-white/10 bg-gray-50/80 dark:bg-[#0B0E1A]'
+                            }`}>
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] text-2xl">
+                                    <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl ${
+                                        isBento
+                                            ? 'bg-[#fef08a] border-2 border-black text-black'
+                                            : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827]'
+                                    }`}>
                                         {track?.icon || '🗺️'}
                                     </div>
                                     <div className="min-w-0">
-                                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{track?.title || 'Learning Path'}</h2>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">{track?.description || 'Track progress and lessons in one place.'}</p>
+                                        <h2 className="text-xl font-black text-gray-900 dark:text-white">{track?.title || 'Learning Path'}</h2>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">{track?.description || 'Track progress and lessons in one place.'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -1162,31 +1374,51 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
                     </div>
 
                     <div className="min-w-0">
-                        <div className="flex h-full flex-col gap-4 rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#0B0E1A] p-4">
+                        <div className={`flex h-full flex-col gap-4 rounded-2xl p-4 transition-all ${
+                            isBento
+                                ? 'bg-slate-50/80 text-black border border-slate-200/80'
+                                : 'border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#0B0E1A]'
+                        }`}>
                             <div className="grid grid-cols-3 gap-3 text-center">
-                                <div className="rounded-xl bg-white dark:bg-[#161c2b] px-3 py-3">
-                                    <div className="text-lg font-bold text-gray-900 dark:text-white">{modules.length}</div>
-                                    <div className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Modules</div>
+                                <div className={`rounded-xl px-3 py-3 ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-white dark:bg-[#161c2b]'
+                                }`}>
+                                    <div className="text-xl font-black text-gray-900 dark:text-white">{modules.length}</div>
+                                    <div className="text-[10px] uppercase font-bold tracking-wider text-gray-500 dark:text-gray-400">Modules</div>
                                 </div>
-                                <div className="rounded-xl bg-white dark:bg-[#161c2b] px-3 py-3">
-                                    <div className="text-lg font-bold text-gray-900 dark:text-white">{totalLessonCount}</div>
-                                    <div className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Lessons</div>
+                                <div className={`rounded-xl px-3 py-3 ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-white dark:bg-[#161c2b]'
+                                }`}>
+                                    <div className="text-xl font-black text-gray-900 dark:text-white">{totalLessonCount}</div>
+                                    <div className="text-[10px] uppercase font-bold tracking-wider text-gray-500 dark:text-gray-400">Lessons</div>
                                 </div>
-                                <div className="rounded-xl bg-white dark:bg-[#161c2b] px-3 py-3">
-                                    <div className="text-lg font-bold text-gray-900 dark:text-white">{linkedQuizCount}</div>
-                                    <div className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Quizzes</div>
+                                <div className={`rounded-xl px-3 py-3 ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-white dark:bg-[#161c2b]'
+                                }`}>
+                                    <div className="text-xl font-black text-gray-900 dark:text-white">{linkedQuizCount}</div>
+                                    <div className="text-[10px] uppercase font-bold tracking-wider text-gray-500 dark:text-gray-400">Quizzes</div>
                                 </div>
                             </div>
 
                             {!readOnly && (
-                                <div className="flex flex-1 flex-col justify-between rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b] p-4">
+                                <div className={`flex flex-1 flex-col justify-between rounded-2xl p-4 transition-all ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2b]'
+                                }`}>
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
-                                            <div className={`text-sm font-semibold ${isDirty ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                                                {isDirty ? 'Unsaved changes' : 'All changes saved'}
+                                            <div className={`text-sm font-black ${isDirty ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                                {isDirty ? '● Unsaved changes' : '✓ All changes saved'}
                                             </div>
-                                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                {isDirty ? 'Save before leaving this screen to keep the latest roadmap edits.' : 'Use Ctrl/Cmd+S any time to save quickly.'}
+                                            <p className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                                                {isDirty ? 'Save before navigating away to keep updates.' : 'Use Ctrl/Cmd+S any time to save.'}
                                             </p>
                                         </div>
                                         {saving && <Loader2 className="mt-0.5 h-4 w-4 animate-spin text-indigo-500" />}
@@ -1195,18 +1427,26 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
                                         <button
                                             onClick={() => void handleDiscardChanges()}
                                             disabled={!isDirty || saving}
-                                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black disabled:cursor-not-allowed disabled:opacity-40 transition-all cursor-pointer ${
+                                                isBento
+                                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100 active:translate-x-0.5 active:translate-y-0.5'
+                                                    : 'border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-200'
+                                            }`}
                                         >
-                                            <RotateCcw size={16} />
+                                            <RotateCcw size={14} />
                                             Discard
                                         </button>
                                         <button
                                             onClick={() => void handleSave()}
                                             disabled={saving || !isDirty}
-                                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black disabled:cursor-not-allowed disabled:opacity-40 transition-all cursor-pointer ${
+                                                isBento
+                                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#a3e635] active:translate-x-0.5 active:translate-y-0.5'
+                                                    : 'bg-indigo-600 text-white'
+                                            }`}
                                         >
-                                            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={16} />}
-                                            Save
+                                            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={14} />}
+                                            Save Road
                                         </button>
                                     </div>
                                 </div>
@@ -1216,7 +1456,7 @@ const RoadmapManagement: React.FC<RoadmapManagementProps> = ({
                 </div>
             </div>
 
-            {renderSketch()}
+            {renderSolidRoadmap()}
 
             {/* Inspector Panel */}
             {selectedNodeId && !readOnly && selectedNode && (

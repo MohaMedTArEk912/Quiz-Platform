@@ -51,6 +51,7 @@ import subjectRoutes from './routes/subjects.js';
 import aiStudioRoutes from './routes/aiStudio.js';
 import trackRequestRoutes from './routes/trackRequests.js';
 import notificationRoutes from './routes/notifications.js';
+import supportRoutes from './routes/support.js';
 
 // Strictly whitelisted origins (No broad wildcard *.vercel.app or *.netlify.app domains)
 const allowedOrigins = [
@@ -288,6 +289,7 @@ app.use('/api/badge-nodes', badgeNodesRoutes);
 app.use('/api/badge-trees', badgeTreesRoutes);
 app.use('/api/track-requests', trackRequestRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/support', supportRoutes);
 
 
 // Socket.io event handlers (disabled on Vercel serverless)

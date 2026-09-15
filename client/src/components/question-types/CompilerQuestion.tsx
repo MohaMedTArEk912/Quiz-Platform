@@ -4,6 +4,8 @@ import { Play, Terminal as TerminalIcon, RotateCcw } from 'lucide-react';
 import { api } from '../../lib/api';
 import { COMPILER_ALLOWED_LANGUAGES, COMPILER_INITIAL_CODE } from '../../constants/quizDefaults.ts';
 
+import { useTheme } from '../../context/ThemeContext';
+
 interface CompilerQuestionProps {
     language: string;
     allowedLanguages?: string[];
@@ -14,6 +16,7 @@ interface CompilerQuestionProps {
 }
 
 const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLanguage, allowedLanguages = COMPILER_ALLOWED_LANGUAGES, initialCode, onChange, readOnly, className }) => {
+    const { isBento } = useTheme();
     const [language, setLanguage] = useState(defaultLanguage);
     const [code, setCode] = useState(initialCode || COMPILER_INITIAL_CODE[defaultLanguage] || `// Write your ${defaultLanguage} code here\n`);
 
@@ -32,9 +35,6 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
 
     const handleLanguageChange = (newLang: string) => {
         setLanguage(newLang);
-        // Optional: Reset code template when changing language?
-        // For now, let's keep the code buffer but maybe comment out previous code if we wanted to be fancy.
-        // Or just let the user handle it.
     };
 
     const handleEditorChange = (value: string | undefined) => {
@@ -70,22 +70,38 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
     };
 
     return (
-        <div className={`flex flex-col border-2 border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm ${className || 'h-[600px]'}`}>
+        <div className={`flex flex-col rounded-xl overflow-hidden shadow-sm ${className || 'h-[600px]'} ${
+            isBento
+                ? 'border-[2.5px] border-black bg-white shadow-[6px_6px_0px_#000]'
+                : 'border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+        }`}>
             {/* Toolbar */}
-            <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div className={`flex items-center justify-between p-2.5 border-b ${
+                isBento
+                    ? 'bg-[#f5f3ec] border-b-[2.5px] border-black'
+                    : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+            }`}>
                 <div className="flex items-center gap-2">
                     {allowedLanguages.length > 1 ? (
                         <select
                             value={language}
                             onChange={(e) => handleLanguageChange(e.target.value)}
-                            className="text-xs font-bold uppercase text-gray-700 dark:text-gray-200 px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className={`text-xs font-bold uppercase px-3 py-1 rounded-md border focus:outline-none ${
+                                isBento
+                                    ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000] font-black'
+                                    : 'text-gray-700 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500'
+                            }`}
                         >
                             {allowedLanguages.map(lang => (
                                 <option key={lang} value={lang}>{lang}</option>
                             ))}
                         </select>
                     ) : (
-                        <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600">
+                        <span className={`text-xs uppercase px-3 py-1 rounded-md border ${
+                            isBento
+                                ? 'bg-[#fde047] text-black font-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                : 'font-bold text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600'
+                        }`}>
                             {language}
                         </span>
                     )}
@@ -97,7 +113,11 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
                             setCode(reset);
                             onChange(reset);
                         }}
-                        className="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+                        className={`p-2 transition-all ${
+                            isBento
+                                ? 'border-2 border-black bg-white rounded-lg text-black hover:bg-[#fde047] shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
+                                : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                        }`}
                         title="Reset Code"
                     >
                         <RotateCcw className="w-4 h-4" />
@@ -106,14 +126,17 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
                         <button
                             onClick={handleRun}
                             disabled={isRunning}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold text-white transition-all ${isRunning
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : 'bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg hover:-translate-y-0.5'
-                                }`}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm transition-all ${
+                                isRunning
+                                    ? 'bg-gray-400 cursor-not-allowed text-white'
+                                    : isBento
+                                        ? 'bg-[#bef264] hover:bg-[#a3e635] text-black font-black border-2 border-black shadow-[3px_3px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_#000]'
+                                        : 'font-bold text-white bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg hover:-translate-y-0.5'
+                            }`}
                         >
                             {isRunning ? (
                                 <>
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    <div className={`w-4 h-4 border-2 rounded-full animate-spin ${isBento ? 'border-black/30 border-t-black' : 'border-white/30 border-t-white'}`} />
                                     Running...
                                 </>
                             ) : (
@@ -174,9 +197,17 @@ const CompilerQuestion: React.FC<CompilerQuestionProps> = ({ language: defaultLa
             </div>
 
             {/* Terminal Output */}
-            <div className="h-1/3 bg-[#1e1e1e] border-t-4 border-gray-700 flex flex-col">
-                <div className="flex items-center gap-2 px-4 py-2 bg-[#252526] text-gray-300 text-xs font-bold border-b border-black/50 select-none">
-                    <TerminalIcon className="w-3 h-3" /> CONSOLE
+            <div className={`h-1/3 flex flex-col ${
+                isBento
+                    ? 'bg-[#18181b] border-t-[2.5px] border-black'
+                    : 'bg-[#1e1e1e] border-t-4 border-gray-700'
+            }`}>
+                <div className={`flex items-center gap-2 px-4 py-2 text-xs font-black select-none border-b ${
+                    isBento
+                        ? 'bg-black text-[#bef264] border-black tracking-wider'
+                        : 'bg-[#252526] text-gray-300 font-bold border-black/50'
+                }`}>
+                    <TerminalIcon className="w-3.5 h-3.5" /> CONSOLE
                 </div>
                 <div className="flex-1 p-4 font-mono text-sm overflow-y-auto text-gray-300 font-medium">
                     {output.length === 0 ? (

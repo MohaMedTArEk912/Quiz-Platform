@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Eye, EyeOff, Mail, User as UserIcon, Lock, Check, AlertCircle } from 'lucide-react';
 import type { UserData } from '../types/index.ts';
 import { api } from '../lib/api.ts';
+import { useTheme } from '../context/ThemeContext.tsx';
 
 interface UserSettingsProps {
     user: UserData;
@@ -10,6 +11,7 @@ interface UserSettingsProps {
 }
 
 const UserSettings: React.FC<UserSettingsProps> = ({ user, onClose, onUpdate }) => {
+    const { isBento } = useTheme();
     const [name, setName] = useState(user.name);
     const [email, setEmail] = useState(user.email);
     const [currentPassword, setCurrentPassword] = useState('');
@@ -101,26 +103,41 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onClose, onUpdate }) 
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[150] animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto relative animate-in zoom-in-95 duration-200">
+        <div className={`fixed inset-0 flex items-center justify-center p-4 z-[150] animate-in fade-in duration-200 ${
+            isBento ? 'bg-black/60' : 'bg-black/80 backdrop-blur-sm'
+        }`}>
+            <div className={`max-w-md w-full max-h-[90vh] overflow-y-auto relative animate-in zoom-in-95 duration-200 ${
+                isBento
+                    ? 'bg-white text-black border-[3px] border-black rounded-2xl shadow-[8px_8px_0px_#000]'
+                    : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 rounded-[2rem] shadow-2xl'
+            }`}>
                 <button
                     onClick={onClose}
-                    className="absolute top-6 right-6 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors z-20"
+                    className={`absolute top-6 right-6 transition-all z-20 ${
+                        isBento
+                            ? 'p-1.5 rounded-xl border-2 border-black bg-white hover:bg-[#fed7aa] text-black shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
                 >
-                    <X className="w-6 h-6" />
+                    <X className="w-5 h-5" />
                 </button>
 
                 <div className="p-8">
                     <div className="mb-8">
-                        <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Account Settings</h2>
-                        <p className="text-gray-500 dark:text-gray-400 font-medium">Manage your profile and security</p>
+                        <h2 className={`text-2xl font-black mb-1 ${isBento ? 'text-black' : 'text-gray-900 dark:text-white'}`}>Account Settings</h2>
+                        <p className={`text-sm ${isBento ? 'text-gray-700 font-bold' : 'text-gray-500 dark:text-gray-400 font-medium'}`}>Manage your profile and security</p>
                     </div>
 
                     {notification && (
-                        <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 border ${notification.type === 'success'
-                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
-                            : 'bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400'
-                            } animate-in slide-in-from-top-2`}>
+                        <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
+                            isBento
+                                ? notification.type === 'success'
+                                    ? 'bg-[#dcfce7] border-2 border-black text-black font-bold shadow-[3px_3px_0px_#000]'
+                                    : 'bg-[#fee2e2] border-2 border-black text-black font-bold shadow-[3px_3px_0px_#000]'
+                                : notification.type === 'success'
+                                    ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+                                    : 'bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400'
+                        } animate-in slide-in-from-top-2`}>
                             {notification.type === 'success' ? <Check className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
                             <span className="font-bold text-sm">{notification.message}</span>
                         </div>
@@ -129,20 +146,26 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onClose, onUpdate }) 
                     <div className="space-y-6">
                         {/* Profile Info */}
                         <div className="space-y-4">
-                            <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                <UserIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Profile Info
+                            <h3 className={`text-sm font-black uppercase tracking-wider flex items-center gap-2 ${
+                                isBento ? 'text-black' : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                                <UserIcon className={`w-4 h-4 ${isBento ? 'text-black' : 'text-purple-600 dark:text-purple-400'}`} /> Profile Info
                             </h3>
 
                             <div className="space-y-4">
                                 <div>
                                     <label className="sr-only">Full Name</label>
                                     <div className="relative">
-                                        <UserIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
+                                        <UserIcon className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isBento ? 'text-black' : 'text-gray-400 dark:text-gray-500'}`} />
                                         <input
                                             type="text"
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
-                                            className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 font-medium transition-all"
+                                            className={`w-full pl-12 pr-4 py-3 rounded-xl font-medium transition-all ${
+                                                isBento
+                                                    ? 'border-2 border-black bg-white text-black placeholder-gray-500 shadow-[2px_2px_0px_#000] focus:outline-none'
+                                                    : 'bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500'
+                                            }`}
                                             placeholder="Full Name"
                                         />
                                     </div>
@@ -150,12 +173,16 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onClose, onUpdate }) 
                                 <div>
                                     <label className="sr-only">Email Address</label>
                                     <div className="relative">
-                                        <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
+                                        <Mail className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isBento ? 'text-black' : 'text-gray-400 dark:text-gray-500'}`} />
                                         <input
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 font-medium transition-all"
+                                            className={`w-full pl-12 pr-4 py-3 rounded-xl font-medium transition-all ${
+                                                isBento
+                                                    ? 'border-2 border-black bg-white text-black placeholder-gray-500 shadow-[2px_2px_0px_#000] focus:outline-none'
+                                                    : 'bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600'
+                                            }`}
                                             placeholder="Email Address"
                                         />
                                     </div>
@@ -164,62 +191,76 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onClose, onUpdate }) 
                         </div>
 
                         {/* Security */}
-                        <div className="pt-6 border-t border-gray-200 dark:border-white/5 space-y-4">
-                            <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                <Lock className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Security
+                        <div className={`pt-6 space-y-4 border-t ${isBento ? 'border-black' : 'border-gray-200 dark:border-white/5'}`}>
+                            <h3 className={`text-sm font-black uppercase tracking-wider flex items-center gap-2 ${
+                                isBento ? 'text-black' : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                                <Lock className={`w-4 h-4 ${isBento ? 'text-black' : 'text-purple-600 dark:text-purple-400'}`} /> Security
                             </h3>
-                            <p className="text-xs text-gray-500 font-medium mb-2">Leave blank to keep current password</p>
+                            <p className={`text-xs font-bold mb-2 ${isBento ? 'text-gray-700' : 'text-gray-500'}`}>Leave blank to keep current password</p>
 
                             <div className="space-y-4">
                                 <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
+                                    <Lock className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isBento ? 'text-black' : 'text-gray-400 dark:text-gray-500'}`} />
                                     <input
                                         type={showCurrentPassword ? 'text' : 'password'}
                                         value={currentPassword}
                                         onChange={(e) => setCurrentPassword(e.target.value)}
-                                        className="w-full pl-12 pr-12 py-3 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 font-medium transition-all"
+                                        className={`w-full pl-12 pr-12 py-3 rounded-xl font-medium transition-all ${
+                                            isBento
+                                                ? 'border-2 border-black bg-white text-black placeholder-gray-500 shadow-[2px_2px_0px_#000] focus:outline-none'
+                                                : 'bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600'
+                                        }`}
                                         placeholder="Current Password"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                                        className={`absolute right-4 top-1/2 transform -translate-y-1/2 ${isBento ? 'text-black' : 'text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
                                     >
                                         {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
                                 </div>
 
                                 <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
+                                    <Lock className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isBento ? 'text-black' : 'text-gray-400 dark:text-gray-500'}`} />
                                     <input
                                         type={showNewPassword ? 'text' : 'password'}
                                         value={newPassword}
                                         onChange={(e) => setNewPassword(e.target.value)}
-                                        className="w-full pl-12 pr-12 py-3 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 font-medium transition-all"
+                                        className={`w-full pl-12 pr-12 py-3 rounded-xl font-medium transition-all ${
+                                            isBento
+                                                ? 'border-2 border-black bg-white text-black placeholder-gray-500 shadow-[2px_2px_0px_#000] focus:outline-none'
+                                                : 'bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600'
+                                        }`}
                                         placeholder="New Password"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowNewPassword(!showNewPassword)}
-                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                                        className={`absolute right-4 top-1/2 transform -translate-y-1/2 ${isBento ? 'text-black' : 'text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
                                     >
                                         {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
                                 </div>
 
                                 <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
+                                    <Lock className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isBento ? 'text-black' : 'text-gray-400 dark:text-gray-500'}`} />
                                     <input
                                         type={showConfirmPassword ? 'text' : 'password'}
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full pl-12 pr-12 py-3 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 font-medium transition-all"
+                                        className={`w-full pl-12 pr-12 py-3 rounded-xl font-medium transition-all ${
+                                            isBento
+                                                ? 'border-2 border-black bg-white text-black placeholder-gray-500 shadow-[2px_2px_0px_#000] focus:outline-none'
+                                                : 'bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600'
+                                        }`}
                                         placeholder="Confirm New Password"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                                        className={`absolute right-4 top-1/2 transform -translate-y-1/2 ${isBento ? 'text-black' : 'text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
                                     >
                                         {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
@@ -231,18 +272,26 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onClose, onUpdate }) 
                             <button
                                 onClick={onClose}
                                 disabled={isLoading}
-                                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-all disabled:opacity-50"
+                                className={`flex-1 px-4 py-3 rounded-xl font-black transition-all disabled:opacity-50 ${
+                                    isBento
+                                        ? 'bg-white hover:bg-gray-100 text-black border-2 border-black shadow-[3px_3px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
+                                        : 'bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'
+                                }`}
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSave}
                                 disabled={isLoading}
-                                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg shadow-purple-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                                className={`flex-1 px-4 py-3 rounded-xl font-black transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${
+                                    isBento
+                                        ? 'bg-[#bef264] hover:bg-[#a3e635] text-black border-2 border-black shadow-[3px_3px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
+                                        : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-500 hover:to-indigo-500 shadow-lg shadow-purple-500/20'
+                                }`}
                             >
                                 {isLoading ? (
                                     <>
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <div className={`w-4 h-4 border-2 rounded-full animate-spin ${isBento ? 'border-black/30 border-t-black' : 'border-white/30 border-t-white'}`} />
                                         Saving...
                                     </>
                                 ) : (
