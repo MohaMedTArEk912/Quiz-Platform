@@ -1,0 +1,13 @@
+{
+  "name": "Spring Code Clash Championship",
+  "description": "High-intensity tournament competing across data structures, logic, and rapid problem solving. Top rankers earn legendary badges and exclusive store rewards.",
+  "startsAt": "2026-10-01T10:00:00.000Z",
+  "endsAt": "2026-10-08T18:00:00.000Z",
+  "status": "scheduled",
+  "quizIds": [
+    "quiz_algo_prelims",
+    "quiz_algo_finals"
+  ],
+  "rewardBadgeId": "badge_tournament_master",
+  "rewardItemId": "item_trophy_gold"
+}

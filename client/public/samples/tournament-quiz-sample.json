@@ -1,0 +1,47 @@
+{
+  "title": "Tournament Preliminary Sprint: Algorithms",
+  "description": "Official timed tournament qualifying stage. Real-time competitive scoring enabled.",
+  "category": "Tournament",
+  "difficulty": "medium",
+  "timeLimit": 15,
+  "passingScore": 70,
+  "xpReward": 300,
+  "coinReward": 150,
+  "isTournamentOnly": true,
+  "isProctored": true,
+  "requireFullscreen": true,
+  "disableCopyPaste": true,
+  "strictTabSwitchLimit": 2,
+  "questions": [
+    {
+      "id": "tq_1",
+      "text": "What is the worst-case time complexity of QuickSort when the pivot is always the extreme element?",
+      "type": "multiple-choice",
+      "points": 10,
+      "options": ["O(N log N)", "O(N²)", "O(N)", "O(log N)"],
+      "correctAnswer": 1,
+      "explanation": "When QuickSort partitions on an extreme element each time, recursion depth becomes N resulting in O(N²) time."
+    },
+    {
+      "id": "tq_2",
+      "text": "What is the output of the following Python snippet?",
+      "type": "code-output",
+      "points": 15,
+      "codeSnippet": "x = [1, 2, 3]\ny = x\nx = x + [4]\nprint(len(y))",
+      "correctAnswer": "3",
+      "explanation": "`x + [4]` creates a new list assigned to `x`, leaving `y` referencing the original 3-element list."
+    },
+    {
+      "id": "tq_3",
+      "text": "Arrange these algorithms in increasing order of average-case asymptotic complexity:",
+      "type": "ordering",
+      "points": 20,
+      "orderingItems": [
+        "Binary Search - O(log N)",
+        "Linear Scan - O(N)",
+        "Merge Sort - O(N log N)",
+        "Bubble Sort - O(N²)"
+      ]
+    }
+  ]
+}

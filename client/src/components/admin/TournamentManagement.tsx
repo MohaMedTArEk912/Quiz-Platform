@@ -55,13 +55,82 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
     
 
     const handleDownloadExampleJson = () => {
-        const exampleData = { name: "Example Tournament", description: "Tournament description", startsAt: new Date().toISOString(), endsAt: new Date(Date.now() + 86400000).toISOString(), status: "scheduled", quizIds: [] };
+        const exampleData = {
+            name: "Spring Code Clash Championship",
+            description: "High-intensity tournament competing across data structures, logic, and rapid problem solving.",
+            startsAt: new Date(Date.now() + 86400000).toISOString(),
+            endsAt: new Date(Date.now() + 86400000 * 7).toISOString(),
+            status: "scheduled",
+            quizIds: ["quiz_algo_prelims", "quiz_algo_finals"],
+            rewardBadgeId: "badge_tournament_master",
+            rewardItemId: "item_trophy_gold"
+        };
         const dataStr = JSON.stringify(exampleData, null, 2);
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
         const url = URL.createObjectURL(dataBlob);
         const link = document.createElement('a');
         link.href = url;
         link.download = 'tournament-example.json';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleDownloadTournamentQuizSample = () => {
+        const sampleTournamentQuiz = {
+            title: "Tournament Preliminary Sprint: Algorithms",
+            description: "Official timed tournament qualifying stage. Real-time competitive scoring enabled.",
+            category: "Tournament",
+            difficulty: "medium",
+            timeLimit: 15,
+            passingScore: 70,
+            xpReward: 300,
+            coinReward: 150,
+            isTournamentOnly: true,
+            isProctored: true,
+            requireFullscreen: true,
+            disableCopyPaste: true,
+            strictTabSwitchLimit: 2,
+            questions: [
+                {
+                    id: "tq_1",
+                    text: "What is the worst-case time complexity of QuickSort when the pivot is always the extreme element?",
+                    type: "multiple-choice",
+                    points: 10,
+                    options: ["O(N log N)", "O(N²)", "O(N)", "O(log N)"],
+                    correctAnswer: 1,
+                    explanation: "When QuickSort partitions on an extreme element each time, recursion depth becomes N resulting in O(N²) time."
+                },
+                {
+                    id: "tq_2",
+                    text: "What is the output of the following Python snippet?",
+                    type: "code-output",
+                    points: 15,
+                    codeSnippet: "x = [1, 2, 3]\ny = x\nx = x + [4]\nprint(len(y))",
+                    correctAnswer: "3",
+                    explanation: "`x + [4]` creates a new list assigned to `x`, leaving `y` referencing the original 3-element list."
+                },
+                {
+                    id: "tq_3",
+                    text: "Arrange these algorithms in increasing order of average-case asymptotic complexity:",
+                    type: "ordering",
+                    points: 20,
+                    orderingItems: [
+                        "Binary Search - O(log N)",
+                        "Linear Scan - O(N)",
+                        "Merge Sort - O(N log N)",
+                        "Bubble Sort - O(N²)"
+                    ]
+                }
+            ]
+        };
+        const dataStr = JSON.stringify(sampleTournamentQuiz, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'tournament-quiz-sample.json';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -356,7 +425,7 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
                                 >
                                     <Upload className="w-3 h-3" /> Upload JSON
                                 </button>
-                                <button onClick={() => handleDownloadExampleJson()} className="p-2.5 bg-gray-100 dark:bg-white/5 text-gray-400 rounded-xl hover:text-indigo-500 transition-colors">
+                                <button onClick={() => handleDownloadTournamentQuizSample()} title="Download Tournament Quiz Sample JSON" className="p-2.5 bg-gray-100 dark:bg-white/5 text-gray-400 rounded-xl hover:text-indigo-500 transition-colors">
                                     <Download className="w-4 h-4" />
                                 </button>
                             </div>

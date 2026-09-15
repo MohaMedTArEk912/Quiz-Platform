@@ -381,28 +381,127 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
 
     const handleDownloadSample = () => {
         const sampleQuiz: Quiz = {
-            id: 'sample-quiz-template',
-            title: 'Sample Quiz Template',
-            description: 'Use this template to structure your JSON import.',
-            category: 'General',
-            difficulty: 'Easy',
-            timeLimit: 15,
+            id: 'sample-quiz-master-template',
+            title: 'Full-Featured Quiz & Exam Template',
+            description: 'Demonstrates all question types (MCQ, Code Output, Text, Ordering, Matching, Live Compiler, Video) and advanced proctoring/pool settings.',
+            category: 'Computer Science',
+            difficulty: 'Medium',
+            timeLimit: 20,
             passingScore: 70,
-            coinsReward: 50,
-            xpReward: 100,
+            coinsReward: 150,
+            xpReward: 300,
             icon: 'Code',
+            quizType: 'quiz', // 'quiz' | 'exam' | 'pool'
+            isQuestionPool: false, // Set true to randomly draw a subset of questions per attempt
+            questionsPerAttempt: 5, // Active when isQuestionPool is true
+            shuffleQuestions: true, // Shuffle question order for students
+            isProctored: true, // Track student integrity telemetry (tab switches, window blur)
+            requireFullscreen: true, // Require fullscreen mode during exam
+            disableCopyPaste: true, // Block clipboard copy/paste and right-click
+            strictTabSwitchLimit: 3, // Flag attempt if tab switch threshold exceeded
+            reviewMode: true, // Allow student to inspect correct answers and explanations after submission
             isTournamentOnly: false,
             questions: [
                 {
                     id: 1,
                     type: 'multiple-choice',
-                    part: 'Part 1',
-                    question: 'What is the output of this code?',
-                    codeSnippet: 'console.log("Hello World!");',
-                    options: ['Hello World!', 'undefined', 'null', 'Error'],
+                    part: 'Part 1: Conceptual Foundations',
+                    question: 'What is the average time complexity of searching in a balanced Binary Search Tree? Formula: $O(\\log N)$',
+                    options: ['$O(1)$', '$O(\\log N)$', '$O(N)$', '$O(N^2)$'],
+                    correctAnswer: 1,
+                    points: 10,
+                    shuffleOptions: true,
+                    imageUrl: 'https://images.unsplash.com/photo-1516116211227-bbc074815469?w=800',
+                    explanation: 'A balanced BST eliminates half of the remaining search space per step, yielding $O(\\log N)$ performance.'
+                },
+                {
+                    id: 2,
+                    type: 'code-output',
+                    part: 'Part 2: Code Execution & Analysis',
+                    question: 'What will be printed to stdout when the following Python function executes?',
+                    codeSnippet: 'def compute(nums):\n    return sum(x ** 2 for x in nums if x % 2 == 0)\n\nprint(compute([1, 2, 3, 4]))',
+                    options: ['20', '30', '16', '10'],
+                    correctAnswer: 0,
+                    points: 15,
+                    explanation: 'Even numbers in the list are 2 and 4. $2^2 + 4^2 = 4 + 16 = 20$.'
+                },
+                {
+                    id: 3,
+                    type: 'text',
+                    part: 'Part 3: Syntax & Fill-in-the-Blank',
+                    question: 'In Python, which built-in function returns the total number of items in an iterable object (e.g. list, string, dictionary)?',
+                    correctAnswer: 'len',
+                    points: 10,
+                    explanation: 'The built-in len() function takes any collection or sequence and returns its integer length.'
+                },
+                {
+                    id: 4,
+                    type: 'ordering',
+                    part: 'Part 4: Process Flow & Sequencing',
+                    question: 'Arrange the following phases of the standard HTTP request-response lifecycle in the correct order:',
+                    orderingItems: [
+                        'DNS Resolution (IP Lookup)',
+                        'TCP 3-Way Handshake & TLS Negotiation',
+                        'Client sends HTTP Request Headers & Body',
+                        'Server processes request and returns HTTP Response',
+                        'Browser parses response body and renders DOM/CSS/JS'
+                    ],
+                    correctAnswer: [
+                        'DNS Resolution (IP Lookup)',
+                        'TCP 3-Way Handshake & TLS Negotiation',
+                        'Client sends HTTP Request Headers & Body',
+                        'Server processes request and returns HTTP Response',
+                        'Browser parses response body and renders DOM/CSS/JS'
+                    ],
+                    points: 20,
+                    explanation: 'Connection starts with domain name resolution, followed by transport handshake, HTTP transmission, server execution, and client rendering.'
+                },
+                {
+                    id: 5,
+                    type: 'matching',
+                    part: 'Part 5: Concept Pairing',
+                    question: 'Match each networking protocol with its standard default port and primary OSI transport layer:',
+                    matchingPairs: [
+                        { left: 'HTTP', right: 'Port 80 (TCP)' },
+                        { left: 'HTTPS', right: 'Port 443 (TCP)' },
+                        { left: 'DNS', right: 'Port 53 (UDP/TCP)' },
+                        { left: 'SSH', right: 'Port 22 (TCP)' }
+                    ],
+                    correctAnswer: {
+                        'HTTP': 'Port 80 (TCP)',
+                        'HTTPS': 'Port 443 (TCP)',
+                        'DNS': 'Port 53 (UDP/TCP)',
+                        'SSH': 'Port 22 (TCP)'
+                    },
+                    points: 20,
+                    explanation: 'Standard IANA well-known port assignments: HTTP=80, HTTPS=443, DNS=53, SSH=22.'
+                },
+                {
+                    id: 6,
+                    type: 'multiple-choice',
+                    isCompiler: true,
+                    part: 'Part 6: Interactive Coding Challenge',
+                    question: 'Complete the Python function is_palindrome(text) that returns True if a given string is a palindrome (ignoring casing and non-alphanumeric characters).',
+                    points: 25,
+                    explanation: 'Sanitize input by lowercasing and keeping only alphanumeric characters, then compare to its reverse [::-1].',
+                    compilerConfig: {
+                        language: 'python',
+                        allowedLanguages: ['python', 'javascript', 'cpp'],
+                        initialCode: 'def is_palindrome(text: str) -> bool:\n    # Write your solution here\n    pass',
+                        referenceCode: 'def is_palindrome(text: str) -> bool:\n    clean = [c.lower() for c in text if c.isalnum()]\n    return clean == clean[::-1]'
+                    }
+                },
+                {
+                    id: 7,
+                    type: 'multiple-choice',
+                    part: 'Part 7: Multimedia & Video Timestamp Lecture',
+                    question: 'Watch the lecture clip at 02:15 and identify which sorting algorithm demonstrates in-place partitioning:',
+                    videoUrl: 'https://www.youtube.com/watch?v=kqtD5dpn9C8',
+                    videoTimestamp: 135,
+                    options: ['QuickSort', 'MergeSort', 'CountingSort', 'RadixSort'],
                     correctAnswer: 0,
                     points: 10,
-                    explanation: 'console.log prints the given string to the console.'
+                    explanation: 'QuickSort performs in-place partitioning using a pivot element without allocating an auxiliary array.'
                 }
             ]
         };

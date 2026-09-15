@@ -70,16 +70,17 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
         reader.onload = (e) => {
             try {
                 const json = JSON.parse(e.target?.result as string);
+                const badgeData = Array.isArray(json) ? json[0] : json;
                 setEditingBadge({
                     badgeId: '', // Generate new ID on save
-                    name: json.name || '',
-                    description: json.description || '',
-                    icon: json.icon || '🏆',
-                    rarity: json.rarity || 'common',
-                    color: json.color || '#3B82F6',
-                    unlockCriteria: Array.isArray(json.unlockCriteria) ? json.unlockCriteria : [],
-                    rewards: json.rewards || { xp: 0, coins: 0, powerUps: [] },
-                    trees: json.trees || []
+                    name: badgeData.name || '',
+                    description: badgeData.description || '',
+                    icon: badgeData.icon || '🏆',
+                    rarity: badgeData.rarity || 'common',
+                    color: badgeData.color || '#3B82F6',
+                    unlockCriteria: Array.isArray(badgeData.unlockCriteria) ? badgeData.unlockCriteria : [],
+                    rewards: badgeData.rewards || { xp: 0, coins: 0, powerUps: [] },
+                    trees: badgeData.trees || []
                 });
                 setShowBadgeEditor(true);
                 onNotification('success', 'Badge loaded from JSON. Please review and save.');

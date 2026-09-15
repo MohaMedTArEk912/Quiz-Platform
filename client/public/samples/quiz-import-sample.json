@@ -1,0 +1,117 @@
+[
+  {
+    "title": "Full-Featured Advanced Mastery Assessment",
+    "description": "Comprehensive evaluation covering all supported question types, LaTeX math notation, code execution snippets, media lectures, and proctoring controls.",
+    "category": "Computer Science",
+    "difficulty": "hard",
+    "timeLimit": 30,
+    "passingScore": 75,
+    "xpReward": 250,
+    "coinReward": 100,
+    "quizType": "quiz",
+    "isQuestionPool": false,
+    "questionsPerAttempt": 7,
+    "shuffleQuestions": true,
+    "isProctored": true,
+    "requireFullscreen": true,
+    "disableCopyPaste": true,
+    "strictTabSwitchLimit": 3,
+    "reviewMode": true,
+    "questions": [
+      {
+        "id": "q1_mcq_math",
+        "text": "What is the tight asymptotic upper bound of binary search on a sorted array of size $N$, and what is $\\lim_{N \\to \\infty} \\frac{\\log_2 N}{N}$?",
+        "type": "multiple-choice",
+        "points": 10,
+        "options": [
+          "Bound: $O(\\log N)$, Limit: $0$",
+          "Bound: $O(N)$, Limit: $1$",
+          "Bound: $O(N \\log N)$, Limit: $\\infty$",
+          "Bound: $O(1)$, Limit: $0$"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Binary search divides the problem space by 2 at each step, yielding $O(\\log N)$ time. As $N$ approaches infinity, $\\frac{\\log N}{N} \\to 0$.",
+        "shuffleOptions": true,
+        "imageUrl": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        "id": "q2_code_output",
+        "text": "Predict the exact terminal output when executing this Python snippet:",
+        "type": "code-output",
+        "points": 15,
+        "codeSnippet": "data = [i ** 2 for i in range(5) if i % 2 == 1]\nprint('-'.join(map(str, data)))",
+        "correctAnswer": "1-9",
+        "explanation": "Range(5) odd numbers are 1 and 3. Their squares are 1 and 9. Joining them with '-' results in '1-9'."
+      },
+      {
+        "id": "q3_text_fill",
+        "text": "In Python, which built-in function returns the total number of items in a list, string, or dictionary?",
+        "type": "text",
+        "points": 10,
+        "correctAnswer": "len",
+        "explanation": "The `len()` built-in function computes the length or cardinality of a collection or sequence."
+      },
+      {
+        "id": "q4_ordering",
+        "text": "Sort the OSI reference model layers from lowest physical abstraction (Layer 1) to highest application layer (Layer 7):",
+        "type": "ordering",
+        "points": 20,
+        "orderingItems": [
+          "Physical Layer (Layer 1)",
+          "Data Link Layer (Layer 2)",
+          "Network Layer (Layer 3)",
+          "Transport Layer (Layer 4)",
+          "Application Layer (Layer 7)"
+        ],
+        "explanation": "The standard bottom-up OSI hierarchy proceeds from Physical (1) to Data Link (2), Network (3), Transport (4), Session (5), Presentation (6), to Application (7)."
+      },
+      {
+        "id": "q5_matching",
+        "text": "Match each HTTP response status code with its standard semantic classification:",
+        "type": "matching",
+        "points": 20,
+        "matchingPairs": [
+          { "left": "201", "right": "Created" },
+          { "left": "304", "right": "Not Modified" },
+          { "left": "403", "right": "Forbidden" },
+          { "left": "503", "right": "Service Unavailable" }
+        ],
+        "explanation": "201 signifies successful resource creation, 304 indicates cached freshness, 403 signals unauthorized/forbidden access, and 503 denotes server overload or downtime."
+      },
+      {
+        "id": "q6_compiler",
+        "text": "Implement a function `sum_evens(nums)` that returns the cumulative sum of all even integers in the provided array.",
+        "type": "multiple-choice",
+        "points": 25,
+        "isCompiler": true,
+        "compilerConfig": {
+          "language": "python",
+          "allowedLanguages": ["python", "javascript", "cpp"],
+          "initialCode": "def sum_evens(nums):\n    # Write your solution here\n    pass\n\n# Example test:\nprint(sum_evens([1, 2, 3, 4, 5, 6])) # Expected: 12",
+          "testCases": [
+            { "input": "[1, 2, 3, 4, 5, 6]", "expectedOutput": "12", "isHidden": false },
+            { "input": "[7, 11, 13]", "expectedOutput": "0", "isHidden": false },
+            { "input": "[2, 4, 6, 8, 10]", "expectedOutput": "30", "isHidden": true }
+          ]
+        },
+        "explanation": "Iterate through the array and accumulate values satisfying `n % 2 == 0`."
+      },
+      {
+        "id": "q7_video_lecture",
+        "text": "Watch the lecture segment and identify what fundamental property distinguishes asynchronous I/O from synchronous blocking I/O:",
+        "type": "multiple-choice",
+        "points": 15,
+        "videoUrl": "https://www.youtube.com/watch?v=8aGhZQkoFbQ",
+        "videoTimestamp": 135,
+        "options": [
+          "Non-blocking thread execution allowing the event loop to service other tasks",
+          "Faster CPU clock cycles and multi-core core pinning",
+          "Automatic GPU offloading of mathematical routines",
+          "Elimination of all network latency overhead"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Asynchronous I/O returns execution flow back to the event loop immediately while operations await I/O completion in the background."
+      }
+    ]
+  }
+]

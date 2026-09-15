@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Speed Demon",
+    "description": "Complete a quiz in under 60 seconds with high accuracy",
+    "icon": "⚡",
+    "rarity": "rare",
+    "color": "#3B82F6",
+    "rewards": {
+      "xp": 150,
+      "coins": 100,
+      "powerUps": [
+        { "type": "time_freeze", "quantity": 2 },
+        { "type": "fifty_fifty", "quantity": 1 }
+      ]
+    },
+    "unlockCriteria": [
+      {
+        "type": "speed_demon",
+        "threshold": 60,
+        "operator": "<="
+      }
+    ],
+    "trees": ["general-skills", "speedrun-track"]
+  },
+  {
+    "name": "Streak Master",
+    "description": "Maintain a 7-day continuous learning streak",
+    "icon": "🔥",
+    "rarity": "epic",
+    "color": "#F97316",
+    "rewards": {
+      "xp": 300,
+      "coins": 200,
+      "powerUps": [
+        { "type": "double_xp", "quantity": 2 }
+      ]
+    },
+    "unlockCriteria": [
+      {
+        "type": "streak",
+        "threshold": 7,
+        "operator": ">="
+      }
+    ],
+    "trees": ["consistency-track"]
+  },
+  {
+    "name": "Quiz Veteran",
+    "description": "Successfully finish 50 quizzes across any category",
+    "icon": "🎖️",
+    "rarity": "rare",
+    "color": "#8B5CF6",
+    "rewards": {
+      "xp": 500,
+      "coins": 250,
+      "powerUps": [
+        { "type": "time_freeze", "quantity": 3 }
+      ]
+    },
+    "unlockCriteria": [
+      {
+        "type": "quiz_completion",
+        "threshold": 50,
+        "operator": ">="
+      }
+    ],
+    "trees": ["general-skills"]
+  },
+  {
+    "name": "Grand Champion",
+    "description": "Win first place in an official competitive tournament",
+    "icon": "👑",
+    "rarity": "legendary",
+    "color": "#EAB308",
+    "rewards": {
+      "xp": 1000,
+      "coins": 500,
+      "powerUps": [
+        { "type": "time_freeze", "quantity": 5 },
+        { "type": "second_chance", "quantity": 3 }
+      ]
+    },
+    "unlockCriteria": [
+      {
+        "type": "tournament_win",
+        "threshold": 1,
+        "operator": ">="
+      }
+    ],
+    "trees": ["tournaments"]
+  }
+]

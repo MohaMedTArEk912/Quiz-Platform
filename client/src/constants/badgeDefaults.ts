@@ -23,20 +23,73 @@ export const BADGE_RARITY_COLORS = {
 
 export const SAMPLE_BADGE = {
     name: "Speed Demon",
-    description: "Complete a quiz in under 60 seconds",
+    description: "Complete a quiz in under 60 seconds with high accuracy",
     icon: "⚡",
-    rarity: "rare",
+    rarity: "rare" as const,
     color: "#3B82F6",
     rewards: {
-        xp: 100,
-        coins: 50,
-        powerUps: []
+        xp: 150,
+        coins: 100,
+        powerUps: [
+            { type: "time_freeze", quantity: 2 },
+            { type: "fifty_fifty", quantity: 1 }
+        ]
     },
     unlockCriteria: [
         {
-            type: "time_limit",
+            type: "speed_demon" as const,
             threshold: 60,
-            comparison: "lte"
+            operator: "<=" as const
         }
-    ]
+    ],
+    trees: ["general-skills", "speedrun-track"]
 };
+
+export const SAMPLE_BADGES = [
+    SAMPLE_BADGE,
+    {
+        name: "Streak Master",
+        description: "Maintain a 7-day continuous learning streak",
+        icon: "🔥",
+        rarity: "epic" as const,
+        color: "#F97316",
+        rewards: {
+            xp: 300,
+            coins: 200,
+            powerUps: [
+                { type: "double_xp", quantity: 2 }
+            ]
+        },
+        unlockCriteria: [
+            {
+                type: "streak" as const,
+                threshold: 7,
+                operator: ">=" as const
+            }
+        ],
+        trees: ["consistency-track"]
+    },
+    {
+        name: "Grand Champion",
+        description: "Win first place in an official competitive tournament",
+        icon: "👑",
+        rarity: "legendary" as const,
+        color: "#EAB308",
+        rewards: {
+            xp: 1000,
+            coins: 500,
+            powerUps: [
+                { type: "time_freeze", quantity: 5 },
+                { type: "second_chance", quantity: 3 }
+            ]
+        },
+        unlockCriteria: [
+            {
+                type: "tournament_win" as const,
+                threshold: 1,
+                operator: ">=" as const
+            }
+        ],
+        trees: ["tournaments"]
+    }
+];

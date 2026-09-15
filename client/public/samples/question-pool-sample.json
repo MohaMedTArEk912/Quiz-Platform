@@ -1,0 +1,119 @@
+[
+  {
+    "title": "Computer Science Core Question Pool",
+    "description": "Dynamic Question Pool where each student receives 5 randomly sampled questions from this bank on every attempt.",
+    "category": "Computer Science",
+    "difficulty": "medium",
+    "timeLimit": 20,
+    "passingScore": 80,
+    "xpReward": 200,
+    "coinReward": 80,
+    "quizType": "pool",
+    "isQuestionPool": true,
+    "questionsPerAttempt": 5,
+    "shuffleQuestions": true,
+    "isProctored": false,
+    "requireFullscreen": false,
+    "disableCopyPaste": false,
+    "strictTabSwitchLimit": 5,
+    "reviewMode": true,
+    "questions": [
+      {
+        "id": "pool_q1",
+        "text": "Which data structure follows the First In, First Out (FIFO) principle?",
+        "type": "multiple-choice",
+        "points": 10,
+        "options": ["Queue", "Stack", "Binary Heap", "Hash Table"],
+        "correctAnswer": 0,
+        "explanation": "Queues operate on a FIFO basis, where items are dequeued in the order they were enqueued."
+      },
+      {
+        "id": "pool_q2",
+        "text": "What is the average lookup time complexity in a balanced Binary Search Tree (e.g., AVL or Red-Black Tree)?",
+        "type": "multiple-choice",
+        "points": 10,
+        "options": ["$O(\\log N)$", "$O(1)$", "$O(N)$", "$O(N \\log N)$"],
+        "correctAnswer": 0,
+        "explanation": "Self-balancing binary trees maintain height proportional to $\\log N$, guaranteeing $O(\\log N)$ search time."
+      },
+      {
+        "id": "pool_q3",
+        "text": "What will be printed to stdout?",
+        "type": "code-output",
+        "points": 15,
+        "codeSnippet": "a = [10, 20, 30]\nb = a\nb.append(40)\nprint(len(a))",
+        "correctAnswer": "4",
+        "explanation": "`b` and `a` reference the exact same underlying list in memory, so appending to `b` alters `a`."
+      },
+      {
+        "id": "pool_q4",
+        "text": "What keyword is used in JavaScript to declare an immutable block-scoped variable binding?",
+        "type": "text",
+        "points": 10,
+        "correctAnswer": "const",
+        "explanation": "`const` declares block-scoped constants that cannot be reassigned through re-assignment."
+      },
+      {
+        "id": "pool_q5",
+        "text": "Order these sorting algorithms by their worst-case time complexity, from best to worst:",
+        "type": "ordering",
+        "points": 20,
+        "orderingItems": [
+          "Merge Sort - O(N log N)",
+          "Heap Sort - O(N log N)",
+          "QuickSort - O(N²)",
+          "Selection Sort - O(N²)"
+        ],
+        "explanation": "Merge Sort and Heap Sort have $O(N \\log N)$ worst cases, while QuickSort and Selection Sort can degrade to $O(N²)$."
+      },
+      {
+        "id": "pool_q6",
+        "text": "Match the database design concept with its definition:",
+        "type": "matching",
+        "points": 20,
+        "matchingPairs": [
+          { "left": "Primary Key", "right": "Unique identifier for each record in a table" },
+          { "left": "Foreign Key", "right": "Field establishing relational link between two tables" },
+          { "left": "Index", "right": "Data structure improving query lookup performance" },
+          { "left": "Normalization", "right": "Process minimizing data redundancy and anomalies" }
+        ],
+        "explanation": "Fundamental relational database schema definitions."
+      },
+      {
+        "id": "pool_q7",
+        "text": "In distributed computing, what does the 'C' represent in Brewer's CAP Theorem?",
+        "type": "multiple-choice",
+        "points": 10,
+        "options": ["Consistency", "Concurrency", "Coherence", "Capacity"],
+        "correctAnswer": 0,
+        "explanation": "CAP theorem states distributed systems trade off Consistency, Availability, and Partition Tolerance."
+      },
+      {
+        "id": "pool_q8",
+        "text": "What is the output of `bool([])` in Python?",
+        "type": "code-output",
+        "points": 15,
+        "codeSnippet": "val = []\nprint(bool(val))",
+        "correctAnswer": "False",
+        "explanation": "Empty collections in Python evaluate to `False` in boolean contexts."
+      },
+      {
+        "id": "pool_q9",
+        "text": "Which network protocol is connectionless and does not guarantee packet delivery order?",
+        "type": "text",
+        "points": 10,
+        "correctAnswer": "UDP",
+        "explanation": "User Datagram Protocol (UDP) is a connectionless transport protocol prioritizing speed over delivery guarantee."
+      },
+      {
+        "id": "pool_q10",
+        "text": "What is the space complexity of Depth First Search (DFS) on a balanced binary tree of depth $H$?",
+        "type": "multiple-choice",
+        "points": 10,
+        "options": ["$O(H)$", "$O(N^2)$", "$O(1)$", "$O(2^H)$"],
+        "correctAnswer": 0,
+        "explanation": "DFS call stack memory usage is proportional to the tree height $H$."
+      }
+    ]
+  }
+]
