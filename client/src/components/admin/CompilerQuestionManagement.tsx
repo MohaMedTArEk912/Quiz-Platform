@@ -197,59 +197,12 @@ const CompilerQuestionManagement: React.FC<CompilerQuestionManagementProps> = ({
 
     // ===== JSON Import/Export =====
     const handleDownloadSampleJson = () => {
-        const sample = [
-            {
-                title: "Two Sum Target Finder",
-                description: "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.\n\nYou may assume that each input would have **exactly one solution**, and you may not use the same element twice.\n\n### Example:\n```python\nnums = [2, 7, 11, 15], target = 9\n# Output: [0, 1] because nums[0] + nums[1] == 9\n```\n\n### Constraints:\n- $2 \\le \\text{len}(nums) \\le 10^4$\n- Time complexity target: $O(N)$",
-                referenceCode: "def two_sum(nums, target):\n    lookup = {}\n    for i, num in enumerate(nums):\n        complement = target - num\n        if complement in lookup:\n            return [lookup[complement], i]\n        lookup[num] = i\n    return []\n\n# Test execution\nprint(two_sum([2, 7, 11, 15], 9))",
-                language: "python",
-                difficulty: "easy",
-                category: "Algorithms",
-                hints: [
-                    "Consider using a hash map (dictionary) to store each number and its index.",
-                    "For every number `num`, calculate `target - num` and check if it already exists in your map."
-                ],
-                rewardCoins: 50,
-                rewardXP: 100,
-                isActive: true
-            },
-            {
-                title: "Deep Flatten Array with Depth Limit",
-                description: "Write a JavaScript function `flatten(arr, depth)` that recursively flattens a nested array up to the specified `depth`.\n\n### Example:\n```javascript\nflatten([1, [2, [3, [4]], 5]], 2);\n// Output: [1, 2, 3, [4], 5]\n```\n\n### Requirements:\n- Must handle empty nested arrays gracefully.\n- If `depth <= 0`, return a shallow copy of the original array.",
-                referenceCode: "function flatten(arr, depth = 1) {\n  if (depth <= 0) return arr.slice();\n  return arr.reduce((acc, val) => {\n    if (Array.isArray(val)) {\n      acc.push(...flatten(val, depth - 1));\n    } else {\n      acc.push(val);\n    }\n    return acc;\n  }, []);\n}\n\nconsole.log(flatten([1, [2, [3, [4]], 5]], 2));",
-                language: "javascript",
-                difficulty: "medium",
-                category: "Data Structures",
-                hints: [
-                    "Array.prototype.reduce or recursion works effectively here.",
-                    "Check `Array.isArray(element)` and decrease `depth - 1` on each recursive descent."
-                ],
-                rewardCoins: 75,
-                rewardXP: 150,
-                isActive: true
-            },
-            {
-                title: "Search in Rotated Sorted Array",
-                description: "You are given an integer array `nums` sorted in ascending order (with distinct values), which has been rotated at an unknown pivot index.\n\nGiven the array `nums` after the possible rotation and an integer `target`, return the index of `target` if it is in `nums`, or `-1` if it is not in `nums`.\n\n### Complexity Requirement:\n- You must write an algorithm with **$O(\\log N)$** runtime complexity.",
-                referenceCode: "#include <iostream>\n#include <vector>\n\nint search(const std::vector<int>& nums, int target) {\n    int left = 0, right = static_cast<int>(nums.size()) - 1;\n    while (left <= right) {\n        int mid = left + (right - left) / 2;\n        if (nums[mid] == target) return mid;\n        \n        // Left half is sorted\n        if (nums[left] <= nums[mid]) {\n            if (target >= nums[left] && target < nums[mid]) {\n                right = mid - 1;\n            } else {\n                left = mid + 1;\n            }\n        } else { // Right half is sorted\n            if (target > nums[mid] && target <= nums[right]) {\n                left = mid + 1;\n            } else {\n                right = mid - 1;\n            }\n        }\n    }\n    return -1;\n}\n\nint main() {\n    std::vector<int> nums = {4, 5, 6, 7, 0, 1, 2};\n    std::cout << search(nums, 0) << std::endl; // Output: 4\n    return 0;\n}",
-                language: "cpp",
-                difficulty: "hard",
-                category: "Algorithms",
-                hints: [
-                    "Notice that at least one half of the array (left or right of mid) is always normally sorted.",
-                    "Determine which side is sorted by comparing `nums[left]` with `nums[mid]`, then check if `target` lies within that sorted range."
-                ],
-                rewardCoins: 120,
-                rewardXP: 250,
-                isActive: true
-            }
-        ];
-        const blob = new Blob([JSON.stringify(sample, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = 'compiler-questions-sample.json';
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        a.href = '/samples/compiler-questions-sample.json';
+        a.download = 'compiler-questions-sample.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
         setSuccess('Sample JSON downloaded');
         setShowMenu(false);
     };

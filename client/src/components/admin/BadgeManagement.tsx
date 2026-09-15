@@ -3,7 +3,7 @@ import { api } from '../../lib/api';
 import type { BadgeNode } from '../../types';
 import { Plus, Edit2, Trash2, Award, Download, Upload, MoreVertical } from 'lucide-react';
 import BadgeNodeEditor from './BadgeNodeEditor';
-import { SAMPLE_BADGE, BADGE_RARITY_COLORS } from '../../constants/badgeDefaults';
+import { BADGE_RARITY_COLORS } from '../../constants/badgeDefaults';
 import { useConfirm } from '../../hooks/useConfirm';
 import ConfirmDialog from '../ConfirmDialog';
 
@@ -48,17 +48,12 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
     }, [loadData]);
 
     const handleDownloadSample = () => {
-        const sample = SAMPLE_BADGE;
-
-        const blob = new Blob([JSON.stringify(sample, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
+        a.href = '/samples/badge-sample.json';
         a.download = 'badge_sample.json';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
         setShowMenu(false);
     };
 

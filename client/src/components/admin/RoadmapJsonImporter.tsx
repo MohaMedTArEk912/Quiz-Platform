@@ -10,169 +10,7 @@ interface RoadmapJsonImporterProps {
     onImport: (data: { track?: Partial<SkillTrack>, modules: SkillModule[] }) => Promise<void> | void;
 }
 
-const SAMPLE_JSON = {
-    title: "Full-Stack Web Development Track",
-    description: "Comprehensive pathway covering modern web engineering, algorithms, and cloud deployment",
-    icon: "🚀",
-    modules: [
-        {
-            moduleId: "mod_internet_fundamentals",
-            title: "Web & Internet Fundamentals",
-            description: "Understand HTTP/HTTPS, DNS, browsers, and the client-server model",
-            level: 0,
-            type: "core",
-            status: "available",
-            xpReward: 120,
-            icon: "🌐",
-            coordinates: { x: 100, y: 150 },
-            resources: [
-                {
-                    id: "res_http_guide",
-                    title: "MDN: How the Web Works",
-                    url: "https://developer.mozilla.org/en-US/docs/Learn/Getting_started_with_the_web/How_the_Web_works",
-                    type: "article"
-                },
-                {
-                    id: "res_dns_video",
-                    title: "Crash Course: DNS Explained",
-                    url: "https://www.youtube.com/watch?v=72snZ46Tx30",
-                    type: "video"
-                }
-            ],
-            subModules: [
-                { id: "sub_http", title: "HTTP Methods & Status Codes", state: "available", xp: 30, quizId: "quiz_http_basics", videoUrl: "https://www.youtube.com/watch?v=iYM2zFP3Zn0" },
-                { id: "sub_dns", title: "Domain Names & IP Addressing", state: "locked", xp: 30 },
-                { id: "sub_client_server", title: "Client-Server Architecture", state: "locked", xp: 30 },
-                { id: "sub_browser_engine", title: "Browser Rendering Pipeline", state: "locked", xp: 30 }
-            ]
-        },
-        {
-            moduleId: "mod_modern_javascript",
-            title: "Modern JavaScript (ES6+)",
-            description: "Deep dive into async/await, closures, prototypes, and functional array methods",
-            level: 1,
-            type: "core",
-            status: "locked",
-            xpReward: 160,
-            icon: "⚡",
-            coordinates: { x: 300, y: 150 },
-            prerequisites: ["mod_internet_fundamentals"],
-            unlockRule: {
-                type: "ALL",
-                nodes: ["mod_internet_fundamentals"]
-            },
-            quizIds: ["quiz_js_core"],
-            resources: [
-                {
-                    id: "res_js_info",
-                    title: "JavaScript.info Deep Dive",
-                    url: "https://javascript.info",
-                    type: "article"
-                }
-            ],
-            subModules: [
-                { id: "sub_js_vars", title: "Scope, Hoisting & Closures", state: "locked", xp: 40 },
-                { id: "sub_js_async", title: "Promises & Async/Await", state: "locked", xp: 40, quizId: "quiz_js_async" },
-                { id: "sub_js_arrays", title: "Higher Order Functions (map, filter, reduce)", state: "locked", xp: 40 },
-                { id: "sub_js_modules", title: "ES Modules & Bundling", state: "locked", xp: 40 }
-            ]
-        },
-        {
-            moduleId: "mod_react_ecosystem",
-            title: "React & Component Architecture",
-            description: "Hooks, state management, memoization, and custom hooks",
-            level: 2,
-            type: "core",
-            status: "locked",
-            xpReward: 200,
-            icon: "⚛️",
-            coordinates: { x: 500, y: 100 },
-            prerequisites: ["mod_modern_javascript"],
-            unlockRule: {
-                type: "ALL",
-                nodes: ["mod_modern_javascript"]
-            },
-            quizIds: ["quiz_react_essentials"],
-            subModules: [
-                { id: "sub_hooks", title: "useState, useEffect, useMemo", state: "locked", xp: 50 },
-                { id: "sub_custom_hooks", title: "Designing Resilient Custom Hooks", state: "locked", xp: 50 },
-                { id: "sub_context", title: "Context API & State Trees", state: "locked", xp: 50 }
-            ]
-        },
-        {
-            moduleId: "mod_typescript_adv",
-            title: "TypeScript Mastery",
-            description: "Generics, conditional types, utility types, and strict type safety",
-            level: 2,
-            type: "optional",
-            status: "locked",
-            xpReward: 150,
-            icon: "🔷",
-            coordinates: { x: 500, y: 250 },
-            prerequisites: ["mod_modern_javascript"],
-            resources: [
-                {
-                    id: "res_ts_handbook",
-                    title: "TypeScript Official Handbook",
-                    url: "https://www.typescriptlang.org/docs/handbook/intro.html",
-                    type: "article"
-                }
-            ],
-            subModules: [
-                { id: "sub_ts_generics", title: "Type Constraints & Generics", state: "locked", xp: 50 },
-                { id: "sub_ts_narrowing", title: "Discriminated Unions & Type Guards", state: "locked", xp: 50 }
-            ]
-        },
-        {
-            moduleId: "mod_capstone_project",
-            title: "Interactive Web Platform Project",
-            description: "Build a production-grade responsive web application with real-time state and testing",
-            level: 3,
-            type: "project",
-            status: "locked",
-            xpReward: 350,
-            icon: "🛠️",
-            coordinates: { x: 700, y: 150 },
-            prerequisites: ["mod_react_ecosystem"],
-            subModules: [
-                { id: "sub_proj_setup", title: "Project Architecture & CI Setup", state: "locked", xp: 100 },
-                { id: "sub_proj_impl", title: "Full Feature Implementation", state: "locked", xp: 150 },
-                { id: "sub_proj_tests", title: "Unit & Integration Testing Suite", state: "locked", xp: 100 }
-            ]
-        },
-        {
-            moduleId: "mod_fullstack_exam",
-            title: "Full-Stack Certification Exam",
-            description: "Comprehensive proctored assessment testing full curriculum competencies",
-            level: 4,
-            type: "exam",
-            status: "locked",
-            xpReward: 500,
-            icon: "🎓",
-            coordinates: { x: 900, y: 150 },
-            prerequisites: ["mod_capstone_project"],
-            quizIds: ["exam_fullstack_cert"],
-            badgeId: "badge_fullstack_architect",
-            unlockRule: {
-                type: "ALL",
-                nodes: ["mod_capstone_project"]
-            }
-        },
-        {
-            moduleId: "mod_milestone_graduate",
-            title: "Mastery Milestone Achieved!",
-            description: "Congratulations! You have completed the Full-Stack Web Development roadmap.",
-            level: 5,
-            type: "achievement",
-            status: "locked",
-            xpReward: 1000,
-            icon: "🏆",
-            coordinates: { x: 1100, y: 150 },
-            prerequisites: ["mod_fullstack_exam"],
-            badgeId: "badge_fullstack_master"
-        }
-    ]
-};
+const SAMPLE_ROUTER_ASSET = '/samples/roadmap-sample.json';
 
 export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen, onClose, onImport }) => {
     const [mode, setMode] = useState<'upload' | 'editor'>('upload');
@@ -206,13 +44,24 @@ export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen
     // --- Actions ---
 
     const handleDownloadSample = () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(SAMPLE_JSON, null, 2));
         const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("href", SAMPLE_ROUTER_ASSET);
         downloadAnchorNode.setAttribute("download", "roadmap_sample.json");
         document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
+    };
+
+    const handleLoadSampleToEditor = async () => {
+        try {
+            const res = await fetch(SAMPLE_ROUTER_ASSET);
+            if (!res.ok) throw new Error('Failed to fetch sample JSON');
+            const data = await res.json();
+            setJsonInput(JSON.stringify(data, null, 2));
+            setMode('editor');
+        } catch {
+            setError('Could not load sample roadmap template.');
+        }
     };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -301,10 +150,7 @@ export const RoadmapJsonImporter: React.FC<RoadmapJsonImporterProps> = ({ isOpen
                             Sample JSON
                         </button>
                         <button
-                            onClick={() => {
-                                setJsonInput(JSON.stringify(SAMPLE_JSON, null, 2));
-                                setMode('editor');
-                            }}
+                            onClick={handleLoadSampleToEditor}
                             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-indigo-400 hover:text-indigo-300 hover:bg-white/5 transition-all"
                         >
                             <Code className="w-4 h-4" />
