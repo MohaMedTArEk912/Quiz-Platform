@@ -567,19 +567,84 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                     const isCorrect = isDetailed ? ans.isCorrect : (ans !== undefined && ans !== null && ans === q.correctAnswer);
                                     const userAnswer = isDetailed ? ans.selected : ans;
 
-                                    const rawUserAnsText = q.type === 'multiple-choice' || !q.type 
-                                        ? (q.options && typeof userAnswer === 'number' ? q.options[userAnswer] : String(userAnswer ?? '')) 
-                                        : String(userAnswer ?? '');
-                                    const userAnsText = (activeTrans?.options && typeof userAnswer === 'number' && activeTrans.options[userAnswer] !== undefined)
-                                        ? activeTrans.options[userAnswer]
-                                        : rawUserAnsText;
+                                    // Format user answer display for all 6 question types
+                                    let userAnsText = '';
+                                    if (userAnswer === undefined || userAnswer === null) {
+                                        userAnsText = 'No Answer';
+                                    } else if (q.type === 'multiple-choice' || !q.type) {
+                                        if (typeof userAnswer === 'number' && q.options) {
+                                            userAnsText = (activeTrans?.options && activeTrans.options[userAnswer] !== undefined)
+                                                ? activeTrans.options[userAnswer]
+                                                : q.options[userAnswer] || `Option ${userAnswer + 1}`;
+                                        } else {
+                                            userAnsText = String(userAnswer);
+                                        }
+                                    } else if (q.type === 'ordering') {
+                                        if (Array.isArray(userAnswer)) {
+                                            userAnsText = userAnswer.map((item, i) => `${i + 1}. ${item}`).join(' ➔ ');
+                                        } else {
+                                            userAnsText = String(userAnswer);
+                                        }
+                                    } else if (q.type === 'matching') {
+                                        if (typeof userAnswer === 'object' && userAnswer !== null) {
+                                            userAnsText = Object.entries(userAnswer as Record<string, string>)
+                                                .map(([left, right]) => `${left} ➔ ${right}`)
+                                                .join(' | ');
+                                        } else {
+                                            userAnsText = String(userAnswer);
+                                        }
+                                    } else if (q.type === 'code-output') {
+                                        if (typeof userAnswer === 'number' && q.options) {
+                                            userAnsText = q.options[userAnswer] || String(userAnswer);
+                                        } else {
+                                            userAnsText = String(userAnswer);
+                                        }
+                                    } else if (Array.isArray(userAnswer)) {
+                                        userAnsText = userAnswer.join(', ');
+                                    } else {
+                                        userAnsText = String(userAnswer);
+                                    }
 
-                                    const rawCorrectText = q.type === 'multiple-choice' || !q.type 
-                                        ? (q.options && typeof q.correctAnswer === 'number' ? q.options[q.correctAnswer] : String(q.correctAnswer ?? '')) 
-                                        : String(q.correctAnswer ?? '');
-                                    const correctAnsText = (activeTrans?.options && typeof q.correctAnswer === 'number' && activeTrans.options[q.correctAnswer] !== undefined)
-                                        ? activeTrans.options[q.correctAnswer]
-                                        : rawCorrectText;
+                                    // Format correct answer display
+                                    let correctAnsText = '';
+                                    if (q.type === 'multiple-choice' || !q.type) {
+                                        if (typeof q.correctAnswer === 'number' && q.options) {
+                                            correctAnsText = (activeTrans?.options && activeTrans.options[q.correctAnswer] !== undefined)
+                                                ? activeTrans.options[q.correctAnswer]
+                                                : q.options[q.correctAnswer] || `Option ${q.correctAnswer + 1}`;
+                                        } else {
+                                            correctAnsText = String(q.correctAnswer ?? '');
+                                        }
+                                    } else if (q.type === 'ordering') {
+                                        const expectedOrder = q.orderingItems || (Array.isArray(q.correctAnswer) ? q.correctAnswer : q.options);
+                                        if (Array.isArray(expectedOrder)) {
+                                            correctAnsText = expectedOrder.map((item, i) => `${i + 1}. ${item}`).join(' ➔ ');
+                                        } else {
+                                            correctAnsText = String(q.correctAnswer ?? '');
+                                        }
+                                    } else if (q.type === 'matching') {
+                                        if (q.matchingPairs && Array.isArray(q.matchingPairs)) {
+                                            correctAnsText = q.matchingPairs.map(p => `${p.left} ➔ ${p.right}`).join(' | ');
+                                        } else if (typeof q.correctAnswer === 'object' && q.correctAnswer !== null) {
+                                            correctAnsText = Object.entries(q.correctAnswer as Record<string, string>)
+                                                .map(([left, right]) => `${left} ➔ ${right}`)
+                                                .join(' | ');
+                                        } else {
+                                            correctAnsText = String(q.correctAnswer ?? '');
+                                        }
+                                    } else if (q.type === 'code-output') {
+                                        if (typeof q.correctAnswer === 'number' && q.options) {
+                                            correctAnsText = q.options[q.correctAnswer] || String(q.correctAnswer);
+                                        } else {
+                                            correctAnsText = String(q.correctAnswer ?? '');
+                                        }
+                                    } else if (q.isCompiler) {
+                                        correctAnsText = q.compilerConfig?.referenceCode ? 'Reference solution available' : '';
+                                    } else if (Array.isArray(q.correctAnswer)) {
+                                        correctAnsText = q.correctAnswer.join(' or ');
+                                    } else {
+                                        correctAnsText = String(q.correctAnswer ?? '');
+                                    }
                                     
                                     return (
                                         <div
@@ -627,11 +692,10 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                                                     : (isBento ? 'text-rose-800' : 'text-rose-600 dark:text-rose-400')
                                                             } ${isRtl ? 'text-right' : 'text-left'}`}>
                                                                 {userAnsText}
-                                                                {userAnswer === undefined && 'No Answer'}
                                                             </span>
                                                         </div>
                                                         
-                                                        {!isCorrect && q.type !== 'text' && (
+                                                        {!isCorrect && Boolean(correctAnsText && correctAnsText.trim()) && (
                                                             <div className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 pt-2 ${
                                                                 isBento ? 'border-t-2 border-black' : 'border-t border-slate-200/60 dark:border-white/[0.06]'
                                                             }`}>

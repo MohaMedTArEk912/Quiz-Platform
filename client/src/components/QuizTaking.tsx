@@ -13,6 +13,7 @@ import MediaPromptPlayer from './common/MediaPromptPlayer';
 import OrderingQuestion from './question-types/OrderingQuestion';
 import MatchingQuestion from './question-types/MatchingQuestion';
 import CodeOutputQuestion from './question-types/CodeOutputQuestion';
+import TextQuestion from './question-types/TextQuestion';
 import { useTheme } from '../context/ThemeContext';
 
 const CompilerQuestion = React.lazy(() => import('./question-types/CompilerQuestion'));
@@ -395,21 +396,87 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         ? currentQuestion === wrongQuestionIndices.length - 1
         : currentQuestion === quiz.questions.length - 1;
 
-    // Helper for checking correctness
-    const checkComplexAnswer = useCallback((q: Question | { type?: string; isCompiler?: boolean; compilerConfig?: { referenceCode?: string }; correctAnswer?: unknown }, ans: unknown): boolean => {
-        if (q.type === 'text') return false;
-        if (q.isCompiler) {
+    // Helper for checking correctness across all question types
+    const checkComplexAnswer = useCallback((q: Question | { type?: string; isCompiler?: boolean; compilerConfig?: { referenceCode?: string }; correctAnswer?: unknown; orderingItems?: string[]; matchingPairs?: { left: string; right: string }[]; options?: string[] }, ans: unknown): boolean => {
+        if (ans === undefined || ans === null) return false;
+
+        // 1. Compiler Questions
+        if (q.isCompiler || q.type === 'compiler') {
             if (q.compilerConfig?.referenceCode && ans) {
                 const norm = (s: string) => s.replace(/\s+/g, '').trim();
                 return norm(String(ans)) === norm(q.compilerConfig.referenceCode);
             }
             return false;
         }
+
+        // 2. Ordering Questions
+        if (q.type === 'ordering') {
+            const expectedOrder = q.orderingItems || (Array.isArray(q.correctAnswer) ? q.correctAnswer : q.options);
+            if (Array.isArray(expectedOrder) && Array.isArray(ans)) {
+                if (ans.length !== expectedOrder.length) return false;
+                return ans.every((item, i) => String(item).trim() === String(expectedOrder[i]).trim());
+            }
+            return false;
+        }
+
+        // 3. Matching Pairs Questions
+        if (q.type === 'matching') {
+            if (q.matchingPairs && Array.isArray(q.matchingPairs) && typeof ans === 'object' && ans !== null) {
+                const userMatches = ans as Record<string, string>;
+                const answeredKeys = Object.keys(userMatches);
+                if (answeredKeys.length !== q.matchingPairs.length) return false;
+                return q.matchingPairs.every(pair => userMatches[pair.left]?.trim() === pair.right?.trim());
+            }
+            if (typeof q.correctAnswer === 'object' && q.correctAnswer !== null && typeof ans === 'object' && ans !== null) {
+                const correctObj = q.correctAnswer as Record<string, string>;
+                const userObj = ans as Record<string, string>;
+                const correctKeys = Object.keys(correctObj);
+                if (Object.keys(userObj).length !== correctKeys.length) return false;
+                return correctKeys.every(k => userObj[k]?.trim() === correctObj[k]?.trim());
+            }
+            return false;
+        }
+
+        // 4. Code Output Questions
+        if (q.type === 'code-output') {
+            if (q.options && q.options.length > 0) {
+                // If options present, student may have clicked option index or typed option text
+                if (typeof ans === 'number') {
+                    return ans === Number(q.correctAnswer) || String(q.options[ans]).trim() === String(q.correctAnswer).trim();
+                }
+                const cleanAns = String(ans).trim();
+                const cleanCorrect = String(q.correctAnswer).trim();
+                if (cleanAns === cleanCorrect) return true;
+                if (typeof q.correctAnswer === 'number' && q.options[q.correctAnswer] && cleanAns === q.options[q.correctAnswer].trim()) {
+                    return true;
+                }
+                return false;
+            }
+            // Direct stdout string comparison
+            return String(ans).trim() === String(q.correctAnswer).trim();
+        }
+
+        // 5. Short Answer / Text Questions
+        if (q.type === 'text') {
+            if (q.correctAnswer === undefined || q.correctAnswer === null) return false;
+            const cleanAns = String(ans).trim().toLowerCase();
+            if (Array.isArray(q.correctAnswer)) {
+                return q.correctAnswer.some(c => String(c).trim().toLowerCase() === cleanAns);
+            }
+            // Support comma or pipe separated accepted variants (e.g. "len, len()")
+            const accepted = String(q.correctAnswer).split(/[,|]/).map(s => s.trim().toLowerCase());
+            return accepted.includes(cleanAns);
+        }
+
+        // 6. Multiple Choice / Default Fallback
         if (Array.isArray(q.correctAnswer) && Array.isArray(ans)) {
             return JSON.stringify(q.correctAnswer) === JSON.stringify(ans);
         }
-        if (typeof q.correctAnswer === 'object' && q.correctAnswer !== null && typeof ans === 'object' && ans !== null) {
-            return JSON.stringify(q.correctAnswer) === JSON.stringify(ans);
+        if (typeof q.correctAnswer === 'number' && (typeof ans === 'number' || !isNaN(Number(ans)))) {
+            return Number(ans) === q.correctAnswer;
+        }
+        if (Array.isArray(q.options) && typeof q.correctAnswer === 'string' && typeof ans === 'number') {
+            return q.options[ans]?.trim() === q.correctAnswer.trim();
         }
         return ans === q.correctAnswer;
     }, []);
@@ -422,14 +489,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             questionOrder.forEach((actualIndex, orderIdx) => {
                 const q = quiz.questions[actualIndex];
                 const ans = answers[actualIndex];
-                let isCorrect = false;
-                if (q.type === 'text') {
-                    isCorrect = false;
-                } else if (q.isCompiler) {
-                    isCorrect = checkComplexAnswer(q, ans);
-                } else {
-                    isCorrect = ans === q.correctAnswer;
-                }
+                const isCorrect = checkComplexAnswer(q, ans);
                 if (!isCorrect) {
                     wrongs.push(orderIdx);
                 }
@@ -633,12 +693,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
         // Strict Mode Check
         if (mustAnswerCorrectly && !delayedValidation) {
-            if (!q.isCompiler && q.type !== 'text') {
-                if (answer !== q.correctAnswer) {
-                    setShakeError(true);
-                    setTimeout(() => setShakeError(false), 400);
-                    return;
-                }
+            if (!checkComplexAnswer(q, answer)) {
+                setShakeError(true);
+                setTimeout(() => setShakeError(false), 400);
+                return;
             }
         }
 
@@ -650,7 +708,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 // If keyboard selection in review mode, DO NOT submit/grade immediately.
                 return;
             }
-            const isCorrect = q.type === 'text' ? false : answer === q.correctAnswer;
+            const isCorrect = checkComplexAnswer(q, answer);
             setIsCurrentAnswerCorrect(isCorrect);
             setQuestionSubmitted(true);
             setSubmittedQuestions(prev => ({ ...prev, [actualIndex]: true }));
@@ -669,7 +727,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             let correctCount = 0;
             quiz.questions.forEach((qObj, idx) => {
                 const currentAns = newAnswers[idx];
-                if (currentAns !== undefined && qObj.type !== 'text') {
+                if (currentAns !== undefined) {
                     answered++;
                     const isCorrect = checkComplexAnswer(qObj, currentAns);
                     if (isCorrect) {
@@ -681,12 +739,6 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             const progressIndex = delayedValidation ? correctCount : answered;
             onProgress(currentScore, progressIndex);
         }
-
-        if (mustAnswerCorrectly && !delayedValidation && !q.isCompiler && q.type !== 'text') {
-            setTimeout(() => {
-                nextQuestion();
-            }, 300);
-        }
     }, [isSubmitting, getActualQuestionIndex, quiz.questions, mustAnswerCorrectly, delayedValidation, answers, quiz.reviewMode, onProgress, checkComplexAnswer, nextQuestion, currentQuestion]);
 
 
@@ -696,11 +748,17 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         const answer = answers[actualIndex];
         if (answer === undefined) return;
 
-        const isCorrect = q.type === 'text' ? false : answer === q.correctAnswer;
+        const isCorrect = checkComplexAnswer(q, answer);
         setIsCurrentAnswerCorrect(isCorrect);
         setQuestionSubmitted(true);
         setSubmittedQuestions(prev => ({ ...prev, [actualIndex]: true }));
         setQuestionCorrectness(prev => ({ ...prev, [actualIndex]: isCorrect }));
+
+        if (isCorrect) {
+            sounds.playCorrect();
+        } else {
+            sounds.playIncorrect();
+        }
 
         if (onProgress) {
             let currentScore = 0;
@@ -710,7 +768,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 const isCurrent = idx === actualIndex;
                 const currentAns = isCurrent ? answer : answers[idx];
                 const isAnsSubmitted = isCurrent ? true : submittedQuestions[idx];
-                if (currentAns !== undefined && qObj.type !== 'text') {
+                if (currentAns !== undefined) {
                     if (isAnsSubmitted) {
                         answered++;
                         const isCorrect = checkComplexAnswer(qObj, currentAns);
@@ -732,7 +790,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         if (showResumePrompt || isSubmitting || showShop) return;
 
         const handleKeyDown = (e: KeyboardEvent) => {
+            const isInputFocused = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
+
             if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+                if (isInputFocused) return;
                 e.preventDefault();
                 setShowKeyboardShortcuts(prev => !prev);
                 return;
@@ -743,6 +804,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             
             // Allow Enter to advance or submit
             if (e.key === 'Enter') {
+                if (isInputFocused && !questionSubmitted) return; // Let input's onKeyDown handle submit
                 e.preventDefault();
                 const isReviewMode = quiz.reviewMode !== false;
                 if (isReviewMode && !delayedValidation) {
@@ -767,12 +829,14 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             }
 
             if (e.key === 'ArrowLeft') {
+                if (isInputFocused) return;
                 e.preventDefault();
                 previousQuestion();
                 return;
             }
 
             if (e.key === 'ArrowRight') {
+                if (isInputFocused) return;
                 e.preventDefault();
                 const isReviewMode = quiz.reviewMode !== false;
                 if (isReviewMode && !delayedValidation && answers[actualIndex] === undefined) {
@@ -783,6 +847,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 }
                 return;
             }
+
+            if (isInputFocused) return;
 
             // Keyboard option selection (1-N or A-N) dynamically based on number of options
             if (q && q.options && !q.isCompiler && (!questionSubmitted || delayedValidation)) {
@@ -843,11 +909,17 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             setTimeLeft(prev => countUpTimer ? prev : prev + 30); // Add 30s to countdown
         }
         else if (type === 'skip') {
-            // Auto complete as correct
+            // Auto complete as correct across all question types
             if (q.correctAnswer !== undefined && q.correctAnswer !== null) {
                 handleAnswer(q.correctAnswer as string | number | string[] | Record<string, string>);
             } else if (q.isCompiler && q.compilerConfig?.referenceCode) {
                 handleAnswer(q.compilerConfig.referenceCode);
+            } else if (q.type === 'ordering' && (q.orderingItems || q.options)) {
+                handleAnswer(q.orderingItems || q.options || []);
+            } else if (q.type === 'matching' && q.matchingPairs) {
+                const autoMatches: Record<string, string> = {};
+                q.matchingPairs.forEach(p => { autoMatches[p.left] = p.right; });
+                handleAnswer(autoMatches);
             } else {
                 handleAnswer("SKIPPED");
             }
@@ -1355,6 +1427,16 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 onChange={(val) => handleAnswer(val)}
                                 readOnly={isSubmitting}
                             />
+                        ) : q.type === 'text' ? (
+                            <TextQuestion
+                                value={typeof answers[actualIndex] === 'string' ? answers[actualIndex] as string : (answers[actualIndex] !== undefined ? String(answers[actualIndex]) : '')}
+                                correctAnswer={q.correctAnswer}
+                                submitted={questionSubmitted && !delayedValidation}
+                                isCorrect={isCurrentAnswerCorrect}
+                                onChange={(val) => handleAnswer(val, true)}
+                                onSubmit={submitQuestion}
+                                readOnly={isSubmitting}
+                            />
                         ) : (
                             currentOptions.map((originalIndex, visualIndex) => {
                                 // If user used a hint to hide this
@@ -1458,7 +1540,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             ? 'bg-slate-100 text-black border-2 border-black font-bold'
                             : 'text-slate-500 dark:text-slate-400 bg-slate-100/60 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/5'
                     }`}>
-                        {q && q.options && !q.isCompiler && (
+                        {q && q.options && !q.isCompiler && (!q.type || q.type === 'multiple-choice') && (
                             <>
                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-tabular ${isBento ? 'border border-black bg-white text-black' : 'border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400'}`}>1-{q.options.length}</span>
                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isBento ? 'border border-black bg-white text-black' : 'border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400'}`}>A-{String.fromCharCode(65 + q.options.length - 1)}</span> 

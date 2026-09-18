@@ -55,7 +55,7 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
     const [isBulkEditQuestionsOpen, setIsBulkEditQuestionsOpen] = useState(false);
     const [bulkQuestionPoints, setBulkQuestionPoints] = useState(10);
     const [bulkQuestionPart, setBulkQuestionPart] = useState('A');
-    const [bulkQuestionType, setBulkQuestionType] = useState<'multiple-choice' | 'text' | 'code-output'>('multiple-choice');
+    const [bulkQuestionType, setBulkQuestionType] = useState<'multiple-choice' | 'text' | 'code-output' | 'ordering' | 'matching'>('multiple-choice');
     const [enableBulkPoints, setEnableBulkPoints] = useState(false);
     const [enableBulkPart, setEnableBulkPart] = useState(false);
     const [enableBulkType, setEnableBulkType] = useState(false);
@@ -94,6 +94,34 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
         const missingRef = editingQuiz.questions?.find(q => q.isCompiler && (!q.compilerConfig?.referenceCode || !q.compilerConfig.referenceCode.trim()));
         if (missingRef) {
             onNotification('error', `Question "${missingRef.question}" is missing a reference answer code.`);
+            return;
+        }
+
+        // Check ordering questions
+        const invalidOrdering = editingQuiz.questions?.find(q => q.type === 'ordering' && (!q.orderingItems || q.orderingItems.length < 2 || q.orderingItems.some(item => !item.trim())));
+        if (invalidOrdering) {
+            onNotification('error', `Ordering question "${invalidOrdering.question || 'Untitled'}" must have at least 2 non-empty sequence steps.`);
+            return;
+        }
+
+        // Check matching questions
+        const invalidMatching = editingQuiz.questions?.find(q => q.type === 'matching' && (!q.matchingPairs || q.matchingPairs.length < 2 || q.matchingPairs.some(p => !p.left?.trim() || !p.right?.trim())));
+        if (invalidMatching) {
+            onNotification('error', `Matching question "${invalidMatching.question || 'Untitled'}" must have at least 2 complete pairs.`);
+            return;
+        }
+
+        // Check code output questions
+        const invalidCodeOutput = editingQuiz.questions?.find(q => q.type === 'code-output' && (!q.codeSnippet?.trim() || q.correctAnswer === undefined || String(q.correctAnswer).trim() === ''));
+        if (invalidCodeOutput) {
+            onNotification('error', `Code output question "${invalidCodeOutput.question || 'Untitled'}" must include both a code snippet and correct answer.`);
+            return;
+        }
+
+        // Check short answer questions
+        const invalidText = editingQuiz.questions?.find(q => q.type === 'text' && !q.isCompiler && (q.correctAnswer === undefined || String(q.correctAnswer).trim() === ''));
+        if (invalidText) {
+            onNotification('error', `Short answer question "${invalidText.question || 'Untitled'}" must have a correct answer specified.`);
             return;
         }
 
@@ -845,13 +873,27 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                                                     {q.question || 'Untitled Question'}
                                                 </p>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
-                                                        isBento
-                                                            ? 'bg-[#fef08a] border border-black text-black shadow-[1px_1px_0px_#000]'
-                                                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                                                    }`}>
-                                                        {q.isCompiler ? 'Compiler' : 'Multiple Choice'}
-                                                    </span>
+                                                    {(() => {
+                                                        const qType = q.isCompiler ? 'compiler' : (q.type || 'multiple-choice');
+                                                        const badgeMap: Record<string, { label: string; color: string }> = {
+                                                            'compiler': { label: 'Compiler', color: 'bg-[#fef08a]' },
+                                                            'ordering': { label: 'Ordering', color: 'bg-[#fed7aa]' },
+                                                            'matching': { label: 'Matching', color: 'bg-[#fbcfe8]' },
+                                                            'code-output': { label: 'Code Output', color: 'bg-[#ddd6fe]' },
+                                                            'text': { label: 'Short Answer', color: 'bg-[#bef264]' },
+                                                            'multiple-choice': { label: 'Multiple Choice', color: 'bg-[#bae6fd]' }
+                                                        };
+                                                        const badge = badgeMap[qType] || badgeMap['multiple-choice'];
+                                                        return (
+                                                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                                                                isBento
+                                                                    ? `${badge.color} border border-black text-black shadow-[1px_1px_0px_#000]`
+                                                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                                            }`}>
+                                                                {badge.label}
+                                                            </span>
+                                                        );
+                                                    })()}
                                                     <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
                                                         isBento
                                                             ? 'bg-[#bef264] border border-black text-black shadow-[1px_1px_0px_#000]'
@@ -859,9 +901,19 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                                                     }`}>
                                                         {q.points || 10} pts
                                                     </span>
-                                                    {q.options && !q.isCompiler && (
+                                                    {!q.isCompiler && (!q.type || q.type === 'multiple-choice') && q.options && (
                                                         <span className={`text-[10px] font-bold ${isBento ? 'text-gray-600' : 'text-gray-400'}`}>
                                                             • {q.options.length} options
+                                                        </span>
+                                                    )}
+                                                    {q.type === 'ordering' && q.orderingItems && (
+                                                        <span className={`text-[10px] font-bold ${isBento ? 'text-gray-600' : 'text-gray-400'}`}>
+                                                            • {q.orderingItems.length} steps
+                                                        </span>
+                                                    )}
+                                                    {q.type === 'matching' && q.matchingPairs && (
+                                                        <span className={`text-[10px] font-bold ${isBento ? 'text-gray-600' : 'text-gray-400'}`}>
+                                                            • {q.matchingPairs.length} pairs
                                                         </span>
                                                     )}
                                                 </div>
@@ -996,7 +1048,7 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                         </label>
                         {enableBulkType && (
                             <div className="flex flex-wrap gap-2 pl-6">
-                                {(['multiple-choice', 'text', 'code-output'] as const).map(t => (
+                                {(['multiple-choice', 'ordering', 'matching', 'code-output', 'text'] as const).map(t => (
                                     <button
                                         key={t}
                                         type="button"

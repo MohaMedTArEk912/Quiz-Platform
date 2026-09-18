@@ -66,8 +66,11 @@ export const CodeOutputQuestion: React.FC<CodeOutputQuestionProps> = ({
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         {options.map((opt, optIdx) => {
-                            const isSelected = userAnswer === optIdx;
-                            const isCorrect = submitted && optIdx === Number(correctAnswer);
+                            const isSelected = userAnswer === optIdx || String(userAnswer) === String(opt) || String(userAnswer) === String(optIdx);
+                            const isCorrect = submitted && (
+                                optIdx === Number(correctAnswer) || 
+                                String(correctAnswer).trim() === String(opt).trim()
+                            );
                             const isWrong = submitted && isSelected && !isCorrect;
 
                             const buttonClass = isBento

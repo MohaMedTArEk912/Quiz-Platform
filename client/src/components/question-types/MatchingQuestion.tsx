@@ -108,8 +108,23 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
 
     return (
         <div className="space-y-4 w-full">
-            <div className={`text-xs font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-gray-400'}`}>
-                Match each term on the left with its corresponding definition on the right:
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className={`text-xs font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-gray-400'}`}>
+                    Match each term on the left with its corresponding definition on the right:
+                </div>
+                {pairs.length > 0 && (
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${
+                        Object.keys(matches).length === pairs.length
+                            ? isBento
+                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            : isBento
+                                ? 'bg-[#fef08a] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                                : 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300'
+                    }`}>
+                        Linked {Object.keys(matches).length} / {pairs.length} {Object.keys(matches).length === pairs.length && '✓'}
+                    </span>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
