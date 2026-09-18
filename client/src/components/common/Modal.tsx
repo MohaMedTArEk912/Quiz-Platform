@@ -70,10 +70,12 @@ const Modal: React.FC<ModalProps> = ({
                             isBento ? 'text-black' : 'text-gray-900 dark:text-white'
                         }`}>
                             {icon && (
-                                <div className={`p-2 rounded-xl flex items-center justify-center ${
-                                    isBento
-                                        ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
-                                        : 'bg-orange-500/10 text-orange-500'
+                                <div className={`p-2 rounded-xl flex items-center justify-center shrink-0 ${
+                                    iconContainerClassName ?? (
+                                        isBento
+                                            ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                            : 'bg-orange-500/10 text-orange-500'
+                                    )
                                 }`}>
                                     {icon}
                                 </div>
