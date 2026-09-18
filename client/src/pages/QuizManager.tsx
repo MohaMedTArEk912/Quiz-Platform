@@ -784,7 +784,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                         )}
                     </div>
 
-                    {selectedQuizIds.length > 0 && (
+                    {selectedQuizIds.length > 0 ? (
                         <div className="flex items-center gap-2 animate-in fade-in duration-200">
                             <button
                                 type="button"
@@ -824,6 +824,10 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                             >
                                 <X className="w-4 h-4" />
                             </button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400">
+                            <span className="hidden sm:inline">Click any card or checkbox to select for bulk edit / delete</span>
                         </div>
                     )}
                 </div>

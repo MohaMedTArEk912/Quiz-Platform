@@ -9,7 +9,9 @@ import {
     Coins, 
     Award, 
     Check, 
-    Loader2 
+    Loader2,
+    Tag,
+    ShieldAlert
 } from 'lucide-react';
 import Modal from '../common/Modal';
 import { useTheme } from '../../context/ThemeContext';
@@ -27,6 +29,7 @@ interface BulkEditQuizzesModalProps {
 
 const TIME_PRESETS = [5, 10, 15, 20, 30, 45, 60];
 const SCORE_PRESETS = [50, 60, 70, 80, 90, 100];
+const CATEGORY_PRESETS = ['General', 'JavaScript', 'TypeScript', 'Python', 'React', 'Data Structures', 'Database', 'Web Development'];
 
 const BulkEditQuizzesModal: React.FC<BulkEditQuizzesModalProps> = ({
     isOpen,
@@ -41,36 +44,48 @@ const BulkEditQuizzesModal: React.FC<BulkEditQuizzesModalProps> = ({
     // Field enablement toggles
     const [enableTime, setEnableTime] = useState(false);
     const [enableType, setEnableType] = useState(false);
+    const [enableCategory, setEnableCategory] = useState(false);
     const [enableDifficulty, setEnableDifficulty] = useState(false);
     const [enablePassingScore, setEnablePassingScore] = useState(false);
     const [enableSubject, setEnableSubject] = useState(false);
     const [enableVisibility, setEnableVisibility] = useState(false);
     const [enableShuffle, setEnableShuffle] = useState(false);
     const [enableReview, setEnableReview] = useState(false);
+    const [enablePoolCount, setEnablePoolCount] = useState(false);
     const [enableRewards, setEnableRewards] = useState(false);
+    const [enableProctoring, setEnableProctoring] = useState(false);
 
     // Field values
     const [timeLimit, setTimeLimit] = useState(15);
     const [quizType, setQuizType] = useState<'quiz' | 'exam' | 'pool'>('quiz');
+    const [category, setCategory] = useState('General');
     const [difficulty, setDifficulty] = useState('Intermediate');
     const [passingScore, setPassingScore] = useState(70);
     const [subjectId, setSubjectId] = useState<string>('');
     const [isVisible, setIsVisible] = useState(true);
     const [shuffleQuestions, setShuffleQuestions] = useState(true);
     const [reviewMode, setReviewMode] = useState(true);
+    const [questionsPerAttempt, setQuestionsPerAttempt] = useState(10);
     const [coinsReward, setCoinsReward] = useState(10);
     const [xpReward, setXpReward] = useState(50);
+    const [isProctored, setIsProctored] = useState(false);
+    const [requireFullscreen, setRequireFullscreen] = useState(false);
+    const [disableCopyPaste, setDisableCopyPaste] = useState(false);
+    const [strictTabSwitchLimit, setStrictTabSwitchLimit] = useState(3);
 
     const hasAnyFieldSelected = 
         enableTime || 
         enableType || 
+        enableCategory || 
         enableDifficulty || 
         enablePassingScore || 
         enableSubject || 
         enableVisibility || 
         enableShuffle || 
         enableReview || 
-        enableRewards;
+        enablePoolCount || 
+        enableRewards || 
+        enableProctoring;
 
     const handleSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -83,15 +98,23 @@ const BulkEditQuizzesModal: React.FC<BulkEditQuizzesModalProps> = ({
             updates.quizType = quizType;
             updates.isQuestionPool = quizType === 'pool';
         }
+        if (enableCategory) updates.category = category.trim();
         if (enableDifficulty) updates.difficulty = difficulty;
         if (enablePassingScore) updates.passingScore = Number(passingScore);
         if (enableSubject) updates.subjectId = subjectId || undefined;
         if (enableVisibility) updates.isVisible = isVisible;
         if (enableShuffle) updates.shuffleQuestions = shuffleQuestions;
         if (enableReview) updates.reviewMode = reviewMode;
+        if (enablePoolCount) updates.questionsPerAttempt = Number(questionsPerAttempt);
         if (enableRewards) {
             updates.coinsReward = Number(coinsReward);
             updates.xpReward = Number(xpReward);
+        }
+        if (enableProctoring) {
+            updates.isProctored = isProctored;
+            updates.requireFullscreen = requireFullscreen;
+            updates.disableCopyPaste = disableCopyPaste;
+            updates.strictTabSwitchLimit = Number(strictTabSwitchLimit);
         }
 
         await onApply(updates);
@@ -292,7 +315,141 @@ const BulkEditQuizzesModal: React.FC<BulkEditQuizzesModalProps> = ({
                     )}
                 </div>
 
-                {/* 3. Difficulty */}
+                {/* 3. Question Bank Pool Count */}
+                {quizType === 'pool' && (
+                    <div className={cardClass(enablePoolCount)}>
+                        <div className="flex items-center justify-between mb-3">
+                            <label 
+                                onClick={() => setEnablePoolCount(!enablePoolCount)}
+                                className="flex items-center gap-2.5 cursor-pointer select-none"
+                            >
+                                <div className={checkboxClass(enablePoolCount)}>
+                                    {enablePoolCount && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                    <span className={`text-xs font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-gray-900 dark:text-white'}`}>
+                                        Questions Per Attempt (Pool Mode)
+                                    </span>
+                                </div>
+                            </label>
+                            {enablePoolCount && (
+                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                                    isBento ? 'bg-[#c7d2fe] text-black border border-black' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                                }`}>
+                                    Enabled
+                                </span>
+                            )}
+                        </div>
+
+                        {enablePoolCount && (
+                            <div className="space-y-2 pl-7 animate-in fade-in duration-200">
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="100"
+                                        value={questionsPerAttempt}
+                                        onChange={(e) => setQuestionsPerAttempt(Math.max(1, parseInt(e.target.value) || 1))}
+                                        className={`w-28 px-3.5 py-2 rounded-xl text-sm font-black text-center focus:outline-none ${
+                                            isBento
+                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-white dark:bg-black/40 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white'
+                                        }`}
+                                    />
+                                    <span className={`text-xs font-bold ${isBento ? 'text-black' : 'text-gray-500'}`}>
+                                        questions randomly picked per student attempt
+                                    </span>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {[5, 10, 15, 20, 25, 30].map(cnt => (
+                                        <button
+                                            key={cnt}
+                                            type="button"
+                                            onClick={() => setQuestionsPerAttempt(cnt)}
+                                            className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                                questionsPerAttempt === cnt
+                                                    ? isBento
+                                                        ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                                                        : 'bg-indigo-600 text-white shadow-sm'
+                                                    : isBento
+                                                        ? 'bg-white text-black border border-black hover:bg-gray-100'
+                                                        : 'bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            {cnt} questions
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* 4. Category */}
+                <div className={cardClass(enableCategory)}>
+                    <div className="flex items-center justify-between mb-3">
+                        <label 
+                            onClick={() => setEnableCategory(!enableCategory)}
+                            className="flex items-center gap-2.5 cursor-pointer select-none"
+                        >
+                            <div className={checkboxClass(enableCategory)}>
+                                {enableCategory && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Tag className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                <span className={`text-xs font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-gray-900 dark:text-white'}`}>
+                                    Category
+                                </span>
+                            </div>
+                        </label>
+                        {enableCategory && (
+                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                                isBento ? 'bg-[#fef08a] text-black border border-black' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                            }`}>
+                                Enabled
+                            </span>
+                        )}
+                    </div>
+
+                    {enableCategory && (
+                        <div className="space-y-2.5 pl-7 animate-in fade-in duration-200">
+                            <input
+                                type="text"
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                placeholder="Enter category (e.g. JavaScript, Math, System Design)"
+                                className={`w-full px-3.5 py-2 rounded-xl text-xs font-black focus:outline-none ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-white dark:bg-black/40 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white'
+                                }`}
+                            />
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                                {CATEGORY_PRESETS.map(preset => (
+                                    <button
+                                        key={preset}
+                                        type="button"
+                                        onClick={() => setCategory(preset)}
+                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                            category === preset
+                                                ? isBento
+                                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                                                    : 'bg-purple-600 text-white shadow-sm'
+                                                : isBento
+                                                    ? 'bg-white text-black border border-black hover:bg-gray-100'
+                                                    : 'bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {preset}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* 5. Difficulty */}
                 <div className={cardClass(enableDifficulty)}>
                     <div className="flex items-center justify-between mb-3">
                         <label 
@@ -665,6 +822,115 @@ const BulkEditQuizzesModal: React.FC<BulkEditQuizzesModalProps> = ({
                                             : 'bg-white dark:bg-black/40 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white'
                                     }`}
                                 />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* 9. Proctoring & Security Rules */}
+                <div className={cardClass(enableProctoring)}>
+                    <div className="flex items-center justify-between mb-3">
+                        <label 
+                            onClick={() => setEnableProctoring(!enableProctoring)}
+                            className="flex items-center gap-2.5 cursor-pointer select-none"
+                        >
+                            <div className={checkboxClass(enableProctoring)}>
+                                {enableProctoring && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <ShieldAlert className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                <span className={`text-xs font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-gray-900 dark:text-white'}`}>
+                                    Proctoring & Anti-Cheating
+                                </span>
+                            </div>
+                        </label>
+                        {enableProctoring && (
+                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                                isBento ? 'bg-[#fecdd3] text-black border border-black' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                            }`}>
+                                Enabled
+                            </span>
+                        )}
+                    </div>
+
+                    {enableProctoring && (
+                        <div className="space-y-3 pl-7 animate-in fade-in duration-200">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                {/* Strict Proctoring Toggle */}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsProctored(!isProctored)}
+                                    className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between ${
+                                        isProctored
+                                            ? isBento
+                                                ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-red-500/10 border-red-500 text-red-700 dark:text-red-300'
+                                            : isBento
+                                                ? 'bg-white text-black border border-black hover:bg-gray-50'
+                                                : 'bg-white dark:bg-black/20 border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300'
+                                    }`}
+                                >
+                                    <span className="text-xs font-black uppercase">Strict Proctoring</span>
+                                    <span className="text-[10px] opacity-75 mt-1 font-semibold">{isProctored ? 'Active' : 'Disabled'}</span>
+                                </button>
+
+                                {/* Fullscreen Requirement */}
+                                <button
+                                    type="button"
+                                    onClick={() => setRequireFullscreen(!requireFullscreen)}
+                                    className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between ${
+                                        requireFullscreen
+                                            ? isBento
+                                                ? 'bg-[#fed7aa] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-amber-500/10 border-amber-500 text-amber-700 dark:text-amber-300'
+                                            : isBento
+                                                ? 'bg-white text-black border border-black hover:bg-gray-50'
+                                                : 'bg-white dark:bg-black/20 border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300'
+                                    }`}
+                                >
+                                    <span className="text-xs font-black uppercase">Force Fullscreen</span>
+                                    <span className="text-[10px] opacity-75 mt-1 font-semibold">{requireFullscreen ? 'Required' : 'Optional'}</span>
+                                </button>
+
+                                {/* Block Copy/Paste */}
+                                <button
+                                    type="button"
+                                    onClick={() => setDisableCopyPaste(!disableCopyPaste)}
+                                    className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between ${
+                                        disableCopyPaste
+                                            ? isBento
+                                                ? 'bg-[#e9d5ff] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-purple-500/10 border-purple-500 text-purple-700 dark:text-purple-300'
+                                            : isBento
+                                                ? 'bg-white text-black border border-black hover:bg-gray-50'
+                                                : 'bg-white dark:bg-black/20 border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300'
+                                    }`}
+                                >
+                                    <span className="text-xs font-black uppercase">Block Copy/Paste</span>
+                                    <span className="text-[10px] opacity-75 mt-1 font-semibold">{disableCopyPaste ? 'Blocked' : 'Allowed'}</span>
+                                </button>
+                            </div>
+
+                            {/* Tab Switch Limit */}
+                            <div className="flex items-center gap-3 pt-1">
+                                <span className={`text-xs font-bold ${isBento ? 'text-black' : 'text-gray-600 dark:text-gray-300'}`}>
+                                    Max Tab Switches:
+                                </span>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="10"
+                                    value={strictTabSwitchLimit}
+                                    onChange={(e) => setStrictTabSwitchLimit(Math.max(0, parseInt(e.target.value) || 0))}
+                                    className={`w-20 px-3 py-1.5 rounded-lg text-xs font-black text-center focus:outline-none ${
+                                        isBento
+                                            ? 'bg-white text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                                            : 'bg-white dark:bg-black/40 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white'
+                                    }`}
+                                />
+                                <span className="text-[11px] text-gray-500">
+                                    {strictTabSwitchLimit === 0 ? 'No tab switch enforcement' : `Auto-flag after ${strictTabSwitchLimit} switches`}
+                                </span>
                             </div>
                         </div>
                     )}

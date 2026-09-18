@@ -59,6 +59,8 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
     const [enableBulkPoints, setEnableBulkPoints] = useState(false);
     const [enableBulkPart, setEnableBulkPart] = useState(false);
     const [enableBulkType, setEnableBulkType] = useState(false);
+    const [bulkShuffleOptions, setBulkShuffleOptions] = useState(true);
+    const [enableBulkShuffleOptions, setEnableBulkShuffleOptions] = useState(false);
 
     useEffect(() => {
         if (quiz) {
@@ -163,7 +165,8 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                         ...q,
                         ...(enableBulkPoints ? { points: Number(bulkQuestionPoints) } : {}),
                         ...(enableBulkPart ? { part: bulkQuestionPart } : {}),
-                        ...(enableBulkType ? { type: bulkQuestionType } : {})
+                        ...(enableBulkType ? { type: bulkQuestionType } : {}),
+                        ...(enableBulkShuffleOptions ? { shuffleOptions: bulkShuffleOptions } : {})
                     };
                 }
                 return q;
@@ -1007,6 +1010,40 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                                         {t.replace('-', ' ')}
                                     </button>
                                 ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Shuffle Answer Options */}
+                    <div className={`p-3 rounded-xl border ${isBento ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000]' : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10'}`}>
+                        <label onClick={() => setEnableBulkShuffleOptions(!enableBulkShuffleOptions)} className="flex items-center gap-2 cursor-pointer mb-2">
+                            <input type="checkbox" checked={enableBulkShuffleOptions} onChange={() => {}} className="cursor-pointer" />
+                            <span className="text-xs font-black uppercase">Shuffle Answer Options</span>
+                        </label>
+                        {enableBulkShuffleOptions && (
+                            <div className="flex gap-2 pl-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setBulkShuffleOptions(true)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase cursor-pointer ${
+                                        bulkShuffleOptions
+                                            ? isBento ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-purple-600 text-white'
+                                            : isBento ? 'bg-white text-black border border-black' : 'bg-gray-100 dark:bg-white/10'
+                                    }`}
+                                >
+                                    Shuffle Options: Yes
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setBulkShuffleOptions(false)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase cursor-pointer ${
+                                        !bulkShuffleOptions
+                                            ? isBento ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-rose-600 text-white'
+                                            : isBento ? 'bg-white text-black border border-black' : 'bg-gray-100 dark:bg-white/10'
+                                    }`}
+                                >
+                                    Fixed Order: No
+                                </button>
                             </div>
                         )}
                     </div>

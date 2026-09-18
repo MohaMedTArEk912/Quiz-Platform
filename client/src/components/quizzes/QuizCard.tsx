@@ -110,7 +110,15 @@ const QuizCard: React.FC<QuizCardProps> = ({
     ].filter(Boolean) as Array<{ label: string; icon?: React.ComponentType<{ className?: string }>; action: () => void; style: string; title: string }>;
 
     return (
-        <div className={`group relative h-full rounded-[28px] p-5 transition-all duration-200 ${
+        <div 
+            onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (!target.closest('button') && !target.closest('a') && onToggleSelect) {
+                    const qId = quiz.id || quiz._id || '';
+                    if (qId) onToggleSelect(qId);
+                }
+            }}
+            className={`group relative h-full rounded-[28px] p-5 transition-all duration-200 cursor-pointer ${
             isSelected
                 ? isBento
                     ? 'bg-[#fef9c3] text-black border-3 border-black shadow-[6px_6px_0px_#000] ring-4 ring-[#bef264]'
