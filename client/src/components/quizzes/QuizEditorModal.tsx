@@ -14,9 +14,13 @@ import {
     Folder, 
     Sliders,
     Layers,
-    Eye
+    Eye,
+    CheckSquare,
+    Square,
+    X
 } from 'lucide-react';
 import Modal from '../common/Modal';
+import ConfirmDialog from '../ConfirmDialog';
 import QuestionEditor from './QuestionEditor';
 import type { Quiz, Question, Subject } from '../../types';
 import { DIFFICULTY_LEVELS } from '../../constants/quizDefaults';
@@ -45,12 +49,24 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
     const [activeModalTab, setActiveModalTab] = useState<'general' | 'questions'>('general');
     const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
 
+    // Question Selection & Bulk Edit States
+    const [selectedQuestionIds, setSelectedQuestionIds] = useState<number[]>([]);
+    const [isBulkDeleteQuestionsOpen, setIsBulkDeleteQuestionsOpen] = useState(false);
+    const [isBulkEditQuestionsOpen, setIsBulkEditQuestionsOpen] = useState(false);
+    const [bulkQuestionPoints, setBulkQuestionPoints] = useState(10);
+    const [bulkQuestionPart, setBulkQuestionPart] = useState('A');
+    const [bulkQuestionType, setBulkQuestionType] = useState<'multiple-choice' | 'text' | 'code-output'>('multiple-choice');
+    const [enableBulkPoints, setEnableBulkPoints] = useState(false);
+    const [enableBulkPart, setEnableBulkPart] = useState(false);
+    const [enableBulkType, setEnableBulkType] = useState(false);
+
     useEffect(() => {
         if (quiz) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setEditingQuiz({ ...quiz, icon: quiz.icon || DEFAULT_QUIZ_ICON, questions: quiz.questions || [] });
             setActiveModalTab('general');
             setEditingQuestion(null);
+            setSelectedQuestionIds([]);
         }
     }, [quiz]);
 
@@ -106,6 +122,58 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
             ...editingQuiz,
             questions: (editingQuiz.questions || []).filter(q => q.id !== questionId)
         });
+        setSelectedQuestionIds(prev => prev.filter(id => id !== questionId));
+    };
+
+    // Question Multi-Selection Handlers
+    const handleToggleSelectQuestion = (qId: number) => {
+        setSelectedQuestionIds(prev =>
+            prev.includes(qId) ? prev.filter(id => id !== qId) : [...prev, qId]
+        );
+    };
+
+    const handleSelectAllQuestions = () => {
+        const allIds = (editingQuiz?.questions || []).map(q => q.id);
+        const allSelected = allIds.length > 0 && allIds.every(id => selectedQuestionIds.includes(id));
+        if (allSelected) {
+            setSelectedQuestionIds([]);
+        } else {
+            setSelectedQuestionIds(allIds);
+        }
+    };
+
+    const confirmBulkDeleteQuestions = () => {
+        if (!editingQuiz || selectedQuestionIds.length === 0) return;
+        try {
+            const updatedQuestions = (editingQuiz.questions || []).filter(q => !selectedQuestionIds.includes(q.id));
+            setEditingQuiz({ ...editingQuiz, questions: updatedQuestions });
+            onNotification('success', `Removed ${selectedQuestionIds.length} questions`);
+        } finally {
+            setSelectedQuestionIds([]);
+            setIsBulkDeleteQuestionsOpen(false);
+        }
+    };
+
+    const handleApplyBulkQuestionEdit = () => {
+        if (!editingQuiz || selectedQuestionIds.length === 0) return;
+        try {
+            const updatedQuestions = (editingQuiz.questions || []).map(q => {
+                if (selectedQuestionIds.includes(q.id)) {
+                    return {
+                        ...q,
+                        ...(enableBulkPoints ? { points: Number(bulkQuestionPoints) } : {}),
+                        ...(enableBulkPart ? { part: bulkQuestionPart } : {}),
+                        ...(enableBulkType ? { type: bulkQuestionType } : {})
+                    };
+                }
+                return q;
+            });
+            setEditingQuiz({ ...editingQuiz, questions: updatedQuestions });
+            onNotification('success', `Updated ${selectedQuestionIds.length} questions`);
+        } finally {
+            setSelectedQuestionIds([]);
+            setIsBulkEditQuestionsOpen(false);
+        }
     };
 
     return (
@@ -643,6 +711,75 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                         </button>
                     </div>
 
+                    {/* Bulk Selection Bar for Questions */}
+                    <div className={`flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border transition-all ${
+                        isBento 
+                            ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000]'
+                            : 'bg-white/60 dark:bg-white/5 border-gray-200 dark:border-white/10'
+                    }`}>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handleSelectAllQuestions}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000] hover:bg-gray-50'
+                                        : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300'
+                                }`}
+                            >
+                                {editingQuiz.questions?.length > 0 && selectedQuestionIds.length === editingQuiz.questions.length ? (
+                                    <CheckSquare className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                ) : (
+                                    <Square className="w-4 h-4 text-gray-400" />
+                                )}
+                                <span>{editingQuiz.questions?.length > 0 && selectedQuestionIds.length === editingQuiz.questions.length ? 'Deselect All' : 'Select All'}</span>
+                            </button>
+                            {selectedQuestionIds.length > 0 && (
+                                <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                                    isBento ? 'bg-[#bef264] text-black border border-black' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                                }`}>
+                                    {selectedQuestionIds.length} Selected
+                                </span>
+                            )}
+                        </div>
+
+                        {selectedQuestionIds.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsBulkEditQuestionsOpen(true)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                                        isBento
+                                            ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
+                                            : 'bg-purple-600 text-white shadow-sm'
+                                    }`}
+                                >
+                                    <Sliders className="w-3.5 h-3.5" />
+                                    <span>Bulk Edit ({selectedQuestionIds.length})</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsBulkDeleteQuestionsOpen(true)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                                        isBento
+                                            ? 'bg-[#ff6b6b] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
+                                            : 'bg-red-600 text-white shadow-sm'
+                                    }`}
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>Delete ({selectedQuestionIds.length})</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedQuestionIds([])}
+                                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 cursor-pointer"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Active Question Editor (Adding a New Question) */}
                     {editingQuestion && editingQuestion.id === 0 && (
                         <QuestionEditor
@@ -668,11 +805,31 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                                     />
                                 ) : (
                                     <div className={`flex items-center justify-between p-3.5 rounded-xl transition-all ${
-                                        isBento
-                                            ? 'bg-white border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000]'
-                                            : 'bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5'
+                                        selectedQuestionIds.includes(q.id)
+                                            ? isBento
+                                                ? 'bg-[#fef9c3] border-2 border-black shadow-[4px_4px_0px_#000] ring-2 ring-[#bef264]'
+                                                : 'bg-purple-50/50 dark:bg-purple-950/20 border-2 border-purple-500 shadow-sm'
+                                            : isBento
+                                                ? 'bg-white border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000]'
+                                                : 'bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5'
                                     }`}>
                                         <div className="flex items-center gap-3 min-w-0 flex-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleToggleSelectQuestion(q.id)}
+                                                aria-label={selectedQuestionIds.includes(q.id) ? 'Deselect question' : 'Select question'}
+                                                className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+                                                    selectedQuestionIds.includes(q.id)
+                                                        ? isBento
+                                                            ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                                                            : 'bg-purple-600 text-white shadow-sm'
+                                                        : isBento
+                                                            ? 'bg-white border-2 border-black hover:bg-gray-100 shadow-[1px_1px_0px_#000]'
+                                                            : 'bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 text-transparent'
+                                                }`}
+                                            >
+                                                {selectedQuestionIds.includes(q.id) && <Check className="w-4 h-4 stroke-[3]" />}
+                                            </button>
                                             <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 ${
                                                 isBento
                                                     ? 'bg-[#bae6fd] border-2 border-black shadow-[1.5px_1.5px_0px_#000] text-black'
@@ -752,6 +909,122 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                     </div>
                 </div>
             )}
+
+            {/* Bulk Edit Questions Modal */}
+            <Modal
+                isOpen={isBulkEditQuestionsOpen}
+                onClose={() => setIsBulkEditQuestionsOpen(false)}
+                title={`Bulk Edit ${selectedQuestionIds.length} Questions`}
+                description="Update points, part, or type across all selected questions."
+                maxWidth="max-w-md"
+                footer={
+                    <div className="flex justify-between items-center gap-3 w-full">
+                        <button
+                            type="button"
+                            onClick={() => setIsBulkEditQuestionsOpen(false)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider ${
+                                isBento ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]' : 'bg-gray-100 dark:bg-white/10'
+                            }`}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleApplyBulkQuestionEdit}
+                            disabled={!enableBulkPoints && !enableBulkPart && !enableBulkType}
+                            className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider disabled:opacity-50 ${
+                                isBento ? 'bg-[#bef264] text-black border-2 border-black shadow-[2.5px_2.5px_0px_#000]' : 'bg-purple-600 text-white'
+                            }`}
+                        >
+                            Apply Changes
+                        </button>
+                    </div>
+                }
+            >
+                <div className="space-y-4">
+                    {/* Points */}
+                    <div className={`p-3 rounded-xl border ${isBento ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000]' : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10'}`}>
+                        <label onClick={() => setEnableBulkPoints(!enableBulkPoints)} className="flex items-center gap-2 cursor-pointer mb-2">
+                            <input type="checkbox" checked={enableBulkPoints} onChange={() => {}} className="cursor-pointer" />
+                            <span className="text-xs font-black uppercase">Update Points</span>
+                        </label>
+                        {enableBulkPoints && (
+                            <div className="flex items-center gap-2 pl-6">
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={bulkQuestionPoints}
+                                    onChange={e => setBulkQuestionPoints(Math.max(1, parseInt(e.target.value) || 1))}
+                                    className={`w-24 px-3 py-1.5 rounded-lg text-sm font-black text-center ${
+                                        isBento ? 'border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'border'
+                                    }`}
+                                />
+                                <span className="text-xs font-bold">pts</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Part */}
+                    <div className={`p-3 rounded-xl border ${isBento ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000]' : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10'}`}>
+                        <label onClick={() => setEnableBulkPart(!enableBulkPart)} className="flex items-center gap-2 cursor-pointer mb-2">
+                            <input type="checkbox" checked={enableBulkPart} onChange={() => {}} className="cursor-pointer" />
+                            <span className="text-xs font-black uppercase">Update Part Section</span>
+                        </label>
+                        {enableBulkPart && (
+                            <div className="pl-6">
+                                <input
+                                    type="text"
+                                    value={bulkQuestionPart}
+                                    onChange={e => setBulkQuestionPart(e.target.value.toUpperCase())}
+                                    placeholder="e.g. A, B, 1, 2"
+                                    className={`w-24 px-3 py-1.5 rounded-lg text-sm font-black text-center ${
+                                        isBento ? 'border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'border'
+                                    }`}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Question Type */}
+                    <div className={`p-3 rounded-xl border ${isBento ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000]' : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10'}`}>
+                        <label onClick={() => setEnableBulkType(!enableBulkType)} className="flex items-center gap-2 cursor-pointer mb-2">
+                            <input type="checkbox" checked={enableBulkType} onChange={() => {}} className="cursor-pointer" />
+                            <span className="text-xs font-black uppercase">Update Question Type</span>
+                        </label>
+                        {enableBulkType && (
+                            <div className="flex flex-wrap gap-2 pl-6">
+                                {(['multiple-choice', 'text', 'code-output'] as const).map(t => (
+                                    <button
+                                        key={t}
+                                        type="button"
+                                        onClick={() => setBulkQuestionType(t)}
+                                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer ${
+                                            bulkQuestionType === t
+                                                ? isBento ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-purple-600 text-white'
+                                                : isBento ? 'bg-white text-black border border-black' : 'bg-gray-100 dark:bg-white/10'
+                                        }`}
+                                    >
+                                        {t.replace('-', ' ')}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Bulk Delete Questions Confirm Dialog */}
+            <ConfirmDialog
+                isOpen={isBulkDeleteQuestionsOpen}
+                onCancel={() => setIsBulkDeleteQuestionsOpen(false)}
+                onConfirm={confirmBulkDeleteQuestions}
+                title={`Remove ${selectedQuestionIds.length} Questions?`}
+                message={`Are you sure you want to remove these ${selectedQuestionIds.length} questions from this quiz?`}
+                confirmText={`Remove ${selectedQuestionIds.length} Questions`}
+                cancelText="Cancel"
+                type="danger"
+                showWarningBanner={false}
+            />
         </Modal>
     );
 };

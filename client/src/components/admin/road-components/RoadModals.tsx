@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Loader2, X, Trash2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import type { Subject } from '../../../types';
+import ConfirmDialog from '../../ConfirmDialog';
 
 interface RoadModalsProps {
     isCreateModalOpen: boolean;
@@ -169,35 +170,18 @@ const RoadModals: React.FC<RoadModalsProps> = ({
             )}
 
             {/* Delete Confirmation */}
-            {isDeleteModalOpen && roadToDelete && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#1e1e2d] rounded-3xl w-full max-w-md shadow-2xl p-8 border border-white/20 dark:border-white/5 text-center relative overflow-hidden scale-100 animate-in zoom-in-95 duration-200">
-                        <div className="absolute top-0 left-0 w-32 h-32 bg-red-500/10 rounded-br-full -ml-16 -mt-16 pointer-events-none" />
-
-                        <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm ring-8 ring-red-50 dark:ring-red-900/10">
-                            <Trash2 className="w-10 h-10" />
-                        </div>
-                        <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-3">Delete Road?</h3>
-                        <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">
-                            Are you sure you want to delete <span className="font-bold text-gray-900 dark:text-white">{roadToDelete.title}</span>? This action cannot be undone and will delete all associated resources.
-                        </p>
-                        <div className="flex justify-center gap-4">
-                            <button
-                                onClick={onDeleteClose}
-                                className="px-6 py-3 rounded-xl text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-100 dark:hover:bg-white/5 transition-colors w-full"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={onDeleteRoad}
-                                className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-bold shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all w-full"
-                            >
-                                Delete Road
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmDialog
+                isOpen={isDeleteModalOpen && !!roadToDelete}
+                onCancel={onDeleteClose}
+                onConfirm={onDeleteRoad}
+                title="Delete Road?"
+                message={roadToDelete ? `Are you sure you want to delete "${roadToDelete.title}"? This action cannot be undone and will delete all associated resources.` : ''}
+                confirmText="Delete Road"
+                cancelText="Cancel"
+                type="danger"
+                isLoading={isSubmitting}
+                showWarningBanner={true}
+            />
         </>
     );
 };

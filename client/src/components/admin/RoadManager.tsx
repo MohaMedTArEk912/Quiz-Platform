@@ -286,12 +286,11 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
 
     const handleDeleteRoad = async () => {
         if (!roadToDelete) return;
+        setIsSubmitting(true);
         try {
             const res = await api.deleteSubject(roadToDelete._id, currentUser.userId);
             if (res.success) {
                 onNotification('success', 'Road deleted successfully');
-                setIsDeleteModalOpen(false);
-                setRoadToDelete(null);
                 if (selectedRoad && selectedRoad._id === roadToDelete._id) {
                     handleBack();
                 } else {
@@ -301,6 +300,10 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to delete road';
             onNotification('error', 'Failed to delete road: ' + message);
+        } finally {
+            setIsSubmitting(false);
+            setIsDeleteModalOpen(false);
+            setRoadToDelete(null);
         }
     };
 

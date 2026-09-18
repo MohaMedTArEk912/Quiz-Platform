@@ -13,26 +13,45 @@ interface QuizGridProps {
     onHost?: (quiz: Quiz) => void;
     onReplace?: (quiz: Quiz) => void;
     onCreateFirstQuiz?: () => void;
+    selectedQuizIds?: string[];
+    onToggleSelect?: (id: string) => void;
 }
 
-const QuizGrid: React.FC<QuizGridProps> = ({ quizzes, onExport, onEdit, onDelete, onShare, onPlay, onHost, onReplace, onCreateFirstQuiz }) => {
+const QuizGrid: React.FC<QuizGridProps> = ({ 
+    quizzes, 
+    onExport, 
+    onEdit, 
+    onDelete, 
+    onShare, 
+    onPlay, 
+    onHost, 
+    onReplace, 
+    onCreateFirstQuiz,
+    selectedQuizIds = [],
+    onToggleSelect
+}) => {
     const safeQuizzes = Array.isArray(quizzes) ? quizzes : [];
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-right-4 duration-300">
-            {safeQuizzes.map(quiz => (
-                <QuizCard
-                    key={quiz.id || quiz._id} // Handle potential _id if present in data
-                    quiz={quiz}
-                    onExport={onExport}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onShare={onShare}
-                    onPlay={onPlay}
-                    onHost={onHost}
-                    onReplace={onReplace}
-                />
-            ))}
+            {safeQuizzes.map(quiz => {
+                const qId = quiz.id || quiz._id || '';
+                return (
+                    <QuizCard
+                        key={qId}
+                        quiz={quiz}
+                        onExport={onExport}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onShare={onShare}
+                        onPlay={onPlay}
+                        onHost={onHost}
+                        onReplace={onReplace}
+                        isSelected={selectedQuizIds.includes(qId)}
+                        onToggleSelect={onToggleSelect}
+                    />
+                );
+            })}
             {safeQuizzes.length === 0 && (
                 <EmptyState
                     message="No quizzes found in this collection"

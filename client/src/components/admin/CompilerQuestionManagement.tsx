@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../../lib/api';
 import type { CompilerQuestion } from '../../types';
 import Modal from '../common/Modal';
+import ConfirmDialog from '../ConfirmDialog';
+import { useConfirm } from '../../hooks/useConfirm';
 import { Plus, Edit2, Trash2, RefreshCw, Code2, Save, X, AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Upload, Download } from 'lucide-react';
 
 interface CompilerQuestionManagementProps {
@@ -13,6 +15,7 @@ interface CompilerQuestionManagementProps {
  * Provides CRUD operations and bulk upload functionality.
  */
 const CompilerQuestionManagement: React.FC<CompilerQuestionManagementProps> = ({ adminId }) => {
+    const { confirm, confirmState, handleCancel } = useConfirm();
     const [questions, setQuestions] = useState<CompilerQuestion[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -123,7 +126,13 @@ const CompilerQuestionManagement: React.FC<CompilerQuestionManagementProps> = ({
      * Delete a compiler question
      */
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this question?')) return;
+        const confirmed = await confirm({
+            title: 'Delete Question',
+            message: 'Are you sure you want to permanently delete this compiler question? This action cannot be undone.',
+            confirmText: 'Delete',
+            type: 'danger'
+        });
+        if (!confirmed) return;
 
         try {
             await api.deleteCompilerQuestion(id, adminId);
@@ -642,6 +651,18 @@ const CompilerQuestionManagement: React.FC<CompilerQuestionManagementProps> = ({
                     </div>
                 )}
             </div>
+
+            {confirmState.isOpen && (
+                <ConfirmDialog
+                    title={confirmState.title}
+                    message={confirmState.message}
+                    confirmText={confirmState.confirmText}
+                    cancelText={confirmState.cancelText}
+                    type={confirmState.type}
+                    onConfirm={confirmState.onConfirm}
+                    onCancel={handleCancel}
+                />
+            )}
         </div>
     );
 };

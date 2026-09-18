@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Edit2, Trash2, Users, Eye, EyeOff, Search, BarChart3, Mail, Trophy, Calendar, Map, Lock, Unlock, CheckCircle, Gift, ChevronDown, Route } from 'lucide-react';
 import Modal from '../common/Modal';
+import ConfirmDialog from '../ConfirmDialog';
 import Avatar from '../Avatar.tsx';
 import AttemptDetailsModal from './AttemptDetailsModal';
 import type { UserData, AttemptData, SkillTrack, SkillModule, Quiz, ShopItem, Subject } from '../../types/index.ts';
@@ -1107,37 +1108,17 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, attempts, curren
             </Modal>
 
             {/* Delete Confirmation Modal */}
-            {/* Delete Confirmation Modal */}
-            <Modal
+            <ConfirmDialog
                 isOpen={!!deleteConfirmation}
-                onClose={() => setDeleteConfirmation(null)}
+                onCancel={() => setDeleteConfirmation(null)}
+                onConfirm={confirmDeleteUser}
                 title="Abolish Agent?"
-                description="This will permanently extinguish the agent and all their progress histories."
-                icon={<Trash2 className="w-6 h-6 text-red-500" />}
-                maxWidth="max-w-md"
-                footer={
-                    <>
-                        <button
-                            onClick={() => setDeleteConfirmation(null)}
-                            className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest transition-colors hover:bg-gray-200 dark:hover:bg-white/10"
-                        >
-                            Back
-                        </button>
-                        <button
-                            onClick={confirmDeleteUser}
-                            className="flex-1 py-3 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-red-500/20 transform hover:-translate-y-0.5 transition-all hover:bg-red-700"
-                        >
-                            Abolish
-                        </button>
-                    </>
-                }
-            >
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
-                    <p className="text-red-500 text-sm font-bold text-center">
-                        ⚠️ This action cannot be undone.
-                    </p>
-                </div>
-            </Modal>
+                message="This will permanently extinguish the agent and all their progress histories."
+                confirmText="Abolish"
+                cancelText="Back"
+                type="danger"
+                showWarningBanner={true}
+            />
 
             {/* Manage User Track Permissions Modal */}
             {managingTrackAccess && (

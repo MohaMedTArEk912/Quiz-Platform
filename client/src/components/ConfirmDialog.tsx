@@ -94,7 +94,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
     const getCancelButtonClass = () => {
         if (isBento) {
-            return 'bg-white dark:bg-[#18181b] text-black dark:text-white border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] hover:bg-gray-100 dark:hover:bg-zinc-800 hover:translate-x-[-1px] hover:translate-y-[-1px] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none';
+            return 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-gray-100 hover:translate-x-[-1px] hover:translate-y-[-1px] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none';
         }
         return 'bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10 hover:bg-gray-200 dark:hover:bg-white/10 active:scale-95';
     };

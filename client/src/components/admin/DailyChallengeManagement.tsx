@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Zap, Plus, Edit2, Trash2, RefreshCw, Code2, Calendar, Sparkles } from 'lucide-react';
 import Modal from '../common/Modal';
+import ConfirmDialog from '../ConfirmDialog';
 import type { UserData, Quiz, CompilerQuestion, ShopItem, DailyChallengeItem } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 import CompilerQuestionManagement from './CompilerQuestionManagement';
@@ -364,37 +365,17 @@ const DailyChallengeManagement: React.FC<DailyChallengeManagementProps> = ({ cur
             </div>
 
             {/* Confirmation Modal */}
-            {/* Confirmation Modal */}
-            <Modal
+            <ConfirmDialog
                 isOpen={!!confirmAction}
-                onClose={() => setConfirmAction(null)}
-                title="Confirm Action"
-                description={confirmAction?.type === 'delete' ? 'Are you sure you want to permanently delete this daily challenge?' : 'Do you want to move this challenge to today?'}
-                icon={confirmAction?.type === 'delete' ? <Trash2 className="w-6 h-6 text-red-500" /> : <RefreshCw className="w-6 h-6 text-emerald-500" />}
-                maxWidth="max-w-md"
-                footer={
-                    <>
-                        <button
-                            onClick={() => setConfirmAction(null)}
-                            className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest transition-colors hover:bg-gray-200 dark:hover:bg-white/10"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={executeAction}
-                            className={`flex-1 py-3 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-all transform hover:-translate-y-0.5 ${confirmAction?.type === 'delete' ? 'bg-red-600 shadow-red-500/20 hover:bg-red-700' : 'bg-emerald-600 shadow-emerald-500/20 hover:bg-emerald-700'}`}
-                        >
-                            Execute
-                        </button>
-                    </>
-                }
-            >
-                <div className={`p-4 rounded-2xl border ${confirmAction?.type === 'delete' ? 'bg-red-500/10 border-red-500/20' : 'bg-emerald-500/10 border-emerald-500/20'}`}>
-                    <p className={`text-sm font-bold text-center ${confirmAction?.type === 'delete' ? 'text-red-500' : 'text-emerald-500'}`}>
-                        {confirmAction?.type === 'delete' ? '⚠️ This action cannot be undone.' : '📅 This will update the challenge date.'}
-                    </p>
-                </div>
-            </Modal>
+                onCancel={() => setConfirmAction(null)}
+                onConfirm={executeAction}
+                title={confirmAction?.type === 'delete' ? 'Delete Daily Challenge' : 'Reschedule Challenge'}
+                message={confirmAction?.type === 'delete' ? 'Are you sure you want to permanently delete this daily challenge?' : 'Do you want to move this challenge to today? This will update the challenge date.'}
+                confirmText={confirmAction?.type === 'delete' ? 'Delete' : 'Move to Today'}
+                cancelText="Cancel"
+                type={confirmAction?.type === 'delete' ? 'danger' : 'info'}
+                showWarningBanner={confirmAction?.type === 'delete'}
+            />
 
             {/* Edit Challenge Modal */}
             {/* Edit Challenge Modal */}

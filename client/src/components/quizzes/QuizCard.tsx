@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Edit2, Trash2, Share2, Play, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { Download, Edit2, Trash2, Share2, Play, RefreshCw, Eye, EyeOff, Check } from 'lucide-react';
 import type { Quiz } from '../../types';
 import { getQuizIconOption } from '../../utils/quizIcons';
 import { useTheme } from '../../context/ThemeContext';
@@ -13,9 +13,22 @@ interface QuizCardProps {
     onPlay?: (quiz: Quiz) => void;
     onHost?: (quiz: Quiz) => void;
     onReplace?: (quiz: Quiz) => void;
+    isSelected?: boolean;
+    onToggleSelect?: (id: string) => void;
 }
 
-const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, onShare, onPlay, onHost, onReplace }) => {
+const QuizCard: React.FC<QuizCardProps> = ({ 
+    quiz, 
+    onExport, 
+    onEdit, 
+    onDelete, 
+    onShare, 
+    onPlay, 
+    onHost, 
+    onReplace,
+    isSelected = false,
+    onToggleSelect
+}) => {
     const { isBento } = useTheme();
     const quizIcon = getQuizIconOption(quiz.icon);
     const QuizIcon = quizIcon.Icon;
@@ -97,14 +110,40 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, onExport, onEdit, onDelete, o
     ].filter(Boolean) as Array<{ label: string; icon?: React.ComponentType<{ className?: string }>; action: () => void; style: string; title: string }>;
 
     return (
-        <div className={`group h-full rounded-[28px] p-5 transition-all duration-200 ${
-            isBento
-                ? 'bg-white text-black border-3 border-black shadow-[5px_5px_0px_#000] hover:shadow-[7px_7px_0px_#000] hover:-translate-y-1'
-                : 'border border-gray-200 bg-white/90 shadow-sm hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 dark:bg-black/20 dark:border-white/5'
+        <div className={`group relative h-full rounded-[28px] p-5 transition-all duration-200 ${
+            isSelected
+                ? isBento
+                    ? 'bg-[#fef9c3] text-black border-3 border-black shadow-[6px_6px_0px_#000] ring-4 ring-[#bef264]'
+                    : 'border-2 border-purple-500 bg-purple-50/50 dark:bg-purple-950/20 shadow-lg shadow-purple-500/10'
+                : isBento
+                    ? 'bg-white text-black border-3 border-black shadow-[5px_5px_0px_#000] hover:shadow-[7px_7px_0px_#000] hover:-translate-y-1'
+                    : 'border border-gray-200 bg-white/90 shadow-sm hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 dark:bg-black/20 dark:border-white/5'
         }`}>
             <div className="flex h-full flex-col">
                 <div className="mb-4 flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-3">
+                        {onToggleSelect && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const qId = quiz.id || quiz._id || '';
+                                    if (qId) onToggleSelect(qId);
+                                }}
+                                aria-label={isSelected ? 'Deselect quiz' : 'Select quiz'}
+                                className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-3 transition-all cursor-pointer ${
+                                    isSelected
+                                        ? isBento
+                                            ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                                            : 'bg-purple-600 text-white shadow-sm'
+                                        : isBento
+                                            ? 'bg-white border-2 border-black hover:bg-gray-100 shadow-[1px_1px_0px_#000]'
+                                            : 'bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 text-transparent hover:border-purple-400'
+                                }`}
+                            >
+                                {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                            </button>
+                        )}
                         <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-transform group-hover:scale-105 ${
                             isBento
                                 ? 'bg-[#bef264] text-black border-2.5 border-black shadow-[3px_3px_0px_#000]'

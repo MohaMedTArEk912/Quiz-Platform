@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Trophy, MoreVertical, Download, Upload, Plus, Edit2, Trash2, BookOpen, X } from 'lucide-react';
 import Modal from '../common/Modal';
+import ConfirmDialog from '../ConfirmDialog';
 import type { Tournament, Quiz, UserData, BadgeDefinition, ShopItem } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 
@@ -403,37 +404,17 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
             </Modal>
 
             {/* Delete Confirmation Modal */}
-            {/* Delete Confirmation Modal */}
-            <Modal
+            <ConfirmDialog
                 isOpen={!!deleteConfirmation}
-                onClose={() => setDeleteConfirmation(null)}
+                onCancel={() => setDeleteConfirmation(null)}
+                onConfirm={confirmDeleteTournament}
                 title="Confirm Deletion"
-                description="Are you sure you want to permanently abolish this tournament? This action is irreversible."
-                icon={<Trash2 className="w-6 h-6 text-red-500" />}
-                maxWidth="max-w-md"
-                footer={
-                    <>
-                        <button
-                            onClick={() => setDeleteConfirmation(null)}
-                            className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest transition-colors hover:bg-gray-200 dark:hover:bg-white/10"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={confirmDeleteTournament}
-                            className="flex-1 py-3 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-red-500/20 transition-all transform hover:-translate-y-0.5 hover:bg-red-700"
-                        >
-                            Abolish
-                        </button>
-                    </>
-                }
-            >
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
-                    <p className="text-red-500 text-sm font-bold text-center">
-                        ⚠️ This action cannot be undone.
-                    </p>
-                </div>
-            </Modal>
+                message="Are you sure you want to permanently abolish this tournament? This action is irreversible."
+                confirmText="Abolish"
+                cancelText="Cancel"
+                type="danger"
+                showWarningBanner={true}
+            />
         </div>
     );
 };

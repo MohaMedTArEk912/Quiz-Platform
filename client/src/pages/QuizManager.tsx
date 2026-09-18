@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MoreVertical, Download, Upload, Plus } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Download, Upload, Plus, CheckSquare, Square, Trash2, Sliders, X } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Quiz, Subject, UserData, Question } from '../types';
 import { DIFFICULTY_LEVELS } from '../constants/quizDefaults';
+import { useTheme } from '../context/ThemeContext';
 
 // Custom Hooks
 import { useQuizzesBySubject } from '../hooks/useQuizzesBySubject';
@@ -20,6 +21,8 @@ import DeleteQuizModal from '../components/quizzes/DeleteQuizModal';
 import ShareQuizModal from '../components/quizzes/ShareQuizModal';
 import ReplaceQuizModal from '../components/quizzes/ReplaceQuizModal';
 import LiveHostMode from '../components/multiplayer/LiveHostMode';
+import ConfirmDialog from '../components/ConfirmDialog';
+import BulkEditQuizzesModal from '../components/quizzes/BulkEditQuizzesModal';
 
 interface QuizManagerProps {
     quizzes: Quiz[];
@@ -30,6 +33,7 @@ interface QuizManagerProps {
 }
 
 const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefresh, onNotification, selectedSubjectId }) => {
+    const { isBento } = useTheme();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -104,6 +108,13 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
     } | null>(null);
     const [isReplacing, setIsReplacing] = useState(false);
     const replaceFileInputRef = useRef<HTMLInputElement>(null);
+
+    // Bulk Selection & Edit States
+    const [selectedQuizIds, setSelectedQuizIds] = useState<string[]>([]);
+    const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
+    const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+    const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
     // Import State
     const [importTargetStackId, setImportTargetStackId] = useState<string | null>(null);
@@ -184,10 +195,11 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
             setSubjects(prev => prev.filter(s => s._id !== subjectToDelete._id));
             setLocalQuizzes(prev => prev.map(q => q.subjectId === subjectToDelete._id ? { ...q, subjectId: undefined } : q));
             onNotification('success', 'Stack deleted successfully');
-            setSubjectToDelete(null);
         } catch (error) {
             console.error('Delete subject error:', error);
             onNotification('error', 'Failed to delete stack');
+        } finally {
+            setSubjectToDelete(null);
         }
     };
 
@@ -247,6 +259,89 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
             onNotification('error', 'Failed to delete quiz');
         } finally {
             setDeleteQuizConfirmation(null);
+        }
+    };
+
+    // Bulk Operation Handlers
+    const handleToggleSelectQuiz = (quizId: string) => {
+        setSelectedQuizIds(prev =>
+            prev.includes(quizId) ? prev.filter(id => id !== quizId) : [...prev, quizId]
+        );
+    };
+
+    const handleSelectAllFiltered = () => {
+        const visibleIds = filteredQuizzes.map(q => q.id || q._id || '').filter(Boolean);
+        const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedQuizIds.includes(id));
+        if (allSelected) {
+            setSelectedQuizIds(prev => prev.filter(id => !visibleIds.includes(id)));
+        } else {
+            setSelectedQuizIds(prev => Array.from(new Set([...prev, ...visibleIds])));
+        }
+    };
+
+    const handleClearSelection = () => {
+        setSelectedQuizIds([]);
+    };
+
+    const confirmBulkDelete = async () => {
+        if (selectedQuizIds.length === 0) return;
+        setIsBulkDeleting(true);
+        try {
+            const results = await Promise.allSettled(
+                selectedQuizIds.map(id => api.deleteQuiz(id, currentUser.userId))
+            );
+            const successfulIds = selectedQuizIds.filter((_, idx) => results[idx].status === 'fulfilled');
+            const failedCount = results.filter(r => r.status === 'rejected').length;
+
+            setLocalQuizzes(prev => prev.filter(q => !successfulIds.includes(q.id || q._id || '')));
+
+            if (failedCount === 0) {
+                onNotification('success', `Successfully deleted ${successfulIds.length} quizzes`);
+            } else {
+                onNotification('warning', `Deleted ${successfulIds.length} quizzes, ${failedCount} failed`);
+            }
+            await Promise.resolve(onRefresh());
+        } catch (error) {
+            console.error('Bulk delete error:', error);
+            onNotification('error', 'An error occurred during bulk deletion');
+        } finally {
+            setIsBulkDeleting(false);
+            setIsBulkDeleteOpen(false);
+            setSelectedQuizIds([]);
+        }
+    };
+
+    const handleBulkApplyUpdates = async (updates: Partial<Quiz>) => {
+        if (selectedQuizIds.length === 0) return;
+        setIsBulkUpdating(true);
+        try {
+            const results = await Promise.allSettled(
+                selectedQuizIds.map(id => api.updateQuiz(id, updates, currentUser.userId))
+            );
+            const successfulIds = selectedQuizIds.filter((_, idx) => results[idx].status === 'fulfilled');
+            const failedCount = results.filter(r => r.status === 'rejected').length;
+
+            setLocalQuizzes(prev => prev.map(q => {
+                const qId = q.id || q._id || '';
+                if (successfulIds.includes(qId)) {
+                    return { ...q, ...updates };
+                }
+                return q;
+            }));
+
+            if (failedCount === 0) {
+                onNotification('success', `Successfully updated ${successfulIds.length} quizzes`);
+            } else {
+                onNotification('warning', `Updated ${successfulIds.length} quizzes, ${failedCount} failed`);
+            }
+            await Promise.resolve(onRefresh());
+        } catch (error) {
+            console.error('Bulk update error:', error);
+            onNotification('error', 'An error occurred during bulk update');
+        } finally {
+            setIsBulkUpdating(false);
+            setIsBulkEditOpen(false);
+            setSelectedQuizIds([]);
         }
     };
 
@@ -650,6 +745,90 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                 </div>
             )}
 
+            {/* Bulk Selection Bar */}
+            {viewMode === 'list' && (
+                <div className={`flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl transition-all ${
+                    isBento
+                        ? 'bg-white border-2 border-black shadow-[3px_3px_0px_#000]'
+                        : 'bg-white/70 dark:bg-white/5 border border-gray-200 dark:border-white/10 shadow-sm'
+                }`}>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <button
+                            type="button"
+                            onClick={handleSelectAllFiltered}
+                            className={`px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-gray-50 active:translate-x-0.5 active:translate-y-0.5'
+                                    : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
+                            }`}
+                        >
+                            {(() => {
+                                const visibleIds = filteredQuizzes.map(q => q.id || q._id || '').filter(Boolean);
+                                const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedQuizIds.includes(id));
+                                return (
+                                    <>
+                                        {allSelected ? <CheckSquare className="w-4 h-4 text-purple-600 dark:text-purple-400" /> : <Square className="w-4 h-4 text-gray-400" />}
+                                        <span>{allSelected ? 'Deselect All' : 'Select All'}</span>
+                                    </>
+                                );
+                            })()}
+                        </button>
+                        {selectedQuizIds.length > 0 && (
+                            <span className={`px-2.5 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
+                                isBento
+                                    ? 'bg-[#fef08a] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                                    : 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300'
+                            }`}>
+                                {selectedQuizIds.length} Selected
+                            </span>
+                        )}
+                    </div>
+
+                    {selectedQuizIds.length > 0 && (
+                        <div className="flex items-center gap-2 animate-in fade-in duration-200">
+                            <button
+                                type="button"
+                                onClick={() => setIsBulkEditOpen(true)}
+                                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                                    isBento
+                                        ? 'bg-[#bef264] text-black border-2 border-black shadow-[2.5px_2.5px_0px_#000] hover:shadow-[3.5px_3.5px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
+                                        : 'bg-purple-600 hover:bg-purple-500 text-white shadow-md'
+                                }`}
+                            >
+                                <Sliders className="w-4 h-4" />
+                                <span>Bulk Edit ({selectedQuizIds.length})</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsBulkDeleteOpen(true)}
+                                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                                    isBento
+                                        ? 'bg-[#ff6b6b] text-black border-2 border-black shadow-[2.5px_2.5px_0px_#000] hover:shadow-[3.5px_3.5px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
+                                        : 'bg-red-600 hover:bg-red-500 text-white shadow-md'
+                                }`}
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                <span>Delete ({selectedQuizIds.length})</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleClearSelection}
+                                aria-label="Clear selection"
+                                className={`p-2 rounded-xl transition-all cursor-pointer ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000] hover:bg-gray-100'
+                                        : 'bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                                }`}
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Content */}
             {viewMode === 'stacks' ? (
                 <StackGrid
@@ -676,6 +855,8 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                     onDelete={(id) => setDeleteQuizConfirmation({ isOpen: true, id })}
                     onShare={setSharingQuiz}
                     onCreateFirstQuiz={() => setEditingQuiz(getEmptyQuiz())}
+                    selectedQuizIds={selectedQuizIds}
+                    onToggleSelect={handleToggleSelectQuiz}
                 />
             )}
 
@@ -736,6 +917,30 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                 isOpen={!!deleteQuizConfirmation}
                 onClose={() => setDeleteQuizConfirmation(null)}
                 onDelete={confirmDeleteQuiz}
+            />
+
+            {/* Bulk Edit Modal */}
+            <BulkEditQuizzesModal
+                isOpen={isBulkEditOpen}
+                onClose={() => setIsBulkEditOpen(false)}
+                selectedCount={selectedQuizIds.length}
+                subjects={subjects}
+                onApply={handleBulkApplyUpdates}
+                isLoading={isBulkUpdating}
+            />
+
+            {/* Bulk Delete Confirm Dialog */}
+            <ConfirmDialog
+                isOpen={isBulkDeleteOpen}
+                onCancel={() => setIsBulkDeleteOpen(false)}
+                onConfirm={confirmBulkDelete}
+                title={`Delete ${selectedQuizIds.length} Quizzes?`}
+                message={`Are you sure you want to permanently delete these ${selectedQuizIds.length} selected quizzes? All their questions, student attempts, and associated data will be removed.`}
+                confirmText={`Delete ${selectedQuizIds.length} Quizzes`}
+                cancelText="Cancel"
+                type="danger"
+                isLoading={isBulkDeleting}
+                showWarningBanner={true}
             />
 
             <ShareQuizModal
