@@ -83,7 +83,7 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
 
     const loadQuizzes = useCallback(async () => {
         try {
-            const quizArray = await api.getQuizzes();
+            const quizArray = await api.getQuizzes(undefined, true);
             setAllQuizzes(quizArray);
             if (selectedRoad) {
                 setQuizzes(quizArray.filter((q: Quiz) => q.subjectId === selectedRoad._id));
@@ -97,8 +97,19 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
     useEffect(() => {
         if (currentUser?.userId) {
             loadRoads();
+            loadQuizzes();
         }
-    }, [currentUser?.userId, loadRoads]);
+    }, [currentUser?.userId, loadRoads, loadQuizzes]);
+
+    const quizCounts = React.useMemo(() => {
+        const counts: Record<string, number> = {};
+        for (const q of allQuizzes) {
+            if (q.subjectId) {
+                counts[q.subjectId] = (counts[q.subjectId] || 0) + 1;
+            }
+        }
+        return counts;
+    }, [allQuizzes]);
 
     const handleExportBundle = async (subjectId?: string) => {
         setIsExporting(true);
@@ -334,7 +345,16 @@ const RoadManager: React.FC<RoadManagerProps> = ({ currentUser, onNotification }
                     <RoadList
                         isLoading={isLoading}
                         roads={roads}
+                        quizCounts={quizCounts}
                         onSelectRoad={handleSelectRoad}
+                        onEditRoad={(road) => {
+                            setRoadToEdit(road);
+                            setIsEditModalOpen(true);
+                        }}
+                        onDeleteRoad={(road) => {
+                            setRoadToDelete(road);
+                            setIsDeleteModalOpen(true);
+                        }}
                         onExportRoad={(road) => handleExportBundle(road._id)}
                     />
                 </div>
