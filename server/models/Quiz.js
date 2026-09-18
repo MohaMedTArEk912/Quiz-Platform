@@ -2,16 +2,27 @@ import mongoose from 'mongoose';
 
 const questionSchema = new mongoose.Schema({
   id: { type: Number, required: true },
-  type: { type: String, enum: ['multiple-choice', 'text'], default: 'multiple-choice' },
-  part: { type: String, required: true },
+  type: { 
+    type: String, 
+    enum: ['multiple-choice', 'text', 'code-output', 'ordering', 'matching', 'compiler', 'block'], 
+    default: 'multiple-choice' 
+  },
+  part: { type: String, default: 'A' },
   question: { type: String, required: true },
   options: { type: [String], default: [] },
-  correctAnswer: { type: Number }, // For text/block/compiler this might be unused or used differently
+  correctAnswer: { type: mongoose.Schema.Types.Mixed }, // Supports Number, String, Array (ordering), or Object (matching)
   explanation: { type: String, default: '' },
   points: { type: Number, default: 1 },
   imageUrl: { type: String },
   codeSnippet: { type: String },
   audioUrl: { type: String },
+  videoUrl: { type: String },
+  videoTimestamp: { type: Number },
+  orderingItems: { type: [String], default: [] },
+  matchingPairs: [{
+    left: { type: String },
+    right: { type: String }
+  }],
 
   // New features
   isBlock: { type: Boolean, default: false },
@@ -25,7 +36,12 @@ const questionSchema = new mongoose.Schema({
     language: { type: String, default: 'javascript' },
     allowedLanguages: { type: [String], default: ['javascript'] },
     initialCode: { type: String },
-    referenceCode: { type: String }
+    referenceCode: { type: String },
+    testCases: [{
+      input: { type: String },
+      expectedOutput: { type: String },
+      isHidden: { type: Boolean, default: false }
+    }]
   },
   shuffleOptions: { type: Boolean, default: true }
 });

@@ -24,7 +24,8 @@ import type {
     QuestionAnalyticsItem,
     DetailedAttemptData,
     CohortAnalyticsResponse,
-    LiveProctoringResponse
+    LiveProctoringResponse,
+    SupportTicket
 } from '../types';
 import { fetchWithFallback } from './apiRetry';
 
@@ -54,12 +55,13 @@ export type {
     LiveProctoringResponse,
     QuestionAnalyticsResponse,
     QuestionAnalyticsItem,
-    DetailedAttemptData
+    DetailedAttemptData,
+    SupportTicket
 };
 
 const getStoredToken = () => {
     try {
-        const session = sessionStorage.getItem('userSession');
+        const session = sessionStorage.getItem('userSession') || localStorage.getItem('userSession');
         if (!session) return null;
         const parsed = JSON.parse(session);
         return parsed.token ?? null;
@@ -283,7 +285,10 @@ export const api = {
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to import quizzes');
+            const detailedMessage = Array.isArray(error.errors) && error.errors.length > 0
+                ? `${error.message || 'Failed to import quizzes'}: ${error.errors.join(', ')}`
+                : (error.message || 'Failed to import quizzes');
+            throw new Error(detailedMessage);
         }
         return response.json();
     },
@@ -1600,11 +1605,18 @@ export const api = {
 
     // Notifications API
     async getNotifications(limit?: number): Promise<{ success: boolean; notifications: AppNotification[] }> {
+        const token = getStoredToken();
+        if (!token) {
+            return { success: true, notifications: [] };
+        }
         const url = limit ? `/notifications?limit=${limit}` : '/notifications';
         const response = await fetchWithFallback(url, {
             headers: getHeaders()
         });
         if (!response.ok) {
+            if (response.status === 401) {
+                return { success: true, notifications: [] };
+            }
             const error = await response.json().catch(() => ({}));
             throw new Error(error.message || 'Failed to fetch notifications');
         }
@@ -1612,6 +1624,10 @@ export const api = {
     },
 
     async getUnreadNotificationCount(): Promise<{ success: boolean; count: number }> {
+        const token = getStoredToken();
+        if (!token) {
+            return { success: true, count: 0 };
+        }
         const response = await fetchWithFallback('/notifications/unread-count', {
             headers: getHeaders()
         });
@@ -1802,7 +1818,7 @@ export const api = {
         return response.json();
     },
 
-    async getMySupportTickets(): Promise<{ success: boolean; tickets: any[] }> {
+    async getMySupportTickets(): Promise<{ success: boolean; tickets: SupportTicket[] }> {
         const response = await fetchWithFallback('/support/my-tickets', {
             headers: getHeaders()
         });

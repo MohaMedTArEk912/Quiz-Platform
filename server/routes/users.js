@@ -7,7 +7,7 @@ const router = express.Router();
 router.put('/users/:userId', verifyUser, userController.updateUser);
 
 router.delete('/users/:userId', verifyAdmin, userController.deleteUser);
-router.get('/leaderboard', userController.getPublicLeaderboard);
+router.get(['/leaderboard', '/users/leaderboard'], userController.getPublicLeaderboard);
 router.get('/user/data', verifyUser, userController.getUserData);
 router.get('/users/search', verifyUser, userController.searchUsers);
 router.post('/friends/request', verifyUser, userController.sendFriendRequest);

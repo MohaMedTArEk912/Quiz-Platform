@@ -857,6 +857,23 @@ export interface LiveProctoringResponse {
     sessions: LiveProctoringSession[];
 }
 
+export interface SupportTicket {
+    _id?: string;
+    ticketId: string;
+    email: string;
+    name?: string;
+    subject: string;
+    category?: 'technical' | 'bug' | 'scoring' | 'account' | 'feature' | 'general' | string;
+    message: string;
+    userId?: string;
+    status: 'open' | 'in_progress' | 'resolved' | 'closed';
+    emailDeliveryStatus?: 'sent' | 'failed' | 'simulated';
+    emailDeliveryError?: string;
+    emailDeliveryMessageId?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
 declare global {
     interface Window {
         __pendingChallengeCallback?: (quizId: string, quizTitle: string) => void;

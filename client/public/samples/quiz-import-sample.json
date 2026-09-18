@@ -1,5 +1,6 @@
 [
   {
+    "id": "sample-advanced-mastery",
     "title": "Full-Featured Advanced Mastery Assessment",
     "description": "Comprehensive evaluation covering all supported question types, LaTeX math notation, code execution snippets, media lectures, and proctoring controls.",
     "category": "Computer Science",
@@ -20,6 +21,7 @@
     "questions": [
       {
         "id": "q1_mcq_math",
+        "question": "What is the tight asymptotic upper bound of binary search on a sorted array of size $N$, and what is $\\lim_{N \\to \\infty} \\frac{\\log_2 N}{N}$?",
         "text": "What is the tight asymptotic upper bound of binary search on a sorted array of size $N$, and what is $\\lim_{N \\to \\infty} \\frac{\\log_2 N}{N}$?",
         "type": "multiple-choice",
         "points": 10,
@@ -36,6 +38,7 @@
       },
       {
         "id": "q2_code_output",
+        "question": "Predict the exact terminal output when executing this Python snippet:",
         "text": "Predict the exact terminal output when executing this Python snippet:",
         "type": "code-output",
         "points": 15,
@@ -45,6 +48,7 @@
       },
       {
         "id": "q3_text_fill",
+        "question": "In Python, which built-in function returns the total number of items in a list, string, or dictionary?",
         "text": "In Python, which built-in function returns the total number of items in a list, string, or dictionary?",
         "type": "text",
         "points": 10,
@@ -53,6 +57,7 @@
       },
       {
         "id": "q4_ordering",
+        "question": "Sort the OSI reference model layers from lowest physical abstraction (Layer 1) to highest application layer (Layer 7):",
         "text": "Sort the OSI reference model layers from lowest physical abstraction (Layer 1) to highest application layer (Layer 7):",
         "type": "ordering",
         "points": 20,
@@ -67,6 +72,7 @@
       },
       {
         "id": "q5_matching",
+        "question": "Match each HTTP response status code with its standard semantic classification:",
         "text": "Match each HTTP response status code with its standard semantic classification:",
         "type": "matching",
         "points": 20,
@@ -80,6 +86,7 @@
       },
       {
         "id": "q6_compiler",
+        "question": "Implement a function `sum_evens(nums)` that returns the cumulative sum of all even integers in the provided array.",
         "text": "Implement a function `sum_evens(nums)` that returns the cumulative sum of all even integers in the provided array.",
         "type": "multiple-choice",
         "points": 25,
@@ -98,6 +105,7 @@
       },
       {
         "id": "q7_video_lecture",
+        "question": "Watch the lecture segment and identify what fundamental property distinguishes asynchronous I/O from synchronous blocking I/O:",
         "text": "Watch the lecture segment and identify what fundamental property distinguishes asynchronous I/O from synchronous blocking I/O:",
         "type": "multiple-choice",
         "points": 15,

@@ -13,6 +13,7 @@ interface ModalProps {
     footer?: React.ReactNode;
     icon?: React.ReactNode;
     bodyClassName?: string;
+    iconContainerClassName?: string;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -24,7 +25,8 @@ const Modal: React.FC<ModalProps> = ({
     maxWidth = 'max-w-2xl',
     footer,
     icon,
-    bodyClassName
+    bodyClassName,
+    iconContainerClassName
 }) => {
     const { isBento } = useTheme();
 

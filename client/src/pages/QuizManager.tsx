@@ -448,6 +448,28 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                 });
             }
 
+            // Pre-sanitize imported quizzes to guarantee IDs and question text fields
+            allQuizzes.forEach((quiz) => {
+                if (!quiz.id && quiz.title) {
+                    const slug = String(quiz.title)
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/(^-|-$)/g, '')
+                        .slice(0, 40);
+                    quiz.id = `${slug || 'quiz'}-${crypto.randomUUID().slice(0, 8)}`;
+                }
+                if (Array.isArray(quiz.questions)) {
+                    // Normalize any question text/id structures
+                    quiz.questions = quiz.questions.map((q: Partial<Question> & { text?: string }, idx: number) => ({
+                        ...q,
+                        id: Number.isFinite(Number(q.id)) ? Number(q.id) : idx + 1,
+                        question: q.question || q.text || `Question ${idx + 1}`,
+                        part: q.part || 'A',
+                        points: Number.isFinite(Number(q.points)) ? Number(q.points) : 10
+                    })) as Question[];
+                }
+            });
+
             const result = await api.importQuizzes(allQuizzes, currentUser.userId);
 
             // Optimistically upsert imported quizzes so the current view updates immediately.
@@ -475,7 +497,8 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
             await loadSubjects();
         } catch (error) {
             console.error('Import error:', error);
-            onNotification('error', 'Failed to import quizzes.');
+            const errorMessage = error instanceof Error ? error.message : 'Failed to import quizzes.';
+            onNotification('error', errorMessage);
         } finally {
             setIsImporting(false);
             event.target.value = '';

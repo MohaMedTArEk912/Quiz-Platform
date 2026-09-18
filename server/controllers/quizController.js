@@ -3,6 +3,7 @@ import { QuestionPoolProgress } from '../models/QuestionPoolProgress.js';
 import { createAndSendNotification } from './notificationController.js';
 import { readdir, readFile } from 'fs/promises';
 import path from 'path';
+import crypto from 'crypto';
 
 const loadStaticQuizzes = async () => {
   const quizzesDir = path.join(process.cwd(), 'public', 'quizzes');
@@ -43,11 +44,16 @@ const loadStaticQuizzes = async () => {
  */
 export const sanitizeQuestions = (questions, quizId = 'unknown') => {
   if (!questions || !Array.isArray(questions)) {
-    return questions;
+    return [];
   }
 
   return questions.map((rawQuestion, index) => {
-    const question = (rawQuestion && typeof rawQuestion === 'object') ? rawQuestion : {};
+    const question = (rawQuestion && typeof rawQuestion === 'object') ? { ...rawQuestion } : {};
+
+    // Support both 'question' and 'text' fields
+    if (!question.question && question.text) {
+      question.question = question.text;
+    }
 
     // Sanitize question text (preserve line breaks, remove excessive whitespace)
     if (typeof question.question === 'string') {
@@ -58,6 +64,8 @@ export const sanitizeQuestions = (questions, quizId = 'unknown') => {
         .trim();
     } else if (question.question !== undefined && question.question !== null) {
       question.question = String(question.question).trim();
+    } else {
+      question.question = `Question ${index + 1}`;
     }
 
     // Validate image URL if provided
@@ -75,13 +83,52 @@ export const sanitizeQuestions = (questions, quizId = 'unknown') => {
     }
 
     // Ensure required fields
-    if (!Number.isFinite(question.id)) question.id = index + 1;
+    if (!Number.isFinite(question.id)) {
+      const parsedId = Number(question.id);
+      question.id = Number.isFinite(parsedId) ? parsedId : index + 1;
+    }
     if (!question.part || typeof question.part !== 'string') question.part = 'A';
     if (!Number.isFinite(question.points)) question.points = 10;
+    if (typeof question.explanation !== 'string') question.explanation = question.explanation ? String(question.explanation) : '';
+
+    // Normalize question type
+    const validTypes = ['multiple-choice', 'text', 'code-output', 'ordering', 'matching', 'compiler', 'block'];
+    if (!question.type || !validTypes.includes(question.type)) {
+      if (question.matchingPairs && Array.isArray(question.matchingPairs) && question.matchingPairs.length > 0) {
+        question.type = 'matching';
+      } else if (question.orderingItems && Array.isArray(question.orderingItems) && question.orderingItems.length > 0) {
+        question.type = 'ordering';
+      } else if (question.isCompiler || question.compilerConfig) {
+        question.type = 'compiler';
+      } else if (question.isBlock || question.blockConfig) {
+        question.type = 'block';
+      } else if (question.codeSnippet && (!question.options || question.options.length === 0)) {
+        question.type = 'code-output';
+      } else {
+        question.type = 'multiple-choice';
+      }
+    }
 
     // Normalize options to strings when present
     if (question.options && Array.isArray(question.options)) {
       question.options = question.options.map(opt => (typeof opt === 'string' ? opt : String(opt)));
+    } else if (question.type === 'multiple-choice') {
+      question.options = [];
+    }
+
+    // Normalize orderingItems
+    if (question.orderingItems && Array.isArray(question.orderingItems)) {
+      question.orderingItems = question.orderingItems.map(item => (typeof item === 'string' ? item : String(item)));
+    }
+
+    // Normalize matchingPairs
+    if (question.matchingPairs && Array.isArray(question.matchingPairs)) {
+      question.matchingPairs = question.matchingPairs
+        .filter(p => p && typeof p === 'object')
+        .map(p => ({
+          left: p.left !== undefined ? String(p.left) : '',
+          right: p.right !== undefined ? String(p.right) : ''
+        }));
     }
 
     // Auto-detect non-shuffleable patterns
@@ -186,8 +233,18 @@ export const getQuizzes = async (req, res) => {
 
 export const createQuiz = async (req, res) => {
   try {
-    const quizData = req.body;
+    const quizData = { ...req.body };
     
+    // Auto-generate ID if missing
+    if (!quizData.id && quizData.title) {
+      const slug = String(quizData.title)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .substring(0, 40);
+      quizData.id = `${slug || 'quiz'}-${crypto.randomBytes(3).toString('hex')}`;
+    }
+
     // Check for duplicate ID
     const existing = await Quiz.findOne({ id: quizData.id });
     if (existing) {
@@ -227,7 +284,7 @@ export const importQuizzes = async (req, res) => {
     
     // Support single quiz import by wrapping in array
     if (!Array.isArray(quizzes)) {
-      if (typeof quizzes === 'object' && quizzes !== null && quizzes.id) {
+      if (typeof quizzes === 'object' && quizzes !== null && (quizzes.id || quizzes.title)) {
         quizzes = [quizzes];
       } else {
         return res.status(400).json({ message: 'Expected an array of quizzes or a valid quiz object' });
@@ -237,16 +294,51 @@ export const importQuizzes = async (req, res) => {
     const results = [];
     const errors = [];
     
-    for (const quiz of quizzes) {
-      if (!quiz.id || !quiz.title) {
-         errors.push(`Skipped invalid quiz: ${JSON.stringify(quiz).substring(0, 50)}...`);
-         continue;
+    for (let i = 0; i < quizzes.length; i++) {
+      let quiz = quizzes[i];
+      if (!quiz || typeof quiz !== 'object') {
+        errors.push(`Quiz at index ${i} is not a valid object.`);
+        continue;
+      }
+
+      if (!quiz.title) {
+        errors.push(`Quiz at index ${i} is missing a title: ${JSON.stringify(quiz).substring(0, 50)}...`);
+        continue;
+      }
+
+      // Generate id if missing
+      if (!quiz.id) {
+        const slug = String(quiz.title)
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '')
+          .substring(0, 40);
+        quiz.id = `${slug || 'quiz'}-${crypto.randomBytes(3).toString('hex')}`;
       }
       
       try {
+        // Clone to avoid mutating raw input
+        quiz = { ...quiz };
+
+        // Normalize default fields
+        quiz.category = quiz.category || 'General';
+        quiz.difficulty = quiz.difficulty || 'medium';
+        quiz.description = quiz.description || quiz.title || 'Imported quiz';
+        quiz.timeLimit = Number.isFinite(Number(quiz.timeLimit)) ? Number(quiz.timeLimit) : 15;
+        quiz.passingScore = Number.isFinite(Number(quiz.passingScore)) ? Number(quiz.passingScore) : 70;
+        quiz.coinsReward = Number.isFinite(Number(quiz.coinsReward)) 
+          ? Number(quiz.coinsReward) 
+          : (Number.isFinite(Number(quiz.coinReward)) ? Number(quiz.coinReward) : 10);
+        quiz.xpReward = Number.isFinite(Number(quiz.xpReward)) ? Number(quiz.xpReward) : 50;
+        quiz.quizType = quiz.quizType || (quiz.isQuestionPool ? 'pool' : 'quiz');
+        quiz.questionsPerAttempt = Number.isFinite(Number(quiz.questionsPerAttempt)) ? Number(quiz.questionsPerAttempt) : 10;
+        quiz.shuffleQuestions = quiz.shuffleQuestions !== false;
+
         // Validate and sanitize questions before import
         if (quiz.questions && Array.isArray(quiz.questions)) {
           quiz.questions = sanitizeQuestions(quiz.questions, quiz.id);
+        } else {
+          quiz.questions = [];
         }
 
         // Remove _id to avoid CastError if it's not a valid ObjectId
@@ -262,7 +354,7 @@ export const importQuizzes = async (req, res) => {
         results.push(updated);
         console.log(`✅ Imported/Updated quiz: ${quiz.title} (${quiz.id})`);
       } catch (err) {
-        errors.push(`Error importing quiz ${quiz.id}: ${err.message}`);
+        errors.push(`Error importing quiz "${quiz.title || quiz.id}": ${err.message}`);
       }
     }
     
@@ -283,7 +375,7 @@ export const importQuizzes = async (req, res) => {
     }
 
     res.json({ 
-        message: `Imported ${results.length} quizzes successfully`, 
+        message: `Imported ${results.length} quiz${results.length !== 1 ? 'zes' : ''} successfully`, 
         count: results.length,
         errors: errors.length > 0 ? errors : undefined
     });

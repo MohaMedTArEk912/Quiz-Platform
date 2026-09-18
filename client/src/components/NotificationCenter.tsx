@@ -38,7 +38,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     const navigate = useNavigate();
 
     const fetchNotifications = useCallback(async () => {
-        if (!currentUser?.userId) return;
+        if (!currentUser?.userId || currentUser.userId === 'guest') return;
         try {
             const [notifRes, countRes] = await Promise.all([
                 api.getNotifications(50).catch(() => ({ success: true, notifications: [] })),
