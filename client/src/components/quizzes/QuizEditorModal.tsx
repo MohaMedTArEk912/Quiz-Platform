@@ -582,7 +582,6 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                         }`}>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-base">📦</span>
                                     <span className="text-sm font-black uppercase text-black tracking-wider">Question Bank Configuration</span>
                                 </div>
                                 <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white border border-black shadow-[1px_1px_0px_#000] text-black">

@@ -106,8 +106,16 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
         return getPairColorIndex(foundEntry[0]);
     };
 
+    const connectedPairs = Object.entries(matches).map(([left, right]) => ({
+        leftIndex: leftItems.indexOf(left),
+        rightIndex: shuffledRightItems.indexOf(right),
+        colorIndex: getPairColorIndex(left) ?? 0
+    }));
+    const allPairsConnected = pairs.length > 0 && connectedPairs.length === pairs.length;
+    const allPairsCorrect = allPairsConnected && pairs.every(pair => matches[pair.left] === pair.right);
+
     return (
-        <div className="space-y-4 w-full">
+        <div className="space-y-4 w-full md:min-w-[640px]">
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className={`text-xs font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-gray-400'}`}>
                     Match each term on the left with its corresponding definition on the right:
@@ -127,9 +135,29 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
                 )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {submitted && (
+                <div className={`flex items-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-black ${
+                    allPairsCorrect
+                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                        : 'border-rose-500 bg-rose-500/10 text-rose-700 dark:text-rose-300'
+                }`} role="status">
+                    {allPairsCorrect ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                    {allPairsCorrect ? 'All matches are correct!' : 'Some matches are incorrect. Review the highlighted links.'}
+                </div>
+            )}
+
+            <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-28">
+                <svg className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full md:block" aria-hidden="true" preserveAspectRatio="none">
+                    {connectedPairs.map(({ leftIndex, rightIndex, colorIndex }) => {
+                        const rowHeight = 72;
+                        const y1 = 52 + leftIndex * rowHeight;
+                        const y2 = 52 + rightIndex * rowHeight;
+                        const color = isBento ? ['#854d0e', '#3f6212', '#0369a1', '#6d28d9', '#9d174d', '#0e7490'][colorIndex % 6] : ['#6366f1', '#a855f7', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'][colorIndex % 6];
+                        return <path key={`${leftIndex}-${rightIndex}`} d={`M 47% ${y1} C 50% ${y1}, 50% ${y2}, 53% ${y2}`} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" />;
+                    })}
+                </svg>
                 {/* LEFT COLUMN: TERMS */}
-                <div className="space-y-2">
+                <div className="relative z-10 space-y-2">
                     <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isBento ? 'text-black' : 'text-indigo-500'}`}>
                         Column A (Select to link)
                     </div>
@@ -155,7 +183,7 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
                             <div
                                 key={idx}
                                 onClick={() => handleLeftClick(left)}
-                                className={`p-4 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 ${cardStyle}`}
+                                className={`min-h-[64px] p-4 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 ${cardStyle}`}
                             >
                                 <div className="text-sm font-bold truncate">
                                     <MathRenderer text={left} />
@@ -195,7 +223,7 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
                 </div>
 
                 {/* RIGHT COLUMN: DEFINITIONS */}
-                <div className="space-y-2">
+                <div className="relative z-10 space-y-2">
                     <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isBento ? 'text-black' : 'text-purple-500'}`}>
                         Column B (Select to connect)
                     </div>
@@ -218,7 +246,7 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
                             <div
                                 key={idx}
                                 onClick={() => handleRightClick(right)}
-                                className={`p-4 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 ${rightCardStyle}`}
+                                className={`min-h-[64px] p-4 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 ${rightCardStyle}`}
                             >
                                 <div className="text-sm font-medium leading-relaxed">
                                     <MathRenderer text={right} />

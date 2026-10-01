@@ -1568,7 +1568,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                                         ? 'bg-blue-100 text-blue-950 border-2 border-black font-black'
                                                                         : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20'
                                                                 }`}>
-                                                                    <span>📦</span> {poolStatus.totalQuestions} Pool ({poolStatus.questionsPerAttempt}/att)
+                                                                    {poolStatus.totalQuestions} Pool ({poolStatus.questionsPerAttempt}/att)
                                                                 </span>
                                                             ) : (
                                                                 <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
@@ -1599,7 +1599,6 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                             }`}>
                                                                 <div className="flex items-center justify-between mb-2">
                                                                     <div className="flex items-center gap-1.5">
-                                                                        <span className="text-xs">📦</span>
                                                                         <span className={`text-[10px] font-black uppercase tracking-widest ${isBento ? 'text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                                                                             Pool Progress
                                                                         </span>
@@ -1883,7 +1882,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                                          ? 'bg-orange-100 text-orange-950 border-2 border-black font-black'
                                                                          : 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/20'
                                                                  }`}>
-                                                                     <span>📦</span> {poolStatus.totalQuestions} Pool ({poolStatus.questionsPerAttempt}/att)
+                                                                     {poolStatus.totalQuestions} Pool ({poolStatus.questionsPerAttempt}/att)
                                                                  </span>
                                                              ) : (
                                                                 <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
@@ -1914,7 +1913,6 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                              }`}>
                                                                  <div className="flex items-center justify-between mb-2">
                                                                      <div className="flex items-center gap-1.5">
-                                                                         <span className="text-xs">📦</span>
                                                                          <span className={`text-[10px] font-black uppercase tracking-widest ${isBento ? 'text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                                                                              Pool Progress
                                                                          </span>

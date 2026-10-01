@@ -341,7 +341,7 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({ currentUser
                             >
                                 <option value="">No Item Reward</option>
                                 {shopItems.map(item => (
-                                    <option key={item.itemId} value={item.itemId}>📦 {item.name}</option>
+                                    <option key={item.itemId} value={item.itemId}>{item.name}</option>
                                 ))}
                             </select>
                         </div>

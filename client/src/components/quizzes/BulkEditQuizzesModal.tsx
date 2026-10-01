@@ -288,7 +288,7 @@ const BulkEditQuizzesModal: React.FC<BulkEditQuizzesModalProps> = ({
                             {[
                                 { id: 'quiz', label: 'Standard Quiz', icon: '📝', desc: 'Fixed full questions' },
                                 { id: 'exam', label: 'Exam Mode', icon: '🎓', desc: 'Rigorous assessment' },
-                                { id: 'pool', label: 'Question Bank', icon: '📦', desc: 'Random pooled sets' }
+                                { id: 'pool', label: 'Question Bank', desc: 'Random pooled sets' }
                             ].map(option => (
                                 <button
                                     key={option.id}

@@ -622,7 +622,7 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
                                                                     {poolStatus.isPool ? (
                                                                         <>
                                                                             <span className={`font-semibold ${poolStatus.isFullyCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}`}>
-                                                                                📦 {poolStatus.isFullyCompleted ? `Bank Mastered (${poolStatus.totalQuestions} Qs)` : `${poolStatus.seenCount}/${poolStatus.totalQuestions} Qs (${poolStatus.percentage}%)`}
+                                                                                {poolStatus.isFullyCompleted ? `Bank Mastered (${poolStatus.totalQuestions} Qs)` : `${poolStatus.seenCount}/${poolStatus.totalQuestions} Qs (${poolStatus.percentage}%)`}
                                                                             </span>
                                                                             {poolStatus.isFullyCompleted ? (
                                                                                 <span className="text-emerald-500 font-bold">

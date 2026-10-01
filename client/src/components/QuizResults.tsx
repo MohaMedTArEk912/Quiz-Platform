@@ -249,10 +249,12 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
             </header>
 
             {/* HORIZONTAL SPLIT LAYOUT */}
-            <div className="flex-1 flex flex-col lg:flex-row w-full overflow-y-auto lg:overflow-hidden z-10">
+            <div className={`flex-1 flex flex-col lg:flex-row lg:items-start w-full overflow-y-auto z-10 ${
+                isBento ? 'border-2 border-black' : 'border border-slate-200/80 dark:border-white/10'
+            }`}>
                 
                 {/* LEFT SIDE: Big Score Gauge */}
-                <div className={`w-full lg:w-1/2 flex-none lg:flex-1 h-auto lg:h-full flex flex-col items-center justify-center p-8 py-12 lg:p-12 relative overflow-hidden ${
+                <div className={`w-full lg:w-1/2 flex-none lg:flex-1 h-auto lg:h-auto self-start flex flex-col items-center justify-center p-8 py-12 lg:p-12 relative overflow-visible ${
                     isBento
                         ? 'bg-[#f8fafc] border-b-3 lg:border-b-0 lg:border-r-3 border-black'
                         : 'bg-white/70 dark:bg-white/[0.02] backdrop-blur-xl border-b lg:border-b-0 lg:border-r border-slate-200/80 dark:border-white/[0.06]'
@@ -307,7 +309,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
 
 
                 {/* --- RIGHT SIDE: Detailed Stats & Actions --- */}
-                <div className={`w-full lg:w-1/2 flex-none lg:flex-1 h-auto lg:h-full flex flex-col overflow-visible lg:overflow-y-auto no-scrollbar relative p-8 landscape:p-6 lg:p-16 transition-all ${
+                <div className={`w-full lg:w-1/2 flex-none lg:flex-1 h-auto lg:h-auto self-start flex flex-col overflow-visible relative p-8 landscape:p-6 lg:p-16 transition-all ${
                     isBento ? 'bg-[#f8fafc]' : 'bg-transparent lg:bg-white/40 dark:bg-[#0b0f19]'
                 }`}>
                     
@@ -339,7 +341,6 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                             }`}>
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xl">📦</span>
                                         <span className={`text-xs font-black uppercase tracking-widest ${isBento ? 'text-black' : 'text-blue-700 dark:text-blue-300'}`}>Question Bank Progress</span>
                                     </div>
                                     <span className={`text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${

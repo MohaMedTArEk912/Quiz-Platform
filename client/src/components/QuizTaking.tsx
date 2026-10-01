@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
-import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins, Keyboard, WifiOff, Bot, Globe } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins, Keyboard, WifiOff, Bot, Globe, List, Flag } from 'lucide-react';
 import type { Quiz, Question, UserData, QuizResult, AttemptAnswers, PoolProgressData, IntegrityTelemetry, IntegrityTelemetryEvent } from '../types';
 import { api } from '../lib/api';
 import { AmbientBackground } from './AmbientBackground';
@@ -258,6 +258,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     const [isCurrentAnswerCorrect, setIsCurrentAnswerCorrect] = useState(false);
     const [submittedQuestions, setSubmittedQuestions] = useState<Record<number, boolean>>({});
     const [questionCorrectness, setQuestionCorrectness] = useState<Record<number, boolean>>({});
+    const [flaggedQuestions, setFlaggedQuestions] = useState<Record<number, boolean>>({});
+    const [showQuestionMenu, setShowQuestionMenu] = useState(false);
 
     const quizIdentifier = quiz.id || quiz._id || quiz.title;
     const storageKey = `quiz_progress_${user.userId}_${quizIdentifier}`;
@@ -604,6 +606,18 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         resetQuestionState(currentQuestion - 1);
     }, [isSubmitting, currentQuestion, resetQuestionState]);
 
+    const goToQuestion = useCallback((questionPosition: number) => {
+        if (isSubmitting) return;
+        setCurrentQuestion(questionPosition);
+        resetQuestionState(questionPosition);
+        setShowQuestionMenu(false);
+    }, [isSubmitting, resetQuestionState]);
+
+    const toggleCurrentQuestionFlag = useCallback(() => {
+        const actualIndex = getActualQuestionIndex();
+        setFlaggedQuestions(prev => ({ ...prev, [actualIndex]: !prev[actualIndex] }));
+    }, [getActualQuestionIndex]);
+
     // Handlers for Question Translation
     const handleSelectLanguage = useCallback((langCode: string) => {
         setSelectedLanguage(langCode);
@@ -673,7 +687,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         };
     }, [currentQuestion, selectedLanguage, isTranslated, getActualQuestionIndex, quiz.questions, translatedCache]);
 
-    const handleAnswer = useCallback((answer: string | number | string[] | Record<string, string>, isKeyboard = false) => {
+    const handleAnswer = useCallback((answer: string | number | string[] | Record<string, string>) => {
         if (isSubmitting) return;
 
         const actualIndex = getActualQuestionIndex();
@@ -703,24 +717,6 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         const newAnswers = { ...answers, [actualIndex]: answer };
         setAnswers(newAnswers);
 
-        if (!delayedValidation && quiz.reviewMode !== false) {
-            if (isKeyboard) {
-                // If keyboard selection in review mode, DO NOT submit/grade immediately.
-                return;
-            }
-            const isCorrect = checkComplexAnswer(q, answer);
-            setIsCurrentAnswerCorrect(isCorrect);
-            setQuestionSubmitted(true);
-            setSubmittedQuestions(prev => ({ ...prev, [actualIndex]: true }));
-            setQuestionCorrectness(prev => ({ ...prev, [actualIndex]: isCorrect }));
-
-            if (isCorrect) {
-                sounds.playCorrect();
-            } else {
-                sounds.playIncorrect();
-            }
-        }
-
         if (onProgress) {
             let currentScore = 0;
             let answered = 0;
@@ -739,7 +735,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             const progressIndex = delayedValidation ? correctCount : answered;
             onProgress(currentScore, progressIndex);
         }
-    }, [isSubmitting, getActualQuestionIndex, quiz.questions, mustAnswerCorrectly, delayedValidation, answers, quiz.reviewMode, onProgress, checkComplexAnswer, nextQuestion, currentQuestion]);
+    }, [isSubmitting, getActualQuestionIndex, quiz.questions, mustAnswerCorrectly, delayedValidation, answers, onProgress, checkComplexAnswer, currentQuestion]);
 
 
     const submitQuestion = useCallback(() => {
@@ -747,6 +743,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         const q = quiz.questions[actualIndex];
         const answer = answers[actualIndex];
         if (answer === undefined) return;
+        if (q.type === 'matching') {
+            const pairCount = q.matchingPairs?.length || (typeof q.correctAnswer === 'object' && q.correctAnswer !== null ? Object.keys(q.correctAnswer).length : 0);
+            if (typeof answer !== 'object' || Object.keys(answer).length < pairCount) return;
+        }
 
         const isCorrect = checkComplexAnswer(q, answer);
         setIsCurrentAnswerCorrect(isCorrect);
@@ -871,7 +871,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     const originalIndex = currentOptions[selectedVisualIndex];
                     const hiddenOpts = hiddenOptions[actualIndex] || [];
                     if (!hiddenOpts.includes(originalIndex)) {
-                        handleAnswer(originalIndex, true);
+                        handleAnswer(originalIndex);
                     }
                 }
             }
@@ -1005,6 +1005,14 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         : (quiz.questions.length > 0 ? ((currentQuestion + 1) / quiz.questions.length) * 100 : 0);
 
     const hiddenOptsForCurrent = hiddenOptions[actualIndex] || [];
+    const currentAnswer = answers[actualIndex];
+    const matchingPairCount = q.type === 'matching'
+        ? q.matchingPairs?.length || (typeof q.correctAnswer === 'object' && q.correctAnswer !== null ? Object.keys(q.correctAnswer).length : 0)
+        : 0;
+    const hasCompleteAnswer = currentAnswer !== undefined && (
+        q.type !== 'matching' || (typeof currentAnswer === 'object' && Object.keys(currentAnswer).length >= matchingPairCount)
+    );
+    const showSubmitButton = !delayedValidation && quiz.reviewMode !== false && !questionSubmitted;
 
     // Helper functions for UI
     const getPowerUpIcon = (type: string, sizeClass = "w-4 h-4") => {
@@ -1079,6 +1087,19 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             : 'bg-red-500/[0.02] dark:bg-red-500/[0.01] shadow-[inset_0_0_80px_rgba(239,68,68,0.15)] dark:shadow-[inset_0_0_120px_rgba(239,68,68,0.12)] border-[8px] border-red-500/10 dark:border-red-500/5'
                     }`}
                 />
+            )}
+
+            {questionSubmitted && !delayedValidation && (
+                <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl border-2 shadow-xl animate-in slide-in-from-top-3 fade-in duration-300 ${
+                    isCurrentAnswerCorrect
+                        ? 'bg-emerald-500 text-white border-emerald-700'
+                        : 'bg-rose-500 text-white border-rose-700'
+                }`} role="status" aria-live="assertive">
+                    {isCurrentAnswerCorrect ? <CheckCircle className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
+                    <span className="font-black text-sm sm:text-base">
+                        {isCurrentAnswerCorrect ? 'Correct answer!' : 'Not quite. Check the highlighted answer.'}
+                    </span>
+                </div>
             )}
 
             {/* Proctored Exam Fullscreen Warning / Entry Banner */}
@@ -1174,7 +1195,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                         ? 'bg-blue-100 text-blue-900 border-2 border-black font-black shadow-[2px_2px_0px_#000]'
                                         : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
                                 }`}>
-                                    <span>📦</span> Bank: {poolProgress.seenCount}/{poolProgress.totalCount} ({poolProgress.percentage}%)
+                                    Bank: {poolProgress.seenCount}/{poolProgress.totalCount} ({poolProgress.percentage}%)
                                 </span>
                             )}
                         </div>
@@ -1245,12 +1266,72 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     
                     <div className="w-full max-w-2xl lg:ml-auto flex flex-col flex-1">
                         {/* Progress Header */}
-                        <div className="flex items-center justify-between p-4 px-5 sm:px-8 lg:px-10 pb-2">
+                        <div className="relative flex items-center justify-between p-4 px-5 sm:px-8 lg:px-10 pb-2">
                             <div className="flex items-center gap-2">
                                 <span className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider ${isBento ? 'text-slate-600 dark:text-slate-300 font-black' : 'text-slate-400'}`}>Question</span>
                                 <span className="font-tabular text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">{currentQuestion + 1} / {quiz.questions.length}</span>
                             </div>
-                            <div className={`font-tabular font-extrabold text-xs sm:text-sm ${isBento ? 'text-purple-700 dark:text-purple-300 font-black' : 'text-indigo-600 dark:text-indigo-400'}`}>{Math.round(progressPercentage)}%</div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={toggleCurrentQuestionFlag}
+                                    aria-label={flaggedQuestions[actualIndex] ? 'Remove question flag' : 'Flag question for review'}
+                                    className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                                        flaggedQuestions[actualIndex]
+                                            ? 'bg-amber-300 text-black border-black shadow-[2px_2px_0px_#000]'
+                                            : isBento
+                                                ? 'bg-white text-black border-2 border-black hover:bg-amber-100'
+                                                : 'bg-white/70 text-slate-500 border-slate-200 hover:text-amber-600'
+                                    }`}
+                                >
+                                    <Flag className="w-4 h-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowQuestionMenu(prev => !prev)}
+                                    aria-expanded={showQuestionMenu}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+                                        isBento ? 'bg-white text-black border-2 border-black hover:bg-purple-100' : 'bg-white/70 text-slate-600 border-slate-200 hover:border-indigo-400'
+                                    }`}
+                                >
+                                    <List className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Questions</span>
+                                </button>
+                                <div className={`font-tabular font-extrabold text-xs sm:text-sm ${isBento ? 'text-purple-700 dark:text-purple-300 font-black' : 'text-indigo-600 dark:text-indigo-400'}`}>{Math.round(progressPercentage)}%</div>
+                            </div>
+                            {showQuestionMenu && (
+                                <div className={`absolute right-5 sm:right-8 lg:right-10 top-14 z-50 w-64 rounded-2xl border-2 p-3 shadow-xl ${isBento ? 'bg-white border-black' : 'bg-white dark:bg-[#111827] border-slate-200 dark:border-white/10'}`}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-black uppercase tracking-wider">Jump to question</span>
+                                        <span className="text-[10px] font-bold text-slate-400">{Object.values(flaggedQuestions).filter(Boolean).length} flagged</span>
+                                    </div>
+                                    <div className="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto">
+                                        {(retryMode ? wrongQuestionIndices : quiz.questions.map((_, index) => index)).map((_, position) => {
+                                            const menuActualIndex = getActualQuestionIndex(position);
+                                            const isAnswered = answers[menuActualIndex] !== undefined;
+                                            const isFlagged = flaggedQuestions[menuActualIndex];
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={menuActualIndex}
+                                                    onClick={() => goToQuestion(position)}
+                                                    className={`relative h-9 rounded-lg text-xs font-black border-2 cursor-pointer transition-all ${
+                                                        position === currentQuestion
+                                                            ? 'bg-indigo-600 text-white border-indigo-700'
+                                                            : isBento
+                                                                ? 'bg-slate-50 text-black border-black hover:bg-purple-100'
+                                                                : 'bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:border-indigo-400'
+                                                    }`}
+                                                >
+                                                    {position + 1}
+                                                    {isAnswered && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-500" />}
+                                                    {isFlagged && <Flag className="absolute -right-1.5 -top-1.5 w-3.5 h-3.5 text-amber-500 fill-amber-300" />}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Progress Bar Line */}
@@ -1389,7 +1470,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     <div
                         role="radiogroup"
                         aria-label={`Options for Question ${currentQuestion + 1}`}
-                        className="flex-1 w-full max-w-2xl lg:mr-auto p-5 sm:px-8 lg:px-10 pt-5 sm:pt-8 landscape:pt-4 lg:landscape:pt-8 pb-28 landscape:pb-32 lg:landscape:pb-32 flex flex-col justify-start gap-3 sm:gap-3.5 no-scrollbar"
+                        className={`flex-1 w-full ${q.type === 'matching' ? 'max-w-4xl' : 'max-w-2xl'} lg:mr-auto p-5 sm:px-8 lg:px-10 pt-5 sm:pt-8 landscape:pt-4 lg:landscape:pt-8 pb-28 landscape:pb-32 lg:landscape:pb-32 flex flex-col justify-start gap-3 sm:gap-3.5 no-scrollbar`}
                     >
                         {q.isCompiler ? (
                             <Suspense fallback={<div className="animate-spin w-8 h-8 border-4 border-indigo-500 rounded-full border-t-transparent mx-auto"></div>}>
@@ -1433,7 +1514,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 correctAnswer={q.correctAnswer}
                                 submitted={questionSubmitted && !delayedValidation}
                                 isCorrect={isCurrentAnswerCorrect}
-                                onChange={(val) => handleAnswer(val, true)}
+                                onChange={(val) => handleAnswer(val)}
                                 onSubmit={submitQuestion}
                                 readOnly={isSubmitting}
                             />
@@ -1583,7 +1664,20 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         <span>←</span>
                         Previous
                     </button>
-                    {!isLastQuestion && (
+                    {showSubmitButton ? (
+                        <button
+                            onClick={submitQuestion}
+                            disabled={!hasCompleteAnswer}
+                            className={`flex-1 sm:flex-none px-6 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                                isBento
+                                    ? 'bg-[#fde047] hover:bg-[#facc15] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 disabled:opacity-40'
+                                    : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white shadow-lg shadow-indigo-600/25 active:scale-[0.985]'
+                            }`}
+                        >
+                            <span>Submit Answer</span>
+                            <CheckCircle className="w-4 h-4" />
+                        </button>
+                    ) : !isLastQuestion ? (
                         <button
                             onClick={nextQuestion}
                             disabled={answers[actualIndex] === undefined || (quiz.reviewMode !== false && !delayedValidation && !questionSubmitted)}
@@ -1596,10 +1690,9 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             <span>{questionSubmitted && !delayedValidation ? 'Continue' : 'Next Question'}</span>
                             <span>→</span>
                         </button>
-                    )}
-                    {isLastQuestion && (
+                    ) : (
                         <button
-                            onClick={handleQuizComplete}
+                            onClick={questionSubmitted || delayedValidation || quiz.reviewMode === false ? handleQuizComplete : submitQuestion}
                             disabled={answers[actualIndex] === undefined}
                             className={`flex-1 sm:flex-none px-6 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
                                 isBento
@@ -1607,8 +1700,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                     : 'bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white shadow-lg shadow-emerald-600/25 active:scale-[0.985]'
                             }`}
                         >
-                            <span>{isSubmitting ? 'Submitting...' : 'Finish Quiz'}</span>
-                            <Target className="w-4 h-4"/>
+                            <span>{isSubmitting ? 'Submitting...' : questionSubmitted || delayedValidation || quiz.reviewMode === false ? 'Finish Quiz' : 'Submit Answer'}</span>
+                            {questionSubmitted || delayedValidation || quiz.reviewMode === false ? <Target className="w-4 h-4"/> : <CheckCircle className="w-4 h-4" />}
                         </button>
                     )}
                 </div>

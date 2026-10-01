@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import type { SkillModule, SkillTrack, UserData, BadgeTree, BadgeNode, Badge, BadgeTreeNode } from '../../types';
 import { api } from '../../lib/api';
 import { useTheme } from '../../context/ThemeContext';
-import { Target, Lock } from 'lucide-react';
+import { Target, Lock, ChevronDown } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import SkillTreeVisualization from '../tracks/SkillTreeVisualization';
 import { useNavigate } from 'react-router-dom';
@@ -230,20 +230,21 @@ const SkillTracks: React.FC<SkillTracksProps> = ({ user, onUserUpdate }) => {
         {/* Filters Row */}
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Category Filter */}
-          <div className="w-full sm:w-48">
+          <div className="relative w-full sm:w-48">
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className={`w-full px-4 py-2.5 rounded-2xl text-sm focus:outline-none cursor-pointer ${
+              className={`w-full appearance-none px-4 py-2.5 pr-10 rounded-2xl text-sm focus:outline-none cursor-pointer transition-all ${
                 isBento
-                  ? 'bg-white text-black border-2 border-black shadow-[3px_3px_0px_#000] font-black focus:ring-2 focus:ring-black'
-                  : 'glass-card text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/40 shadow-sm'
+                  ? 'bg-white text-black border-2 border-black shadow-[3px_3px_0px_#000] font-black focus:ring-2 focus:ring-black hover:bg-yellow-50'
+                  : 'bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500/40 hover:border-indigo-400'
               }`}
             >
               {categories.map(category => (
-                <option key={category} value={category} className="bg-white text-black dark:bg-[#0f1422] dark:text-white font-bold">{category}</option>
+                <option key={category} value={category} className="bg-white text-black dark:bg-[#0f1422] dark:text-white">{category}</option>
               ))}
             </select>
+            <ChevronDown className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${isBento ? 'text-black' : 'text-slate-500 dark:text-slate-300'}`} />
           </div>
 
           {/* Status Filter */}
