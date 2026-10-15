@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
-import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins, Keyboard, WifiOff, Bot, Globe, List, Flag, Sparkles, RotateCcw, RefreshCw } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins, Keyboard, WifiOff, Globe, List, Flag, Sparkles, RotateCcw, RefreshCw } from 'lucide-react';
 import type { Quiz, Question, UserData, QuizResult, AttemptAnswers, PoolProgressData, IntegrityTelemetry, IntegrityTelemetryEvent } from '../types';
 import { api } from '../lib/api';
 import { AmbientBackground } from './AmbientBackground';
@@ -1397,20 +1397,6 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2.5 sm:gap-3">
-                        {/* AI Study Coach Button */}
-                        <button
-                            type="button"
-                            onClick={() => setIsAICoachOpen(true)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                                isBento
-                                    ? 'bg-white hover:bg-purple-50 text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] active:translate-y-0.5'
-                                    : 'glass-card hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 shadow-sm active:scale-[0.985]'
-                            }`}
-                        >
-                            <Bot className={`w-4 h-4 ${isBento ? 'text-black' : 'text-indigo-500'}`} />
-                            <span className="hidden sm:inline">AI Coach</span>
-                        </button>
-
                         {/* Shop Button */}
                         {!hidePowerUps && (
                             <button
