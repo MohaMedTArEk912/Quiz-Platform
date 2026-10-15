@@ -1605,38 +1605,38 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             )}
 
                             {/* 3D Flipping Question / Clue Card */}
-                            <div className="perspective-1000 mb-6 w-full">
+                            <div className="perspective-1000 mb-6 sm:mb-8 w-full">
                                 <div
                                     className={`preserve-3d paper-flip-spring relative w-full ${
                                         isClueFlipped ? 'paper-flipped' : ''
                                     }`}
                                 >
                                     {/* FRONT FACE: Question Prompt Box */}
-                                    <div className={`backface-hidden w-full min-h-[145px] rounded-2xl p-5 sm:p-6 flex flex-col justify-center border-2 border-black bg-white dark:bg-[#0f172a] shadow-[3px_3px_0px_#000] dark:shadow-[3px_3px_0px_rgba(255,255,255,0.1)] transition-all ${
+                                    <div className={`backface-hidden w-full min-h-[220px] sm:min-h-[250px] md:min-h-[270px] rounded-3xl p-6 sm:p-8 lg:p-10 flex flex-col justify-center border-[3px] border-black bg-white dark:bg-[#0f172a] shadow-[6px_6px_0px_#000] dark:shadow-[6px_6px_0px_rgba(255,255,255,0.1)] transition-all ${
                                         isClueFlipped ? 'pointer-events-none' : ''
                                     }`}>
-                                        <h2 className={`text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] landscape:text-base lg:landscape:text-[28px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight ${isCurrentRtl ? 'text-right' : 'text-left'}`}>
+                                        <h2 className={`text-xl sm:text-2xl lg:text-3xl xl:text-[32px] landscape:text-lg lg:landscape:text-[28px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-normal ${isCurrentRtl ? 'text-right' : 'text-left'}`}>
                                             <MathRenderer text={displayQuestionText} dir={isCurrentRtl ? 'rtl' : 'ltr'} />
                                         </h2>
                                     </div>
 
-                                    {/* BACK FACE: Revealed Socratic Clue Card */}
-                                    <div className={`backface-hidden rotate-y-180 absolute inset-0 w-full h-full rounded-2xl p-4 sm:p-5 flex flex-col justify-between border-2 border-black transition-all ${
+                                    {/* BACK FACE: Revealed Socratic Clue Card (Spacious & Comfortable) */}
+                                    <div className={`backface-hidden rotate-y-180 absolute inset-0 w-full h-full rounded-3xl p-6 sm:p-8 lg:p-10 flex flex-col justify-between border-[3px] border-black transition-all ${
                                         isBento
-                                            ? 'bg-[#faf5ff] text-black shadow-[4px_4px_0px_#000]'
+                                            ? 'bg-[#faf5ff] text-black shadow-[6px_6px_0px_#000]'
                                             : 'bg-purple-50 dark:bg-[#1a132e] text-slate-900 dark:text-white border-purple-300 dark:border-purple-800 shadow-xl'
                                     } ${!isClueFlipped ? 'pointer-events-none' : ''}`}>
-                                        {/* Top row */}
-                                        <div className="flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
-                                            <div className="flex items-center gap-2">
-                                                <span className="px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider bg-[#c084fc] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]">
+                                        {/* Top row: Badges, Progress Dots & Actions */}
+                                        <div className="flex flex-wrap items-center justify-between gap-3" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex items-center gap-3">
+                                                <span className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-[#c084fc] text-black border-2 border-black shadow-[2px_2px_0px_#000]">
                                                     {getClueLevelTitle(inlineClueLevel)}
                                                 </span>
-                                                <div className="flex items-center gap-1">
+                                                <div className="flex items-center gap-1.5">
                                                     {[1, 2, 3, 4].map(lvl => (
                                                         <div
                                                             key={lvl}
-                                                            className={`w-2 h-2 rounded-full border border-black transition-all ${
+                                                            className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border-2 border-black transition-all ${
                                                                 lvl <= inlineClueLevel ? 'bg-[#8b5cf6]' : 'bg-white'
                                                             }`}
                                                         />
@@ -1644,57 +1644,59 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-2">
                                                 <button
                                                     type="button"
                                                     onClick={handleNextInlineClue}
                                                     disabled={isInlineClueLoading}
-                                                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-white hover:bg-purple-100 text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000] active:translate-y-0.5 cursor-pointer disabled:opacity-50"
+                                                    className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-white hover:bg-purple-100 text-black border-2 border-black shadow-[2px_2px_0px_#000] active:translate-y-0.5 cursor-pointer disabled:opacity-50"
                                                     title="Get a different clue from a new angle"
                                                 >
-                                                    <RefreshCw className={`w-3 h-3 ${isInlineClueLoading ? 'animate-spin' : ''}`} />
+                                                    <RefreshCw className={`w-3.5 h-3.5 ${isInlineClueLoading ? 'animate-spin' : ''}`} />
                                                     <span>Another Clue</span>
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={flipToClue}
-                                                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-[#fed7aa] hover:bg-[#fdba74] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000] active:translate-y-0.5 cursor-pointer"
+                                                    className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-[#fed7aa] hover:bg-[#fdba74] text-black border-2 border-black shadow-[2px_2px_0px_#000] active:translate-y-0.5 cursor-pointer"
                                                     title="Return to Question"
                                                 >
-                                                    <RotateCcw className="w-3 h-3" />
+                                                    <RotateCcw className="w-3.5 h-3.5" />
                                                     <span>Flip Back</span>
                                                 </button>
                                             </div>
                                         </div>
 
-                                        {/* Clue Content */}
-                                        <div className="my-2.5 min-h-[48px] flex items-center">
+                                        {/* Clue Content: Spacious, comfortable, readable typography */}
+                                        <div className="my-4 sm:my-6 min-h-[80px] flex items-center">
                                             {isInlineClueLoading ? (
-                                                <div className="flex items-center gap-2 text-xs font-bold text-purple-700 animate-pulse">
-                                                    <Sparkles className="w-4 h-4 animate-spin text-purple-600" />
+                                                <div className="flex items-center gap-3 text-sm sm:text-base font-bold text-purple-700 animate-pulse">
+                                                    <Sparkles className="w-5 h-5 animate-spin text-purple-600" />
                                                     <span>Consulting AI Coach for a spoiler-free pointer...</span>
                                                 </div>
                                             ) : (
-                                                <p className="text-xs sm:text-sm font-black leading-relaxed text-slate-900 dark:text-slate-100">
+                                                <p className="text-base sm:text-lg lg:text-xl font-bold sm:font-extrabold leading-relaxed sm:leading-loose text-slate-900 dark:text-slate-100">
                                                     {inlineClue || '💡 Think about the distinguishing behavior and rules that set this concept apart.'}
                                                 </p>
                                             )}
                                         </div>
 
                                         {/* Bottom row */}
-                                        <div className="flex items-center justify-between pt-2 border-t border-black/15 text-[10px] font-bold text-slate-600 dark:text-slate-400">
-                                            <span className="flex items-center gap-1">
+                                        <div className="flex items-center justify-between pt-3 sm:pt-4 border-t-2 border-black/15 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400">
+                                            <span className="flex items-center gap-1.5">
                                                 🔒 Zero-Spoiler Guaranteed
                                             </span>
-                                            <span className="flex items-center gap-2">
-                                                <span
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    type="button"
                                                     onClick={flipToClue}
-                                                    className="text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-black cursor-pointer"
+                                                    className="text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-black cursor-pointer hover:underline"
                                                 >
                                                     Return to Question ↩
-                                                </span>
+                                                </button>
                                                 <span>•</span>
-                                                <span
+                                                <button
+                                                    type="button"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setIsAICoachOpen(true);
@@ -1702,8 +1704,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                                     className="text-purple-700 dark:text-purple-400 underline font-black cursor-pointer hover:text-purple-900"
                                                 >
                                                     Chat with Coach &rarr;
-                                                </span>
-                                            </span>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
