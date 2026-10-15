@@ -1482,10 +1482,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                                 ? 'bg-white hover:bg-purple-50 text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] active:translate-y-0.5'
                                                 : 'glass-card hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 shadow-sm active:scale-[0.985]'
                                     }`}
-                                    title={isClueFlipped ? "Flip clue card back" : "Get AI clue"}
+                                    title={isClueFlipped ? "Flip back to question" : "Get AI clue"}
                                 >
                                     <Sparkles className={`w-3.5 h-3.5 ${isClueFlipped ? 'text-black rotate-12' : 'text-purple-600 animate-pulse'}`} />
-                                    <span className="hidden sm:inline">AI Coach</span>
+                                    <span className="text-[11px] sm:text-xs font-black">{isClueFlipped ? 'Question' : 'AI Coach'}</span>
                                 </button>
 
                                 {/* Flag Button (White to Yellow transition with filled black icon) */}
@@ -1604,63 +1604,28 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 </div>
                             )}
 
-                            <h2 className={`text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] landscape:text-base lg:landscape:text-[28px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight mb-4 sm:mb-6 ${isCurrentRtl ? 'text-right' : 'text-left'}`}>
-                                <MathRenderer text={displayQuestionText} dir={isCurrentRtl ? 'rtl' : 'ltr'} />
-                            </h2>
-
-                            {/* 3D Flipping Paper Clue Card */}
+                            {/* 3D Flipping Question / Clue Card */}
                             <div className="perspective-1000 mb-6 w-full">
                                 <div
-                                    onClick={flipToClue}
-                                    className={`preserve-3d paper-flip-spring relative w-full min-h-[145px] cursor-pointer ${
+                                    className={`preserve-3d paper-flip-spring relative w-full ${
                                         isClueFlipped ? 'paper-flipped' : ''
                                     }`}
                                 >
-                                    {/* FRONT FACE: Sealed Paper Clue (Folded Note Look) */}
-                                    <div className={`backface-hidden w-full h-full rounded-2xl p-4 sm:p-5 flex flex-col justify-between border-2 border-black transition-all ${
-                                        isBento
-                                            ? 'bg-[#fef9c3] text-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-y-0.5'
-                                            : 'bg-amber-50 dark:bg-amber-950/30 text-amber-950 dark:text-amber-100 border-amber-300 dark:border-amber-700/50 shadow-md'
+                                    {/* FRONT FACE: Question Prompt Box */}
+                                    <div className={`backface-hidden w-full min-h-[145px] rounded-2xl p-5 sm:p-6 flex flex-col justify-center border-2 border-black bg-white dark:bg-[#0f172a] shadow-[3px_3px_0px_#000] dark:shadow-[3px_3px_0px_rgba(255,255,255,0.1)] transition-all ${
+                                        isClueFlipped ? 'pointer-events-none' : ''
                                     }`}>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2.5">
-                                                <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-black text-white text-xs font-black shadow-[1.5px_1.5px_0px_#8b5cf6]">
-                                                    AI
-                                                </span>
-                                                <div>
-                                                    <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-black dark:text-black">
-                                                        AI Coach Paper Clue
-                                                    </h4>
-                                                    <p className="text-[11px] font-semibold text-slate-700">
-                                                        Zero-spoiler hints to guide your thinking
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-white text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]">
-                                                Flip To Read
-                                            </span>
-                                        </div>
-
-                                        <div className="my-2.5 flex items-center justify-between text-xs font-extrabold text-slate-800">
-                                            <span>💡 Need a hint? Tap this paper note to flip it open.</span>
-                                        </div>
-
-                                        <div className="flex items-center justify-between pt-2 border-t border-black/15 text-[11px] font-black">
-                                            <span className="flex items-center gap-1.5 text-purple-800">
-                                                <Sparkles className="w-3.5 h-3.5 text-purple-700 animate-pulse" /> Click anywhere to flip
-                                            </span>
-                                            <span className="text-slate-600 text-[10px] uppercase tracking-wider">
-                                                Zero-Spoiler Guaranteed 🔒
-                                            </span>
-                                        </div>
+                                        <h2 className={`text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] landscape:text-base lg:landscape:text-[28px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight ${isCurrentRtl ? 'text-right' : 'text-left'}`}>
+                                            <MathRenderer text={displayQuestionText} dir={isCurrentRtl ? 'rtl' : 'ltr'} />
+                                        </h2>
                                     </div>
 
-                                    {/* BACK FACE: Revealed Socratic Clue */}
-                                    <div className={`backface-hidden rotate-y-180 absolute inset-0 w-full h-full rounded-2xl p-4 sm:p-5 flex flex-col justify-between border-2 border-black ${
+                                    {/* BACK FACE: Revealed Socratic Clue Card */}
+                                    <div className={`backface-hidden rotate-y-180 absolute inset-0 w-full h-full rounded-2xl p-4 sm:p-5 flex flex-col justify-between border-2 border-black transition-all ${
                                         isBento
                                             ? 'bg-[#faf5ff] text-black shadow-[4px_4px_0px_#000]'
                                             : 'bg-purple-50 dark:bg-[#1a132e] text-slate-900 dark:text-white border-purple-300 dark:border-purple-800 shadow-xl'
-                                    }`}>
+                                    } ${!isClueFlipped ? 'pointer-events-none' : ''}`}>
                                         {/* Top row */}
                                         <div className="flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
                                             <div className="flex items-center gap-2">
@@ -1694,7 +1659,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                                     type="button"
                                                     onClick={flipToClue}
                                                     className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-[#fed7aa] hover:bg-[#fdba74] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000] active:translate-y-0.5 cursor-pointer"
-                                                    title="Flip paper note back"
+                                                    title="Return to Question"
                                                 >
                                                     <RotateCcw className="w-3 h-3" />
                                                     <span>Flip Back</span>
@@ -1721,14 +1686,23 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                             <span className="flex items-center gap-1">
                                                 🔒 Zero-Spoiler Guaranteed
                                             </span>
-                                            <span
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setIsAICoachOpen(true);
-                                                }}
-                                                className="text-purple-700 dark:text-purple-400 underline font-black cursor-pointer hover:text-purple-900"
-                                            >
-                                                Chat with AI Coach &rarr;
+                                            <span className="flex items-center gap-2">
+                                                <span
+                                                    onClick={flipToClue}
+                                                    className="text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-black cursor-pointer"
+                                                >
+                                                    Return to Question ↩
+                                                </span>
+                                                <span>•</span>
+                                                <span
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setIsAICoachOpen(true);
+                                                    }}
+                                                    className="text-purple-700 dark:text-purple-400 underline font-black cursor-pointer hover:text-purple-900"
+                                                >
+                                                    Chat with Coach &rarr;
+                                                </span>
                                             </span>
                                         </div>
                                     </div>
