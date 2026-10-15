@@ -1729,7 +1729,17 @@ export const api = {
     },
 
     // Socratic AI Study Coach Hint
-    async getAICoachHint(data: { question: string; options?: string[]; studentAnswer?: string; category?: string }): Promise<{ success: boolean; hint: string }> {
+    async getAICoachHint(data: {
+        question: string;
+        options?: string[];
+        studentAnswer?: string;
+        category?: string;
+        clueLevel?: number;
+        previousHints?: string[];
+        targetLang?: string;
+        targetLangName?: string;
+        correctAnswer?: unknown;
+    }): Promise<{ success: boolean; hint: string; clueLevel?: number }> {
         const response = await fetchWithFallback('/ai/coach-hint', {
             method: 'POST',
             headers: getHeaders(),

@@ -8,6 +8,7 @@ import { updateSkillTrackProgress } from '../services/progressService.js';
 import { syncClanXp } from '../utils/xpSync.js';
 
 import { checkAndUnlockBadges } from './badgeNodeController.js';
+import { evaluateTextAnswer } from '../utils/textSimilarity.js';
 
 const normalizeAttemptPayload = (attemptData, user) => {
     const normalized = { ...attemptData };
@@ -349,7 +350,7 @@ export const getAttemptDetails = async (req, res) => {
           isCorrect = selected !== undefined && selected !== null && (
             Number(selected) === Number(q.correctAnswer) ||
             (Array.isArray(q.options) && typeof q.correctAnswer === 'number' && q.options[q.correctAnswer] === selected) ||
-            String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
+            (q.type === 'text' ? evaluateTextAnswer(selected, q.correctAnswer, 0.70).isPassed : String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase())
           );
         }
       } else {
@@ -357,7 +358,7 @@ export const getAttemptDetails = async (req, res) => {
         isCorrect = selected !== undefined && selected !== null && (
           Number(selected) === Number(q.correctAnswer) ||
           (Array.isArray(q.options) && typeof q.correctAnswer === 'number' && q.options[q.correctAnswer] === selected) ||
-          String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
+          (q.type === 'text' ? evaluateTextAnswer(selected, q.correctAnswer, 0.70).isPassed : String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase())
         );
       }
 

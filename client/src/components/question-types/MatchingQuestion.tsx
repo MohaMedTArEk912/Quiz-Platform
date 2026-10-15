@@ -115,7 +115,7 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
     const allPairsCorrect = allPairsConnected && pairs.every(pair => matches[pair.left] === pair.right);
 
     return (
-        <div className="space-y-4 w-full md:min-w-[640px]">
+        <div className="space-y-4 w-full">
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className={`text-xs font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-gray-400'}`}>
                     Match each term on the left with its corresponding definition on the right:
@@ -146,14 +146,14 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
                 </div>
             )}
 
-            <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-28">
+            <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
                 <svg className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full md:block" aria-hidden="true" preserveAspectRatio="none">
                     {connectedPairs.map(({ leftIndex, rightIndex, colorIndex }) => {
                         const rowHeight = 72;
                         const y1 = 52 + leftIndex * rowHeight;
                         const y2 = 52 + rightIndex * rowHeight;
                         const color = isBento ? ['#854d0e', '#3f6212', '#0369a1', '#6d28d9', '#9d174d', '#0e7490'][colorIndex % 6] : ['#6366f1', '#a855f7', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'][colorIndex % 6];
-                        return <path key={`${leftIndex}-${rightIndex}`} d={`M 47% ${y1} C 50% ${y1}, 50% ${y2}, 53% ${y2}`} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" />;
+                        return <path key={`${leftIndex}-${rightIndex}`} d={`M 48% ${y1} C 50% ${y1}, 50% ${y2}, 52% ${y2}`} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" />;
                     })}
                 </svg>
                 {/* LEFT COLUMN: TERMS */}
@@ -183,9 +183,9 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
                             <div
                                 key={idx}
                                 onClick={() => handleLeftClick(left)}
-                                className={`min-h-[64px] p-4 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 ${cardStyle}`}
+                                className={`min-h-[64px] p-3.5 sm:p-4 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 ${cardStyle}`}
                             >
-                                <div className="text-sm font-bold truncate">
+                                <div className="text-sm font-bold break-words min-w-0 flex-1">
                                     <MathRenderer text={left} />
                                 </div>
 
@@ -246,9 +246,9 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
                             <div
                                 key={idx}
                                 onClick={() => handleRightClick(right)}
-                                className={`min-h-[64px] p-4 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 ${rightCardStyle}`}
+                                className={`min-h-[64px] p-3.5 sm:p-4 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 ${rightCardStyle}`}
                             >
-                                <div className="text-sm font-medium leading-relaxed">
+                                <div className="text-sm font-medium leading-relaxed break-words min-w-0 flex-1">
                                     <MathRenderer text={right} />
                                 </div>
                             </div>

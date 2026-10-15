@@ -21,9 +21,9 @@ const getGroqClient = () => {
 const getGroqModels = () => {
     const envModel = process.env.GROQ_MODEL;
     const defaults = [
-        'qwen/qwen3.6-27b',
-        'llama-3.1-8b-instant',
-        'mixtral-8x7b-32768'
+        'qwen/qwen3.8-27b',
+        'openai/gpt-oss-120b',
+        'openai/gpt-oss-20b'
     ];
     
     // If env var is set, prioritize it. Deduplicate using Set.

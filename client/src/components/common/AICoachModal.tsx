@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Bot, Sparkles, X, Lightbulb, RefreshCw } from 'lucide-react';
 import { MathRenderer } from './MathRenderer';
 import { api } from '../../lib/api';
@@ -13,6 +13,14 @@ interface AICoachModalProps {
     onClose: () => void;
 }
 
+const LOCAL_FALLBACKS = [
+    '💡 Big Picture Clue: Break down the core objective of the question and think about what makes the right answer fundamentally distinct.',
+    '🔍 Mechanical Clue: Pay attention to how the concepts interact. Eliminate options that violate key structural or syntax rules.',
+    '🎯 Process of Elimination: Rule out answers that only meet part of the criteria. The correct answer satisfies every constraint stated.',
+    '⚡ Key Distinction: Re-read the specific keywords in the prompt. One option aligns precisely with that exact definition.',
+    '🧠 Deep Perspective: Contrast the remaining two closest options against the core domain definition.'
+];
+
 export const AICoachModal: React.FC<AICoachModalProps> = ({
     isOpen,
     question,
@@ -23,38 +31,74 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({
     const { isBento } = useTheme();
     const [hint, setHint] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [clueLevel, setClueLevel] = useState<number>(1);
+    const [clueHistory, setClueHistory] = useState<string[]>([]);
+    const lastQuestionRef = useRef(question);
 
-    const fetchHint = useCallback(async () => {
+    const fetchHint = useCallback(async (targetLevel = 1, priorHints: string[] = []) => {
         setIsLoading(true);
         sounds.playPowerUp();
         try {
             const res = await api.getAICoachHint({
                 question,
                 options,
-                category
+                category,
+                clueLevel: targetLevel,
+                previousHints: priorHints
             });
             if (res.success && res.hint) {
                 setHint(res.hint);
             } else {
-                setHint('💡 Consider the core principles of the topic and rule out any answer that contradicts basic definitions.');
+                const idx = (targetLevel - 1) % LOCAL_FALLBACKS.length;
+                setHint(LOCAL_FALLBACKS[idx]);
             }
         } catch (err) {
             console.error('Failed to get AI Coach hint:', err);
-            setHint('💡 Study Tip: Break down the question prompt into key terms and eliminate the most obvious incorrect options first.');
+            const idx = (targetLevel - 1) % LOCAL_FALLBACKS.length;
+            setHint(LOCAL_FALLBACKS[idx]);
         } finally {
             setIsLoading(false);
         }
     }, [question, options, category]);
 
+    // Reset when modal opens or question changes
     useEffect(() => {
         if (isOpen) {
-            fetchHint();
+            if (lastQuestionRef.current !== question) {
+                lastQuestionRef.current = question;
+                setClueLevel(1);
+                setClueHistory([]);
+                fetchHint(1, []);
+            } else if (!hint) {
+                setClueLevel(1);
+                setClueHistory([]);
+                fetchHint(1, []);
+            }
         } else {
-            setHint(null);
+            lastQuestionRef.current = question;
         }
-    }, [isOpen, fetchHint]);
+    }, [isOpen, question, fetchHint, hint]);
+
+    const handleNextClue = () => {
+        if (isLoading) return;
+        const nextLevel = clueLevel + 1;
+        const updatedHistory = hint ? [...clueHistory, hint] : clueHistory;
+        setClueLevel(nextLevel);
+        setClueHistory(updatedHistory);
+        fetchHint(nextLevel, updatedHistory);
+    };
 
     if (!isOpen) return null;
+
+    const getClueTitle = (level: number) => {
+        switch (level) {
+            case 1: return 'Clue 1: Conceptual Foundation';
+            case 2: return 'Clue 2: Behavioral Mechanics';
+            case 3: return 'Clue 3: Process of Elimination';
+            case 4: return 'Clue 4: Deep Insight';
+            default: return `Clue ${level}: Targeted Guidance`;
+        }
+    };
 
     return (
         <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 ${
@@ -129,9 +173,21 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({
                     }`}>
                         <span className="flex items-center gap-1.5">
                             <Lightbulb className={`w-4 h-4 animate-pulse ${isBento ? 'text-black' : 'text-amber-300'}`} />
-                            Guided Conceptual Pointer
+                            {getClueTitle(clueLevel)}
                         </span>
-                        {isLoading && <span className={`animate-pulse text-[10px] ${isBento ? 'text-black font-black' : 'text-indigo-400'}`}>Thinking...</span>}
+                        <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4].map((step) => (
+                                <span
+                                    key={step}
+                                    title={`Clue level ${step}`}
+                                    className={`w-2 h-2 rounded-full transition-all ${
+                                        clueLevel >= step
+                                            ? isBento ? 'bg-black scale-110' : 'bg-amber-400 scale-110'
+                                            : isBento ? 'bg-black/20' : 'bg-white/20'
+                                    }`}
+                                />
+                            ))}
+                        </div>
                     </div>
 
                     {isLoading ? (
@@ -139,7 +195,7 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({
                             isBento ? 'text-black' : 'text-gray-400'
                         }`}>
                             <RefreshCw className={`w-5 h-5 animate-spin ${isBento ? 'text-black' : 'text-indigo-400'}`} />
-                            <span>Formulating smart Socratic guidance...</span>
+                            <span>Formulating Clue #{clueLevel} from a new angle...</span>
                         </div>
                     ) : (
                         <div className={`text-sm sm:text-base leading-relaxed ${
@@ -154,16 +210,21 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({
                 <div className="flex items-center justify-between gap-3 pt-2">
                     <button
                         type="button"
-                        onClick={fetchHint}
+                        onClick={handleNextClue}
                         disabled={isLoading}
-                        className={`px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer ${
+                        className={`px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 transition cursor-pointer ${
                             isBento
-                                ? 'bg-white hover:bg-[#bae6fd] border-2 border-black text-black font-black shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
-                                : 'bg-white/5 hover:bg-white/10 border border-white/10 font-bold text-gray-300 hover:text-white'
+                                ? 'bg-white hover:bg-[#bae6fd] border-2 border-black text-black font-black shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-50'
+                                : 'bg-white/5 hover:bg-white/10 border border-white/10 font-bold text-gray-300 hover:text-white disabled:opacity-50'
                         }`}
                     >
                         <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                         <span>Another Clue</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-black ${
+                            isBento ? 'bg-black/10 text-black' : 'bg-white/10 text-gray-300'
+                        }`}>
+                            #{clueLevel + 1}
+                        </span>
                     </button>
 
                     <button

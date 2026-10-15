@@ -45,7 +45,7 @@ const Footer: React.FC = () => {
                 setSupportName(currentUser.name);
             }
         }
-    }, [activeModal, currentUser]);
+    }, [activeModal, currentUser, supportEmail, supportName]);
 
     /**
      * Smoothly navigates to target path and scrolls the viewport to the top of the section/page.
@@ -129,11 +129,12 @@ const Footer: React.FC = () => {
             setSupportSubject('');
             setSupportMessage('');
             setActiveModal(null);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Failed to submit support ticket:', error);
+            const err = error as Error;
             showNotification(
                 'error',
-                error.message || 'Failed to dispatch ticket. You can email us directly at mohaamedtariq12@gmail.com.'
+                err.message || 'Failed to dispatch ticket. You can email us directly at mohaamedtariq12@gmail.com.'
             );
         } finally {
             setIsSubmittingSupport(false);
@@ -500,7 +501,7 @@ const Footer: React.FC = () => {
                                     <button
                                         type="button"
                                         key={cat.id}
-                                        onClick={() => setSupportCategory(cat.id as any)}
+                                        onClick={() => setSupportCategory(cat.id as 'technical' | 'bug' | 'scoring' | 'account' | 'feature' | 'general')}
                                         className={`py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all text-center cursor-pointer ${
                                             supportCategory === cat.id
                                                 ? isBento

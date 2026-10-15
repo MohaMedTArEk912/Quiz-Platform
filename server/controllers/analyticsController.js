@@ -4,6 +4,7 @@ import { User } from '../models/User.js';
 import { Badge } from '../models/Badge.js';
 import { Challenge } from '../models/Challenge.js';
 import { ShopItem } from '../models/ShopItem.js';
+import { evaluateTextAnswer } from '../utils/textSimilarity.js';
 
 export const getAnalyticsSummary = async (req, res) => {
   try {
@@ -89,7 +90,7 @@ export const getQuestionAnalytics = async (req, res) => {
             isCorrect = selected !== undefined && (
               Number(selected) === Number(q.correctAnswer) ||
               (Array.isArray(q.options) && typeof q.correctAnswer === 'number' && q.options[q.correctAnswer] === selected) ||
-              String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
+              (q.type === 'text' ? evaluateTextAnswer(selected, q.correctAnswer, 0.70).isPassed : String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase())
             );
           }
         } else {
@@ -97,7 +98,7 @@ export const getQuestionAnalytics = async (req, res) => {
           isCorrect = selected !== undefined && (
             Number(selected) === Number(q.correctAnswer) ||
             (Array.isArray(q.options) && typeof q.correctAnswer === 'number' && q.options[q.correctAnswer] === selected) ||
-            String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
+            (q.type === 'text' ? evaluateTextAnswer(selected, q.correctAnswer, 0.70).isPassed : String(selected).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase())
           );
         }
 

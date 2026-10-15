@@ -65,11 +65,11 @@ export const aiHealth = async (req, res) => {
     }
 };
 
-// PRODUCTION MODELS (Updated Sep 2026 — llama-3.3-70b-versatile retired)
+// PRODUCTION MODELS (Updated to active Groq models)
 const GROQ_ATTEMPT_MODELS = [
-    'qwen/qwen3.6-27b',       // Primary: strong instruction-following
-    'llama-3.1-8b-instant',   // Fast fallback
-    'mixtral-8x7b-32768',     // Legacy fallback
+    'qwen/qwen3.8-27b',       // Primary: strong instruction-following
+    'openai/gpt-oss-120b',    // High-capacity reasoning
+    'openai/gpt-oss-20b',     // Fast fallback
 ];
 
 async function generateContentWithFallback(prompt, jobId = `Gen-${Date.now()}`) {
@@ -276,40 +276,123 @@ Schema:
  */
 export const getAICoachHint = async (req, res) => {
     try {
-        const { question, options, studentAnswer, category } = req.body;
+        const {
+            question,
+            options,
+            studentAnswer,
+            category,
+            clueLevel = 1,
+            previousHints = [],
+            targetLang = 'original',
+            targetLangName = '',
+            correctAnswer
+        } = req.body;
+
         if (!question) {
             return res.status(400).json({ success: false, message: 'Question content is required' });
         }
 
+        const currentLevel = Math.min(Math.max(1, Number(clueLevel) || 1), 5);
         const groq = getGroqClient();
-        if (!groq) {
-            return res.json({
-                success: true,
-                hint: `💡 Concept Focus: Carefully review the core principles in "${category || 'this topic'}". Focus on key terms in the question!`
-            });
+
+        // Determine answer text to strictly ban from the clue
+        let answerText = '';
+        if (typeof correctAnswer === 'number' && Array.isArray(options) && options[correctAnswer]) {
+            answerText = String(options[correctAnswer]).trim();
+        } else if (typeof correctAnswer === 'string') {
+            answerText = correctAnswer.trim();
         }
 
-        const prompt = `You are a supportive, high-IQ Socratic AI Study Coach on a learning platform.
-A student is currently taking an assessment and is stuck on this question:
+        if (groq) {
+            const levelInstructions = [
+                'Focus on the high-level concept or a real-world analogy. Help the student visualize what the core concept is without using technical jargon.',
+                'Focus on the underlying mechanisms and behavior. How does this rule or property actually work when applied in practice?',
+                'Provide a process-of-elimination clue. Point out subtle keywords in the question that rule out common distractor options without naming the final answer directly.',
+                'Provide a precise conceptual breakthrough. Contrast the remaining possibilities to help the student deduce the solution.',
+                'Give a targeted final riddle or perspective that directly highlights the key distinction needed to solve the question.'
+            ];
+
+            const levelGuide = levelInstructions[currentLevel - 1] || levelInstructions[0];
+            const isNonEnglish = targetLang && targetLang !== 'original' && targetLang !== 'en';
+
+            const prompt = `You are a supportive, high-IQ Socratic AI Study Coach on an interactive learning platform.
+A student is currently taking an assessment and needs a helpful hint for this question:
 Question: "${question}"
 Options: ${JSON.stringify(options || [])}
+${category ? `Category/Subject: "${category}"` : ''}
 ${studentAnswer ? `Student's initial thought: "${studentAnswer}"` : ''}
 
-Provide a concise, 1-2 sentence guided conceptual hint that activates their critical thinking WITHOUT revealing the direct answer letter or spoiling the test.`;
+Goal: Provide Clue #${currentLevel}.
+Guidance for this clue level: ${levelGuide}
 
-        const resp = await groq.chat.completions.create({
-            model: 'qwen/qwen3.6-27b',
-            messages: [{ role: 'user', content: prompt }],
-            max_tokens: 200
+CRITICAL ZERO-SPOILER RULE (HIGHEST PRIORITY):
+- You MUST NEVER state, name, or write the exact answer word or property name${answerText ? ` ("${answerText}")` : ''}!
+- Do NOT reveal the option letter (A, B, C, D) or state the answer outright.
+- Speak about how the concept behaves, analogies, or clues to look for. The student must deduce the word themselves!
+${Array.isArray(previousHints) && previousHints.length > 0 ? `ANTI-REPETITION RULE: The student already received these clues:\n${previousHints.map((h, i) => `- Clue ${i + 1}: "${h}"`).join('\n')}\nProvide a COMPLETELY DIFFERENT clue from a fresh perspective.` : ''}
+${isNonEnglish ? `LANGUAGE REQUIREMENT: Respond in ${targetLangName || targetLang}. Ensure natural, high-quality educational phrasing in this language.` : 'Language: Respond in the same language as the question.'}
+
+Format requirement: Respond in 1 to 2 concise sentences.`;
+
+            const candidateModels = ['qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
+
+            for (const modelName of candidateModels) {
+                try {
+                    const resp = await groq.chat.completions.create({
+                        model: modelName,
+                        messages: [{ role: 'user', content: prompt }],
+                        max_tokens: 220,
+                        temperature: 0.75 + (currentLevel * 0.04)
+                    });
+
+                    let hintText = resp?.choices?.[0]?.message?.content?.trim();
+                    if (hintText) {
+                        // Sanitize any accidental leak of the exact answer word
+                        if (answerText && answerText.length > 2) {
+                            const escaped = answerText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+                            hintText = hintText.replace(regex, 'this property/concept');
+                        }
+
+                        return res.json({
+                            success: true,
+                            hint: hintText,
+                            clueLevel: currentLevel
+                        });
+                    }
+                } catch (modelErr) {
+                    console.warn(`[AI Coach] Model ${modelName} failed for clue ${currentLevel}:`, modelErr.message);
+                }
+            }
+        }
+
+        // Tiered fallback clues if AI is offline or unavailable
+        const isArabic = targetLang === 'ar';
+        const fallbackClues = isArabic ? [
+            `💡 فكرة عامة: ركز على الهدف الأساسي من السؤال وفكر في كيفية تصرف الخيارات المختلفة بشكل أساسي.`,
+            `🔍 طريقة العمل: حدد المتطلبات الدقيقة في السؤال وابحث عن السلوك الذي يجمع بينها.`,
+            `🎯 أسلوب الاستبعاد: استبعد الخيارات التي لا تحقق سوى جزء من الشروط المطلوبة في السؤال.`,
+            `⚡ لمحة دقيقة: أعد قراءة الكلمات المفتاحية في السؤال بعناية لتستنتج الإجابة بنفسك.`
+        ] : [
+            `💡 Conceptual Clue: Focus on the big-picture objective of the question. Think about how the different options behave fundamentally differently.`,
+            `🔍 Behavioral Clue: Break down the exact requirements in the question. Does one option uniquely satisfy all constraints while the others fail one?`,
+            `🎯 Elimination Clue: Rule out options that only do half the job. Look closely at compound terms or specific rules that fit the exact wording.`,
+            `⚡ Deep Insight: Re-read the question keywords carefully and contrast the remaining two closest choices.`,
+            `🧠 Final Perspective: Pay special attention to the core definition in this topic—the answer directly matches the primary rule of this concept.`
+        ];
+
+        const clueIndex = (currentLevel - 1) % fallbackClues.length;
+        res.json({
+            success: true,
+            hint: fallbackClues[clueIndex],
+            clueLevel: currentLevel
         });
-
-        const hintText = resp?.choices?.[0]?.message?.content?.trim() || 'Break down the question prompt into its fundamental components and eliminate options that contradict the core definitions.';
-        res.json({ success: true, hint: hintText });
     } catch (error) {
         console.error('AI Coach Hint Error:', error);
         res.json({
             success: true,
-            hint: '💡 Study Pointer: Break down the question keywords and rule out any options that conflict with core domain principles.'
+            hint: '💡 Study Pointer: Break down the question keywords and rule out any options that conflict with core domain principles.',
+            clueLevel: 1
         });
     }
 };
@@ -345,7 +428,7 @@ Respond ONLY with a JSON object in this exact format:
 }`;
 
                 const resp = await groq.chat.completions.create({
-                    model: 'qwen/qwen3.6-27b',
+                    model: 'qwen/qwen3.8-27b',
                     messages: [{ role: 'user', content: prompt }],
                     response_format: { type: 'json_object' },
                     max_tokens: 2000
@@ -459,7 +542,7 @@ Return ONLY valid JSON with this exact structure:
 }`;
 
                 const completion = await groq.chat.completions.create({
-                    model: 'qwen/qwen3.6-27b',
+                    model: 'qwen/qwen3.8-27b',
                     messages: [{ role: 'user', content: prompt }],
                     response_format: { type: 'json_object' },
                     max_tokens: 300,

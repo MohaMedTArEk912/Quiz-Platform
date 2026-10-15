@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
-import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins, Keyboard, WifiOff, Bot, Globe, List, Flag } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Target, Zap, Shield, Lightbulb, ArrowLeft, ShoppingBag, Coins, Keyboard, WifiOff, Bot, Globe, List, Flag, Sparkles, RotateCcw, RefreshCw } from 'lucide-react';
 import type { Quiz, Question, UserData, QuizResult, AttemptAnswers, PoolProgressData, IntegrityTelemetry, IntegrityTelemetryEvent } from '../types';
 import { api } from '../lib/api';
 import { AmbientBackground } from './AmbientBackground';
@@ -7,7 +7,7 @@ import { MathRenderer } from './common/MathRenderer';
 import { KeyboardShortcutsModal } from './common/KeyboardShortcutsModal';
 import { AICoachModal } from './common/AICoachModal';
 import { QuestionTranslatorBar } from './common/QuestionTranslatorBar';
-import { translateQuestion, getLanguageByCode, isRTL, type TranslatedQuestionData } from '../lib/translationService';
+import { translateQuestion, translateText, getLanguageByCode, isRTL, type TranslatedQuestionData } from '../lib/translationService';
 import { sounds } from '../lib/soundEffects';
 import MediaPromptPlayer from './common/MediaPromptPlayer';
 import OrderingQuestion from './question-types/OrderingQuestion';
@@ -15,6 +15,7 @@ import MatchingQuestion from './question-types/MatchingQuestion';
 import CodeOutputQuestion from './question-types/CodeOutputQuestion';
 import TextQuestion from './question-types/TextQuestion';
 import { useTheme } from '../context/ThemeContext';
+import { evaluateTextAnswer } from '../lib/stringSimilarity';
 
 const CompilerQuestion = React.lazy(() => import('./question-types/CompilerQuestion'));
 
@@ -42,6 +43,8 @@ type SavedQuizState = {
     timeLeft: number;
     lastUpdated: number;
     questionOrder?: number[];
+    submittedQuestions?: Record<number, boolean>;
+    questionCorrectness?: Record<number, boolean>;
 };
 
 const QuizTaking: React.FC<QuizTakingProps> = ({
@@ -111,6 +114,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     const timePerQuestionRef = useRef<Record<number, number>>({});
     const telemetryEventsRef = useRef<IntegrityTelemetryEvent[]>([]);
     const questionStartTimeRef = useRef(Date.now());
+    const lastSubmitTimeRef = useRef(0);
     const [isFullscreenActive, setIsFullscreenActive] = useState(false);
     const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
 
@@ -226,6 +230,18 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     const [isAICoachOpen, setIsAICoachOpen] = useState(false);
     const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
+    // --- 3D FLIPPING PAPER CLUE STATE ---
+    const [isClueFlipped, setIsClueFlipped] = useState(false);
+    const [inlineClue, setInlineClue] = useState<string>('');
+    const inlineClueRef = useRef(inlineClue);
+    useEffect(() => {
+        inlineClueRef.current = inlineClue;
+    }, [inlineClue]);
+    const [inlineClueLevel, setInlineClueLevel] = useState<number>(1);
+    const [inlineClueHistory, setInlineClueHistory] = useState<string[]>([]);
+    const [isInlineClueLoading, setIsInlineClueLoading] = useState(false);
+    const clueTranslationsRef = useRef<Record<string, Record<string, string>>>({});
+
     // Online/Offline status listener
     useEffect(() => {
         const handleOnline = () => setIsOnline(true);
@@ -335,16 +351,18 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
     useEffect(() => {
         if (showResumePrompt || isSubmitting || embedded || countUpTimer) return;
-        const state = {
+        const state: SavedQuizState = {
             quizId: quizIdentifier,
             currentQuestion,
             answers,
             timeLeft,
             lastUpdated: Date.now(),
-            questionOrder
+            questionOrder,
+            submittedQuestions,
+            questionCorrectness
         };
         sessionStorage.setItem(storageKey, JSON.stringify(state));
-    }, [currentQuestion, answers, timeLeft, quizIdentifier, storageKey, showResumePrompt, isSubmitting, questionOrder, embedded, countUpTimer]);
+    }, [currentQuestion, answers, timeLeft, quizIdentifier, storageKey, showResumePrompt, isSubmitting, questionOrder, embedded, countUpTimer, submittedQuestions, questionCorrectness]);
 
     const handleResume = () => {
         if (savedState) {
@@ -353,6 +371,12 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             setTimeLeft(savedState.timeLeft);
             if (savedState.questionOrder) {
                 setQuestionOrder(savedState.questionOrder);
+            }
+            if (savedState.submittedQuestions) {
+                setSubmittedQuestions(savedState.submittedQuestions);
+            }
+            if (savedState.questionCorrectness) {
+                setQuestionCorrectness(savedState.questionCorrectness);
             }
         }
         resetQuestionState(savedState?.currentQuestion ?? 0);
@@ -378,25 +402,6 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         return questionOrder[targetIndex];
     }, [currentQuestion, questionOrder, retryMode, wrongQuestionIndices]);
 
-
-    const resetQuestionState = useCallback((targetIndex = currentQuestion) => {
-        setShakeError(false);
-        const isReviewMode = quiz.reviewMode !== false;
-        if (!isReviewMode) {
-            setQuestionSubmitted(false);
-            setIsCurrentAnswerCorrect(false);
-        } else {
-            const actualIdx = getActualQuestionIndex(targetIndex);
-            const hasAnswer = answers[actualIdx] !== undefined;
-            setQuestionSubmitted(hasAnswer && (submittedQuestions[actualIdx] || false));
-            setIsCurrentAnswerCorrect(hasAnswer && (questionCorrectness[actualIdx] || false));
-        }
-    }, [currentQuestion, quiz.reviewMode, getActualQuestionIndex, answers, submittedQuestions, questionCorrectness]);
-
-
-    const isLastQuestion = retryMode
-        ? currentQuestion === wrongQuestionIndices.length - 1
-        : currentQuestion === quiz.questions.length - 1;
 
     // Helper for checking correctness across all question types
     const checkComplexAnswer = useCallback((q: Question | { type?: string; isCompiler?: boolean; compilerConfig?: { referenceCode?: string }; correctAnswer?: unknown; orderingItems?: string[]; matchingPairs?: { left: string; right: string }[]; options?: string[] }, ans: unknown): boolean => {
@@ -442,7 +447,6 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         // 4. Code Output Questions
         if (q.type === 'code-output') {
             if (q.options && q.options.length > 0) {
-                // If options present, student may have clicked option index or typed option text
                 if (typeof ans === 'number') {
                     return ans === Number(q.correctAnswer) || String(q.options[ans]).trim() === String(q.correctAnswer).trim();
                 }
@@ -454,20 +458,14 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 }
                 return false;
             }
-            // Direct stdout string comparison
             return String(ans).trim() === String(q.correctAnswer).trim();
         }
 
-        // 5. Short Answer / Text Questions
+        // 5. Short Answer / Text Questions (70%+ fuzzy matching)
         if (q.type === 'text') {
             if (q.correctAnswer === undefined || q.correctAnswer === null) return false;
-            const cleanAns = String(ans).trim().toLowerCase();
-            if (Array.isArray(q.correctAnswer)) {
-                return q.correctAnswer.some(c => String(c).trim().toLowerCase() === cleanAns);
-            }
-            // Support comma or pipe separated accepted variants (e.g. "len, len()")
-            const accepted = String(q.correctAnswer).split(/[,|]/).map(s => s.trim().toLowerCase());
-            return accepted.includes(cleanAns);
+            const evalResult = evaluateTextAnswer(ans, q.correctAnswer, 0.70);
+            return evalResult.isPassed;
         }
 
         // 6. Multiple Choice / Default Fallback
@@ -482,6 +480,68 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         }
         return ans === q.correctAnswer;
     }, []);
+
+    const resetQuestionState = useCallback((targetIndex = currentQuestion) => {
+        setShakeError(false);
+        setIsClueFlipped(false);
+        setInlineClue('');
+        setInlineClueLevel(1);
+        setInlineClueHistory([]);
+        setIsInlineClueLoading(false);
+        const isReviewMode = quiz.reviewMode !== false;
+        if (!isReviewMode) {
+            setQuestionSubmitted(false);
+            setIsCurrentAnswerCorrect(false);
+        } else {
+            const actualIdx = getActualQuestionIndex(targetIndex);
+            const hasAnswer = answers[actualIdx] !== undefined;
+            const isSubmitted = Boolean(hasAnswer && submittedQuestions[actualIdx]);
+            setQuestionSubmitted(isSubmitted);
+            if (isSubmitted) {
+                const q = quiz.questions[actualIdx];
+                const isCorrect = questionCorrectness[actualIdx] !== undefined
+                    ? questionCorrectness[actualIdx]
+                    : (q ? checkComplexAnswer(q, answers[actualIdx]) : false);
+                setIsCurrentAnswerCorrect(isCorrect);
+            } else {
+                setIsCurrentAnswerCorrect(false);
+            }
+        }
+    }, [currentQuestion, quiz.reviewMode, getActualQuestionIndex, answers, submittedQuestions, questionCorrectness, quiz.questions, checkComplexAnswer]);
+
+    // Automatically keep questionSubmitted and isCurrentAnswerCorrect in sync whenever currentQuestion changes
+    useEffect(() => {
+        setShakeError(false);
+        setIsClueFlipped(false);
+        setInlineClue('');
+        setInlineClueLevel(1);
+        setInlineClueHistory([]);
+        setIsInlineClueLoading(false);
+        const isReviewMode = quiz.reviewMode !== false;
+        if (!isReviewMode) {
+            setQuestionSubmitted(false);
+            setIsCurrentAnswerCorrect(false);
+            return;
+        }
+
+        const actualIdx = getActualQuestionIndex(currentQuestion);
+        const hasAnswer = answers[actualIdx] !== undefined;
+        const isSubmitted = Boolean(hasAnswer && submittedQuestions[actualIdx]);
+        setQuestionSubmitted(isSubmitted);
+        if (isSubmitted) {
+            const q = quiz.questions[actualIdx];
+            const isCorrect = questionCorrectness[actualIdx] !== undefined 
+                ? questionCorrectness[actualIdx] 
+                : (q ? checkComplexAnswer(q, answers[actualIdx]) : false);
+            setIsCurrentAnswerCorrect(isCorrect);
+        } else {
+            setIsCurrentAnswerCorrect(false);
+        }
+    }, [currentQuestion, answers, submittedQuestions, questionCorrectness, quiz.reviewMode, quiz.questions, getActualQuestionIndex, checkComplexAnswer]);
+
+    const isLastQuestion = retryMode
+        ? currentQuestion === wrongQuestionIndices.length - 1
+        : currentQuestion === quiz.questions.length - 1;
 
     const handleQuizComplete = useCallback(() => {
         if (isSubmitting) return;
@@ -687,10 +747,123 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         };
     }, [currentQuestion, selectedLanguage, isTranslated, getActualQuestionIndex, quiz.questions, translatedCache]);
 
+    // --- 3D Paper Inline Clue Logic ---
+    const fetchInlineClue = useCallback(async (targetLevel = 1) => {
+        const actualIdx = getActualQuestionIndex();
+        const currentQ = quiz.questions[actualIdx];
+        if (!currentQ) return;
+
+        setIsInlineClueLoading(true);
+        try {
+            const isNonEn = isTranslated && selectedLanguage !== 'original';
+            const langInfo = isNonEn ? getLanguageByCode(selectedLanguage) : null;
+
+            const res = await api.getAICoachHint({
+                question: currentQ.question,
+                options: currentQ.options,
+                category: quiz.category || currentQ.part || '',
+                studentAnswer: answers[actualIdx] ? String(answers[actualIdx]) : undefined,
+                targetLang: isNonEn ? selectedLanguage : undefined,
+                targetLangName: langInfo ? langInfo.name : undefined,
+                correctAnswer: currentQ.correctAnswer,
+                clueLevel: targetLevel,
+                previousHints: inlineClueHistory
+            });
+
+            if (res.hint) {
+                const hint = res.hint;
+                setInlineClue(hint);
+                setInlineClueLevel(targetLevel);
+                setInlineClueHistory(prev => (prev.includes(hint) ? prev : [...prev, hint]));
+
+                const cacheKey = `${actualIdx}_${targetLevel}`;
+                const currentLangKey = isNonEn ? selectedLanguage : 'original';
+                clueTranslationsRef.current[cacheKey] = {
+                    ...(clueTranslationsRef.current[cacheKey] || {}),
+                    [currentLangKey]: hint
+                };
+            }
+        } catch (err) {
+            console.error('Failed to get clue:', err);
+            setInlineClue('💡 Focus on the fundamental rules of this topic and eliminate options that contradict core principles.');
+        } finally {
+            setIsInlineClueLoading(false);
+        }
+    }, [getActualQuestionIndex, quiz.questions, quiz.category, answers, isTranslated, selectedLanguage, inlineClueHistory]);
+
+    const flipToClue = useCallback(() => {
+        setIsClueFlipped(prev => {
+            const next = !prev;
+            if (next && !inlineClue) {
+                fetchInlineClue(1);
+            }
+            return next;
+        });
+    }, [inlineClue, fetchInlineClue]);
+
+    const handleNextInlineClue = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        const nextLevel = inlineClueLevel + 1;
+        fetchInlineClue(nextLevel);
+    }, [inlineClueLevel, fetchInlineClue]);
+
+    const getClueLevelTitle = useCallback((level: number) => {
+        const titles = [
+            'Level 1: Core Concept',
+            'Level 2: Mechanism & Behavior',
+            'Level 3: Elimination Clue',
+            'Level 4: Deep Insight',
+            'Level 5: Socratic Riddle'
+        ];
+        return titles[level - 1] || `Clue Level ${level}`;
+    }, []);
+
+    // Translate clue synchronously when language or translation mode is toggled via QuestionTranslatorBar
+    useEffect(() => {
+        const currentClue = inlineClueRef.current;
+        if (!currentClue || isInlineClueLoading) return;
+        const actualIdx = getActualQuestionIndex();
+        const cacheKey = `${actualIdx}_${inlineClueLevel}`;
+        const target = (isTranslated && selectedLanguage !== 'original') ? selectedLanguage : 'original';
+
+        if (clueTranslationsRef.current[cacheKey]?.[target]) {
+            setInlineClue(clueTranslationsRef.current[cacheKey][target]);
+            return;
+        }
+
+        if (target === 'original') {
+            if (clueTranslationsRef.current[cacheKey]?.['original']) {
+                setInlineClue(clueTranslationsRef.current[cacheKey]['original']);
+            }
+            return;
+        }
+
+        let isCancelled = false;
+        translateText(currentClue, target)
+            .then(translated => {
+                if (!isCancelled && translated) {
+                    setInlineClue(translated);
+                    clueTranslationsRef.current[cacheKey] = {
+                        ...(clueTranslationsRef.current[cacheKey] || {}),
+                        [target]: translated
+                    };
+                }
+            })
+            .catch(err => {
+                console.warn('[Translate Clue] Error translating clue:', err);
+            });
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [selectedLanguage, isTranslated, getActualQuestionIndex, inlineClueLevel, isInlineClueLoading]);
+
     const handleAnswer = useCallback((answer: string | number | string[] | Record<string, string>) => {
         if (isSubmitting) return;
 
         const actualIndex = getActualQuestionIndex();
+        // Lock answer if already submitted in review mode
+        if (quiz.reviewMode !== false && submittedQuestions[actualIndex]) return;
         const q = quiz.questions[actualIndex];
 
         // Rapid Guessing Detection (< 1.8 seconds on questions with text)
@@ -735,11 +908,13 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             const progressIndex = delayedValidation ? correctCount : answered;
             onProgress(currentScore, progressIndex);
         }
-    }, [isSubmitting, getActualQuestionIndex, quiz.questions, mustAnswerCorrectly, delayedValidation, answers, onProgress, checkComplexAnswer, currentQuestion]);
+    }, [isSubmitting, getActualQuestionIndex, quiz.questions, mustAnswerCorrectly, delayedValidation, answers, onProgress, checkComplexAnswer, currentQuestion, quiz.reviewMode, submittedQuestions]);
 
 
     const submitQuestion = useCallback(() => {
         const actualIndex = getActualQuestionIndex();
+        if (submittedQuestions[actualIndex]) return;
+        lastSubmitTimeRef.current = Date.now();
         const q = quiz.questions[actualIndex];
         const answer = answers[actualIndex];
         if (answer === undefined) return;
@@ -790,7 +965,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         if (showResumePrompt || isSubmitting || showShop) return;
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            const isInputFocused = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
+            const isTextarea = document.activeElement?.tagName === 'TEXTAREA';
+            if (isTextarea) return;
+
+            const isInputFocused = document.activeElement?.tagName === 'INPUT';
 
             if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
                 if (isInputFocused) return;
@@ -804,7 +982,16 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             
             // Allow Enter to advance or submit
             if (e.key === 'Enter') {
-                if (isInputFocused && !questionSubmitted) return; // Let input's onKeyDown handle submit
+                // If a question was just submitted (e.g. via Enter in an input or clicking Submit),
+                // ignore any Enter keystroke for 600ms to guarantee student sees right/wrong feedback
+                if (Date.now() - lastSubmitTimeRef.current < 600) {
+                    e.preventDefault();
+                    return;
+                }
+
+                const isAlreadySubmitted = Boolean(submittedQuestions[actualIndex] || questionSubmitted);
+                if (isInputFocused && !isAlreadySubmitted) return; // Let input's onKeyDown handle submit
+
                 e.preventDefault();
                 const isReviewMode = quiz.reviewMode !== false;
                 if (isReviewMode && !delayedValidation) {
@@ -812,7 +999,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     if (currentAns === undefined) {
                         setShakeError(true);
                         setTimeout(() => setShakeError(false), 400);
-                    } else if (!questionSubmitted) {
+                    } else if (!isAlreadySubmitted) {
                         submitQuestion();
                     } else {
                         nextQuestion();
@@ -851,7 +1038,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             if (isInputFocused) return;
 
             // Keyboard option selection (1-N or A-N) dynamically based on number of options
-            if (q && q.options && !q.isCompiler && (!questionSubmitted || delayedValidation)) {
+            const isCurrentLocked = Boolean(quiz.reviewMode !== false && !delayedValidation && (submittedQuestions[actualIndex] || questionSubmitted));
+            if (q && q.options && !q.isCompiler && !isCurrentLocked) {
                 const currentOptions = optionsOrder[actualIndex] || [];
                 let selectedVisualIndex = -1;
 
@@ -879,7 +1067,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [showResumePrompt, isSubmitting, showShop, getActualQuestionIndex, quiz.questions, quiz.reviewMode, delayedValidation, answers, questionSubmitted, nextQuestion, previousQuestion, optionsOrder, hiddenOptions, handleAnswer, submitQuestion]);
+    }, [showResumePrompt, isSubmitting, showShop, getActualQuestionIndex, quiz.questions, quiz.reviewMode, delayedValidation, answers, questionSubmitted, submittedQuestions, nextQuestion, previousQuestion, optionsOrder, hiddenOptions, handleAnswer, submitQuestion]);
 
 
     // --- Power-up Application Logic ---
@@ -1012,7 +1200,19 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     const hasCompleteAnswer = currentAnswer !== undefined && (
         q.type !== 'matching' || (typeof currentAnswer === 'object' && Object.keys(currentAnswer).length >= matchingPairCount)
     );
-    const showSubmitButton = !delayedValidation && quiz.reviewMode !== false && !questionSubmitted;
+    const isEffectiveSubmitted = Boolean(
+        !delayedValidation &&
+        quiz.reviewMode !== false &&
+        currentAnswer !== undefined &&
+        (submittedQuestions[actualIndex] || questionSubmitted)
+    );
+    const isEffectiveCorrect = isEffectiveSubmitted
+        ? (questionCorrectness[actualIndex] !== undefined
+            ? questionCorrectness[actualIndex]
+            : (isCurrentAnswerCorrect || checkComplexAnswer(q, currentAnswer)))
+        : false;
+    const showSubmitButton = !delayedValidation && quiz.reviewMode !== false && !isEffectiveSubmitted;
+    const isMatchingQuestion = q.type === 'matching';
 
     // Helper functions for UI
     const getPowerUpIcon = (type: string, sizeClass = "w-4 h-4") => {
@@ -1038,7 +1238,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     return (
         <div className={`w-full transition-colors flex flex-col font-sans relative ${embedded
             ? 'h-full bg-transparent'
-            : 'h-screen bg-gradient-to-br from-[#e0e7ff] via-[#f3e8ff] to-[#fee2e2] dark:from-[#080812] dark:via-[#0b0b18] dark:to-[#080812] overflow-hidden'
+            : 'h-screen bg-gradient-to-br from-[#e0e7ff] via-[#f3e8ff] to-[#fee2e2] dark:from-[#080812] dark:via-[#0b0b18] dark:to-[#080812] p-2 sm:p-4 md:p-5 lg:p-6 overflow-hidden'
             } text-gray-900 dark:text-gray-100`}>
             
             {!embedded && <AmbientBackground />}
@@ -1089,18 +1289,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 />
             )}
 
-            {questionSubmitted && !delayedValidation && (
-                <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl border-2 shadow-xl animate-in slide-in-from-top-3 fade-in duration-300 ${
-                    isCurrentAnswerCorrect
-                        ? 'bg-emerald-500 text-white border-emerald-700'
-                        : 'bg-rose-500 text-white border-rose-700'
-                }`} role="status" aria-live="assertive">
-                    {isCurrentAnswerCorrect ? <CheckCircle className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
-                    <span className="font-black text-sm sm:text-base">
-                        {isCurrentAnswerCorrect ? 'Correct answer!' : 'Not quite. Check the highlighted answer.'}
-                    </span>
-                </div>
-            )}
+
 
             {/* Proctored Exam Fullscreen Warning / Entry Banner */}
             {(quiz.requireFullscreen || quiz.isProctored) && !isFullscreenActive && !(user?.role === 'admin' || user?.isAdmin) && (
@@ -1154,13 +1343,19 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 </div>
             )}
 
-            {/* --- TOP BAR (Full width) --- */}
-            {!embedded && (
-                <header className={`flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 z-20 shadow-sm pt-safe pl-safe pr-safe ${
-                    isBento
-                        ? 'bg-white dark:bg-[#0f172a] border-b-2 border-black dark:border-white/20'
-                        : 'glass-panel border-b border-slate-200/80 dark:border-white/10'
-                }`}>
+            {/* --- ELEVATED QUIZ BOARD CONTAINER (Generous margin, rounded-3xl corners, drop shadow) --- */}
+            <div className={`w-full max-w-7xl 2xl:max-w-[1536px] mx-auto flex-1 flex flex-col rounded-3xl overflow-hidden relative z-10 transition-all ${
+                isBento
+                    ? 'border-[3px] border-black bg-white dark:bg-[#0b0f19] shadow-[8px_8px_0px_#000] dark:shadow-[8px_8px_0px_rgba(255,255,255,0.08)]'
+                    : 'border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-[#0b0f19]/90 backdrop-blur-xl shadow-2xl'
+            }`}>
+                {/* --- TOP BAR (Inside Card Header) --- */}
+                {!embedded && (
+                    <header className={`flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 z-20 shadow-sm ${
+                        isBento
+                            ? 'bg-white dark:bg-[#0f172a] border-b-2 border-black dark:border-white/20'
+                            : 'glass-panel border-b border-slate-200/80 dark:border-white/10'
+                    }`}>
                     <div className="flex items-center gap-3 sm:gap-4">
                         <button
                             onClick={onBack}
@@ -1258,40 +1453,68 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             {/* --- HORIZONTAL SPLIT LAYOUT --- */}
             <div className={`flex-1 flex flex-col landscape:flex-row lg:flex-row w-full ${embedded ? '' : 'z-10'} overflow-y-auto landscape:overflow-hidden lg:overflow-hidden`}>
                 {/* --- LEFT SIDE: Question Context --- */}
-                <div className={`w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col ${
+                <div className={`w-full ${
+                    isMatchingQuestion
+                        ? 'landscape:w-[38%] lg:w-[38%] xl:w-[35%]'
+                        : 'landscape:w-1/2 lg:w-1/2'
+                } h-auto landscape:h-full lg:h-full flex flex-col ${
                     isBento
                         ? 'bg-white dark:bg-[#0b0f19] border-b-2 landscape:border-b-0 landscape:border-r-2 lg:border-r-2 border-black dark:border-white/20'
                         : 'bg-white/70 dark:bg-white/[0.02] backdrop-blur-xl border-b landscape:border-b-0 landscape:border-r lg:border-r border-slate-200/80 dark:border-white/[0.06]'
                 } relative z-20 landscape:sticky landscape:top-0 lg:sticky lg:top-0 landscape:overflow-y-auto lg:overflow-y-auto no-scrollbar`}>
                     
-                    <div className="w-full max-w-2xl lg:ml-auto flex flex-col flex-1">
+                    <div className={`w-full ${isMatchingQuestion ? 'max-w-none' : 'max-w-2xl lg:ml-auto'} flex flex-col flex-1`}>
                         {/* Progress Header */}
                         <div className="relative flex items-center justify-between p-4 px-5 sm:px-8 lg:px-10 pb-2">
                             <div className="flex items-center gap-2">
                                 <span className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider ${isBento ? 'text-slate-600 dark:text-slate-300 font-black' : 'text-slate-400'}`}>Question</span>
                                 <span className="font-tabular text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">{currentQuestion + 1} / {quiz.questions.length}</span>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                                {/* AI Coach Button */}
+                                <button
+                                    type="button"
+                                    onClick={flipToClue}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                        isClueFlipped
+                                            ? 'bg-[#c084fc] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                            : isBento
+                                                ? 'bg-white hover:bg-purple-50 text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] active:translate-y-0.5'
+                                                : 'glass-card hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 shadow-sm active:scale-[0.985]'
+                                    }`}
+                                    title={isClueFlipped ? "Flip clue card back" : "Get AI clue"}
+                                >
+                                    <Sparkles className={`w-3.5 h-3.5 ${isClueFlipped ? 'text-black rotate-12' : 'text-purple-600 animate-pulse'}`} />
+                                    <span className="hidden sm:inline">AI Coach</span>
+                                </button>
+
+                                {/* Flag Button (White to Yellow transition with filled black icon) */}
                                 <button
                                     type="button"
                                     onClick={toggleCurrentQuestionFlag}
                                     aria-label={flaggedQuestions[actualIndex] ? 'Remove question flag' : 'Flag question for review'}
-                                    className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                                    className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border-2 border-black transition-all cursor-pointer ${
                                         flaggedQuestions[actualIndex]
-                                            ? 'bg-amber-300 text-black border-black shadow-[2px_2px_0px_#000]'
+                                            ? 'bg-[#facc15] text-black shadow-[2px_2px_0px_#000] hover:bg-[#fde047] scale-[1.02] active:translate-y-0.5'
                                             : isBento
-                                                ? 'bg-white text-black border-2 border-black hover:bg-amber-100'
-                                                : 'bg-white/70 text-slate-500 border-slate-200 hover:text-amber-600'
+                                                ? 'bg-white text-black shadow-[2px_2px_0px_#000] hover:bg-amber-50 active:translate-y-0.5'
+                                                : 'bg-white/90 text-slate-700 shadow-sm hover:bg-amber-50 border-slate-300'
                                     }`}
+                                    title={flaggedQuestions[actualIndex] ? 'Question is flagged' : 'Flag question'}
                                 >
-                                    <Flag className="w-4 h-4" />
+                                    <Flag className={`w-4 h-4 transition-transform ${flaggedQuestions[actualIndex] ? 'fill-black text-black scale-110' : 'text-slate-700'}`} />
+                                    <span className={`text-[11px] sm:text-xs font-black uppercase tracking-wider ${flaggedQuestions[actualIndex] ? 'text-black' : 'text-slate-700'}`}>
+                                        {flaggedQuestions[actualIndex] ? 'Flagged' : 'Flag'}
+                                    </span>
                                 </button>
+
+                                {/* Questions Menu Button */}
                                 <button
                                     type="button"
                                     onClick={() => setShowQuestionMenu(prev => !prev)}
                                     aria-expanded={showQuestionMenu}
                                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer ${
-                                        isBento ? 'bg-white text-black border-2 border-black hover:bg-purple-100' : 'bg-white/70 text-slate-600 border-slate-200 hover:border-indigo-400'
+                                        isBento ? 'bg-white text-black border-2 border-black hover:bg-purple-100 shadow-[2px_2px_0px_#000]' : 'bg-white/70 text-slate-600 border-slate-200 hover:border-indigo-400'
                                     }`}
                                 >
                                     <List className="w-4 h-4" />
@@ -1310,6 +1533,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                             const menuActualIndex = getActualQuestionIndex(position);
                                             const isAnswered = answers[menuActualIndex] !== undefined;
                                             const isFlagged = flaggedQuestions[menuActualIndex];
+                                            const isMenuSubmitted = Boolean(isAnswered && submittedQuestions[menuActualIndex] && quiz.reviewMode !== false && !delayedValidation);
+                                            const isMenuCorrect = isMenuSubmitted ? questionCorrectness[menuActualIndex] : undefined;
                                             return (
                                                 <button
                                                     type="button"
@@ -1317,14 +1542,22 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                                     onClick={() => goToQuestion(position)}
                                                     className={`relative h-9 rounded-lg text-xs font-black border-2 cursor-pointer transition-all ${
                                                         position === currentQuestion
-                                                            ? 'bg-indigo-600 text-white border-indigo-700'
-                                                            : isBento
-                                                                ? 'bg-slate-50 text-black border-black hover:bg-purple-100'
-                                                                : 'bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:border-indigo-400'
+                                                            ? 'bg-indigo-600 text-white border-indigo-700 shadow-[2px_2px_0px_#000]'
+                                                            : isMenuSubmitted
+                                                                ? isMenuCorrect
+                                                                    ? 'bg-emerald-100 text-emerald-900 border-emerald-600 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-500'
+                                                                    : 'bg-rose-100 text-rose-900 border-rose-600 hover:bg-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-500'
+                                                                : isBento
+                                                                    ? 'bg-slate-50 text-black border-black hover:bg-purple-100'
+                                                                    : 'bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:border-indigo-400'
                                                     }`}
                                                 >
                                                     {position + 1}
-                                                    {isAnswered && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-500" />}
+                                                    {isMenuSubmitted ? (
+                                                        <span className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${isMenuCorrect ? 'bg-emerald-600' : 'bg-rose-600'}`} />
+                                                    ) : isAnswered ? (
+                                                        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-500" />
+                                                    ) : null}
                                                     {isFlagged && <Flag className="absolute -right-1.5 -top-1.5 w-3.5 h-3.5 text-amber-500 fill-amber-300" />}
                                                 </button>
                                             );
@@ -1361,7 +1594,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         {/* Question Content */}
                         <div
                             dir={isCurrentRtl ? 'rtl' : 'ltr'}
-                            className={`flex-1 landscape:overflow-y-auto px-5 sm:px-8 lg:px-10 pb-28 landscape:pb-32 lg:landscape:pb-32 flex flex-col pt-5 sm:pt-8 landscape:pt-4 lg:landscape:pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
+                            className={`flex-1 landscape:overflow-y-auto px-5 sm:px-8 lg:px-10 pb-8 sm:pb-10 flex flex-col pt-5 sm:pt-8 landscape:pt-4 lg:landscape:pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
                             
                             {/* Translated Indicator Badge */}
                             {isTranslated && selectedLanguage !== 'original' && (
@@ -1374,6 +1607,133 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             <h2 className={`text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] landscape:text-base lg:landscape:text-[28px] font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-tight mb-4 sm:mb-6 ${isCurrentRtl ? 'text-right' : 'text-left'}`}>
                                 <MathRenderer text={displayQuestionText} dir={isCurrentRtl ? 'rtl' : 'ltr'} />
                             </h2>
+
+                            {/* 3D Flipping Paper Clue Card */}
+                            <div className="perspective-1000 mb-6 w-full">
+                                <div
+                                    onClick={flipToClue}
+                                    className={`preserve-3d paper-flip-spring relative w-full min-h-[145px] cursor-pointer ${
+                                        isClueFlipped ? 'paper-flipped' : ''
+                                    }`}
+                                >
+                                    {/* FRONT FACE: Sealed Paper Clue (Folded Note Look) */}
+                                    <div className={`backface-hidden w-full h-full rounded-2xl p-4 sm:p-5 flex flex-col justify-between border-2 border-black transition-all ${
+                                        isBento
+                                            ? 'bg-[#fef9c3] text-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-y-0.5'
+                                            : 'bg-amber-50 dark:bg-amber-950/30 text-amber-950 dark:text-amber-100 border-amber-300 dark:border-amber-700/50 shadow-md'
+                                    }`}>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2.5">
+                                                <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-black text-white text-xs font-black shadow-[1.5px_1.5px_0px_#8b5cf6]">
+                                                    AI
+                                                </span>
+                                                <div>
+                                                    <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-black dark:text-black">
+                                                        AI Coach Paper Clue
+                                                    </h4>
+                                                    <p className="text-[11px] font-semibold text-slate-700">
+                                                        Zero-spoiler hints to guide your thinking
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-white text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]">
+                                                Flip To Read
+                                            </span>
+                                        </div>
+
+                                        <div className="my-2.5 flex items-center justify-between text-xs font-extrabold text-slate-800">
+                                            <span>💡 Need a hint? Tap this paper note to flip it open.</span>
+                                        </div>
+
+                                        <div className="flex items-center justify-between pt-2 border-t border-black/15 text-[11px] font-black">
+                                            <span className="flex items-center gap-1.5 text-purple-800">
+                                                <Sparkles className="w-3.5 h-3.5 text-purple-700 animate-pulse" /> Click anywhere to flip
+                                            </span>
+                                            <span className="text-slate-600 text-[10px] uppercase tracking-wider">
+                                                Zero-Spoiler Guaranteed 🔒
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* BACK FACE: Revealed Socratic Clue */}
+                                    <div className={`backface-hidden rotate-y-180 absolute inset-0 w-full h-full rounded-2xl p-4 sm:p-5 flex flex-col justify-between border-2 border-black ${
+                                        isBento
+                                            ? 'bg-[#faf5ff] text-black shadow-[4px_4px_0px_#000]'
+                                            : 'bg-purple-50 dark:bg-[#1a132e] text-slate-900 dark:text-white border-purple-300 dark:border-purple-800 shadow-xl'
+                                    }`}>
+                                        {/* Top row */}
+                                        <div className="flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex items-center gap-2">
+                                                <span className="px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider bg-[#c084fc] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]">
+                                                    {getClueLevelTitle(inlineClueLevel)}
+                                                </span>
+                                                <div className="flex items-center gap-1">
+                                                    {[1, 2, 3, 4].map(lvl => (
+                                                        <div
+                                                            key={lvl}
+                                                            className={`w-2 h-2 rounded-full border border-black transition-all ${
+                                                                lvl <= inlineClueLevel ? 'bg-[#8b5cf6]' : 'bg-white'
+                                                            }`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleNextInlineClue}
+                                                    disabled={isInlineClueLoading}
+                                                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-white hover:bg-purple-100 text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000] active:translate-y-0.5 cursor-pointer disabled:opacity-50"
+                                                    title="Get a different clue from a new angle"
+                                                >
+                                                    <RefreshCw className={`w-3 h-3 ${isInlineClueLoading ? 'animate-spin' : ''}`} />
+                                                    <span>Another Clue</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={flipToClue}
+                                                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-[#fed7aa] hover:bg-[#fdba74] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000] active:translate-y-0.5 cursor-pointer"
+                                                    title="Flip paper note back"
+                                                >
+                                                    <RotateCcw className="w-3 h-3" />
+                                                    <span>Flip Back</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Clue Content */}
+                                        <div className="my-2.5 min-h-[48px] flex items-center">
+                                            {isInlineClueLoading ? (
+                                                <div className="flex items-center gap-2 text-xs font-bold text-purple-700 animate-pulse">
+                                                    <Sparkles className="w-4 h-4 animate-spin text-purple-600" />
+                                                    <span>Consulting AI Coach for a spoiler-free pointer...</span>
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs sm:text-sm font-black leading-relaxed text-slate-900 dark:text-slate-100">
+                                                    {inlineClue || '💡 Think about the distinguishing behavior and rules that set this concept apart.'}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Bottom row */}
+                                        <div className="flex items-center justify-between pt-2 border-t border-black/15 text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                                            <span className="flex items-center gap-1">
+                                                🔒 Zero-Spoiler Guaranteed
+                                            </span>
+                                            <span
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setIsAICoachOpen(true);
+                                                }}
+                                                className="text-purple-700 dark:text-purple-400 underline font-black cursor-pointer hover:text-purple-900"
+                                            >
+                                                Chat with AI Coach &rarr;
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                             {/* Image */}
                             {q.imageUrl && (
@@ -1414,28 +1774,28 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             )}
 
                             {/* Explanation Card */}
-                            {questionSubmitted && !delayedValidation && (
+                            {isEffectiveSubmitted && (
                                 <div className={`mt-6 p-6 rounded-2xl transition-all animate-in fade-in slide-in-from-bottom-4 duration-300 ${
                                     isBento
-                                        ? isCurrentAnswerCorrect
+                                        ? isEffectiveCorrect
                                             ? 'bg-[#dcfce7] border-2 border-black shadow-[4px_4px_0px_#000] text-black'
                                             : 'bg-[#fee2e2] border-2 border-black shadow-[4px_4px_0px_#000] text-black'
-                                        : isCurrentAnswerCorrect 
+                                        : isEffectiveCorrect 
                                             ? 'bg-green-500/5 border-green-500/20 text-green-950 dark:text-green-100 shadow-lg shadow-green-500/5 backdrop-blur-md' 
                                             : 'bg-red-500/5 border-red-500/20 text-red-950 dark:text-red-100 shadow-lg shadow-red-500/5 backdrop-blur-md'
                                 }`}>
                                     <div className="flex items-center gap-3 mb-3">
                                         <div className={`p-2 rounded-xl ${
                                             isBento
-                                                ? isCurrentAnswerCorrect
+                                                ? isEffectiveCorrect
                                                     ? 'bg-emerald-500 text-white border-2 border-black font-black'
                                                     : 'bg-rose-500 text-white border-2 border-black font-black'
-                                                : isCurrentAnswerCorrect ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+                                                : isEffectiveCorrect ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
                                         }`}>
-                                            {isCurrentAnswerCorrect ? <CheckCircle className="w-5 h-5"/> : <XCircle className="w-5 h-5"/>}
+                                            {isEffectiveCorrect ? <CheckCircle className="w-5 h-5"/> : <XCircle className="w-5 h-5"/>}
                                         </div>
                                         <h4 className="text-lg font-black tracking-tight">
-                                            {isCurrentAnswerCorrect ? 'Excellent! Correct Answer' : 'Incorrect Answer'}
+                                            {isEffectiveCorrect ? 'Excellent! Correct Answer' : 'Incorrect Answer'}
                                         </h4>
                                     </div>
 
@@ -1455,14 +1815,33 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                 </div>
                             )}
                             
-                            <div className="flex-1 min-h-[40px]"></div> {/* Spacer */}
+                            {/* Helpful instructions for matching questions */}
+                            {isMatchingQuestion && !isEffectiveSubmitted && (
+                                <div className={`mt-4 p-4 rounded-2xl border transition-all ${
+                                    isBento
+                                        ? 'bg-[#fef9c3] border-2 border-black text-black shadow-[3px_3px_0px_#000]'
+                                        : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-700 dark:text-indigo-300'
+                                }`}>
+                                    <div className="flex items-start gap-2.5 text-xs font-bold leading-relaxed">
+                                        <span className="text-base select-none">💡</span>
+                                        <div>
+                                            <span className="font-black uppercase tracking-wider block mb-0.5">How to match:</span>
+                                            <span>Click a term in <strong className="font-black">Column A</strong>, then click its corresponding definition in <strong className="font-black">Column B</strong>. Click "Linked" to disconnect a pair.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                         </div>
                     </div>
                 </div>
 
                 {/* --- RIGHT SIDE: Answer Options --- */}
-                <div className={`w-full landscape:w-1/2 lg:w-1/2 h-auto landscape:h-full lg:h-full flex flex-col ${
+                <div className={`w-full ${
+                    isMatchingQuestion
+                        ? 'landscape:w-[62%] lg:w-[62%] xl:w-[65%]'
+                        : 'landscape:w-1/2 lg:w-1/2'
+                } h-auto landscape:h-full lg:h-full flex flex-col ${
                     isBento 
                         ? 'bg-[#f8fafc] dark:bg-[#030712]' 
                         : 'bg-transparent lg:bg-white/40 dark:bg-[#0b0f19]'
@@ -1470,7 +1849,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     <div
                         role="radiogroup"
                         aria-label={`Options for Question ${currentQuestion + 1}`}
-                        className={`flex-1 w-full ${q.type === 'matching' ? 'max-w-4xl' : 'max-w-2xl'} lg:mr-auto p-5 sm:px-8 lg:px-10 pt-5 sm:pt-8 landscape:pt-4 lg:landscape:pt-8 pb-28 landscape:pb-32 lg:landscape:pb-32 flex flex-col justify-start gap-3 sm:gap-3.5 no-scrollbar`}
+                        className={`flex-1 w-full ${isMatchingQuestion ? 'max-w-none' : 'max-w-2xl'} lg:mr-auto p-4 sm:p-6 lg:p-8 pt-5 sm:pt-6 landscape:pt-4 lg:landscape:pt-6 pb-6 landscape:pb-8 lg:landscape:pb-8 flex flex-col justify-start gap-3 sm:gap-3.5 no-scrollbar`}
                     >
                         {q.isCompiler ? (
                             <Suspense fallback={<div className="animate-spin w-8 h-8 border-4 border-indigo-500 rounded-full border-t-transparent mx-auto"></div>}>
@@ -1479,7 +1858,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                         initialCode={q.compilerConfig?.initialCode}
                                         language={q.compilerConfig?.language || 'javascript'}
                                         onChange={(code) => handleAnswer(code)}
-                                        readOnly={isSubmitting || (questionSubmitted && !delayedValidation)}
+                                        readOnly={isSubmitting || isEffectiveSubmitted}
                                     />
                                 </div>
                             </Suspense>
@@ -1487,36 +1866,36 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             <OrderingQuestion
                                 items={activeTranslation?.orderingItems || q.orderingItems || q.options || []}
                                 correctOrder={q.orderingItems || q.options}
-                                submitted={questionSubmitted && !delayedValidation}
+                                submitted={isEffectiveSubmitted}
                                 onChange={(ordered) => handleAnswer(ordered)}
-                                readOnly={isSubmitting}
+                                readOnly={isSubmitting || isEffectiveSubmitted}
                             />
                         ) : q.type === 'matching' ? (
                             <MatchingQuestion
                                 pairs={activeTranslation?.matchingPairs || q.matchingPairs || []}
-                                submitted={questionSubmitted && !delayedValidation}
+                                submitted={isEffectiveSubmitted}
                                 onChange={(matches) => handleAnswer(matches)}
-                                readOnly={isSubmitting}
+                                readOnly={isSubmitting || isEffectiveSubmitted}
                             />
                         ) : q.type === 'code-output' ? (
                             <CodeOutputQuestion
                                 codeSnippet={q.codeSnippet}
                                 options={activeTranslation?.options || q.options}
                                 correctAnswer={q.correctAnswer as string | number}
-                                submitted={questionSubmitted && !delayedValidation}
+                                submitted={isEffectiveSubmitted}
                                 userAnswer={answers[actualIndex] as string | number | undefined}
                                 onChange={(val) => handleAnswer(val)}
-                                readOnly={isSubmitting}
+                                readOnly={isSubmitting || isEffectiveSubmitted}
                             />
                         ) : q.type === 'text' ? (
                             <TextQuestion
                                 value={typeof answers[actualIndex] === 'string' ? answers[actualIndex] as string : (answers[actualIndex] !== undefined ? String(answers[actualIndex]) : '')}
                                 correctAnswer={q.correctAnswer}
-                                submitted={questionSubmitted && !delayedValidation}
-                                isCorrect={isCurrentAnswerCorrect}
+                                submitted={isEffectiveSubmitted}
+                                isCorrect={isEffectiveCorrect}
                                 onChange={(val) => handleAnswer(val)}
                                 onSubmit={submitQuestion}
-                                readOnly={isSubmitting}
+                                readOnly={isSubmitting || isEffectiveSubmitted}
                             />
                         ) : (
                             currentOptions.map((originalIndex, visualIndex) => {
@@ -1529,9 +1908,9 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                     : rawOption;
                                 const isSelected = answers[actualIndex] === originalIndex;
                                 const isCorrectOption = originalIndex === q.correctAnswer;
-                                const showCorrect = questionSubmitted && !delayedValidation && !isCurrentAnswerCorrect && isCorrectOption;
-                                const showWrong = questionSubmitted && !delayedValidation && !isCurrentAnswerCorrect && isSelected;
-                                const showSuccess = questionSubmitted && !delayedValidation && isCurrentAnswerCorrect && isSelected;
+                                const showCorrect = isEffectiveSubmitted && !isEffectiveCorrect && isCorrectOption;
+                                const showWrong = isEffectiveSubmitted && !isEffectiveCorrect && isSelected;
+                                const showSuccess = isEffectiveSubmitted && isEffectiveCorrect && isSelected;
 
                                 const letters = ['A', 'B', 'C', 'D', 'E'];
                                 const label = letters[visualIndex] || (visualIndex + 1);
@@ -1584,9 +1963,8 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                         aria-label={`Option ${label}: ${option}`}
                                         tabIndex={0}
                                         onClick={() => handleAnswer(originalIndex)}
-                                        disabled={isSubmitting || (questionSubmitted && !delayedValidation)}
-                                        className={`${baseClass} ${stateClass} disabled:opacity-75 disabled:cursor-default`}
-                                    >
+                                        disabled={isSubmitting || isEffectiveSubmitted}
+                                        className={`${baseClass} ${stateClass} disabled:opacity-75 disabled:cursor-default`}>
                                         <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-extrabold text-sm mr-3 sm:mr-4 transition-colors shrink-0 ${badgeClass} font-tabular`}>
                                             {showSuccess || showCorrect ? <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" /> : showWrong ? <XCircle className="w-4 h-4 sm:w-5 sm:h-5"/> : label}
                                         </div>
@@ -1609,10 +1987,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 Question {currentQuestion + 1} of {quiz.questions.length}: {q.question}
             </div>
 
-            {/* Bottom Action Footer Overlay */}
-            <div className={`fixed bottom-0 left-0 right-0 p-3 sm:p-4 z-30 w-full flex items-center justify-between pointer-events-auto pb-safe pl-safe pr-safe ${
+            {/* Bottom Action Footer (Docked neatly inside the elevated card) */}
+            <div className={`flex-none p-3 sm:p-4 z-20 w-full flex items-center justify-between pointer-events-auto ${
                 isBento
-                    ? 'bg-white dark:bg-[#0f172a] border-t-2 border-black dark:border-white/20 shadow-[0px_-4px_12px_rgba(0,0,0,0.06)]'
+                    ? 'bg-white dark:bg-[#0f172a] border-t-2 border-black dark:border-white/20 shadow-[0px_-4px_12px_rgba(0,0,0,0.04)]'
                     : 'glass-panel border-t border-slate-200/80 dark:border-white/10 shadow-lg'
             }`}>
                 {!isMobileDevice && (
@@ -1651,6 +2029,24 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     </div>
                 )}
                 
+                {/* Answer Feedback Pill (Docked in footer, never overlapping header) */}
+                {isEffectiveSubmitted && (
+                    <div className={`flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+                        isEffectiveCorrect
+                            ? isBento
+                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                                : 'bg-emerald-500 text-white border-2 border-emerald-700'
+                            : isBento
+                                ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                                : 'bg-rose-500 text-white border-2 border-rose-700'
+                    }`} role="status" aria-live="assertive">
+                        {isEffectiveCorrect ? <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-black" /> : <XCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-black" />}
+                        <span className="font-black text-xs sm:text-sm">
+                            {isEffectiveCorrect ? 'Correct answer!' : 'Not quite. Check the highlighted answer.'}
+                        </span>
+                    </div>
+                )}
+
                 <div className="flex w-full sm:w-auto gap-2.5 sm:gap-3 pointer-events-auto">
                     <button
                         onClick={previousQuestion}
@@ -1680,19 +2076,19 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     ) : !isLastQuestion ? (
                         <button
                             onClick={nextQuestion}
-                            disabled={answers[actualIndex] === undefined || (quiz.reviewMode !== false && !delayedValidation && !questionSubmitted)}
+                            disabled={answers[actualIndex] === undefined || (quiz.reviewMode !== false && !delayedValidation && !isEffectiveSubmitted)}
                             className={`flex-1 sm:flex-none px-6 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
                                 isBento
                                     ? 'bg-[#8b5cf6] hover:bg-[#7c3aed] text-white border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_#000] disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0px_#000]'
                                     : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white shadow-lg shadow-indigo-600/25 active:scale-[0.985]'
                             }`}
                         >
-                            <span>{questionSubmitted && !delayedValidation ? 'Continue' : 'Next Question'}</span>
+                            <span>{isEffectiveSubmitted ? 'Continue' : 'Next Question'}</span>
                             <span>→</span>
                         </button>
                     ) : (
                         <button
-                            onClick={questionSubmitted || delayedValidation || quiz.reviewMode === false ? handleQuizComplete : submitQuestion}
+                            onClick={isEffectiveSubmitted || delayedValidation || quiz.reviewMode === false ? handleQuizComplete : submitQuestion}
                             disabled={answers[actualIndex] === undefined}
                             className={`flex-1 sm:flex-none px-6 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
                                 isBento
@@ -1700,12 +2096,13 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                     : 'bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white shadow-lg shadow-emerald-600/25 active:scale-[0.985]'
                             }`}
                         >
-                            <span>{isSubmitting ? 'Submitting...' : questionSubmitted || delayedValidation || quiz.reviewMode === false ? 'Finish Quiz' : 'Submit Answer'}</span>
-                            {questionSubmitted || delayedValidation || quiz.reviewMode === false ? <Target className="w-4 h-4"/> : <CheckCircle className="w-4 h-4" />}
+                            <span>{isSubmitting ? 'Submitting...' : isEffectiveSubmitted || delayedValidation || quiz.reviewMode === false ? 'Finish Quiz' : 'Submit Answer'}</span>
+                            {isEffectiveSubmitted || delayedValidation || quiz.reviewMode === false ? <Target className="w-4 h-4"/> : <CheckCircle className="w-4 h-4" />}
                         </button>
                     )}
                 </div>
             </div>
+        </div> {/* End ELEVATED QUIZ BOARD CONTAINER */}
 
             {/* --- SHOP OVERLAY (Feature 9) --- */}
             {showShop && (

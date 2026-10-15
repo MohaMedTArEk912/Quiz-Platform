@@ -124,7 +124,7 @@ export const processMaterial = async (req, res) => {
 
             const completion = await groq.chat.completions.create({
                 messages: [{ role: 'user', content: prompt }],
-                model: 'qwen/qwen3.6-27b',
+                model: 'qwen/qwen3.8-27b',
                 response_format: { type: 'json_object' }
             });
 
@@ -218,7 +218,7 @@ export const generateQuizFromMaterials = async (req, res) => {
 
         const completion = await groq.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
-            model: 'qwen/qwen3.6-27b',
+            model: 'qwen/qwen3.8-27b',
             response_format: { type: 'json_object' }
         });
 

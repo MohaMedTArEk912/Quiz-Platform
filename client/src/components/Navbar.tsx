@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
     User,
     Award,
@@ -152,20 +152,20 @@ const Navbar: React.FC<NavbarProps> = ({
         return [...PRIMARY_NAV_ITEMS, ...secondaryNavItems];
     }, [secondaryNavItems]);
 
-    const isActive = (path: string) => {
+    const isActive = useCallback((path: string) => {
         if (path === '/') {
             return location.pathname === '/' || location.pathname === '/dashboard';
         }
         return location.pathname === path || location.pathname.startsWith(`${path}/`);
-    };
+    }, [location.pathname]);
 
     const isSecondaryActive = useMemo(() => {
         return secondaryNavItems.some(item => isActive(item.path));
-    }, [location.pathname, secondaryNavItems]);
+    }, [isActive, secondaryNavItems]);
 
     const activeSecondaryItem = useMemo(() => {
         return secondaryNavItems.find(item => isActive(item.path));
-    }, [location.pathname, secondaryNavItems]);
+    }, [isActive, secondaryNavItems]);
 
     const hasClanInvites = Boolean(user?.clanInvites && user.clanInvites.length > 0);
 
