@@ -926,6 +926,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         setQuestionSubmitted(true);
         setSubmittedQuestions(prev => ({ ...prev, [actualIndex]: true }));
         setQuestionCorrectness(prev => ({ ...prev, [actualIndex]: isCorrect }));
+        setIsClueFlipped(false);
 
         if (isCorrect) {
             sounds.playCorrect();
@@ -1596,12 +1597,68 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                     }`}
                                 >
                                     {/* FRONT FACE: Question Prompt Box */}
-                                    <div className={`backface-hidden w-full min-h-[250px] sm:min-h-[280px] rounded-2xl sm:rounded-3xl p-6 sm:p-8 flex flex-col justify-center border-[3px] border-black bg-white dark:bg-[#0f172a] shadow-[4px_4px_0px_#000] dark:shadow-[4px_4px_0px_rgba(255,255,255,0.1)] transition-all overflow-hidden ${
+                                    <div className={`backface-hidden w-full min-h-[250px] sm:min-h-[280px] rounded-2xl sm:rounded-3xl p-5 sm:p-7 flex flex-col ${
+                                        isEffectiveSubmitted ? 'justify-start' : 'justify-center'
+                                    } border-[3px] border-black bg-white dark:bg-[#0f172a] shadow-[4px_4px_0px_#000] dark:shadow-[4px_4px_0px_rgba(255,255,255,0.1)] transition-all overflow-hidden ${
                                         isClueFlipped ? 'pointer-events-none' : ''
                                     }`}>
-                                        <h2 className={`text-xl sm:text-2xl lg:text-3xl font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-normal ${isCurrentRtl ? 'text-right' : 'text-left'}`}>
-                                            <MathRenderer text={displayQuestionText} dir={isCurrentRtl ? 'rtl' : 'ltr'} />
-                                        </h2>
+                                        {!isEffectiveSubmitted ? (
+                                            <h2 className={`text-xl sm:text-2xl lg:text-3xl font-[900] tracking-tight text-gray-900 dark:text-white leading-snug lg:leading-normal ${isCurrentRtl ? 'text-right' : 'text-left'}`}>
+                                                <MathRenderer text={displayQuestionText} dir={isCurrentRtl ? 'rtl' : 'ltr'} />
+                                            </h2>
+                                        ) : (
+                                            <div className="flex flex-col h-full justify-between gap-3 animate-in fade-in duration-300">
+                                                {/* Minimized Question Prompt */}
+                                                <div className={`pb-2.5 border-b-2 border-black/10 shrink-0 ${isCurrentRtl ? 'text-right' : 'text-left'}`}>
+                                                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                                                        <span>Question {currentQuestion + 1}</span>
+                                                    </div>
+                                                    <h3 className="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-200 leading-snug">
+                                                        <MathRenderer text={displayQuestionText} dir={isCurrentRtl ? 'rtl' : 'ltr'} />
+                                                    </h3>
+                                                </div>
+
+                                                {/* Explanation & Result Block */}
+                                                <div className={`flex-1 p-4 sm:p-5 rounded-xl sm:rounded-2xl transition-all flex flex-col justify-between ${
+                                                    isBento
+                                                        ? isEffectiveCorrect
+                                                            ? 'bg-[#dcfce7] border-2 border-black shadow-[3px_3px_0px_#000] text-black'
+                                                            : 'bg-[#fee2e2] border-2 border-black shadow-[3px_3px_0px_#000] text-black'
+                                                        : isEffectiveCorrect 
+                                                            ? 'bg-green-500/10 border border-green-500/25 text-green-950 dark:text-green-100 shadow-sm' 
+                                                            : 'bg-red-500/10 border border-red-500/25 text-red-950 dark:text-red-100 shadow-sm'
+                                                }`}>
+                                                    <div className="flex items-center gap-3 mb-2.5 shrink-0">
+                                                        <div className={`p-1.5 sm:p-2 rounded-xl shrink-0 ${
+                                                            isBento
+                                                                ? isEffectiveCorrect
+                                                                    ? 'bg-emerald-500 text-white border-2 border-black font-black'
+                                                                    : 'bg-rose-500 text-white border-2 border-black font-black'
+                                                                : isEffectiveCorrect ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'
+                                                        }`}>
+                                                            {isEffectiveCorrect ? <CheckCircle className="w-5 h-5"/> : <XCircle className="w-5 h-5"/>}
+                                                        </div>
+                                                        <h4 className="text-base sm:text-lg font-black tracking-tight text-black dark:text-inherit">
+                                                            {isEffectiveCorrect ? 'Excellent! Correct Answer' : 'Incorrect Answer'}
+                                                        </h4>
+                                                    </div>
+
+                                                    {displayExplanationText ? (
+                                                        <div className={`pt-2.5 border-t ${isBento ? 'border-black/20' : 'border-gray-200/50 dark:border-white/5'} overflow-y-auto no-scrollbar`}>
+                                                            <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400 mb-1.5">
+                                                                <Lightbulb className="w-3.5 h-3.5 text-yellow-500 animate-pulse"/>
+                                                                <span>Explanation</span>
+                                                            </div>
+                                                            <MathRenderer text={displayExplanationText} className={`text-xs sm:text-sm leading-relaxed font-bold opacity-90 ${isCurrentRtl ? 'text-right' : 'text-left'}`} />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="pt-2 border-t border-black/10 text-xs text-gray-500 italic">
+                                                            No explanation provided for this question.
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* BACK FACE: Revealed Socratic Clue Card (Clean, Non-Overlapping & Self-Contained) */}
@@ -1719,48 +1776,6 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                     <pre className="p-6 font-mono text-sm lg:text-base text-indigo-600 dark:text-emerald-400 whitespace-pre-wrap font-medium overflow-x-auto leading-relaxed">
                                         {q.codeSnippet}
                                     </pre>
-                                </div>
-                            )}
-
-                            {/* Explanation Card */}
-                            {isEffectiveSubmitted && (
-                                <div className={`mt-6 p-6 rounded-2xl transition-all animate-in fade-in slide-in-from-bottom-4 duration-300 ${
-                                    isBento
-                                        ? isEffectiveCorrect
-                                            ? 'bg-[#dcfce7] border-2 border-black shadow-[4px_4px_0px_#000] text-black'
-                                            : 'bg-[#fee2e2] border-2 border-black shadow-[4px_4px_0px_#000] text-black'
-                                        : isEffectiveCorrect 
-                                            ? 'bg-green-500/5 border-green-500/20 text-green-950 dark:text-green-100 shadow-lg shadow-green-500/5 backdrop-blur-md' 
-                                            : 'bg-red-500/5 border-red-500/20 text-red-950 dark:text-red-100 shadow-lg shadow-red-500/5 backdrop-blur-md'
-                                }`}>
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className={`p-2 rounded-xl ${
-                                            isBento
-                                                ? isEffectiveCorrect
-                                                    ? 'bg-emerald-500 text-white border-2 border-black font-black'
-                                                    : 'bg-rose-500 text-white border-2 border-black font-black'
-                                                : isEffectiveCorrect ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                                        }`}>
-                                            {isEffectiveCorrect ? <CheckCircle className="w-5 h-5"/> : <XCircle className="w-5 h-5"/>}
-                                        </div>
-                                        <h4 className="text-lg font-black tracking-tight">
-                                            {isEffectiveCorrect ? 'Excellent! Correct Answer' : 'Incorrect Answer'}
-                                        </h4>
-                                    </div>
-
-                                    {displayExplanationText ? (
-                                        <div className={`pt-3 border-t ${isBento ? 'border-black/20' : 'border-gray-200/50 dark:border-white/5'}`}>
-                                            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
-                                                <Lightbulb className="w-3.5 h-3.5 text-yellow-500 animate-pulse"/>
-                                                <span>Explanation</span>
-                                            </div>
-                                            <MathRenderer text={displayExplanationText} className={`text-sm leading-relaxed opacity-90 font-medium ${isCurrentRtl ? 'text-right' : 'text-left'}`} />
-                                        </div>
-                                    ) : (
-                                        <div className="pt-3 border-t border-gray-200/50 dark:border-white/5 text-xs text-gray-400 italic">
-                                            No explanation provided for this question.
-                                        </div>
-                                    )}
                                 </div>
                             )}
                             
