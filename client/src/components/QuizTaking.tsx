@@ -5,7 +5,6 @@ import { api } from '../lib/api';
 import { AmbientBackground } from './AmbientBackground';
 import { MathRenderer } from './common/MathRenderer';
 import { KeyboardShortcutsModal } from './common/KeyboardShortcutsModal';
-import { AICoachModal } from './common/AICoachModal';
 import { QuestionTranslatorBar } from './common/QuestionTranslatorBar';
 import { translateQuestion, translateText, getLanguageByCode, isRTL, type TranslatedQuestionData } from '../lib/translationService';
 import { sounds } from '../lib/soundEffects';
@@ -227,7 +226,6 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     const [shakeError, setShakeError] = useState(false);
     const [isMobileDevice, setIsMobileDevice] = useState(false);
     const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
-    const [isAICoachOpen, setIsAICoachOpen] = useState(false);
     const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
     // --- 3D FLIPPING PAPER CLUE STATE ---
@@ -1673,27 +1671,14 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                             <span className="flex items-center gap-1">
                                                 🔒 Zero-Spoiler<span className="hidden xs:inline"> Guaranteed</span>
                                             </span>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={flipToClue}
-                                                    className="text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-black cursor-pointer hover:underline"
-                                                >
-                                                    <span className="hidden sm:inline">Return to Question</span>
-                                                    <span className="sm:hidden">Question</span> ↩
-                                                </button>
-                                                <span>•</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setIsAICoachOpen(true);
-                                                    }}
-                                                    className="text-purple-700 dark:text-purple-400 underline font-black cursor-pointer hover:text-purple-900"
-                                                >
-                                                    Chat with Coach &rarr;
-                                                </button>
-                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={flipToClue}
+                                                className="text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-black cursor-pointer hover:underline"
+                                            >
+                                                <span className="hidden sm:inline">Return to Question</span>
+                                                <span className="sm:hidden">Question</span> ↩
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -2306,15 +2291,6 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             <KeyboardShortcutsModal
                 isOpen={showKeyboardShortcuts}
                 onClose={() => setShowKeyboardShortcuts(false)}
-            />
-
-            {/* AI Study Coach Modal */}
-            <AICoachModal
-                isOpen={isAICoachOpen}
-                question={q.question}
-                options={q.options}
-                category={quiz.category}
-                onClose={() => setIsAICoachOpen(false)}
             />
         </div>
     );
