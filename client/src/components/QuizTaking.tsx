@@ -1952,7 +1952,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             </div>
 
             {/* Bottom Action Footer (Docked neatly inside the elevated card) */}
-            <div className={`flex-none p-3 sm:p-4 z-20 w-full flex items-center justify-between pointer-events-auto ${
+            <div className={`flex-none p-3 sm:p-4 z-20 w-full flex items-center justify-between pointer-events-auto relative ${
                 isBento
                     ? 'bg-white dark:bg-[#0f172a] border-t-2 border-black dark:border-white/20 shadow-[0px_-4px_12px_rgba(0,0,0,0.04)]'
                     : 'glass-panel border-t border-slate-200/80 dark:border-white/10 shadow-lg'
@@ -1993,21 +1993,27 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     </div>
                 )}
                 
-                {/* Answer Feedback Pill (Docked in footer, never overlapping header) */}
+                {/* Answer Feedback Pill (Always centered directly under the line that halves the page) */}
                 {isEffectiveSubmitted && (
-                    <div className={`flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all animate-in fade-in slide-in-from-bottom-2 duration-300 ${
-                        isEffectiveCorrect
-                            ? isBento
-                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
-                                : 'bg-emerald-500 text-white border-2 border-emerald-700'
-                            : isBento
-                                ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
-                                : 'bg-rose-500 text-white border-2 border-rose-700'
-                    }`} role="status" aria-live="assertive">
-                        {isEffectiveCorrect ? <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-black" /> : <XCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-black" />}
-                        <span className="font-black text-xs sm:text-sm">
-                            {isEffectiveCorrect ? 'Correct answer!' : 'Not quite. Check the highlighted answer.'}
-                        </span>
+                    <div className={`transition-all animate-in fade-in slide-in-from-bottom-2 duration-300 z-10 ${
+                        isMatchingQuestion
+                            ? 'landscape:absolute landscape:left-[38%] landscape:-translate-x-1/2 lg:absolute lg:left-[38%] xl:left-[35%] lg:-translate-x-1/2'
+                            : 'landscape:absolute landscape:left-1/2 landscape:-translate-x-1/2 lg:absolute lg:left-1/2 lg:-translate-x-1/2 sm:absolute sm:left-1/2 sm:-translate-x-1/2'
+                    } flex items-center justify-center pointer-events-none`}>
+                        <div className={`flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl pointer-events-auto ${
+                            isEffectiveCorrect
+                                ? isBento
+                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                                    : 'bg-emerald-500 text-white border-2 border-emerald-700'
+                                : isBento
+                                    ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                                    : 'bg-rose-500 text-white border-2 border-rose-700'
+                        }`} role="status" aria-live="assertive">
+                            {isEffectiveCorrect ? <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-black" /> : <XCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-black" />}
+                            <span className="font-black text-xs sm:text-sm whitespace-nowrap">
+                                {isEffectiveCorrect ? 'Correct answer!' : 'Not quite. Check the highlighted answer.'}
+                            </span>
+                        </div>
                     </div>
                 )}
 
