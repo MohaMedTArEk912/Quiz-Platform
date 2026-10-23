@@ -61,26 +61,27 @@ export const AmbientBackground: React.FC = React.memo(() => {
                 </>
             ) : (
                 <>
-                    {/* Light Mode High-Performance Aurora Mesh */}
+                    {/* Light Mode High-Performance Atmospheric Mesh (Clean, calm, zero-eye-fatigue) */}
                     <div 
                         className="absolute inset-0 dark:hidden transition-opacity duration-300"
                         style={{
                             background: `
-                                radial-gradient(ellipse 70% 40% at 50% -5%, rgba(199, 210, 254, 0.45) 0%, rgba(224, 231, 255, 0.2) 45%, transparent 75%),
-                                radial-gradient(circle 500px at 0% 30%, rgba(224, 231, 255, 0.35) 0%, transparent 65%),
-                                radial-gradient(circle 550px at 100% 55%, rgba(241, 245, 249, 0.6) 0%, transparent 65%)
+                                radial-gradient(ellipse 70% 45% at 50% -8%, rgba(99, 102, 241, 0.08) 0%, rgba(224, 231, 255, 0.15) 45%, transparent 70%),
+                                radial-gradient(circle 600px at 0% 25%, rgba(241, 245, 249, 0.9) 0%, transparent 60%),
+                                radial-gradient(circle 500px at 100% 60%, rgba(238, 242, 255, 0.5) 0%, transparent 65%)
                             `
                         }}
                     />
 
-                    {/* Dark Mode High-Performance Aurora Mesh */}
+                    {/* Dark Mode High-Performance Atmospheric Mesh (Deep obsidian, rich indigo/violet horizon) */}
                     <div 
                         className="absolute inset-0 hidden dark:block transition-opacity duration-300"
                         style={{
                             background: `
-                                radial-gradient(ellipse 75% 45% at 50% -5%, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.08) 45%, transparent 75%),
-                                radial-gradient(circle 500px at 0% 30%, rgba(67, 56, 202, 0.12) 0%, transparent 65%),
-                                radial-gradient(circle 550px at 100% 55%, rgba(124, 58, 237, 0.09) 0%, transparent 65%)
+                                radial-gradient(ellipse 75% 50% at 50% -10%, rgba(99, 102, 241, 0.16) 0%, rgba(139, 92, 246, 0.08) 45%, transparent 75%),
+                                radial-gradient(circle 650px at 0% 30%, rgba(55, 48, 163, 0.12) 0%, transparent 65%),
+                                radial-gradient(circle 600px at 100% 60%, rgba(109, 40, 217, 0.1) 0%, transparent 65%),
+                                radial-gradient(circle 450px at 50% 100%, rgba(30, 27, 75, 0.25) 0%, transparent 70%)
                             `
                         }}
                     />

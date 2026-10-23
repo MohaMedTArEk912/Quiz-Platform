@@ -21,7 +21,7 @@ export const CodeOutputQuestion: React.FC<CodeOutputQuestionProps> = ({
     onChange,
     readOnly = false
 }) => {
-    const { isBento } = useTheme();
+    const { theme, isBento } = useTheme();
     const [typedOutput, setTypedOutput] = useState<string>(typeof userAnswer === 'string' ? userAnswer : '');
 
     const handleTextChange = (val: string) => {
@@ -73,7 +73,7 @@ export const CodeOutputQuestion: React.FC<CodeOutputQuestionProps> = ({
                             );
                             const isWrong = submitted && isSelected && !isCorrect;
 
-                            const buttonClass = isBento
+                            const buttonClass = theme === 'bento'
                                 ? isCorrect
                                     ? 'bg-[#bef264] border-2 border-black text-black shadow-[3px_3px_0px_#000]'
                                     : isWrong
@@ -82,12 +82,14 @@ export const CodeOutputQuestion: React.FC<CodeOutputQuestionProps> = ({
                                             ? 'bg-[#fde047] border-2 border-black text-black shadow-[3px_3px_0px_#000]'
                                             : 'bg-white border-2 border-black text-black shadow-[3px_3px_0px_#000] hover:bg-[#fef9c3]'
                                 : isCorrect
-                                    ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-300 ring-2 ring-emerald-500'
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-950 dark:text-emerald-200 ring-2 ring-emerald-500/30 shadow-sm'
                                     : isWrong
-                                        ? 'bg-red-500/15 border-red-500 text-red-600 dark:text-red-300'
+                                        ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-500 text-rose-950 dark:text-rose-200 ring-2 ring-rose-500/30 shadow-sm'
                                         : isSelected
-                                            ? 'bg-indigo-500/20 border-indigo-500 text-indigo-600 dark:text-indigo-300 ring-2 ring-indigo-500'
-                                            : 'bg-white/80 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:border-indigo-500/40 text-gray-800 dark:text-gray-200';
+                                            ? 'bg-indigo-50/90 dark:bg-indigo-950/60 border-indigo-600 dark:border-indigo-500 text-indigo-950 dark:text-white ring-2 ring-indigo-500/30 shadow-sm'
+                                            : theme === 'dark'
+                                                ? 'bg-[#0e1424] border border-white/10 hover:border-indigo-400/50 hover:bg-[#131b31] text-slate-100 shadow-sm'
+                                                : 'bg-white border border-slate-200/90 hover:border-indigo-400 hover:bg-slate-50 text-slate-800 shadow-sm';
 
                             return (
                                 <button

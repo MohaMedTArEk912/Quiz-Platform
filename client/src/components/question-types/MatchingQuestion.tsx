@@ -48,7 +48,7 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
     onChange,
     readOnly = false
 }) => {
-    const { isBento } = useTheme();
+    const { theme, isBento } = useTheme();
     const leftItems = pairs.map(p => p.left);
     const [prevPairs, setPrevPairs] = useState(pairs);
     const [shuffledRightItems, setShuffledRightItems] = useState<string[]>(() => shuffleRightSide(pairs));
@@ -167,17 +167,19 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
                         const pairColorIdx = getPairColorIndex(left);
                         const isCorrect = submitted && pairs.some(p => p.left === left && p.right === pairedRight);
 
-                        const cardStyle = isBento
+                        const cardStyle = theme === 'bento'
                             ? isSelected
-                                ? 'border-2 border-black bg-[#bef264] text-black shadow-[4px_4px_0px_#000] scale-[1.02]'
+                                ? 'border-[2.5px] border-black bg-[#bef264] text-black shadow-[4px_4px_0px_#000] scale-[1.02]'
                                 : pairColorIdx !== null
                                     ? BENTO_PAIR_COLORS[pairColorIdx]
-                                    : 'border-2 border-black bg-white text-black shadow-[3px_3px_0px_#000] hover:bg-[#fef9c3]'
+                                    : 'border-[2.5px] border-black bg-white text-black shadow-[3px_3px_0px_#000] hover:bg-[#fef9c3]'
                             : isSelected
                                 ? 'border-indigo-600 bg-indigo-500/20 ring-2 ring-indigo-500 scale-[1.02]'
                                 : pairColorIdx !== null
                                     ? PAIR_COLORS[pairColorIdx]
-                                    : 'bg-white/80 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:border-indigo-500/40';
+                                    : theme === 'dark'
+                                        ? 'bg-[#0e1424] border border-white/10 hover:border-indigo-400/50 hover:bg-[#131b31] text-slate-100 shadow-sm'
+                                        : 'bg-white border border-slate-200/90 hover:border-indigo-400 hover:bg-slate-50 text-slate-800 shadow-sm';
 
                         return (
                             <div
@@ -230,17 +232,19 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
                     {shuffledRightItems.map((right, idx) => {
                         const pairColorIdx = getRightPairColorIndex(right);
 
-                        const rightCardStyle = isBento
+                        const rightCardStyle = theme === 'bento'
                             ? pairColorIdx !== null
                                 ? BENTO_PAIR_COLORS[pairColorIdx]
                                 : selectedLeft
-                                    ? 'border-2 border-dashed border-black bg-[#fef9c3] text-black shadow-[2px_2px_0px_#000] hover:bg-[#fde047]'
-                                    : 'border-2 border-black bg-white text-black shadow-[3px_3px_0px_#000] hover:bg-[#fef9c3]'
+                                    ? 'border-[2.5px] border-dashed border-black bg-[#fef9c3] text-black shadow-[2px_2px_0px_#000] hover:bg-[#fde047]'
+                                    : 'border-[2.5px] border-black bg-white text-black shadow-[3px_3px_0px_#000] hover:bg-[#fef9c3]'
                             : pairColorIdx !== null
                                 ? PAIR_COLORS[pairColorIdx]
                                 : selectedLeft
-                                    ? 'bg-white/80 dark:bg-white/5 border-dashed border-indigo-400/60 hover:bg-indigo-500/10'
-                                    : 'bg-white/80 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:border-purple-500/40';
+                                    ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-2 border-dashed border-indigo-500/70 text-indigo-950 dark:text-indigo-200 hover:bg-indigo-100/70'
+                                    : theme === 'dark'
+                                        ? 'bg-[#0e1424] border border-white/10 hover:border-purple-400/50 hover:bg-[#131b31] text-slate-100 shadow-sm'
+                                        : 'bg-white border border-slate-200/90 hover:border-purple-400 hover:bg-slate-50 text-slate-800 shadow-sm';
 
                         return (
                             <div

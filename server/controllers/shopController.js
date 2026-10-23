@@ -40,7 +40,10 @@ const SHOP_CATALOG = [
     { itemId: 'formal-blazer', name: 'Formal Blazer', description: 'Dress to impress.', type: 'cosmetic', price: 2000, payload: { attribute: 'clothing', value: 'blazer' } },
     { itemId: 'summer-dress', name: 'Summer Dress', description: 'Light and breezy.', type: 'cosmetic', price: 1200, payload: { attribute: 'clothing', value: 'dress' } },
     { itemId: 'double-xp-1h', name: 'Double XP (1h)', description: 'Earn 2x XP for 1 hour', type: 'boost', price: 300, payload: { boost: 'xp', multiplier: 2, duration: 3600 } },
-    { itemId: 'coin-magnet-1h', name: 'Coin Magnet (1h)', description: 'Earn 1.5x Coins for 1 hour', type: 'boost', price: 300, payload: { boost: 'coins', multiplier: 1.5, duration: 3600 } }
+    { itemId: 'coin-magnet-1h', name: 'Coin Magnet (1h)', description: 'Earn 1.5x Coins for 1 hour', type: 'boost', price: 300, payload: { boost: 'coins', multiplier: 1.5, duration: 3600 } },
+    { itemId: 'ai-coach-1', name: '1 AI Coach Hint', description: 'Unlock 1 AI Coach Socratic hint during quiz', type: 'power-up', price: 25, payload: { powerUpType: 'ai-hint', uses: 1 } },
+    { itemId: 'ai-coach-3', name: '3 AI Coach Hints', description: 'Unlock 3 AI Coach Socratic hints during quiz', type: 'power-up', price: 60, payload: { powerUpType: 'ai-hint', uses: 3 } },
+    { itemId: 'ai-coach-5', name: '5 AI Coach Hints', description: 'Unlock 5 AI Coach Socratic hints during quiz', type: 'power-up', price: 95, payload: { powerUpType: 'ai-hint', uses: 5 } }
 ];
 
 async function ensureShopSeed() {

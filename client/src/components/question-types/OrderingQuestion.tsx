@@ -18,7 +18,7 @@ export const OrderingQuestion: React.FC<OrderingQuestionProps> = ({
     onChange,
     readOnly = false
 }) => {
-    const { isBento } = useTheme();
+    const { theme, isBento } = useTheme();
 
     // Helper to shuffle items if they arrive in the exact correct order
     const getInitialOrder = (items: string[]) => {
@@ -84,7 +84,7 @@ export const OrderingQuestion: React.FC<OrderingQuestionProps> = ({
                     const isCorrectPosition = submitted && correctOrder && correctOrder[idx] === item;
                     const isWrongPosition = submitted && correctOrder && correctOrder[idx] !== item;
 
-                    const itemClass = isBento
+                    const itemClass = theme === 'bento'
                         ? isCorrectPosition
                             ? 'bg-[#bef264] border-2 border-black text-black shadow-[3px_3px_0px_#000]'
                             : isWrongPosition
@@ -94,7 +94,9 @@ export const OrderingQuestion: React.FC<OrderingQuestionProps> = ({
                             ? 'bg-emerald-500/10 border-emerald-500 text-emerald-900 dark:text-emerald-200'
                             : isWrongPosition
                                 ? 'bg-red-500/10 border-red-500 text-red-900 dark:text-red-200'
-                                : 'bg-white/80 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:border-indigo-500/40';
+                                : theme === 'dark'
+                                    ? 'bg-[#0e1424] border border-white/10 hover:border-indigo-400/50 hover:bg-[#131b31] text-slate-100 shadow-sm'
+                                    : 'bg-white border border-slate-200/90 hover:border-indigo-400 hover:bg-slate-50 text-slate-800 shadow-sm';
 
                     return (
                         <div
@@ -103,13 +105,15 @@ export const OrderingQuestion: React.FC<OrderingQuestionProps> = ({
                         >
                             <div className="flex items-center gap-3 min-w-0">
                                 <span className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
-                                    isBento
+                                    theme === 'bento'
                                         ? 'bg-[#fde047] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
-                                        : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                                        : theme === 'dark'
+                                            ? 'bg-white/10 text-slate-200 border border-white/15'
+                                            : 'bg-slate-100 text-slate-700 border border-slate-200/80'
                                 }`}>
                                     {idx + 1}
                                 </span>
-                                <div className={`text-sm sm:text-base font-bold truncate ${isBento ? 'text-black font-black' : 'text-gray-900 dark:text-white'}`}>
+                                <div className={`text-sm sm:text-base font-bold truncate ${theme === 'bento' ? 'text-black font-black' : theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                                     <MathRenderer text={item} />
                                 </div>
                             </div>
@@ -135,7 +139,7 @@ export const OrderingQuestion: React.FC<OrderingQuestionProps> = ({
                                             className={`p-2 rounded-xl transition cursor-pointer disabled:opacity-30 ${
                                                 isBento
                                                     ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#fde047] text-black'
-                                                    : 'bg-black/5 dark:bg-white/5 hover:bg-indigo-500/15 text-gray-600 dark:text-gray-300'
+                                                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10'
                                             }`}
                                             aria-label="Move Up"
                                         >
@@ -148,7 +152,7 @@ export const OrderingQuestion: React.FC<OrderingQuestionProps> = ({
                                             className={`p-2 rounded-xl transition cursor-pointer disabled:opacity-30 ${
                                                 isBento
                                                     ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#fde047] text-black'
-                                                    : 'bg-black/5 dark:bg-white/5 hover:bg-indigo-500/15 text-gray-600 dark:text-gray-300'
+                                                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10'
                                             }`}
                                             aria-label="Move Down"
                                         >

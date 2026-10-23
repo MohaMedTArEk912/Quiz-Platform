@@ -24,7 +24,7 @@ export const TextQuestion: React.FC<TextQuestionProps> = ({
     readOnly = false,
     placeholder = 'Type your answer here...'
 }) => {
-    const { isBento } = useTheme();
+    const { theme, isBento } = useTheme();
     const [localValue, setLocalValue] = useState(value);
 
     useEffect(() => {
@@ -65,7 +65,7 @@ export const TextQuestion: React.FC<TextQuestionProps> = ({
     return (
         <div className="space-y-4 w-full">
             <div className={`text-xs font-black uppercase tracking-wider flex items-center justify-between flex-wrap gap-2 ${
-                isBento ? 'text-black dark:text-white' : 'text-gray-400'
+                theme === 'bento' ? 'text-black dark:text-white' : theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
             }`}>
                 <span className="flex items-center gap-1.5">
                     <span>Short Answer / Text Fill</span>
@@ -89,17 +89,19 @@ export const TextQuestion: React.FC<TextQuestionProps> = ({
                         placeholder={placeholder}
                         autoFocus
                         className={`w-full p-4 sm:p-4.5 rounded-2xl text-base sm:text-lg font-bold transition-all duration-150 outline-none ${
-                            isBento
+                            theme === 'bento'
                                 ? submitted
                                     ? passed
-                                        ? 'bg-[#bef264] border-2.5 border-black text-black shadow-[3px_3px_0px_#000]'
-                                        : 'bg-[#fecdd3] border-2.5 border-black text-black shadow-[3px_3px_0px_#000]'
-                                    : 'bg-white dark:bg-[#111827] border-2.5 border-black dark:border-white/20 text-black dark:text-white shadow-[4px_4px_0px_#000] dark:shadow-[4px_4px_0px_rgba(255,255,255,0.1)] focus:shadow-[6px_6px_0px_#000] focus:bg-[#fef9c3] dark:focus:bg-[#1f2937]'
+                                        ? 'bg-[#bef264] border-[2.5px] border-black text-black shadow-[3px_3px_0px_#000]'
+                                        : 'bg-[#fecdd3] border-[2.5px] border-black text-black shadow-[3px_3px_0px_#000]'
+                                    : 'bg-white dark:bg-[#111827] border-[2.5px] border-black dark:border-white/20 text-black dark:text-white shadow-[4px_4px_0px_#000] focus:shadow-[6px_6px_0px_#000] focus:bg-[#fef9c3] dark:focus:bg-[#1f2937]'
                                 : submitted
                                     ? passed
                                         ? 'bg-emerald-500/15 border-2 border-emerald-500 text-emerald-900 dark:text-emerald-200'
                                         : 'bg-red-500/15 border-2 border-red-500 text-red-900 dark:text-red-200'
-                                    : 'bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500'
+                                    : theme === 'dark'
+                                        ? 'bg-[#0e1424] border border-indigo-500/30 text-white shadow-inner focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30 placeholder:text-slate-500'
+                                        : 'bg-white border border-slate-300 text-slate-900 shadow-sm focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 placeholder:text-slate-400'
                         } ${submitted ? 'cursor-default select-text' : ''} disabled:opacity-95 disabled:cursor-not-allowed`}
                     />
                 </div>
