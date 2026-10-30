@@ -36,7 +36,6 @@ import {
     Send,
     Layers,
     Compass,
-    Sparkles,
     Quote
 } from 'lucide-react';
 import Navbar from './Navbar.tsx';
@@ -684,15 +683,6 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
                                                                 : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
                                                         }`}>
                                                             #{quoteData.topic}
-                                                        </span>
-                                                    )}
-                                                    {quoteData.isAI && (
-                                                        <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
-                                                            isBento
-                                                                ? 'bg-purple-300 text-black border border-black'
-                                                                : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20'
-                                                        }`}>
-                                                            <Sparkles className="w-2.5 h-2.5" /> AI Daily Spark
                                                         </span>
                                                     )}
                                                 </div>

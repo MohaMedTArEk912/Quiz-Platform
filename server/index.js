@@ -77,6 +77,9 @@ const isOriginAllowed = (origin) => {
 const isServerless = !!process.env.VERCEL;
 
 const app = express();
+
+// Trust proxy for Vercel/reverse proxy deployments
+app.set('trust proxy', 1);
 let httpServer = null;
 let io = null;
 
@@ -184,6 +187,7 @@ const limiter = rateLimit({
   },
   standardHeaders: true, 
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   skip: (req) => {
     if (isLocalEnv) return true;
     const ip = req.ip || req.connection?.remoteAddress || '';
@@ -208,6 +212,7 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   skip: () => isLocalEnv
 });
 
@@ -221,6 +226,7 @@ const heavyResourceLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   skip: () => isLocalEnv
 });
 

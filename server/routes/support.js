@@ -16,7 +16,8 @@ const supportLimiter = rateLimit({
     message: 'Too many support requests submitted from this network. Please wait a few minutes or email mohaamedtariq12@gmail.com directly.'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false }
 });
 
 // Optional authentication: extracts user if token provided, but doesn't block guests

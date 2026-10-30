@@ -18,7 +18,9 @@ import { evaluateTextAnswer } from '../lib/stringSimilarity';
 
 const CompilerQuestion = React.lazy(() => import('./question-types/CompilerQuestion'));
 
-const isSameAnswer = (a: any, b: any): boolean => {
+type AnswerValue = string | number | string[] | Record<string, string>;
+
+const isSameAnswer = (a: unknown, b: unknown): boolean => {
     if (a === b) return true;
     if (a === undefined || a === null || b === undefined || b === null) return false;
     if (typeof a === 'object' && typeof b === 'object') {
@@ -51,12 +53,12 @@ interface QuizTakingProps {
 type SavedQuizState = {
     quizId: string;
     currentQuestion: number;
-    answers: Record<number, string | number | string[] | Record<string, string>>;
+    answers: Record<number, AnswerValue>;
     timeLeft: number;
     lastUpdated: number;
     questionOrder?: number[];
     submittedQuestions?: Record<number, boolean>;
-    submittedAnswers?: Record<number, any>;
+    submittedAnswers?: Record<number, AnswerValue>;
     questionCorrectness?: Record<number, boolean>;
 };
 
@@ -89,7 +91,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         }
     }, []);
     const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [answers, setAnswers] = useState<Record<number, string | number | string[] | Record<string, string>>>({});
+    const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
     const [timeLeft, setTimeLeft] = useState(countUpTimer ? 0 : quiz.timeLimit * 60);
     const startTimeRef = useRef(Date.now());
 
@@ -272,14 +274,18 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                 const parsed = parseInt(saved, 10);
                 if (!isNaN(parsed) && parsed >= 0) return parsed;
             }
-        } catch {}
+        } catch {
+            // Ignore storage access errors (e.g. private browsing mode)
+        }
         return 3; // 3 starter hints per quiz attempt
     });
 
     useEffect(() => {
         try {
             sessionStorage.setItem(`quiz_ai_hints_${quiz.id}_${user.userId}`, String(aiCoachUsesLeft));
-        } catch {}
+        } catch {
+            // Ignore storage quota / security errors
+        }
     }, [aiCoachUsesLeft, quiz.id, user.userId]);
 
     // Track highest unlocked clue level per question (actualIndex -> level)
@@ -287,14 +293,18 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         try {
             const saved = sessionStorage.getItem(`quiz_unlocked_clues_${quiz.id}_${user.userId}`);
             if (saved) return JSON.parse(saved);
-        } catch {}
+        } catch {
+            // Ignore storage read or JSON parse errors
+        }
         return {};
     });
 
     useEffect(() => {
         try {
             sessionStorage.setItem(`quiz_unlocked_clues_${quiz.id}_${user.userId}`, JSON.stringify(unlockedClues));
-        } catch {}
+        } catch {
+            // Ignore storage write / quota errors
+        }
     }, [unlockedClues, quiz.id, user.userId]);
 
     // Cache generated clues per question to avoid re-fetching and ensure free re-flipping
@@ -335,9 +345,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     const [questionSubmitted, setQuestionSubmitted] = useState(false);
     const [isCurrentAnswerCorrect, setIsCurrentAnswerCorrect] = useState(false);
     const [submittedQuestions, setSubmittedQuestions] = useState<Record<number, boolean>>({});
-    const [submittedAnswers, setSubmittedAnswers] = useState<Record<number, any>>(() => {
-        return (initialSavedState?.submittedAnswers as Record<number, any>) || {};
-    });
+    const [submittedAnswers, setSubmittedAnswers] = useState<Record<number, AnswerValue>>({});
     const [questionCorrectness, setQuestionCorrectness] = useState<Record<number, boolean>>({});
     const [flaggedQuestions, setFlaggedQuestions] = useState<Record<number, boolean>>({});
     const [showQuestionMenu, setShowQuestionMenu] = useState(false);
@@ -1313,10 +1321,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         }
         else if (type === 'skip') {
             // Auto complete as correct across all question types
-            let skipAns: any = "SKIPPED";
+            let skipAns: AnswerValue = "SKIPPED";
             if (q.correctAnswer !== undefined && q.correctAnswer !== null) {
-                skipAns = q.correctAnswer;
-                handleAnswer(q.correctAnswer as string | number | string[] | Record<string, string>);
+                skipAns = q.correctAnswer as AnswerValue;
+                handleAnswer(skipAns);
             } else if (q.isCompiler && q.compilerConfig?.referenceCode) {
                 skipAns = q.compilerConfig.referenceCode;
                 handleAnswer(q.compilerConfig.referenceCode);
