@@ -100,6 +100,14 @@ export async function connectToDatabase() {
   }
   connectionAttemptTime = Date.now();
 
+  const isCloudDeployment = Boolean(
+    process.env.VERCEL || 
+    process.env.AWS_LAMBDA_FUNCTION_NAME || 
+    process.env.NETLIFY || 
+    process.env.RENDER || 
+    process.env.KOYEB ||
+    process.env.NODE_ENV === 'production'
+  );
   const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
   const isLocal = uri.includes('127.0.0.1') || uri.includes('localhost');
 
@@ -128,7 +136,25 @@ export async function connectToDatabase() {
       console.info(`✅ MongoDB connected successfully in ${ms}ms [${uriType}] (Host: ${cachedConnection.host || 'local'}, DB: ${cachedConnection.name})`);
       return cachedConnection;
     })
-    .catch((err) => {
+    .catch(async (err) => {
+      // Local development fallback to local MongoDB if remote Atlas fails
+      if (!isLocal && !isCloudDeployment) {
+        console.warn('⚠️ Remote MongoDB Atlas failed. Attempting local MongoDB fallback...');
+        const localUri = process.env.LOCAL_MONGODB_URI || 'mongodb://127.0.0.1:27017/quiz-platform';
+        try {
+          const localInstance = await mongoose.connect(localUri, { 
+            ...opts, 
+            serverSelectionTimeoutMS: 3000, 
+            connectTimeoutMS: 3000 
+          });
+          cachedConnection = localInstance.connection;
+          console.info('✅ Successfully fell back to local MongoDB (Host: 127.0.0.1)');
+          return cachedConnection;
+        } catch (localErr) {
+          console.error('❌ Local MongoDB fallback also failed:', localErr.message);
+        }
+      }
+
       cachedPromise = null;
       cachedConnection = null;
       const ms = Date.now() - start;

@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { getEnrichedUser } from '../services/userService.js';
 import { resolveJwtSecret } from '../utils/jwtSecret.js';
+import { sendWelcomeEmail, sendPasswordResetEmail, sendPasswordChangedEmail } from '../services/emailService.js';
+import { evaluateAndAwardBadges } from '../services/badgeService.js';
 
 
 // Helper: Generate JWT
@@ -54,7 +56,7 @@ const resolveLoginEmail = (email) => {
 
 export const register = async (req, res) => {
   try {
-    const { userId, name, email, password } = req.body;
+    const { userId, name, email, password } = req.body || {};
     
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -76,6 +78,13 @@ export const register = async (req, res) => {
 
     await newUser.save();
     
+    // Dispatch Welcome Email (non-blocking)
+    sendWelcomeEmail({
+      email: newUser.email,
+      name: newUser.name,
+      userId: newUser.userId
+    }).catch(err => console.warn('⚠️ [Register] Welcome email error:', err.message));
+    
     // Generate Token
     const token = generateToken(newUser.userId, newUser.role || 'user');
     
@@ -91,11 +100,11 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
     const normalizedEmail = resolveLoginEmail(email);
-    const loginCandidates = normalizedEmail === email.toLowerCase().trim()
+    const loginCandidates = normalizedEmail === (email || '').toLowerCase().trim()
       ? [normalizedEmail]
-      : [normalizedEmail, email.toLowerCase().trim()];
+      : [normalizedEmail, (email || '').toLowerCase().trim()];
 
     const user = await User.findOne({ email: { $in: loginCandidates } });
 
@@ -103,7 +112,6 @@ export const login = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Verify Password
     // Verify Password
     let isMatch = await bcrypt.compare(password, user.password);
     
@@ -129,6 +137,9 @@ export const login = async (req, res) => {
     user.lastLoginDate = new Date();
     await user.save();
 
+    // Trigger badge evaluation on login
+    evaluateAndAwardBadges(user.userId).catch(() => {});
+
     // Generate Token
     const token = generateToken(user.userId, user.role || 'user');
 
@@ -145,8 +156,8 @@ export const login = async (req, res) => {
 
 export const googleAuth = async (req, res) => {
   try {
-    const { email, name, googleId } = req.body;
-    const normalizedEmail = email.toLowerCase().trim();
+    const { email, name, googleId } = req.body || {};
+    const normalizedEmail = (email || '').toLowerCase().trim();
     
     // Check if user exists
     let user = await User.findOne({ email: normalizedEmail });
@@ -177,6 +188,9 @@ export const googleAuth = async (req, res) => {
       await user.save();
     }
     
+    // Trigger badge evaluation on Google login
+    evaluateAndAwardBadges(user.userId).catch(() => {});
+    
     // Generate Token for Google User
     const token = generateToken(user.userId, user.role || 'user');
     
@@ -203,11 +217,11 @@ export const verifySession = async (req, res) => {
     // Assuming we update the frontend to check validaty by hitting a protected route
     // Or we decode the token here if sent in body.
 
-    // Let's assume the client sends { token }
-    const authHeader = req.headers.authorization;
+    const authHeader = req.headers?.authorization;
     const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
-    const { token: bodyToken } = req.body;
-    const token = headerToken || bodyToken;
+    const bodyToken = req.body?.token;
+    const queryToken = req.query?.token;
+    const token = headerToken || bodyToken || queryToken;
 
     if (!token) return res.status(401).json({ valid: false, message: 'No token provided' });
 
@@ -234,29 +248,42 @@ export const verifySession = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
     try {
-        const { email } = req.body;
-        const normalizedEmail = email.toLowerCase().trim();
+        const { email } = req.body || {};
+        const normalizedEmail = (email || '').toLowerCase().trim();
         
         const user = await User.findOne({ email: normalizedEmail });
         if (!user) {
             return res.status(404).json({ message: 'No account found with this email address' });
         }
         
-        // In a real app, you would send an email with a reset token
-        // For now, we'll just confirm the email exists and allow direct reset
+        // Generate secure 6-digit numeric verification code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        user.resetPasswordCode = code;
+        user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
+        await user.save();
+
+        // Dispatch Password Reset Code Email
+        await sendPasswordResetEmail({
+            email: user.email,
+            name: user.name,
+            resetCode: code
+        });
+
         res.json({ 
-            message: 'Email verified. You can now reset your password.',
-            userId: user.userId 
+            message: 'A 6-digit verification code has been dispatched to your email.',
+            userId: user.userId,
+            ...(process.env.NODE_ENV !== 'production' ? { code } : {})
         });
     } catch (error) {
+        console.error('Error in forgotPassword:', error);
         res.status(500).json({ message: 'Error processing request', error: error.message });
     }
 };
 
 export const resetPassword = async (req, res) => {
     try {
-        const { email, newPassword } = req.body;
-        const normalizedEmail = email.toLowerCase().trim();
+        const { email, newPassword, code } = req.body || {};
+        const normalizedEmail = (email || '').toLowerCase().trim();
         
         if (!newPassword || newPassword.length < 6) {
             return res.status(400).json({ message: 'Password must be at least 6 characters long' });
@@ -266,21 +293,40 @@ export const resetPassword = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
+
+        // Validate verification code if active on user account
+        if (user.resetPasswordCode) {
+            if (!code || user.resetPasswordCode !== code.trim()) {
+                return res.status(400).json({ message: 'Invalid or incorrect verification code' });
+            }
+            if (user.resetPasswordExpires && new Date() > user.resetPasswordExpires) {
+                return res.status(400).json({ message: 'Verification code has expired. Please request a new code.' });
+            }
+        }
         
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(newPassword, salt);
+        user.resetPasswordCode = undefined;
+        user.resetPasswordExpires = undefined;
         await user.save();
+
+        // Dispatch confirmation email
+        sendPasswordChangedEmail({
+            email: user.email,
+            name: user.name
+        }).catch(err => console.warn('⚠️ [ResetPassword] Notification email error:', err.message));
         
         res.json({ message: 'Password reset successfully' });
     } catch (error) {
+        console.error('Error resetting password:', error);
         res.status(500).json({ message: 'Error resetting password', error: error.message });
     }
 };
 
 export const changePassword = async (req, res) => {
     try {
-        const { email, currentPassword, newPassword } = req.body;
-        const normalizedEmail = email.toLowerCase().trim();
+        const { email, currentPassword, newPassword } = req.body || {};
+        const normalizedEmail = (email || '').toLowerCase().trim();
         
         if (!newPassword || newPassword.length < 6) {
             return res.status(400).json({ message: 'New password must be at least 6 characters long' });
@@ -308,6 +354,12 @@ export const changePassword = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(newPassword, salt);
         await user.save();
+
+        // Dispatch confirmation email
+        sendPasswordChangedEmail({
+            email: user.email,
+            name: user.name
+        }).catch(err => console.warn('⚠️ [ChangePassword] Notification email error:', err.message));
         
         res.json({ message: 'Password changed successfully' });
     } catch (error) {
@@ -363,6 +415,13 @@ export const adminCreateUser = async (req, res) => {
         });
 
         await newUser.save();
+    
+    // Dispatch Welcome Email (non-blocking)
+    sendWelcomeEmail({
+      email: newUser.email,
+      name: newUser.name,
+      userId: newUser.userId
+    }).catch(err => console.warn('⚠️ [Register] Welcome email error:', err.message));
 
         // Fetch enriched user for response
         const enrichedUser = await getEnrichedUser(newUser.userId);

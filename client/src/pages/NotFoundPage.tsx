@@ -68,44 +68,44 @@ const NotFoundPage: React.FC = () => {
                     </p>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 items-stretch gap-3 max-w-lg mx-auto">
                         <button
                             type="button"
                             onClick={() => navigate('/')}
-                            className={`w-full sm:w-auto flex-1 py-3 px-5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 ${
+                            className={`w-full h-12 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
                                 isBento
-                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] font-black uppercase'
+                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] font-black uppercase tracking-wider'
                                     : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25'
                             }`}
                         >
-                            <Home className="w-4 h-4" />
-                            Return Home
+                            <Home className="w-4 h-4 shrink-0" />
+                            <span>Return Home</span>
                         </button>
 
                         <button
                             type="button"
                             onClick={() => navigate('/tracks')}
-                            className={`w-full sm:w-auto flex-1 py-3 px-5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 ${
+                            className={`w-full h-12 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
                                 isBento
-                                    ? 'bg-white text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:bg-[#fef9c3] font-black'
+                                    ? 'bg-white text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:bg-[#fef9c3] hover:shadow-[4px_4px_0px_#000] font-black uppercase tracking-wider'
                                     : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10'
                             }`}
                         >
-                            <Compass className="w-4 h-4 text-indigo-500" />
-                            Explore Tracks
+                            <Compass className="w-4 h-4 text-indigo-500 shrink-0" />
+                            <span>Explore Tracks</span>
                         </button>
 
                         <button
                             type="button"
                             onClick={() => navigate('/leaderboard')}
-                            className={`w-full sm:w-auto flex-1 py-3 px-5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 ${
+                            className={`w-full h-12 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
                                 isBento
-                                    ? 'bg-[#fde047] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] font-black'
+                                    ? 'bg-[#fde047] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] font-black uppercase tracking-wider'
                                     : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10'
                             }`}
                         >
-                            <Trophy className="w-4 h-4 text-amber-500" />
-                            Leaderboard
+                            <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+                            <span>Leaderboard</span>
                         </button>
                     </div>
 

@@ -8,7 +8,9 @@ import { updateSkillTrackProgress } from '../services/progressService.js';
 import { syncClanXp } from '../utils/xpSync.js';
 
 import { checkAndUnlockBadges } from './badgeNodeController.js';
+import { evaluateAndAwardBadges } from '../services/badgeService.js';
 import { evaluateTextAnswer } from '../utils/textSimilarity.js';
+import { sendQuizResultEmail } from '../services/emailService.js';
 
 const normalizeAttemptPayload = (attemptData, user) => {
     const normalized = { ...attemptData };
@@ -207,14 +209,26 @@ export const saveAttempt = async (req, res) => {
         
         await user.save();
 
-        // Send response IMMEDIATELY — don't make the user wait for badges/roadmap
-        res.status(201).json({ ...newAttempt.toObject(), newBadges: [] });
+        // Evaluate achievement badges and roadmap progress to return newly unlocked badges
+        const badgeResult = await evaluateAndAwardBadges(userId, { attempt: normalizedAttempt }).catch(err => {
+            console.error('Badge evaluation error during quiz submission:', err);
+            return { newlyUnlocked: [], user };
+        });
 
-        // Fire-and-forget: badge checks + roadmap progress in background
-        Promise.all([
-            checkAndUnlockBadges(userId, normalizedAttempt),
-            normalizedAttempt.passed ? updateRoadmapProgress(userId, normalizedAttempt.quizId) : Promise.resolve()
-        ]).catch(err => console.error('Post-submission background processing error:', err));
+        if (normalizedAttempt.passed) {
+            await updateRoadmapProgress(userId, normalizedAttempt.quizId).catch(err => {
+                console.error('Roadmap progress sync error:', err);
+            });
+        }
+
+        const freshUser = badgeResult?.user || await User.findOne({ userId }).lean();
+        const newlyUnlocked = badgeResult?.newlyUnlocked || [];
+
+        res.status(201).json({
+            ...newAttempt.toObject(),
+            newBadges: newlyUnlocked,
+            user: freshUser
+        });
 
         return; // Early return — response already sent
     }
@@ -508,5 +522,38 @@ const updateRoadmapProgress = async (userId, quizId) => {
         }
     } catch (error) {
         console.error('Error updating roadmap progress:', error);
+    }
+};
+
+
+export const emailQuizResult = async (req, res) => {
+    try {
+        const { email, name, quizTitle, score, totalQuestions, percentage, passed, timeTaken } = req.body;
+        const targetEmail = email || req.user?.email;
+        const targetName = name || req.user?.name;
+
+        if (!targetEmail) {
+            return res.status(400).json({ success: false, message: "Email address is required" });
+        }
+
+        const mailResult = await sendQuizResultEmail({
+            email: targetEmail,
+            name: targetName,
+            quizTitle,
+            score,
+            totalQuestions,
+            percentage,
+            passed,
+            timeTaken
+        });
+
+        res.json({
+            success: true,
+            message: `Scorecard dispatched to ${targetEmail}`,
+            previewUrl: mailResult.previewUrl || undefined
+        });
+    } catch (error) {
+        console.error("Error dispatching quiz result email:", error);
+        res.status(500).json({ success: false, message: "Failed to send scorecard email", error: error.message });
     }
 };

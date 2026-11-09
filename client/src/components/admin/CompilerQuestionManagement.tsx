@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../../lib/api';
 import type { CompilerQuestion } from '../../types';
 import Modal from '../common/Modal';
+import { useTheme } from '../../context/ThemeContext';
 import ConfirmDialog from '../ConfirmDialog';
 import { useConfirm } from '../../hooks/useConfirm';
 import { Plus, Edit2, Trash2, RefreshCw, Code2, Save, X, AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Upload, Download } from 'lucide-react';
@@ -15,6 +16,7 @@ interface CompilerQuestionManagementProps {
  * Provides CRUD operations and bulk upload functionality.
  */
 const CompilerQuestionManagement: React.FC<CompilerQuestionManagementProps> = ({ adminId }) => {
+    const { isBento } = useTheme();
     const { confirm, confirmState, handleCancel } = useConfirm();
     const [questions, setQuestions] = useState<CompilerQuestion[]>([]);
     const [loading, setLoading] = useState(true);
@@ -317,7 +319,11 @@ const CompilerQuestionManagement: React.FC<CompilerQuestionManagementProps> = ({
                     footer={
                         <>
                             <button onClick={() => { setShowImportModal(false); setImportJson(''); setImportPreview([]); }} className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">Cancel</button>
-                            <button onClick={handleImportSubmit} disabled={importPreview.length === 0} className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:from-indigo-700 hover:to-purple-700 transition-all">Import {importPreview.length} Question(s)</button>
+                            <button onClick={handleImportSubmit} disabled={importPreview.length === 0} className={`flex-1 py-3 rounded-xl font-bold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+    isBento
+        ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] font-mono'
+        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
+}`}>Import {importPreview.length} Question(s)</button>
                         </>
                     }
                 >

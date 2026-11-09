@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Loader2, X } from 'lucide-react';
 import type { Subject } from '../../../types';
 import ConfirmDialog from '../../ConfirmDialog';
+import { useTheme } from '../../../context/ThemeContext';
 
 interface RoadModalsProps {
     isCreateModalOpen: boolean;
@@ -32,6 +33,7 @@ const RoadModals: React.FC<RoadModalsProps> = ({
     onUpdateRoad,
     onDeleteRoad
 }) => {
+    const { isBento } = useTheme();
     // Form States for Create/Edit
     const [title, setTitle] = useState(roadToEdit?.title || '');
     const [description, setDescription] = useState(roadToEdit?.description || '');
@@ -107,7 +109,11 @@ const RoadModals: React.FC<RoadModalsProps> = ({
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all flex items-center gap-2"
+                                    className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+    isBento
+        ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 font-mono'
+        : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/30'
+}`}
                                 >
                                     {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Road'}
                                 </button>
@@ -159,7 +165,11 @@ const RoadModals: React.FC<RoadModalsProps> = ({
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all flex items-center gap-2"
+                                    className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+    isBento
+        ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 font-mono'
+        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30'
+}`}
                                 >
                                     {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Save Changes'}
                                 </button>

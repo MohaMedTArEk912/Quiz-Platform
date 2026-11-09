@@ -1484,7 +1484,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
     return (
         <div className={`w-full transition-colors flex flex-col font-sans relative ${embedded
             ? 'h-full bg-transparent'
-            : 'h-screen bg-slate-100/90 dark:bg-[#070b14] p-2 sm:p-4 md:p-5 lg:p-6 overflow-hidden'
+            : 'h-screen bg-slate-100/90 dark:bg-[#070b14] p-2 sm:p-3 md:p-4 overflow-hidden'
             } text-gray-900 dark:text-gray-100`}>
             
             {!embedded && <AmbientBackground />}
@@ -1597,7 +1597,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             }`}>
                 {/* --- TOP BAR (Inside Card Header) --- */}
                 {!embedded && (
-                    <header className={`flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 z-20 shadow-sm ${
+                    <header className={`sticky top-0 flex-none h-14 sm:h-16 landscape:h-12 lg:landscape:h-16 flex items-center justify-between px-4 sm:px-6 z-20 shadow-sm ${
                         isBento
                             ? 'bg-white dark:bg-[#0f172a] border-b-2 border-black dark:border-white/20'
                             : 'bg-white/95 dark:bg-[#0f1424]/95 border-b border-slate-200/80 dark:border-white/10 backdrop-blur-xl'
@@ -1695,9 +1695,9 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         : 'bg-white dark:bg-[#0c101c] border-b landscape:border-b-0 landscape:border-r lg:border-r border-slate-200/80 dark:border-white/10'
                 } relative z-20 landscape:sticky landscape:top-0 lg:sticky lg:top-0 landscape:overflow-y-auto lg:overflow-y-auto no-scrollbar`}>
                     
-                    <div className={`w-full ${isMatchingQuestion ? 'max-w-none' : 'max-w-2xl lg:ml-auto'} flex flex-col flex-1`}>
+                    <div className="w-full flex flex-col flex-1">
                         {/* Progress Header */}
-                        <div className="relative flex items-center justify-between p-4 px-5 sm:px-8 lg:px-10 pb-2">
+                        <div className="relative flex items-center justify-between p-4 px-4 sm:px-6 lg:px-7 pb-2">
                             <div className="flex items-center gap-2">
                                 <span className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider ${isBento ? 'text-slate-600 dark:text-slate-300 font-black' : 'text-slate-400'}`}>Question</span>
                                 <span className="font-tabular text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">{currentQuestion + 1} / {quiz.questions.length}</span>
@@ -1872,7 +1872,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         </div>
 
                         {/* Progress Bar Line */}
-                        <div className="px-5 sm:px-8 lg:px-10 pb-3 sm:pb-4 border-b border-slate-200/60 dark:border-white/[0.06]">
+                        <div className="px-4 sm:px-6 lg:px-7 pb-3 sm:pb-4 border-b border-slate-200/60 dark:border-white/[0.06]">
                             <div className={`w-full rounded-full overflow-hidden flex ${
                                 isBento
                                     ? 'h-2.5 bg-slate-100 dark:bg-white/10 border-1.5 border-black'
@@ -1883,7 +1883,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         </div>
 
                         {/* Real-time Language & Translation Toolbar */}
-                        <div className="px-5 sm:px-8 lg:px-10 pt-3 sm:pt-4">
+                        <div className="px-4 sm:px-6 lg:px-7 pt-3 sm:pt-4">
                             <QuestionTranslatorBar
                                 currentLanguage={selectedLanguage}
                                 isTranslating={isTranslating}
@@ -1898,7 +1898,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                         {/* Question Content */}
                         <div
                             dir={isCurrentRtl ? 'rtl' : 'ltr'}
-                            className={`flex-1 landscape:overflow-y-auto px-5 sm:px-8 lg:px-10 pb-8 sm:pb-10 flex flex-col pt-5 sm:pt-8 landscape:pt-4 lg:landscape:pt-8 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
+                            className={`flex-1 landscape:overflow-y-auto px-4 sm:px-6 lg:px-7 pb-6 sm:pb-8 flex flex-col pt-4 sm:pt-6 landscape:pt-4 lg:landscape:pt-6 no-scrollbar ${shakeError ? 'animate-shake' : ''}`}>
                             
                             {/* Translated Indicator Badge */}
                             {isTranslated && selectedLanguage !== 'original' && (
@@ -2278,7 +2278,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                     <div
                         role="radiogroup"
                         aria-label={`Options for Question ${currentQuestion + 1}`}
-                        className={`flex-1 w-full ${isMatchingQuestion ? 'max-w-none' : 'max-w-2xl'} lg:mr-auto p-4 sm:p-6 lg:p-8 pt-5 sm:pt-6 landscape:pt-4 lg:landscape:pt-6 pb-6 landscape:pb-8 lg:landscape:pb-8 flex flex-col justify-start gap-3 sm:gap-3.5 no-scrollbar`}
+                        className="flex-1 w-full p-4 sm:p-6 lg:p-7 pt-4 sm:pt-6 landscape:pt-4 lg:landscape:pt-6 pb-6 landscape:pb-8 lg:landscape:pb-8 flex flex-col justify-start gap-3 sm:gap-3.5 no-scrollbar"
                     >
                         {q.isCompiler ? (
                             <Suspense fallback={<div className="animate-spin w-8 h-8 border-4 border-indigo-500 rounded-full border-t-transparent mx-auto"></div>}>
@@ -2352,10 +2352,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
                                 // Dynamic classes based on state and theme
                                 const baseClass = theme === 'bento'
-                                    ? "group relative flex items-center p-4 sm:p-4.5 rounded-2xl cursor-pointer transition-all duration-150 w-full text-left font-bold border-[2.5px] border-black focus-visible:outline-none select-none mb-1"
+                                    ? "group relative flex items-center p-3.5 sm:p-4.5 min-h-[48px] sm:min-h-[52px] rounded-2xl cursor-pointer transition-all duration-150 w-full text-left font-bold border-[2.5px] border-black focus-visible:outline-none select-none mb-1"
                                     : theme === 'dark'
-                                        ? "group relative flex items-center p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all duration-200 w-full text-left border border-white/10 shadow-sm font-semibold mb-1 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none select-none"
-                                        : "group relative flex items-center p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all duration-200 w-full text-left border border-slate-200/90 shadow-sm font-semibold mb-1 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none select-none";
+                                        ? "group relative flex items-center p-3 sm:p-4 min-h-[48px] sm:min-h-[52px] rounded-2xl cursor-pointer transition-all duration-200 w-full text-left border border-white/10 shadow-sm font-semibold mb-1 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none select-none"
+                                        : "group relative flex items-center p-3 sm:p-4 min-h-[48px] sm:min-h-[52px] rounded-2xl cursor-pointer transition-all duration-200 w-full text-left border border-slate-200/90 shadow-sm font-semibold mb-1 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none select-none";
                                 
                                 let stateClass = theme === 'bento'
                                     ? "bg-white text-black shadow-[4px_4px_0px_#000] hover:shadow-[5px_5px_0px_#000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_#000]"
@@ -2437,7 +2437,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             </div>
 
             {/* Bottom Action Footer (Docked neatly inside the elevated card) */}
-            <div className={`flex-none p-3 sm:p-4 z-20 w-full flex items-center justify-between pointer-events-auto relative ${
+            <div className={`sticky bottom-0 pb-safe flex-none px-4 sm:px-6 py-3 sm:py-3.5 z-20 w-full flex items-center justify-between pointer-events-auto ${
                 isBento
                     ? 'bg-white dark:bg-[#0f172a] border-t-2 border-black dark:border-white/20 shadow-[0px_-4px_12px_rgba(0,0,0,0.04)]'
                     : 'bg-white/95 dark:bg-[#0c101c]/95 border-t border-slate-200/80 dark:border-white/10 shadow-[0px_-4px_16px_rgba(15,23,42,0.03)] backdrop-blur-xl'

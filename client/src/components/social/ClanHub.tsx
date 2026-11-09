@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../../lib/api';
-import type { Clan, UserData, ClanChatMessage, AvatarConfig } from '../../types';
-import { Users, Shield, Trophy, Search, LogOut, Star, UserPlus, Edit2, Check, X, MoreVertical, Trash2, ArrowUpCircle, ArrowDownCircle, Bell, Pin, Megaphone, MessageCircle, Lock } from 'lucide-react';
+import type { Clan, UserData, ClanChatMessage, AvatarConfig, ClanLogo, ClanLeaderboardEntry } from '../../types';
+import { ClanEmblem } from './ClanEmblem';
+import { ClanLogoMakerModal } from './ClanLogoMakerModal';
+import { ClanChatSection } from './ClanChatSection';
+import { Users, Shield, Trophy, Search, Palette, LogOut, Star, UserPlus, Edit2, Check, X, MoreVertical, Trash2, ArrowUpCircle, ArrowDownCircle, Bell, Pin, Megaphone, MessageCircle, Lock, ExternalLink, Award, AlertCircle } from 'lucide-react';
 import Avatar from '../Avatar';
-import { ChatWindow } from '../chat/ChatWindow';
 import { useNotification } from '../../context/NotificationContext';
 import { useConfirm } from '../../hooks/useConfirm';
 import ConfirmDialog from '../ConfirmDialog';
 import { useSocket } from '../../context/SocketContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useUserProfileModal } from '../../context/UserProfileModalContext';
 
 interface ClanHubProps {
     user: UserData;
@@ -20,12 +24,26 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
     const { showNotification } = useNotification();
     const { confirm, confirmState, handleCancel } = useConfirm();
     const { socket } = useSocket();
+    const { openUserProfile } = useUserProfileModal();
     const [clan, setClan] = useState<Clan | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Clan[]>([]);
-    const [view, setView] = useState<'my_clan' | 'browse' | 'create'>('my_clan');
+    const [view, setView] = useState<'my_clan' | 'browse' | 'create' | 'leaderboard'>(user.clanId ? 'my_clan' : 'browse');
+
+    // Clan Leaderboard State
+    const [clanLeaderboard, setClanLeaderboard] = useState<ClanLeaderboardEntry[]>([]);
+    const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+
+    // Leader Announcement Banner State
+    const [showBannerEditModal, setShowBannerEditModal] = useState(false);
+    const [bannerForm, setBannerForm] = useState({ text: '', url: '', buttonText: '' });
+    const [showLogoMaker, setShowLogoMaker] = useState(false);
+    const [createLogo, setCreateLogo] = useState<ClanLogo | null>(null);
+    const [showCreateLogoMaker, setShowCreateLogoMaker] = useState(false);
+    const [bannerUrlError, setBannerUrlError] = useState('');
+    const [isSavingBanner, setIsSavingBanner] = useState(false);
 
     // Create Form State
     const [createForm, setCreateForm] = useState({ name: '', tag: '', description: '', isPublic: true });
@@ -39,7 +57,6 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
 
     // Chat State
     const [chatMessages, setChatMessages] = useState<ClanChatMessage[]>([]);
-    const [showChat, setShowChat] = useState(false);
     const [lastViewed, setLastViewed] = useState<number>(0);
     const [unreadCount, setUnreadCount] = useState(0);
 
@@ -73,6 +90,20 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
         setUnreadCount(count);
     }, [chatMessages, lastViewed]);
 
+    // Stabilized mark-as-read callback to eliminate infinite re-render / scroll hijacking loops
+    const handleMarkChatAsRead = useCallback(() => {
+        if (clan?.clanId) {
+            const now = Date.now();
+            setLastViewed(prev => (now - prev < 1500 ? prev : now));
+            try {
+                localStorage.setItem(`clan_chat_last_viewed_${clan.clanId}`, now.toString());
+            } catch {
+                // ignore storage issues
+            }
+            setUnreadCount(0);
+        }
+    }, [clan?.clanId]);
+
 
     // Load chat messages when clan is loaded
     useEffect(() => {
@@ -88,19 +119,25 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
         socket.emit('join_clan_chat', clan.clanId);
 
         const handleNewMessage = (message: ClanChatMessage) => {
-            setChatMessages(prev => [...prev, message]);
+            setChatMessages(prev => {
+                const withoutTemp = prev.filter(m => !(m.id.startsWith('temp_') && m.senderId === message.senderId && m.content === message.content));
+                if (withoutTemp.some(m => m.id === message.id)) {
+                    return withoutTemp;
+                }
+                return [...withoutTemp, message];
+            });
 
-            // If chat is open, we read it immediately
-            if (showChat) {
+            // If chat or clan view is open, mark as read
+            if (view === 'my_clan') {
                 const now = Date.now();
                 setLastViewed(now);
                 localStorage.setItem(`clan_chat_last_viewed_${clan.clanId}`, now.toString());
             }
         };
 
-        const handleMessageEdited = ({ messageId, newContent }: { messageId: string, newContent: string }) => {
+        const handleMessageEdited = ({ messageId, newContent, isEdited, updatedAt }: { messageId: string, newContent: string, isEdited?: boolean, updatedAt?: string }) => {
             setChatMessages(prev => prev.map(msg =>
-                msg.id === messageId ? { ...msg, content: newContent } : msg
+                msg.id === messageId ? { ...msg, content: newContent, isEdited: isEdited ?? true, updatedAt: updatedAt ?? new Date().toISOString() } : msg
             ));
         };
 
@@ -117,8 +154,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
         socket.on('clan_message_deleted', handleMessageDeleted);
         socket.on('chat_error', handleChatError);
 
-        // ISSUE: WebSocket didn't emit update
-        // FIX: Listen for real-time kick notifications
+        // Listen for real-time kick notifications
         const handleKickedFromClan = (data: { message?: string }) => {
             showNotification('error', data.message || 'You have been removed from the clan');
             setClan(null);
@@ -136,77 +172,210 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
             socket.off('kicked_from_clan', handleKickedFromClan);
             socket.emit('leave_clan_chat', clan.clanId);
         };
-    }, [socket, clan?.clanId, showChat, showNotification, onUpdateUser]); // Added showChat dependency to update read status live
+    }, [socket, clan?.clanId, view, showNotification, onUpdateUser]);
 
-    const handleDeleteMessage = async (messageId: string) => {
-        if (!socket || !clan) return;
+    const handleSendMessage = useCallback(async (content: string) => {
+        if (!clan?.clanId || !content.trim()) return;
 
-        const confirmed = await confirm({
-            title: 'Delete Message',
-            message: 'Are you sure you want to delete this message?',
-            confirmText: 'Delete',
-            type: 'danger'
-        });
+        const role = (clan.members?.find(m => m.userId === user.userId)?.role) || (clan.leaderId === user.userId ? 'leader' : 'member');
+        const tempMsg: ClanChatMessage = {
+            id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            senderId: user.userId,
+            senderName: user.name,
+            senderAvatar: user.avatar,
+            senderRole: role,
+            content: content.trim(),
+            createdAt: new Date().toISOString()
+        };
+        setChatMessages(prev => [...prev, tempMsg]);
 
-        if (!confirmed) return;
+        if (socket?.connected) {
+            socket.emit('send_clan_message', {
+                clanId: clan.clanId,
+                senderId: user.userId,
+                senderName: user.name,
+                senderAvatar: user.avatar,
+                senderRole: role,
+                content: content.trim()
+            });
+        } else {
+            try {
+                const saved = await api.sendClanMessage(clan.clanId, content.trim(), user.userId);
+                setChatMessages(prev => prev.map(m => m.id === tempMsg.id ? saved : m));
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : 'Failed to send message';
+                showNotification('error', msg);
+                setChatMessages(prev => prev.filter(m => m.id !== tempMsg.id));
+            }
+        }
 
-        socket.emit('delete_clan_message', {
-            clanId: clan.clanId,
-            messageId,
-            userId: user.userId
-        });
-    };
+        const now = Date.now();
+        setLastViewed(now);
+        localStorage.setItem(`clan_chat_last_viewed_${clan.clanId}`, now.toString());
+        setUnreadCount(0);
+    }, [clan, user, socket, showNotification]);
 
-    // Handle Opening Chat (Mark as Read)
-    const handleOpenChat = () => {
-        setShowChat(true);
-        if (clan?.clanId) {
-            const now = Date.now();
-            setLastViewed(now);
-            localStorage.setItem(`clan_chat_last_viewed_${clan.clanId}`, now.toString());
-            setUnreadCount(0);
+    const handleEditMessage = useCallback(async (messageId: string, newContent: string) => {
+        if (!clan?.clanId || !newContent.trim()) return;
+
+        setChatMessages(prev => prev.map(m => m.id === messageId ? { ...m, content: newContent, isEdited: true, updatedAt: new Date().toISOString() } : m));
+
+        if (socket?.connected) {
+            socket.emit('edit_clan_message', {
+                clanId: clan.clanId,
+                messageId,
+                newContent: newContent.trim(),
+                userId: user.userId
+            });
+        } else {
+            try {
+                await api.editClanMessage(clan.clanId, messageId, newContent.trim(), user.userId);
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : 'Failed to edit message';
+                showNotification('error', msg);
+            }
+        }
+    }, [clan?.clanId, socket, user.userId, showNotification]);
+
+    const handleDeleteMessage = useCallback(async (messageId: string) => {
+        if (!clan?.clanId) return;
+
+        setChatMessages(prev => prev.filter(m => m.id !== messageId));
+
+        if (socket?.connected) {
+            socket.emit('delete_clan_message', {
+                clanId: clan.clanId,
+                messageId,
+                userId: user.userId
+            });
+        } else {
+            try {
+                await api.deleteClanMessage(clan.clanId, messageId, user.userId);
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : 'Failed to delete message';
+                showNotification('error', msg);
+            }
+        }
+    }, [clan?.clanId, socket, user.userId, showNotification]);
+
+    const fetchClanLeaderboard = useCallback(async (showBlockingSpinner = false, forceRefresh = false) => {
+        if (showBlockingSpinner || clanLeaderboard.length === 0) {
+            setLoadingLeaderboard(true);
+        }
+        try {
+            const data = await api.getClanLeaderboard(forceRefresh);
+            setClanLeaderboard(Array.isArray(data) ? data : []);
+        } catch {
+            showNotification('error', 'Failed to fetch clan leaderboard');
+        } finally {
+            setLoadingLeaderboard(false);
+        }
+    }, [showNotification, clanLeaderboard.length]);
+
+    const isValidBannerUrl = (url: string) => {
+        if (!url.trim()) return true;
+        if (url.startsWith('/') && !url.startsWith('//')) return true;
+        try {
+            const parsed = new URL(url);
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        } catch {
+            return false;
         }
     };
 
-    const loadClan = useCallback(async (clanId: string) => {
+    
+    const handleSaveClanLogo = async (newLogo: ClanLogo) => {
+        if (!clan) return;
+        try {
+            await api.updateClan(clan.clanId, { logo: newLogo }, user.userId);
+            await loadClan(clan.clanId);
+            showNotification('success', '🎉 Clan emblem updated successfully!');
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to update clan emblem';
+            showNotification('error', msg);
+        }
+    };
+
+    const handleSaveBanner = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!clan) return;
+        if (bannerForm.url && !isValidBannerUrl(bannerForm.url)) {
+            setBannerUrlError('Please provide a valid URL starting with http://, https://, or / (e.g. https://example.com)');
+            return;
+        }
+        setBannerUrlError('');
+        setIsSavingBanner(true);
+        try {
+            await api.updateClan(clan.clanId, {
+                announcementBanner: {
+                    text: bannerForm.text.trim(),
+                    url: bannerForm.url.trim(),
+                    buttonText: (bannerForm.buttonText || '').trim()
+                }
+            }, user.userId);
+            await loadClan(clan.clanId);
+            setShowBannerEditModal(false);
+            showNotification('success', 'Announcement banner updated successfully!');
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to update announcement banner';
+            showNotification('error', msg);
+        } finally {
+            setIsSavingBanner(false);
+        }
+    };
+
+    const loadClan = useCallback(async (clanId: string, showBlockingSpinner = false) => {
+        if (showBlockingSpinner) {
+            setLoading(true);
+        }
         try {
             const data = await api.getClan(clanId, user.userId);
             setClan(data);
+            if (data.chatMessages) {
+                setChatMessages(data.chatMessages);
+            }
             setEditForm({ name: data.name, description: data.description, isPublic: data.isPublic });
-            setLoading(false);
+            if (data.announcementBanner) {
+                setBannerForm({
+                    text: data.announcementBanner.text || '',
+                    url: data.announcementBanner.url || '',
+                    buttonText: data.announcementBanner.buttonText || ''
+                });
+            }
         } catch {
             setError('Failed to load clan');
+        } finally {
             setLoading(false);
         }
     }, [user.userId]);
 
-    useEffect(() => {
-        if (user.clanId) {
-            loadClan(user.clanId);
-        } else {
-            setView('browse');
-            setLoading(false);
-            // Fetch all clans initially
-            handleSearch('');
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user.clanId]);
-
-    const handleSearch = async (queryOverride?: string) => {
+    const handleSearch = useCallback(async (queryOverride?: string, forceRefresh = false) => {
         const queryToUse = queryOverride !== undefined ? queryOverride : searchQuery;
-        // Don't block empty searches so we can fetch all clans
         try {
-            const results = await api.searchClans(queryToUse, user.userId);
-            setSearchResults(results);
+            const results = await api.searchClans(queryToUse, user.userId, forceRefresh);
+            setSearchResults(Array.isArray(results) ? results : []);
         } catch {
             setError('Search failed');
         }
-    };
+    }, [searchQuery, user.userId]);
+
+    useEffect(() => {
+        if (user.clanId) {
+            loadClan(user.clanId, !clan);
+        } else {
+            setView('browse');
+            setLoading(false);
+        }
+        // Parallel prefetch on mount for instant 0ms tab navigation
+        fetchClanLeaderboard(false);
+        handleSearch('', false);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user.clanId]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.createClan(createForm, user.userId);
+            await api.createClan({ ...createForm, logo: createLogo || undefined }, user.userId);
             onUpdateUser(); // Refresh user to get clanId
             // The useEffect will trigger reload
         } catch (err) {
@@ -355,7 +524,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
 
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
-    if (loading) return (
+    if (loading && !clan) return (
         <div className="flex items-center justify-center py-20">
             <div className="text-center">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-violet-500 mx-auto mb-4"></div>
@@ -367,19 +536,308 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
     // View: My Clan
     if (user.clanId && clan) {
         const isLeader = clan.members.some(m => m.userId === user.userId && m.role === 'leader') || clan.leaderId === user.userId;
+        const isElder = clan.members.some(m => m.userId === user.userId && m.role === 'elder');
 
         return (
             <div className="space-y-6 relative">
-                <div className={`rounded-[2.5rem] overflow-hidden ${
-                    isBento
-                        ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
-                        : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm'
-                }`}>
+                {/* Clan Hub Sub-Navigation for Member */}
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className={`inline-flex items-center gap-1.5 p-1 rounded-2xl ${
+                        isBento
+                            ? 'bg-white border-2 border-black shadow-[3px_3px_0px_#000]'
+                            : 'bg-white/80 dark:bg-white/5 border border-slate-200/80 dark:border-white/10'
+                    }`}>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setView('my_clan');
+                                if (user.clanId) loadClan(user.clanId, false);
+                            }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                view === 'my_clan'
+                                    ? (isBento
+                                        ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-violet-600 text-white shadow-md shadow-violet-600/30')
+                                    : (isBento ? 'text-black hover:bg-[#fef9c3]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white')
+                            }`}
+                        >
+                            <Shield className="w-3.5 h-3.5" />
+                            <span>My Clan</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setView('leaderboard');
+                                fetchClanLeaderboard(false);
+                            }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                view === 'leaderboard'
+                                    ? (isBento
+                                        ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-violet-600 text-white shadow-md shadow-violet-600/30')
+                                    : (isBento ? 'text-black hover:bg-[#fef9c3]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white')
+                            }`}
+                        >
+                            <Award className="w-3.5 h-3.5" />
+                            <span>Rankings</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setView('browse');
+                                handleSearch('', false);
+                            }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                view === 'browse'
+                                    ? (isBento
+                                        ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-violet-600 text-white shadow-md shadow-violet-600/30')
+                                    : (isBento ? 'text-black hover:bg-[#fef9c3]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white')
+                            }`}
+                        >
+                            <Search className="w-3.5 h-3.5" />
+                            <span>Browse Clans</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setView('my_clan');
+                                setTimeout(() => {
+                                    const el = document.getElementById('clan-chat');
+                                    el?.scrollIntoView({ behavior: 'smooth' });
+                                }, 50);
+                            }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer relative ${
+                                isBento ? 'text-black hover:bg-[#fef9c3]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                        >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span>Clan Chat</span>
+                            {unreadCount > 0 && (
+                                <span className={`w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center ${
+                                    isBento ? 'bg-[#ff6b6b] text-black border border-black' : 'bg-red-500 text-white'
+                                }`}>
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Prominent Theme-Aware Leader Announcement Banner */}
+                {(clan.announcementBanner?.text || isLeader) && (
+                    <div className={`p-4 sm:p-5 rounded-3xl transition-all relative overflow-hidden ${
+                        isBento
+                            ? 'bg-[#fef08a] text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                            : 'bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-violet-500/15 border-2 border-amber-500/30 text-slate-900 dark:text-white shadow-xl backdrop-blur-xl'
+                    }`}>
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                            <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                                    isBento
+                                        ? 'bg-[#facc15] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-md shadow-orange-500/30'
+                                }`}>
+                                    <Megaphone className="w-6 h-6 animate-bounce" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                                            isBento ? 'bg-black text-white' : 'bg-amber-500/20 text-amber-700 dark:text-amber-300 font-extrabold border border-amber-500/30'
+                                        }`}>
+                                            📢 Leader Announcement
+                                        </span>
+                                        {clan.announcementBanner?.updatedAt && (
+                                            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
+                                                {new Date(clan.announcementBanner.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className={`text-sm sm:text-base font-bold leading-relaxed break-words ${
+                                        isBento ? 'text-black' : 'text-slate-900 dark:text-white'
+                                    }`}>
+                                        {clan.announcementBanner?.text || (isLeader ? 'No announcement banner published yet. Click "Edit Banner" to post clan news, links, or alerts!' : '')}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2.5 shrink-0 w-full md:w-auto justify-end flex-wrap">
+                                {clan.announcementBanner?.url && (
+                                    <a
+                                        href={clan.announcementBanner.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                            isBento
+                                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] active:translate-y-0.5'
+                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/30 active:scale-95'
+                                        }`}
+                                    >
+                                        <span>{clan.announcementBanner.buttonText || 'Open Link'}</span>
+                                        <ExternalLink className="w-4 h-4" />
+                                    </a>
+                                )}
+                                {isLeader && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setBannerForm({
+                                                text: clan.announcementBanner?.text || '',
+                                                url: clan.announcementBanner?.url || '',
+                                                buttonText: clan.announcementBanner?.buttonText || ''
+                                            });
+                                            setBannerUrlError('');
+                                            setShowBannerEditModal(true);
+                                        }}
+                                        className={`inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                            isBento
+                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#fef9c3] active:translate-y-0.5'
+                                                : 'glass-card hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-white border border-slate-200 dark:border-white/10'
+                                        }`}
+                                    >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                        <span>Edit Banner</span>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Conditional View Rendering */}
+                {view === 'leaderboard' && (
+                    <div className={`p-6 sm:p-8 rounded-[2.5rem] transition-all ${
+                        isBento
+                            ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                            : 'bg-white/90 dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-xl backdrop-blur-xl'
+                    }`}>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-200 dark:border-white/10">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                                    isBento ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000]' : 'bg-amber-500 text-white'
+                                }`}>
+                                    <Award className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black uppercase tracking-tight text-gray-900 dark:text-white">Clan Power Rankings</h2>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold">Top performing guilds competing for seasonal supremacy</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => fetchClanLeaderboard(true)}
+                                disabled={loadingLeaderboard}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                    isBento ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100' : 'glass-card border border-slate-200 dark:border-white/10'
+                                }`}
+                            >
+                                {loadingLeaderboard ? 'Refreshing...' : 'Refresh Rankings'}
+                            </button>
+                        </div>
+
+                        {loadingLeaderboard && clanLeaderboard.length === 0 ? (
+                            <div className="text-center py-16">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500 mx-auto mb-3"></div>
+                                <p className="text-xs font-bold text-gray-500">Loading clan rankings...</p>
+                            </div>
+                        ) : clanLeaderboard.length === 0 ? (
+                            <div className="text-center py-16">
+                                <Trophy className="w-12 h-12 mx-auto text-gray-400 mb-2 opacity-50" />
+                                <h3 className="text-lg font-black uppercase">No Clan Rankings Yet</h3>
+                                <p className="text-xs text-gray-500 mt-1">Clans will appear here as they earn XP through quizzes and tournaments.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {clanLeaderboard.map((item, index) => {
+                                    const isMyClan = user.clanId && (item.clanId === user.clanId);
+
+                                    return (
+                                        <div
+                                            key={item.clanId}
+                                            className={`p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all ${
+                                                isBento
+                                                    ? (isMyClan
+                                                        ? 'bg-[#bef264] text-black border-2.5 border-black shadow-[4px_4px_0px_#000]'
+                                                        : 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]')
+                                                    : (isMyClan
+                                                        ? 'bg-violet-500/10 border-2 border-violet-500 text-slate-900 dark:text-white shadow-md'
+                                                        : 'bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/5 text-slate-800 dark:text-slate-200 hover:border-violet-500/30')
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3.5 min-w-0">
+                                                <ClanEmblem
+                                                    logo={item.logo}
+                                                    tag={item.tag}
+                                                    name={item.name}
+                                                    size="sm"
+                                                />
+                                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                                                    index === 0
+                                                        ? 'bg-amber-400 text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                        : index === 1
+                                                            ? 'bg-slate-300 text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                            : index === 2
+                                                                ? 'bg-amber-600 text-white border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                                : isBento
+                                                                    ? 'bg-slate-100 text-black border border-black'
+                                                                    : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                                                }`}>
+                                                    #{index + 1}
+                                                </div>
+
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className="font-black text-base truncate">
+                                                            [{item.tag}] {item.name}
+                                                        </h3>
+                                                        {isMyClan && (
+                                                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                                                isBento ? 'bg-black text-white' : 'bg-violet-600 text-white'
+                                                            }`}>
+                                                                Your Clan
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs opacity-75 font-medium truncate mt-0.5">
+                                                        Leader: {item.leaderName || 'Unknown'} • Level {item.level}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-4 self-end sm:self-center shrink-0">
+                                                <div className="text-right">
+                                                    <div className="font-tabular font-black text-sm sm:text-base">
+                                                        {item.totalXP?.toLocaleString() || 0} XP
+                                                    </div>
+                                                    <div className="text-[10px] opacity-60 font-bold uppercase tracking-wider">
+                                                        {item.memberCount || 1} Members
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {view === 'my_clan' && (
+                    <div className={`rounded-[2.5rem] overflow-hidden ${
+                        isBento
+                            ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                            : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm'
+                    }`}>
                     {/* Clan Header */}
                     <div className="relative bg-gradient-to-r from-violet-600 to-indigo-600 p-8 text-white overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
                         <div className="absolute top-4 right-4 flex gap-2 z-10">
+                            {isLeader && (
+                                <button onClick={() => setShowLogoMaker(true)} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur-sm transition-colors text-white/80 hover:text-white cursor-pointer" title="Emblem Studio">
+                                    <Palette className="w-5 h-5" />
+                                </button>
+                            )}
                             {isLeader && (
                                 <button onClick={() => setShowEdit(true)} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur-sm transition-colors text-white/80 hover:text-white cursor-pointer" title="Edit Clan">
                                     <Edit2 className="w-5 h-5" />
@@ -390,17 +848,50 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                             </button>
                         </div>
                         <div className="relative flex flex-col md:flex-row items-center gap-6">
-                            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center ${
-                                isBento
-                                    ? 'bg-white text-black border-2 border-black shadow-[3px_3px_0px_#000]'
-                                    : 'bg-white/20 backdrop-blur-md shadow-inner border border-white/30 text-white'
-                            }`}>
-                                <Shield className="w-10 h-10" />
+                            <div className="relative group">
+                                <ClanEmblem
+                                    logo={clan.logo}
+                                    tag={clan.tag}
+                                    name={clan.name}
+                                    size="2xl"
+                                    interactive={isLeader}
+                                    onClick={() => isLeader && setShowLogoMaker(true)}
+                                />
+                                {isLeader && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowLogoMaker(true)}
+                                        className={`absolute -bottom-1 -right-1 p-2 rounded-xl transition-transform hover:scale-110 cursor-pointer ${
+                                            isBento
+                                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-white text-violet-700 shadow-md'
+                                        }`}
+                                        title="Change Clan Emblem"
+                                    >
+                                        <Palette className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
                             <div className="text-center md:text-left">
-                                <h1 className="text-3xl font-black mb-2 flex items-center gap-3 justify-center md:justify-start uppercase tracking-tight">
-                                    [{clan.tag}] {clan.name}
-                                </h1>
+                                <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start mb-2">
+                                    <h1 className="text-3xl font-black uppercase tracking-tight">
+                                        [{clan.tag}] {clan.name}
+                                    </h1>
+                                    {isLeader && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowLogoMaker(true)}
+                                            className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                                                isBento
+                                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
+                                                    : 'bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm'
+                                            }`}
+                                        >
+                                            <Palette className="w-3.5 h-3.5" />
+                                            <span>Emblem Studio</span>
+                                        </button>
+                                    )}
+                                </div>
                                 <p className="text-white/70 max-w-xl text-sm font-medium">{clan.description || 'No description provided.'}</p>
                                 <div className="flex flex-wrap gap-2 mt-4 justify-center md:justify-start">
                                     <span className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5 ${
@@ -576,6 +1067,22 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                             )}
                         </div>
 
+                        {/* Dedicated Clan Chat Section */}
+                        <div id="clan-chat" className="mb-10">
+                            <ClanChatSection
+                                clan={clan}
+                                currentUser={user}
+                                messages={chatMessages}
+                                onSendMessage={handleSendMessage}
+                                onEditMessage={handleEditMessage}
+                                onDeleteMessage={handleDeleteMessage}
+                                isLeader={isLeader}
+                                isElder={isElder}
+                                isBento={isBento}
+                                onMarkAsRead={handleMarkChatAsRead}
+                            />
+                        </div>
+
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-violet-500/10 rounded-xl flex items-center justify-center">
@@ -604,8 +1111,12 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                 <div className="space-y-3">
                                     {clan.activeJoinRequests.map((req: { userId: string; name?: string; avatar?: AvatarConfig }) => (
                                         <div key={req.userId} className="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center font-bold text-gray-500 overflow-hidden">
+                                            <div
+                                                onClick={() => openUserProfile(req.userId)}
+                                                className="flex items-center gap-3 cursor-pointer group"
+                                                title="View user profile"
+                                            >
+                                                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center font-bold text-gray-500 overflow-hidden group-hover:ring-2 group-hover:ring-indigo-500 transition-all">
                                                     {req.avatar ? (
                                                         <Avatar config={req.avatar} size="sm" className="w-full h-full" />
                                                     ) : (
@@ -613,7 +1124,7 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <div className="font-bold text-gray-900 dark:text-white">{req.name || 'Unknown User'}</div>
+                                                    <div className="font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{req.name || 'Unknown User'}</div>
                                                     <div className="text-xs text-gray-500">Requested a while ago</div>
                                                 </div>
                                             </div>
@@ -630,21 +1141,37 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {clan.members.map((member) => (
                                 <div key={member.userId} className="relative flex items-center gap-4 p-4 rounded-2xl bg-white/60 dark:bg-white/5 border border-white/20 dark:border-white/5 group hover:border-violet-500/20 transition-all">
-                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center font-bold text-lg text-gray-600 dark:text-gray-300 overflow-hidden">
-                                        {member.avatar ? (
-                                            <Avatar config={member.avatar} size="md" className="w-full h-full" />
-                                        ) : (
-                                            member.name ? member.name.substring(0, 2).toUpperCase() : '??'
-                                        )}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-bold text-gray-900 dark:text-white">{member.name || 'Unknown User'}</span>
-                                            {member.role === 'leader' && <span className="text-[10px] bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Leader</span>}
-                                            {member.role === 'elder' && <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Elder</span>}
+                                    <div
+                                        onClick={() => openUserProfile(member.userId)}
+                                        className="flex items-center gap-4 flex-1 cursor-pointer group/member min-w-0"
+                                        title={`View ${member.name}'s profile`}
+                                    >
+                                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center font-bold text-lg text-gray-600 dark:text-gray-300 overflow-hidden shrink-0 group-hover/member:ring-2 group-hover/member:ring-indigo-500 transition-all">
+                                            {member.avatar ? (
+                                                <Avatar config={member.avatar} size="md" className="w-full h-full" />
+                                            ) : (
+                                                member.name ? member.name.substring(0, 2).toUpperCase() : '??'
+                                            )}
                                         </div>
-                                        <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                                            Contributed: <span className="font-medium text-violet-600 dark:text-violet-400">{member.contribution || 0} XP</span>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="font-bold text-gray-900 dark:text-white group-hover/member:text-indigo-600 dark:group-hover/member:text-indigo-400 transition-colors truncate">{member.name || 'Unknown User'}</span>
+                                                {member.role === 'leader' && <span className="text-[10px] bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Leader</span>}
+                                                {member.role === 'elder' && <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Elder</span>}
+                                                {member.equippedBadge && (
+                                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                                        isBento
+                                                            ? 'bg-[#fef08a] text-black border border-black shadow-[1px_1px_0px_#000]'
+                                                            : 'bg-amber-400/15 text-amber-600 dark:text-amber-400 border border-amber-400/25'
+                                                    }`} title={member.equippedBadge.name}>
+                                                        <span>{member.equippedBadge.icon}</span>
+                                                        <span>{member.equippedBadge.title || member.equippedBadge.name}</span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                                                Contributed: <span className="font-medium text-violet-600 dark:text-violet-400">{member.contribution || 0} XP</span>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -683,93 +1210,116 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                         </div>
                     </div>
                 </div>
+                )}
 
-                {/* Floating Chat Button */}
-                <button
-                    onClick={handleOpenChat}
-                    className={`fixed bottom-6 right-6 p-4 rounded-full transition-all hover:scale-110 z-50 flex items-center justify-center group cursor-pointer ${
-                        isBento
-                            ? 'bg-[#ddd6fe] text-black border-2.5 border-black shadow-[4px_4px_0px_#000]'
-                            : 'bg-violet-600 text-white hover:bg-violet-700 shadow-2xl'
-                    }`}
-                >
-                    <MessageCircle className={`w-8 h-8 ${isBento ? 'text-black' : 'text-white'}`} />
-                    {unreadCount > 0 && (
-                        <span className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold animate-bounce ${
-                            isBento
-                                ? 'bg-[#ff6b6b] text-black border-2 border-black'
-                                : 'bg-red-500 text-white border-2 border-white dark:border-gray-900'
-                        }`}>
-                            {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                    )}
-                    <span className={`absolute right-full mr-3 px-3 py-1 rounded-lg text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none ${
-                        isBento
-                            ? 'bg-black text-white border border-black font-bold'
-                            : 'bg-gray-900 text-white'
-                    }`}>
-                        Open Clan Chat
-                    </span>
-                </button>
-
-                {/* Chat Overlay */}
-                {showChat && (
-                    <div className="fixed inset-0 z-[120] flex justify-end items-stretch pointer-events-none">
-                        <div
-                            className="absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto transition-opacity"
-                            onClick={() => setShowChat(false)}
-                        />
-                        <div className="relative w-full max-w-md pointer-events-auto h-full animate-in slide-in-from-right duration-300">
-                            <ChatWindow
-                                currentUser={user}
-                                messages={chatMessages}
-                                onSendMessage={(content) => {
-                                    // But wait, the existing sendChatMessage uses 'chatInput' state.
-                                    // I should refactor sendChatMessage to take content as argument
-                                    if (!socket || !clan) return;
-                                    socket.emit('send_clan_message', {
-                                        clanId: clan.clanId,
-                                        senderId: user.userId,
-                                        senderName: user.name,
-                                        content: content.trim()
-                                    });
-                                    const now = Date.now();
-                                    setLastViewed(now);
-                                    localStorage.setItem(`clan_chat_last_viewed_${clan.clanId}`, now.toString());
-                                }}
-                                onClose={() => setShowChat(false)}
-                                title="Clan Chat"
-                                canEditMessage={(msg) => msg.senderId === user.userId}
-                                canDeleteMessage={(msg) => msg.senderId === user.userId || isLeader}
-                                onEditMessage={(id, content) => {
-                                    // Check if we need to set state first? 
-                                    // The existing handleEditMessage didn't depend on state for the *args*, 
-                                    // but used setEditingMessageId. 
-                                    // ChatWindow handles the edit UI state internally, 
-                                    // so we just need the backend emit function.
-                                    if (!socket || !clan) return;
-                                    socket.emit('edit_clan_message', {
-                                        clanId: clan.clanId,
-                                        messageId: id,
-                                        newContent: content,
-                                        userId: user.userId
-                                    });
-                                }}
-                                onDeleteMessage={handleDeleteMessage}
+                {/* If member is viewing Browse Clans */}
+                {view === 'browse' && (
+                    <div className="space-y-6">
+                        {/* Search Bar */}
+                        <div className="relative group">
+                            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${
+                                isBento ? 'text-gray-700 group-focus-within:text-black' : 'text-gray-400 group-focus-within:text-violet-500'
+                            }`} />
+                            <input
+                                type="text"
+                                placeholder="Search clans by name or tag..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                className={`w-full pl-12 pr-28 py-4 rounded-2xl focus:outline-none transition-all font-bold text-sm ${
+                                    isBento
+                                        ? 'bg-white text-black placeholder:text-gray-400 border-2.5 border-black shadow-[3.5px_3.5px_0px_#000] focus:shadow-[5px_5px_0px_#000]'
+                                        : 'bg-white dark:bg-[#13141f] text-gray-900 dark:text-white placeholder:text-gray-400 border border-gray-200 dark:border-white/10 shadow-sm focus:ring-2 focus:ring-violet-500/30'
+                                }`}
                             />
+                            <button
+                                onClick={() => handleSearch()}
+                                className={`absolute right-3 top-1/2 -translate-y-1/2 px-5 py-2 rounded-xl text-sm transition-all cursor-pointer ${
+                                    isBento
+                                        ? 'bg-[#ddd6fe] text-black font-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#c4b5fd] active:translate-y-0.5'
+                                        : 'bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-md shadow-violet-500/20'
+                                }`}
+                            >
+                                Search
+                            </button>
                         </div>
+
+                        {/* Clan Listings */}
+                        {searchResults.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {searchResults.map((clanItem) => (
+                                    <div
+                                        key={clanItem.clanId}
+                                        className={`group relative rounded-[2rem] p-6 transition-all overflow-hidden ${
+                                            isBento
+                                                ? 'bg-white text-black border-2.5 border-black shadow-[4px_4px_0px_#000]'
+                                                : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm'
+                                        }`}
+                                    >
+                                        <div className="relative flex items-start gap-4 mb-4">
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                                                isBento
+                                                    ? 'bg-[#ddd6fe] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                    : 'bg-violet-500/10 text-violet-500 dark:bg-white/10 dark:text-violet-400 shadow-sm'
+                                            }`}>
+                                                <Shield className="w-7 h-7" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-lg font-black truncate">
+                                                    [{clanItem.tag}] {clanItem.name}
+                                                </h3>
+                                                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium line-clamp-2 mt-1">
+                                                    {clanItem.description || 'No description provided.'}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                                isBento ? 'bg-[#fde047] text-black border border-black' : 'bg-violet-500/10 text-violet-500'
+                                            }`}>
+                                                Lvl {clanItem.level}
+                                            </span>
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                                isBento ? 'bg-[#93c5fd] text-black border border-black' : 'bg-blue-500/10 text-blue-500'
+                                            }`}>
+                                                {clanItem.totalXP?.toLocaleString() || 0} XP
+                                            </span>
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                                isBento ? 'bg-[#bef264] text-black border border-black' : 'bg-emerald-500/10 text-emerald-500'
+                                            }`}>
+                                                {clanItem.members?.length || '?'} Members
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className={`text-center py-12 rounded-[2rem] ${
+                                isBento ? 'bg-white border-2 border-black shadow-[3px_3px_0px_#000]' : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10'
+                            }`}>
+                                <p className="text-sm font-bold text-gray-500">No clans found matching your search.</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
+
+
                 {/* Edit Modal */}
-                {
-                    showEdit && (
-                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md">
-                            <div className={`rounded-3xl p-8 w-full max-w-lg shadow-2xl ${
+                {showEdit && typeof document !== 'undefined' && createPortal(
+                    <div 
+                        className="fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center p-4 animate-in fade-in duration-200"
+                        onClick={() => setShowEdit(false)}
+                    >
+                        <div 
+                            className={`rounded-2xl p-8 w-full max-w-lg shadow-2xl ${
                                 isBento
-                                    ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                                    ? 'bg-white text-black border-[3px] border-black shadow-[6px_6px_0px_#000]'
                                     : 'bg-white dark:bg-gray-900 border border-white/10 text-gray-900 dark:text-white'
-                            }`}>
+                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
                                 <h2 className="text-2xl font-black mb-4 uppercase tracking-tight">Edit Clan</h2>
                                 <form onSubmit={handleUpdateClan} className="space-y-4">
                                     <div>
@@ -836,18 +1386,25 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                     </div>
                                 </form>
                             </div>
-                        </div>
+                        </div>,
+                        document.body
                     )
                 }
 
                 {/* Announcement Modal */}
-                {showAnnouncementModal && (
-                    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md">
-                        <div className={`rounded-3xl p-8 w-full max-w-2xl shadow-2xl ${
-                            isBento
-                                ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
-                                : 'bg-white dark:bg-gray-900 border border-white/10 text-gray-900 dark:text-white'
-                        }`}>
+                {showAnnouncementModal && typeof document !== 'undefined' && createPortal(
+                    <div 
+                        className="fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center p-4 animate-in fade-in duration-200"
+                        onClick={() => setShowAnnouncementModal(false)}
+                    >
+                        <div 
+                            className={`rounded-2xl p-8 w-full max-w-2xl shadow-2xl ${
+                                isBento
+                                    ? 'bg-white text-black border-[3px] border-black shadow-[6px_6px_0px_#000]'
+                                    : 'bg-white dark:bg-gray-900 border border-white/10 text-gray-900 dark:text-white'
+                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -933,18 +1490,24 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div>,
+                    document.body
                 )}
 
                 {/* Invite Modal */}
-                {
-                    showInvite && (
-                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md">
-                            <div className={`rounded-3xl p-8 w-full max-w-lg shadow-2xl h-[80vh] flex flex-col ${
+                {showInvite && typeof document !== 'undefined' && createPortal(
+                    <div 
+                        className="fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center p-4 animate-in fade-in duration-200"
+                        onClick={() => setShowInvite(false)}
+                    >
+                        <div 
+                            className={`rounded-2xl p-8 w-full max-w-lg shadow-2xl h-[80vh] flex flex-col ${
                                 isBento
-                                    ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                                    ? 'bg-white text-black border-[3px] border-black shadow-[6px_6px_0px_#000]'
                                     : 'bg-white dark:bg-gray-900 border border-white/10 text-gray-900 dark:text-white'
-                            }`}>
+                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
                                 <h2 className="text-2xl font-black mb-4 uppercase tracking-tight">Invite Members</h2>
                                 <div className="flex gap-2 mb-4">
                                     <input
@@ -1015,9 +1578,197 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                     Close
                                 </button>
                             </div>
-                        </div>
+                        </div>,
+                        document.body
                     )
                 }
+
+                {/* Leader Announcement Banner Edit Modal */}
+                {showBannerEditModal && typeof document !== 'undefined' && createPortal(
+                    <div 
+                        className="fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center p-4 animate-in fade-in duration-200"
+                        onClick={() => setShowBannerEditModal(false)}
+                    >
+                        <div 
+                            className={`rounded-2xl p-6 sm:p-8 w-full max-w-lg shadow-2xl ${
+                                isBento
+                                    ? 'bg-white text-black border-[3px] border-black shadow-[6px_6px_0px_#000]'
+                                    : 'bg-white dark:bg-gray-900 border border-white/10 text-gray-900 dark:text-white'
+                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-5">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                        isBento ? 'bg-[#fde047] text-black border-2 border-black' : 'bg-amber-500 text-white'
+                                    }`}>
+                                        <Megaphone className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-black uppercase tracking-tight">Leader Announcement Banner</h2>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 font-bold">Visible to all clan members at the top of the hub</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowBannerEditModal(false)}
+                                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSaveBanner} className="space-y-4">
+                                <div>
+                                    <label className={`block text-xs font-black uppercase tracking-wider mb-1.5 ${isBento ? 'text-black' : 'text-gray-600 dark:text-gray-300'}`}>
+                                        Announcement Message
+                                    </label>
+                                    <textarea
+                                        required
+                                        value={bannerForm.text}
+                                        onChange={(e) => setBannerForm(prev => ({ ...prev, text: e.target.value }))}
+                                        placeholder="e.g. Weekend Clan Raid starts Saturday 8PM UTC! Read rules and register..."
+                                        rows={3}
+                                        className={`w-full p-3.5 rounded-xl font-medium text-sm focus:outline-none transition-all resize-none ${
+                                            isBento
+                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500'
+                                        }`}
+                                    />
+                                </div>
+
+                                <div>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <label className={`block text-xs font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-gray-600 dark:text-gray-300'}`}>
+                                            Fixed Action Link URL (Optional)
+                                        </label>
+                                        {bannerForm.url && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setBannerForm(prev => ({ ...prev, url: '', buttonText: '' }))}
+                                                className="text-xs text-rose-500 hover:underline font-bold cursor-pointer"
+                                            >
+                                                Clear Link
+                                            </button>
+                                        )}
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={bannerForm.url}
+                                        onChange={(e) => {
+                                            setBannerForm(prev => ({ ...prev, url: e.target.value }));
+                                            if (bannerUrlError) setBannerUrlError('');
+                                        }}
+                                        placeholder="https://discord.gg/... or /tournaments"
+                                        className={`w-full p-3 rounded-xl font-mono text-xs focus:outline-none transition-all ${
+                                            isBento
+                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500'
+                                        }`}
+                                    />
+                                    {bannerUrlError && (
+                                        <p className="text-xs text-rose-500 font-bold mt-1 flex items-center gap-1">
+                                            <AlertCircle className="w-3.5 h-3.5" />
+                                            {bannerUrlError}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className={`block text-xs font-black uppercase tracking-wider mb-1.5 ${isBento ? 'text-black' : 'text-gray-600 dark:text-gray-300'}`}>
+                                        Fixed Button Label (Optional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={bannerForm.buttonText}
+                                        onChange={(e) => setBannerForm(prev => ({ ...prev, buttonText: e.target.value }))}
+                                        placeholder="e.g. Join Discord, Team WhatsApp, Tournament..."
+                                        maxLength={40}
+                                        className={`w-full p-3 rounded-xl font-medium text-xs focus:outline-none transition-all ${
+                                            isBento
+                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500'
+                                        }`}
+                                    />
+                                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mr-1">Presets:</span>
+                                        {[
+                                            { label: 'Discord', url: 'https://discord.gg/', btn: 'Join Clan Discord' },
+                                            { label: 'WhatsApp', url: 'https://chat.whatsapp.com/', btn: 'WhatsApp Group' },
+                                            { label: 'Tournaments', url: '/tournaments', btn: 'Clan Tournaments' },
+                                            { label: 'Study', url: '/study', btn: 'Study Resources' }
+                                        ].map(p => (
+                                            <button
+                                                key={p.label}
+                                                type="button"
+                                                onClick={() => setBannerForm(prev => ({ ...prev, url: p.url, buttonText: p.btn }))}
+                                                className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                                                    isBento
+                                                        ? 'bg-neutral-100 hover:bg-neutral-200 text-black border border-black shadow-[1px_1px_0px_#000]'
+                                                        : 'bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-700 dark:text-gray-300'
+                                                }`}
+                                            >
+                                                + {p.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-2">
+                                        Note: The fixed button ONLY appears on the announcement banner if a link is provided.
+                                    </p>
+                                </div>
+
+                                <div className="flex gap-3 pt-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowBannerEditModal(false)}
+                                        className={`flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
+                                            isBento
+                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-gray-100'
+                                                : 'bg-gray-100 dark:bg-white/10 text-gray-800 dark:text-white'
+                                        }`}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSavingBanner}
+                                        className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                                            isBento
+                                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#a3e635]'
+                                                : 'bg-amber-500 hover:bg-amber-600 text-white shadow-md'
+                                        }`}
+                                    >
+                                        {isSavingBanner ? 'Saving...' : 'Save Banner'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>,
+                    document.body
+                )}
+
+                {/* Clan Logo Maker Modal for Active Clan */}
+                {clan && (
+                    <ClanLogoMakerModal
+                        isOpen={showLogoMaker}
+                        onClose={() => setShowLogoMaker(false)}
+                        clanName={clan.name}
+                        clanTag={clan.tag}
+                        initialLogo={clan.logo}
+                        onSave={handleSaveClanLogo}
+                    />
+                )}
+
+                {confirmState.isOpen && (
+                    <ConfirmDialog
+                        title={confirmState.title}
+                        message={confirmState.message}
+                        confirmText={confirmState.confirmText}
+                        cancelText={confirmState.cancelText}
+                        type={confirmState.type}
+                        onConfirm={confirmState.onConfirm}
+                        onCancel={handleCancel}
+                    />
+                )}
             </div >
         );
     }
@@ -1063,15 +1814,17 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                 }`}>
                     {([
                         { id: 'browse', label: 'Find a Clan', icon: Search },
-                        { id: 'create', label: 'Create New Clan', icon: Shield }
+                        { id: 'leaderboard', label: 'Rankings', icon: Award },
+                        { id: 'create', label: 'Create Clan', icon: Shield }
                     ] as const).map(({ id, label, icon: Icon }) => (
                         <button
                             key={id}
                             onClick={() => {
-                                setView(id as 'browse' | 'create');
+                                setView(id as 'browse' | 'create' | 'leaderboard');
                                 if (id === 'browse') handleSearch('');
+                                if (id === 'leaderboard') fetchClanLeaderboard();
                             }}
-                            className={`flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs sm:text-sm transition-all whitespace-nowrap cursor-pointer ${
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs sm:text-sm transition-all whitespace-nowrap cursor-pointer ${
                                 view === id
                                     ? (isBento
                                         ? 'font-black bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
@@ -1349,6 +2102,109 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                 </div>
             )}
 
+            {view === 'leaderboard' && (
+                <div className={`p-6 sm:p-8 rounded-[2.5rem] transition-all ${
+                    isBento
+                        ? 'bg-white text-black border-3 border-black shadow-[6px_6px_0px_#000]'
+                        : 'bg-white/90 dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-xl backdrop-blur-xl'
+                }`}>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-200 dark:border-white/10">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                                isBento ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000]' : 'bg-amber-500 text-white'
+                            }`}>
+                                <Award className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-black uppercase tracking-tight text-gray-900 dark:text-white">Clan Power Rankings</h2>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-bold">Top performing guilds competing for seasonal supremacy</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => fetchClanLeaderboard(false, true)}
+                            disabled={loadingLeaderboard}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                isBento ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100' : 'glass-card border border-slate-200 dark:border-white/10'
+                            }`}
+                        >
+                            {loadingLeaderboard ? 'Refreshing...' : 'Refresh Rankings'}
+                        </button>
+                    </div>
+
+                    {loadingLeaderboard ? (
+                        <div className="text-center py-16">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500 mx-auto mb-3"></div>
+                            <p className="text-xs font-bold text-gray-500">Loading clan rankings...</p>
+                        </div>
+                    ) : clanLeaderboard.length === 0 ? (
+                        <div className="text-center py-16">
+                            <Trophy className="w-12 h-12 mx-auto text-gray-400 mb-2 opacity-50" />
+                            <h3 className="text-lg font-black uppercase">No Clan Rankings Yet</h3>
+                            <p className="text-xs text-gray-500 mt-1">Clans will appear here as they earn XP through quizzes and tournaments.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {clanLeaderboard.map((item, index) => (
+                                <div
+                                    key={item.clanId}
+                                    className={`p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all ${
+                                        isBento
+                                            ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
+                                            : 'bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/5 text-slate-800 dark:text-slate-200 hover:border-violet-500/30'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${
+                                            index === 0
+                                                ? 'bg-amber-400 text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : index === 1
+                                                    ? 'bg-slate-300 text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                    : index === 2
+                                                        ? 'bg-amber-600 text-white border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                        : isBento
+                                                            ? 'bg-slate-100 text-black border border-black'
+                                                            : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                                        }`}>
+                                            #{index + 1}
+                                        </div>
+
+                                        <div className="min-w-0">
+                                            <h3 className="font-black text-base truncate">
+                                                [{item.tag}] {item.name}
+                                            </h3>
+                                            <p className="text-xs opacity-75 font-medium truncate mt-0.5">
+                                                Leader: {item.leaderName || 'Unknown'} • Level {item.level}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 self-end sm:self-center shrink-0">
+                                        <div className="text-right">
+                                            <div className="font-tabular font-black text-sm sm:text-base">
+                                                {item.totalXP?.toLocaleString() || 0} XP
+                                            </div>
+                                            <div className="text-[10px] opacity-60 font-bold uppercase tracking-wider">
+                                                {item.memberCount || 1} Members
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleJoin(item.clanId)}
+                                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                                isBento ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#a3e635]' : 'bg-violet-600 text-white hover:bg-violet-700'
+                                            }`}
+                                        >
+                                            Join
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
             {view === 'create' && (
                 <div className={`rounded-[2.5rem] p-8 max-w-2xl mx-auto ${
                     isBento
@@ -1388,6 +2244,39 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                                 placeholder="e.g. The Night's Watch"
                             />
                         </div>
+                        <div>
+                            <label className={`block text-xs font-black uppercase tracking-wider mb-2 ${
+                                isBento ? 'text-black' : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                                Clan Emblem / Logo
+                            </label>
+                            <div className={`flex items-center gap-4 p-4 rounded-2xl ${
+                                isBento ? 'bg-yellow-50 border-2 border-black' : 'bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10'
+                            }`}>
+                                <ClanEmblem
+                                    logo={createLogo || { shape: 'rounded', icon: 'Shield', bgColor: '#fde047', iconColor: '#000000', showTag: true }}
+                                    tag={createForm.tag || 'CLAN'}
+                                    name={createForm.name || 'New Clan'}
+                                    size="lg"
+                                />
+                                <div className="flex-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCreateLogoMaker(true)}
+                                        className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                                            isBento
+                                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
+                                                : 'bg-violet-600 hover:bg-violet-700 text-white shadow-md'
+                                        }`}
+                                    >
+                                        <Palette className="w-4 h-4" />
+                                        <span>{createLogo ? 'Edit Emblem' : 'Design Clan Emblem'}</span>
+                                    </button>
+                                    <p className="text-[11px] text-gray-500 mt-1">Pick a custom silhouette, emblem icon, colors, or upload picture</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
                                 <label className={`block text-xs font-black uppercase tracking-wider mb-2 ${
@@ -1461,6 +2350,20 @@ export const ClanHub: React.FC<ClanHubProps> = ({ user, onUpdateUser }) => {
                     </form>
                 </div>
             )}
+            
+            {/* Clan Logo Maker Modal for Founding Clan */}
+            <ClanLogoMakerModal
+                isOpen={showCreateLogoMaker}
+                onClose={() => setShowCreateLogoMaker(false)}
+                clanName={createForm.name || 'New Clan'}
+                clanTag={createForm.tag || 'CLAN'}
+                initialLogo={createLogo}
+                onSave={(newLogo) => {
+                    setCreateLogo(newLogo);
+                    setShowCreateLogoMaker(false);
+                }}
+            />
+
             {confirmState.isOpen && (
                 <ConfirmDialog
                     title={confirmState.title}

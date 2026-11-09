@@ -52,6 +52,8 @@ import aiStudioRoutes from './routes/aiStudio.js';
 import trackRequestRoutes from './routes/trackRequests.js';
 import notificationRoutes from './routes/notifications.js';
 import supportRoutes from './routes/support.js';
+import newsletterRoutes from './routes/newsletter.js';
+import { verifyEmailService } from './services/emailService.js';
 
 // Strictly whitelisted origins (No broad wildcard *.vercel.app or *.netlify.app domains)
 const allowedOrigins = [
@@ -71,7 +73,10 @@ if (process.env.CLIENT_URL) {
 
 const isOriginAllowed = (origin) => {
   if (!origin) return true; // allow mobile apps/curl/server-to-server
-  return allowedOrigins.includes(origin);
+  if (allowedOrigins.includes(origin)) return true;
+  // Allow all localhost and 127.0.0.1 origins on any port for local development
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
+  return false;
 };
 
 const isServerless = !!process.env.VERCEL;
@@ -133,7 +138,7 @@ app.use(cors({
     if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS policy'));
+      callback(null, false);
     }
   },
   credentials: true,
@@ -296,11 +301,13 @@ app.use('/api/badge-trees', badgeTreesRoutes);
 app.use('/api/track-requests', trackRequestRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 
 
 // Socket.io event handlers (disabled on Vercel serverless)
 // In-memory game state
 const gameRooms = new Map();
+const classroomRooms = new Map();
 // Presence tracking: userId -> Set of socket IDs (user can have multiple tabs)
 const onlineUsers = new Map();
 
@@ -515,6 +522,140 @@ if (io) io.on('connection', (socket) => {
         }, 3600000); // 1 hour cleanup just in case
     }
   });
+
+  // ========== CLASSROOM MULTIPLAYER & TURN-BASED EVENTS ==========
+  socket.on('join_classroom', ({ pin, user, quizData }) => {
+    if (!pin || !user) return;
+    const roomId = `classroom_${pin}`;
+    socket.join(roomId);
+
+    if (!classroomRooms.has(roomId)) {
+      classroomRooms.set(roomId, {
+        pin,
+        hostId: user.id || user.userId,
+        hostName: user.name || 'Host',
+        quizData: quizData || null,
+        players: [],
+        currentTurnUserId: user.id || user.userId,
+        currentQuestionIndex: 0,
+        gameState: 'lobby'
+      });
+    }
+
+    const room = classroomRooms.get(roomId);
+    if (quizData && !room.quizData) {
+      room.quizData = quizData;
+    }
+
+    const playerId = user.id || user.userId || `guest_${socket.id}`;
+    const playerName = user.name || 'Student';
+    const existingIdx = room.players.findIndex(p => p.id === playerId);
+    if (existingIdx === -1) {
+      room.players.push({
+        id: playerId,
+        name: playerName,
+        score: 0,
+        streak: 0,
+        socketId: socket.id
+      });
+    } else {
+      room.players[existingIdx].socketId = socket.id;
+      room.players[existingIdx].name = playerName;
+    }
+
+    if (!room.currentTurnUserId && room.players.length > 0) {
+      room.currentTurnUserId = room.players[0].id;
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🎓 Classroom ${pin}: ${playerName} (${playerId}) joined. Total players: ${room.players.length}`);
+    }
+
+    // Broadcast updated state to room
+    io.to(roomId).emit('classroom_state_sync', {
+      pin,
+      players: room.players,
+      currentTurnUserId: room.currentTurnUserId,
+      currentQuestionIndex: room.currentQuestionIndex,
+      gameState: room.gameState,
+      quizData: room.quizData
+    });
+  });
+
+  socket.on('classroom_invite_user', ({ toUserId, fromUser, pin, quizTitle }) => {
+    if (!toUserId) return;
+    io.to(toUserId).emit('classroom_invite_received', {
+      fromUser: fromUser || { name: 'Host' },
+      pin,
+      quizTitle: quizTitle || 'Classroom Arena Quiz',
+      timestamp: Date.now()
+    });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`📨 Classroom invitation sent to user ${toUserId} for room ${pin}`);
+    }
+  });
+
+  socket.on('classroom_start_game', ({ pin, currentTurnUserId }) => {
+    const roomId = `classroom_${pin}`;
+    const room = classroomRooms.get(roomId);
+    if (room) {
+      room.gameState = 'question';
+      room.currentTurnUserId = currentTurnUserId || (room.players[0]?.id ?? null);
+      room.currentQuestionIndex = 0;
+    }
+    io.to(roomId).emit('classroom_game_started', {
+      pin,
+      currentTurnUserId: room ? room.currentTurnUserId : currentTurnUserId,
+      currentQuestionIndex: 0,
+      quizData: room ? room.quizData : null
+    });
+  });
+
+  socket.on('classroom_submit_turn', ({ pin, userId, userName, questionIndex, answerIndex, isCorrect, points, timedOut }) => {
+    const roomId = `classroom_${pin}`;
+    const room = classroomRooms.get(roomId);
+    if (room) {
+      const player = room.players.find(p => p.id === userId);
+      if (player) {
+        player.score = (player.score || 0) + (points || 0);
+        player.streak = isCorrect ? (player.streak || 0) + 1 : 0;
+        player.lastAnswerCorrect = isCorrect;
+        player.lastAnswerPoints = points;
+      }
+      room.gameState = 'reveal';
+    }
+
+    io.to(roomId).emit('classroom_turn_result', {
+      pin,
+      userId,
+      userName,
+      questionIndex,
+      answerIndex,
+      isCorrect,
+      points,
+      timedOut: !!timedOut,
+      players: room ? room.players : []
+    });
+  });
+
+  socket.on('classroom_advance_turn', ({ pin, nextTurnUserId, nextQuestionIndex, isGameOver }) => {
+    const roomId = `classroom_${pin}`;
+    const room = classroomRooms.get(roomId);
+    if (room) {
+      room.currentTurnUserId = nextTurnUserId;
+      room.currentQuestionIndex = nextQuestionIndex;
+      room.gameState = isGameOver ? 'game_over' : 'question';
+    }
+
+    io.to(roomId).emit('classroom_turn_advanced', {
+      pin,
+      nextTurnUserId,
+      nextQuestionIndex,
+      isGameOver: !!isGameOver,
+      players: room ? room.players : [],
+      quizData: room ? room.quizData : null
+    });
+  });
   
   // ========== CLAN CHAT EVENTS ==========
   socket.on('join_clan_chat', (clanId) => {
@@ -524,20 +665,57 @@ if (io) io.on('connection', (socket) => {
     }
   });
 
-  socket.on('send_clan_message', async ({ clanId, senderId, senderName, content }) => {
+  socket.on('send_clan_message', async ({ clanId, senderId, senderName, senderAvatar, senderRole, content }) => {
     if (!clanId || !senderId || !content?.trim()) return;
     
-    const message = {
-      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      senderId,
-      senderName,
-      content: content.trim().substring(0, 500), // Enforce max length
-      createdAt: new Date()
-    };
-
     try {
       // Import Clan model dynamically to avoid circular deps
       const { Clan } = await import('./models/Clan.js');
+      const { invalidateClanDetailCache } = await import('./controllers/clanController.js');
+
+      let role = senderRole;
+      let avatar = senderAvatar;
+      const clan = await Clan.findOne({ clanId }).select('members leaderId').lean();
+      if (clan) {
+        const member = (clan.members || []).find(m => m.userId === senderId);
+        if (!role && member) {
+          role = member.role;
+        }
+        if (!avatar && member) {
+          avatar = member.avatar;
+        }
+      }
+
+      let senderBadge = null;
+      try {
+        const { User } = await import('./models/User.js');
+        const userDoc = await User.findOne({ userId: senderId }).select('equippedBadgeId badges').lean();
+        if (userDoc && userDoc.equippedBadgeId) {
+          const eqBadge = (userDoc.badges || []).find(b => b.id === userDoc.equippedBadgeId);
+          if (eqBadge) {
+            senderBadge = {
+              id: eqBadge.id,
+              name: eqBadge.name,
+              title: eqBadge.title || eqBadge.name,
+              icon: eqBadge.icon,
+              rarity: eqBadge.rarity || 'common'
+            };
+          }
+        }
+      } catch {
+        // Ignore lookup errors
+      }
+
+      const message = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        senderId,
+        senderName: senderName || 'Clan Member',
+        senderAvatar: avatar || null,
+        senderRole: role || 'member',
+        senderBadge,
+        content: content.trim().substring(0, 500), // Enforce max length
+        createdAt: new Date()
+      };
       
       // Add message and keep only last 100
       await Clan.updateOne(
@@ -551,6 +729,9 @@ if (io) io.on('connection', (socket) => {
           }
         }
       );
+
+      // Invalidate cache for clan detail
+      invalidateClanDetailCache(clanId);
 
       // Broadcast to all clan members
       io.to(`clan_${clanId}`).emit('new_clan_message', message);
@@ -569,21 +750,36 @@ if (io) io.on('connection', (socket) => {
 
     try {
       const { Clan } = await import('./models/Clan.js');
+      const { invalidateClanDetailCache } = await import('./controllers/clanController.js');
       const clan = await Clan.findOne({ clanId });
       if (!clan) return socket.emit('chat_error', { message: 'Clan not found' });
 
       const message = clan.chatMessages.find(m => m.id === messageId);
       if (!message) return socket.emit('chat_error', { message: 'Message not found' });
 
-      // Only sender can edit
-      if (message.senderId !== userId) {
+      // Sender can edit own, Leader & Elder can moderate
+      const member = clan.members?.find(m => m.userId === userId);
+      const isLeader = member?.role === 'leader' || clan.leaderId === userId;
+      const isElder = member?.role === 'elder';
+      const isSender = message.senderId === userId;
+
+      if (!isSender && !isLeader && !isElder) {
         return socket.emit('chat_error', { message: 'Cannot edit this message' });
       }
 
       message.content = newContent.trim().substring(0, 500);
+      message.isEdited = true;
+      message.updatedAt = new Date();
       await clan.save();
 
-      io.to(`clan_${clanId}`).emit('clan_message_edited', { messageId, newContent: message.content });
+      invalidateClanDetailCache(clanId);
+
+      io.to(`clan_${clanId}`).emit('clan_message_edited', { 
+        messageId, 
+        newContent: message.content,
+        isEdited: true,
+        updatedAt: message.updatedAt
+      });
     } catch (error) {
       console.error('❌ Failed to edit clan message:', error.message);
       socket.emit('chat_error', { message: 'Failed to edit message' });
@@ -595,23 +791,27 @@ if (io) io.on('connection', (socket) => {
 
     try {
       const { Clan } = await import('./models/Clan.js');
+      const { invalidateClanDetailCache } = await import('./controllers/clanController.js');
       const clan = await Clan.findOne({ clanId });
       if (!clan) return socket.emit('chat_error', { message: 'Clan not found' });
 
       const message = clan.chatMessages.find(m => m.id === messageId);
       if (!message) return socket.emit('chat_error', { message: 'Message not found' });
 
-      // Sender can delete own, Leader can delete any
+      // Sender can delete own, Leader and Elder can delete (moderate)
       const member = clan.members?.find(m => m.userId === userId);
       const isLeader = member?.role === 'leader' || clan.leaderId === userId;
+      const isElder = member?.role === 'elder';
       const isSender = message.senderId === userId;
       
-      if (!isLeader && !isSender) {
+      if (!isLeader && !isElder && !isSender) {
         return socket.emit('chat_error', { message: 'Cannot delete this message' });
       }
 
       clan.chatMessages = clan.chatMessages.filter(m => m.id !== messageId);
       await clan.save();
+
+      invalidateClanDetailCache(clanId);
 
       io.to(`clan_${clanId}`).emit('clan_message_deleted', { messageId });
     } catch (error) {
@@ -766,6 +966,10 @@ if (!isServerless) {
   } else {
     httpServer.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      // Verify email configuration non-blocking
+      verifyEmailService().catch(err => {
+        console.warn('⚠️  [EmailService] Non-blocking startup check failed:', err.message);
+      });
     });
   }
 }

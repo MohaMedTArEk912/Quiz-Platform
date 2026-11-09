@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { useNotification } from '../context/NotificationContext';
 import InstallPWA from '../components/InstallPWA';
 import PwaUpdatePrompt from '../components/PwaUpdatePrompt';
+import { GlobalChatDrawer } from '../components/chat/GlobalChatDrawer';
+import { NavbarCustomizerModal } from '../components/nav/NavbarCustomizerModal';
 
 const MainLayout: React.FC = () => {
     const { socket } = useSocket();
     const { showNotification } = useNotification();
     const navigate = useNavigate();
+    const location = useLocation();
     const [gameInvite, setGameInvite] = useState<{ fromId: string; fromName: string; quizId: string; roomId: string } | null>(null);
+
+    const isQuizOrGame = location.pathname.startsWith('/quiz') || location.pathname.startsWith('/game');
 
     // Socket Listeners (Global)
     useEffect(() => {
@@ -34,10 +39,25 @@ const MainLayout: React.FC = () => {
             });
         };
 
+        const handleClassroomInvite = (invite: { fromUser?: { name: string }; pin: string; quizTitle?: string }) => {
+            const senderName = invite.fromUser?.name || 'A classmate';
+            showNotification('info', `${senderName} invited you to join Classroom Duel: ${invite.quizTitle || 'Live Arena'}!`, {
+                title: '🎓 Classroom Invite',
+                action: {
+                    label: 'Join Duel',
+                    onClick: () => {
+                        navigate(`/classroom?pin=${invite.pin}`);
+                    }
+                }
+            });
+        };
+
         socket.on('game_invite', handleInvite);
+        socket.on('classroom_invite_received', handleClassroomInvite);
 
         return () => {
             socket.off('game_invite', handleInvite);
+            socket.off('classroom_invite_received', handleClassroomInvite);
         };
     }, [socket, showNotification, navigate]);
 
@@ -58,12 +78,16 @@ const MainLayout: React.FC = () => {
             <Outlet /> {/* Renders the child route */}
             <InstallPWA /> {/* Global PWA install prompt */}
             <PwaUpdatePrompt /> {/* Global PWA auto-update prompt */}
+            <NavbarCustomizerModal /> {/* Global Nav Customizer */}
+            {!isQuizOrGame && (
+                <GlobalChatDrawer />
+            )}
 
             {/* Global Invite Modal */}
             {gameInvite && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 p-6 rounded-3xl shadow-2xl max-w-sm w-full animate-in zoom-in-95 duration-200">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white text-2xl mb-4 shadow-lg shadow-orange-500/25">
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 dark:bg-black/45 backdrop-blur-md p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 p-6 rounded-2xl shadow-2xl max-w-sm w-full animate-in zoom-in-95 duration-200">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white text-2xl mb-4 shadow-lg shadow-orange-500/25">
                             ⚔️
                         </div>
                         <h3 className="text-lg font-black tracking-tight mb-1 text-gray-900 dark:text-white uppercase">

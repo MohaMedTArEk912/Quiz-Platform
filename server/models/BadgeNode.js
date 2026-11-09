@@ -15,7 +15,8 @@ const badgeNodeSchema = new mongoose.Schema({
         'perfect_score', 'speed_demon', 'quiz_completion',
         'exam_pass', 'tournament_win', 'tournament_participate',
         'track_completion', 'module_completion', 'friend_count',
-        'challenge_wins', 'manual' // Admin can manually award
+        'challenge_wins', 'manual',
+        'clans', 'clan_contribution', 'track_started', 'track_modules', 'challenges'
       ],
       required: true
     },
@@ -44,9 +45,15 @@ const badgeNodeSchema = new mongoose.Schema({
   color: { type: String, default: '#3B82F6' }, // Default blue
   rarity: { 
     type: String, 
-    enum: ['common', 'rare', 'epic', 'legendary'],
+    enum: ['common', 'rare', 'epic', 'legendary', 'mythic'],
     default: 'common'
   },
+  category: {
+    type: String,
+    enum: ['milestones', 'perfection', 'streaks', 'speed', 'xp', 'skills', 'social', 'arena', 'other'],
+    default: 'milestones'
+  },
+  title: { type: String, default: '' },
   
   // Tree relationship (can appear in multiple trees)
   trees: [{ type: String }], // Array of treeIds

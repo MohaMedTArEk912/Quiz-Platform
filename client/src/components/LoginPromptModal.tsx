@@ -40,16 +40,14 @@ export const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
     };
 
     return (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 ${
-            isBento ? 'bg-black/60' : 'bg-black/60 backdrop-blur-sm'
-        }`}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 dark:bg-black/45 backdrop-blur-md animate-in fade-in duration-200">
             {/* Modal backdrop click */}
             <div className="fixed inset-0 -z-10" onClick={onClose} />
 
             <div className={`relative w-full max-w-md p-6 sm:p-8 overflow-hidden transition-all ${
                 isBento
-                    ? 'bg-white text-black border-[3px] border-black rounded-2xl shadow-[8px_8px_0px_#000]'
-                    : 'bg-white dark:bg-[#11111a] border border-gray-200 dark:border-white/10 rounded-[2rem] shadow-2xl'
+                    ? 'bg-white text-black border-2 border-black rounded-2xl shadow-[6px_6px_0px_#000]'
+                    : 'bg-white dark:bg-[#11111a] border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl'
             }`}>
                 {/* Background glow decoration */}
                 {!isBento && (
@@ -62,7 +60,7 @@ export const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className={`absolute top-5 right-5 p-2 rounded-xl transition-colors cursor-pointer ${
+                    className={`absolute top-5 right-5 p-2 rounded-lg transition-colors cursor-pointer ${
                         isBento
                             ? 'border-2 border-black bg-white hover:bg-[#fed7aa] text-black shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5'
                             : 'text-gray-400 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:bg-white/5'

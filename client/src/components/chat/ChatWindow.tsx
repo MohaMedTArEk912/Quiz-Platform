@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Send, X, MessageCircle, MoreVertical, Pencil, Trash2, Swords, Trophy, Clock } from 'lucide-react';
+import { Send, X, MessageCircle, MoreVertical, Pencil, Trash2, Swords, Trophy, Clock, Maximize2, Minimize2 } from 'lucide-react';
 import type { DirectChatMessage, ClanChatMessage, UserData } from '../../types';
+import { useTheme } from '../../context/ThemeContext';
+import { useUserProfileModal } from '../../context/UserProfileModalContext';
 
 export type ChatMessage = (DirectChatMessage | ClanChatMessage) & {
     type?: 'text' | 'challenge';
@@ -51,6 +53,10 @@ interface ChatWindowProps {
 
     placeholder?: string;
     loading?: boolean;
+
+    // Fullscreen support
+    isFullscreen?: boolean;
+    onToggleFullscreen?: () => void;
 }
 
 const TimeAgo: React.FC<{ date: string | number | Date }> = ({ date }) => {
@@ -95,21 +101,27 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     headerContent,
     inputActions,
     placeholder = "Type a message...",
-    loading = false
+    loading = false,
+    isFullscreen = false,
+    onToggleFullscreen
 }) => {
+    const { isBento } = useTheme();
+    const { openUserProfile } = useUserProfileModal();
     const [input, setInput] = useState('');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editContent, setEditContent] = useState('');
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
     };
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages, loading]);
+    }, [messages.length, loading]);
 
     const handleSend = () => {
         if (!input.trim()) return;
@@ -125,24 +137,56 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-gray-800 w-full max-w-md mx-auto rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200 text-gray-900 dark:text-gray-100">
+        <div className={`flex flex-col h-full w-full ${isFullscreen ? 'max-w-none rounded-none' : 'max-w-md mx-auto rounded-2xl'} overflow-hidden animate-in fade-in duration-200 ${
+            isBento
+                ? (isFullscreen ? 'bg-white text-black' : 'bg-white text-black border-[3px] border-black shadow-[6px_6px_0px_#000]')
+                : (isFullscreen ? 'bg-white dark:bg-[#11131f] text-gray-900 dark:text-gray-100' : 'bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100')
+        }`}>
             {/* Header */}
-            <div className="p-4 bg-gradient-to-r from-violet-600 to-indigo-600 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-3 text-white">
+            <div className={`p-3 sm:p-4 flex items-center justify-between shrink-0 ${
+                isBento
+                    ? 'bg-[#fde047] text-black border-b-2 border-black font-mono'
+                    : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white'
+            }`}>
+                <div className={`flex items-center gap-2 sm:gap-3 ${isBento ? 'text-black' : 'text-white'} font-bold min-w-0`}>
                     {headerContent ? headerContent : (
                         <>
-                            <MessageCircle className="w-6 h-6" />
-                            <span className="font-bold text-lg">{title || 'Chat'}</span>
+                            <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
+                            <span className="font-bold text-base sm:text-lg truncate">{title || 'Chat'}</span>
                         </>
                     )}
                 </div>
-                <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg text-white transition-colors">
-                    <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                    {onToggleFullscreen && (
+                        <button
+                            type="button"
+                            onClick={onToggleFullscreen}
+                            className={`p-1.5 sm:p-2 rounded-lg transition-colors cursor-pointer ${
+                                isBento ? 'text-black hover:bg-black/10 border border-black' : 'text-white hover:bg-white/10'
+                            }`}
+                            title={isFullscreen ? 'Exit Fullscreen (Esc)' : 'Fullscreen Mode'}
+                            aria-label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Mode'}
+                        >
+                            {isFullscreen ? <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5" /> : <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />}
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className={`p-1.5 sm:p-2 rounded-lg transition-colors cursor-pointer ${
+                            isBento ? 'text-black hover:bg-black/10 border border-black' : 'text-white hover:bg-white/10'
+                        }`}
+                        title="Close Chat"
+                        aria-label="Close Chat"
+                    >
+                        <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
+                </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-[#0f111a] custom-scrollbar">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-[#0f111a] custom-scrollbar">
+                <div className={`w-full ${isFullscreen ? 'max-w-4xl mx-auto' : ''} space-y-4`}>
                 {loading ? (
                     <div className="flex justify-center py-10">
                         <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
@@ -166,7 +210,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
                                     {!isMe && (
                                         <div className="flex items-center gap-2 mb-1">
-                                            <p className="text-[10px] font-bold opacity-70">{msg.senderName}</p>
+                                            <p
+                                                onClick={() => openUserProfile(msg.senderId)}
+                                                className="text-[10px] font-bold opacity-70 hover:opacity-100 hover:underline cursor-pointer"
+                                                title={`View ${msg.senderName}'s profile`}
+                                            >
+                                                {msg.senderName}
+                                            </p>
                                         </div>
                                     )}
 
@@ -259,7 +309,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                         <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">{msg.content}</p>
                                     )}
 
-                                    <div className={`text-[10px] mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-white/60' : 'text-gray-400'}`}>
+                                    <div className={`text-[9px] mt-1 flex items-center justify-end gap-1 select-none font-medium ${isMe ? 'text-white/60' : 'text-gray-400'}`}>
                                         <TimeAgo date={msg.createdAt} />
                                     </div>
 
@@ -309,27 +359,33 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         );
                     })
                 )}
-                <div ref={messagesEndRef} />
+                </div>
             </div>
 
             {/* Input Area */}
-            <div className="p-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shrink-0 flex items-end gap-2">
-                {inputActions}
+            <div className="p-2.5 sm:p-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shrink-0">
+                <div className={`flex items-end gap-1.5 sm:gap-2 w-full ${isFullscreen ? 'max-w-4xl mx-auto' : ''}`}>
+                    {inputActions}
 
-                <textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={placeholder}
-                    className="flex-1 bg-gray-100 dark:bg-gray-900 border-0 rounded-xl p-3 max-h-32 min-h-[44px] focus:ring-2 focus:ring-violet-500 text-gray-900 dark:text-gray-100 resize-none custom-scrollbar"
-                />
-                <button
-                    onClick={handleSend}
-                    disabled={!input.trim()}
-                    className="p-3 bg-violet-600 text-white rounded-xl hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-violet-500/20"
-                >
-                    <Send className="w-5 h-5" />
-                </button>
+                    <textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={placeholder}
+                        className="flex-1 bg-gray-100 dark:bg-gray-900 border-0 rounded-xl p-2.5 sm:p-3 max-h-28 sm:max-h-32 min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm focus:ring-2 focus:ring-violet-500 text-gray-900 dark:text-gray-100 resize-none custom-scrollbar"
+                    />
+                    <button
+                        onClick={handleSend}
+                        disabled={!input.trim()}
+                        className={`p-2.5 sm:p-3 rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0 ${
+                            isBento
+                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
+                                : 'bg-violet-600 text-white hover:bg-violet-700 shadow-lg shadow-violet-500/20'
+                        }`}
+                    >
+                        <Send className={`w-4 h-4 sm:w-5 sm:h-5 ${isBento ? 'text-black' : 'text-white'}`} />
+                    </button>
+                </div>
             </div>
 
             <style dangerouslySetInnerHTML={{

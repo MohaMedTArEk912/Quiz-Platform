@@ -6,7 +6,7 @@ export const AmbientBackground: React.FC = React.memo(() => {
 
     return (
         <div 
-            className="fixed inset-0 overflow-hidden pointer-events-none z-0 select-none"
+            className="ambient-background fixed inset-0 overflow-hidden pointer-events-none z-0 select-none"
             style={{ 
                 contain: 'strict',
                 willChange: 'transform',

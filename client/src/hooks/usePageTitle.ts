@@ -102,6 +102,11 @@ export const usePageTitle = () => {
                     title: 'Skill Tree Progression | Quiz Platform',
                     description: 'Interactive visual tech tree and skill mastery road.'
                 };
+            } else if (pathname.startsWith('/profile/')) {
+                meta = {
+                    title: 'User Profile | Quiz Platform',
+                    description: 'View public dossier, achievements, study activity, and challenges.'
+                };
             } else {
                 meta = {
                     title: 'Quiz Platform - Test Your Knowledge',

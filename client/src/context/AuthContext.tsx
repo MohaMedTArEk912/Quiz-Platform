@@ -6,9 +6,9 @@ interface AuthContextType {
     currentUser: UserData | null;
     isAdmin: boolean;
     isLoading: boolean;
-    login: (email: string, password: string) => Promise<void>;
-    register: (name: string, email: string, password: string) => Promise<void>;
-    googleLogin: (profile: { email: string; name: string; googleId: string }) => Promise<void>;
+    login: (email: string, password: string) => Promise<{ user: UserData; token: string; isAdmin: boolean }>;
+    register: (name: string, email: string, password: string) => Promise<{ user: UserData; token: string; isAdmin: boolean }>;
+    googleLogin: (profile: { email: string; name: string; googleId: string }) => Promise<{ user: UserData; token: string; isAdmin: boolean }>;
     logout: () => void;
     updateUser: (updates: Partial<UserData>) => void;
     refreshUser: () => Promise<void>;
@@ -107,6 +107,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setCurrentUser(user);
         setToken(jwt);
         sessionStorage.setItem('userSession', JSON.stringify({ user, token: jwt, isAdmin: isAdminUser }));
+        return { user, token: jwt, isAdmin: isAdminUser };
     };
 
     const register = async (name: string, email: string, password: string) => {
@@ -129,11 +130,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const registrationData: Partial<UserData> & { password: string } = { ...baseUserData, password };
         const { user, token: jwt } = await api.register(registrationData);
+        const isAdminUser = user.role === 'admin';
 
         setCurrentUser(user);
-        setIsAdmin(user.role === 'admin');
+        setIsAdmin(isAdminUser);
         setToken(jwt);
-        sessionStorage.setItem('userSession', JSON.stringify({ user, token: jwt, isAdmin: user.role === 'admin' }));
+        sessionStorage.setItem('userSession', JSON.stringify({ user, token: jwt, isAdmin: isAdminUser }));
+        return { user, token: jwt, isAdmin: isAdminUser };
     };
 
     const googleLogin = async (profile: { email: string; name: string; googleId: string }) => {
@@ -143,6 +146,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsAdmin(isAdminUser);
         setToken(jwt);
         sessionStorage.setItem('userSession', JSON.stringify({ user, token: jwt, isAdmin: isAdminUser }));
+        return { user, token: jwt, isAdmin: isAdminUser };
     };
 
     const logout = () => {

@@ -71,13 +71,13 @@ const InitialTrackSelectionModal: React.FC<InitialTrackSelectionModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-500 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/30 dark:bg-black/45 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto">
             {/* Ambient Background Glows */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-gradient-to-tr from-indigo-600/30 via-purple-600/30 to-pink-600/30 rounded-full blur-[140px]" />
             </div>
 
-            <div className="relative w-full max-w-4xl bg-white/95 dark:bg-[#11121d]/95 backdrop-blur-2xl rounded-[3rem] border border-white/40 dark:border-white/10 shadow-2xl p-6 sm:p-10 flex flex-col my-auto max-h-[90vh]">
+            <div className="relative w-full max-w-4xl bg-white/95 dark:bg-[#11121d]/95 backdrop-blur-2xl rounded-2xl border border-white/40 dark:border-white/10 shadow-2xl p-6 sm:p-10 flex flex-col my-auto max-h-[90vh]">
                 {/* Header */}
                 <div className="text-center mb-8 shrink-0">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-[0.2em] mb-4">

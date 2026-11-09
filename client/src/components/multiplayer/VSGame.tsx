@@ -5,6 +5,7 @@ import QuizTaking from '../QuizTaking';
 import { Trophy, Activity, Sword, Timer, Swords, Zap } from 'lucide-react';
 import Avatar from '../Avatar';
 import type { AvatarConfig } from '../../types';
+import { useUserProfileModal } from '../../context/UserProfileModalContext';
 
 type OpponentProgress = {
     userId: string;
@@ -33,6 +34,7 @@ interface VSGameProps {
 
 const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, onComplete, onBack, powerUps, onPowerUpUsed }) => {
     const { socket } = useSocket();
+    const { openUserProfile } = useUserProfileModal();
     // Game States: 'waiting' | 'countdown' | 'playing' | 'finished'
     const [gameState, setGameState] = useState<'waiting' | 'countdown' | 'playing' | 'finished'>('waiting');
     const [countdown, setCountdown] = useState(5);
@@ -420,8 +422,12 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
                 </div>
 
                 {/* Compact Opponent Profile */}
-                <div className="z-10 flex items-center gap-3 mb-4 bg-slate-800/40 rounded-xl p-3 border border-slate-700/50">
-                    <div className="relative">
+                <div
+                    onClick={() => opponent.id && openUserProfile(opponent.id)}
+                    className="z-10 flex items-center gap-3 mb-4 bg-slate-800/40 rounded-xl p-3 border border-slate-700/50 cursor-pointer hover:border-indigo-500/50 transition-all group"
+                    title={`View ${opponent.name}'s profile`}
+                >
+                    <div className="relative group-hover:scale-105 transition-transform">
                         <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-orange-500 to-pink-500">
                             <div className="w-full h-full rounded-full overflow-hidden bg-slate-800 border-2 border-slate-900">
                                 {opponent.avatar ? (
@@ -435,7 +441,7 @@ const VSGame: React.FC<VSGameProps> = ({ quiz, currentUser, opponent, roomId, on
                         </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="font-bold text-sm truncate">{opponent.name}</div>
+                        <div className="font-bold text-sm truncate group-hover:text-indigo-400 transition-colors">{opponent.name}</div>
                         <div className="text-xs text-slate-400">Question {opponentState.currentQuestion}/{totalQuestions}</div>
                     </div>
                 </div>

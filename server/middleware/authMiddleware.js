@@ -35,6 +35,28 @@ export const verifyUser = async (req, res, next) => {
   }
 };
 
+// Middleware to optionally extract user if token is provided, without failing for guests
+export const extractOptionalUser = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const decoded = jwt.verify(token, resolveJwtSecret());
+        const user = await User.findOne({ userId: decoded.userId });
+        if (user) {
+          req.user = user;
+        }
+      } catch {
+        // Ignore token decode failures for optional auth
+      }
+    }
+    next();
+  } catch {
+    next();
+  }
+};
+
 // Middleware to verify admin access
 export const verifyAdmin = async (req, res, next) => {
   try {

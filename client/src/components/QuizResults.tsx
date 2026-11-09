@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import type { Quiz, UserData, QuizResult, DetailedAnswer } from '../types';
-import { RotateCcw, Clock, Target, CheckCircle, XCircle, ArrowLeft, Trophy, Flag, AlertTriangle, List, Download, FileText, ChevronDown, Loader2 } from 'lucide-react';
+import type { Quiz, UserData, QuizResult, DetailedAnswer, Badge } from '../types';
+import { RotateCcw, Clock, Target, CheckCircle, XCircle, ArrowLeft, Trophy, Flag, AlertTriangle, List, Download, FileText, ChevronDown, Loader2, Mail, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { MathRenderer } from './common/MathRenderer';
 import {
@@ -12,6 +12,7 @@ import { translateQuestion, isRTL, type TranslatedQuestionData } from '../lib/tr
 import { AmbientBackground } from './AmbientBackground';
 import { useTheme } from '../context/ThemeContext';
 import { evaluateTextAnswer } from '../lib/stringSimilarity';
+import { api } from '../lib/api';
 
 interface QuizResultsProps {
     result: QuizResult;
@@ -34,6 +35,8 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [isExportingResult, setIsExportingResult] = useState(false);
     const [isExportingQuiz, setIsExportingQuiz] = useState(false);
+    const [isEmailingResult, setIsEmailingResult] = useState(false);
+    const [emailFeedback, setEmailFeedback] = useState<string | null>(null);
     const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
         try {
             return localStorage.getItem('quiz_pref_lang') || 'original';
@@ -259,13 +262,38 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
         }
     };
 
+    const handleEmailResult = async () => {
+        setIsEmailingResult(true);
+        try {
+            await api.emailQuizResult({
+                email: user.email,
+                name: user.name,
+                quizTitle: quiz.title,
+                score: result.score,
+                totalQuestions: result.totalQuestions,
+                percentage: result.percentage,
+                passed: result.passed,
+                timeTaken: result.timeTaken
+            });
+            setEmailFeedback("Scorecard sent to " + user.email + "!");
+            setTimeout(() => setEmailFeedback(null), 5000);
+        } catch (err) {
+            console.error("Error emailing scorecard:", err);
+            setEmailFeedback("Failed to send scorecard email");
+            setTimeout(() => setEmailFeedback(null), 5000);
+        } finally {
+            setIsEmailingResult(false);
+            setIsExportMenuOpen(false);
+        }
+    };
+
     return (
-        <div className="h-screen max-h-screen overflow-hidden bg-slate-100/90 dark:bg-[#070b14] p-2 sm:p-3 lg:p-4 text-slate-900 dark:text-slate-100 selection:bg-indigo-500/25 relative flex flex-col justify-center font-sans">
+        <div className="min-h-screen lg:h-screen lg:max-h-screen overflow-y-auto lg:overflow-hidden bg-slate-100/90 dark:bg-[#070b14] p-2 sm:p-3 lg:p-4 text-slate-900 dark:text-slate-100 selection:bg-indigo-500/25 relative flex flex-col justify-start lg:justify-center font-sans">
             {/* Ambient Background */}
             <AmbientBackground />
 
-            {/* --- ELEVATED RESULTS CARD BOARD (Compact, zero-scroll desktop view) --- */}
-            <div className={`w-full max-w-7xl 2xl:max-w-[1536px] mx-auto rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col relative z-10 transition-all h-full max-h-[calc(100vh-1rem)] sm:max-h-[calc(100vh-1.5rem)] lg:max-h-[calc(100vh-2rem)] ${
+            {/* --- ELEVATED RESULTS CARD BOARD (Responsive: full scroll on mobile, zero-scroll desktop view) --- */}
+            <div className={`w-full max-w-7xl 2xl:max-w-[1536px] mx-auto rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col relative z-10 transition-all min-h-0 lg:h-full lg:max-h-[calc(100vh-2rem)] ${
                 isBento
                     ? 'border-[3px] border-black bg-white dark:bg-[#0b0f19] shadow-[8px_8px_0px_#000] dark:shadow-[8px_8px_0px_rgba(255,255,255,0.08)]'
                     : 'border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#0c101c] shadow-xl dark:shadow-2xl'
@@ -317,10 +345,10 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                 </header>
 
                 {/* HORIZONTAL SPLIT LAYOUT */}
-                <div className="flex-1 flex flex-col lg:flex-row w-full min-h-0 overflow-hidden">
+                <div className="flex-1 flex flex-col lg:flex-row w-full min-h-0 overflow-y-auto lg:overflow-hidden">
                     
                     {/* LEFT SIDE: Big Score Gauge Hero (Compact & Centered) */}
-                    <div className={`w-full lg:w-[38%] xl:w-[36%] flex-none flex flex-col items-center justify-center p-3 sm:p-4 lg:p-5 overflow-hidden ${
+                    <div className={`w-full lg:w-[38%] xl:w-[36%] flex-none flex flex-col items-center justify-center p-4 sm:p-5 lg:p-5 shrink-0 ${
                         isBento
                             ? 'bg-[#f8fafc] dark:bg-[#080d19] border-b-2 lg:border-b-0 lg:border-r-2 border-black dark:border-white/20'
                             : 'bg-slate-50/70 dark:bg-white/[0.02] backdrop-blur-xl border-b lg:border-b-0 lg:border-r border-slate-200/80 dark:border-white/[0.08]'
@@ -400,7 +428,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                     {/* --- RIGHT SIDE: Detailed Stats & Actions (Compact, scrollable smoothly from top when review is open) --- */}
                     <div 
                         ref={rightPanelRef}
-                        className={`w-full lg:w-[62%] xl:w-[64%] flex-1 flex flex-col p-4 sm:p-5 lg:p-6 overflow-y-auto transition-all ${
+                        className={`w-full lg:w-[62%] xl:w-[64%] flex-1 flex flex-col p-4 sm:p-5 lg:p-6 overflow-visible lg:overflow-y-auto transition-all ${
                             showReview ? 'justify-start custom-scrollbar' : 'justify-center no-scrollbar'
                         } ${
                             isBento ? 'bg-white dark:bg-[#030712]' : 'bg-transparent lg:bg-white dark:bg-[#0c101c]'
@@ -411,6 +439,47 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                             showReview ? 'my-0' : 'my-auto'
                         } animate-in slide-in-from-right-8 duration-500 delay-150 fill-mode-both`}>
                             
+                            {/* Newly Unlocked Badges Celebration */}
+                            {result.newBadges && result.newBadges.length > 0 && (
+                                <div className={`w-full p-4 rounded-2xl text-center animate-in zoom-in-95 duration-500 ${
+                                    isBento
+                                        ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                                        : 'bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-amber-500/20 border-2 border-purple-400 dark:border-purple-500/40 shadow-xl'
+                                }`}>
+                                    <div className="flex items-center justify-center gap-2 mb-1.5">
+                                        <Sparkles className="w-4 h-4 text-amber-500 animate-bounce" />
+                                        <h3 className={`text-xs sm:text-sm font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-purple-700 dark:text-purple-300'}`}>
+                                            New Achievement{result.newBadges.length > 1 ? 's' : ''} Unlocked!
+                                        </h3>
+                                        <Sparkles className="w-4 h-4 text-amber-500 animate-bounce" />
+                                    </div>
+                                    <div className="flex flex-wrap items-center justify-center gap-2 my-2">
+                                        {result.newBadges.map((badge: Badge) => (
+                                            <div
+                                                key={badge.id}
+                                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider ${
+                                                    isBento
+                                                        ? 'bg-white text-black border border-black shadow-[1.5px_1.5px_0px_#000]'
+                                                        : 'bg-white/90 dark:bg-black/50 text-gray-900 dark:text-white border border-white/20 shadow-md'
+                                                }`}
+                                            >
+                                                <span className="text-base">{badge.icon}</span>
+                                                <span>{badge.name}</span>
+                                                {badge.title && <span className="opacity-75 font-medium">({badge.title})</span>}
+                                                {badge.xpReward && (
+                                                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-black">
+                                                        +{badge.xpReward} XP
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className={`text-[11px] font-bold ${isBento ? 'text-black/80' : 'text-slate-600 dark:text-slate-300'}`}>
+                                        Equip your new title in the Badge Vault on your profile!
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Question Bank 100% Completion Milestone Celebration */}
                             {hasValidPoolProgress && result.poolProgress?.justCompletedPool && (
                                 <div className={`w-full p-3.5 rounded-xl text-center animate-in zoom-in-95 duration-500 ${
@@ -536,6 +605,15 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                 </div>
                             </div>
 
+                            {emailFeedback && (
+                                <div className={`p-2.5 rounded-xl text-center text-xs font-bold animate-in fade-in ${
+                                    isBento
+                                        ? "bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]"
+                                        : "bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                                }`}>
+                                    ✉️ {emailFeedback}
+                                </div>
+                            )}
                             {/* Action Buttons */}
                             <div className="flex flex-col sm:flex-row items-center gap-2 pt-0.5">
                                 <button
@@ -602,6 +680,17 @@ const QuizResults: React.FC<QuizResultsProps> = ({ result, quiz, user, onBackToQ
                                         >
                                             {isExportingQuiz ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3 text-black" />}
                                             <span>Quiz Study Sheet (PDF)</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleEmailResult}
+                                            disabled={isEmailingResult}
+                                            className={`w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold cursor-pointer transition-colors ${
+                                                isBento ? "hover:bg-[#bef264] text-black" : "hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200"
+                                            }`}
+                                        >
+                                            {isEmailingResult ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3 text-indigo-500" />}
+                                            <span>Email Scorecard to Me</span>
                                         </button>
                                     </div>
                                 )}

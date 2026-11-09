@@ -320,7 +320,11 @@ const RoadList: React.FC<RoadListProps> = ({
                                         e.stopPropagation();
                                         onSelectRoad(road);
                                     }}
-                                    className="px-3.5 py-2 rounded-xl font-bold text-xs bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-sm hover:shadow-indigo-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                                    className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all ${
+                                        isBento
+                                            ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 font-mono'
+                                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-sm hover:shadow-indigo-500/20'
+                                    }`}
                                 >
                                     <span>Open Road</span>
                                     <ChevronRight className="w-4 h-4" />

@@ -5,6 +5,8 @@ import { Users, UserPlus, Search, Check, X, Shield, Trophy, MessageCircle, Zap, 
 import Avatar from '../Avatar';
 import { DirectChat } from './DirectChat';
 import { useTheme } from '../../context/ThemeContext';
+import { useChat } from '../../context/ChatContext';
+import { useUserProfileModal } from '../../context/UserProfileModalContext';
 
 
 interface FriendListProps {
@@ -26,6 +28,8 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [activeChatFriend, setActiveChatFriend] = useState<UserData | null>(null);
     const { isBento } = useTheme();
+    const { openChat } = useChat();
+    const { openUserProfile } = useUserProfileModal();
 
     // Build a comprehensive friend ID set from:
     // 1. The explicit friends array
@@ -216,8 +220,12 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                     ? 'bg-white rounded-xl border-[2.5px] border-black shadow-[4px_4px_0px_#000] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#000]'
                                     : 'bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl border border-gray-200 dark:border-white/5 transition-colors'
                             }`}>
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 flex items-center justify-center text-lg font-black overflow-hidden ${
+                                <div
+                                    onClick={() => openUserProfile(friend.userId)}
+                                    className="flex items-center gap-4 cursor-pointer group/friend"
+                                    title={`View ${friend.name}'s profile`}
+                                >
+                                    <div className={`w-12 h-12 flex items-center justify-center text-lg font-black overflow-hidden group-hover/friend:scale-105 transition-transform ${
                                         isBento
                                             ? 'rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000]'
                                             : 'rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-inner'
@@ -231,8 +239,8 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                     <div>
                                         <div className={`font-bold text-lg ${
                                             isBento
-                                                ? 'text-black font-black'
-                                                : 'text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors'
+                                                ? 'text-black font-black group-hover/friend:underline'
+                                                : 'text-gray-900 dark:text-white group-hover/friend:text-indigo-600 dark:group-hover/friend:text-indigo-400 transition-colors'
                                         }`}>{friend.name}</div>
                                         <div className={`text-xs font-semibold uppercase tracking-wider flex items-center gap-2 ${
                                             isBento ? 'text-gray-700' : 'text-gray-500'
@@ -246,7 +254,7 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                 </div>
                                 <div className="flex gap-2">
                                     <button
-                                        onClick={() => setActiveChatFriend(friend)}
+                                        onClick={() => openChat('direct', friend)}
                                         className={`p-3 transition-all ${
                                             isBento
                                                 ? 'rounded-xl bg-[#bae6fd] border-[2.5px] border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 text-black'
@@ -303,22 +311,26 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                     ? 'bg-white rounded-xl border-[2.5px] border-black shadow-[4px_4px_0px_#000]'
                                     : 'bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5'
                             }`}>
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 flex items-center justify-center text-lg font-black overflow-hidden ${
+                                <div
+                                    onClick={() => openUserProfile(request.from)}
+                                    className="flex items-center gap-4 cursor-pointer group/req"
+                                    title="View requester profile"
+                                >
+                                    <div className={`w-12 h-12 flex items-center justify-center text-lg font-black overflow-hidden group-hover/req:scale-105 transition-transform ${
                                         isBento
                                             ? 'rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000]'
                                             : 'rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 text-white'
                                     }`} style={isBento ? { backgroundColor: getBentoColor(index + 1) } : undefined}>
                                         {user?.avatar ? (
-                                            <Avatar config={user.avatar} size="md" className="w-full h-full" />
+                                             <Avatar config={user.avatar} size="md" className="w-full h-full" />
                                         ) : (
                                             <span className={isBento ? 'text-black' : 'text-white'}>{user?.name.charAt(0) || '?'}</span>
                                         )}
                                     </div>
                                     <div>
-                                        <div className={`font-bold text-lg ${isBento ? 'text-black font-black' : 'text-gray-900 dark:text-white'}`}>{user?.name || 'Unknown'}</div>
+                                        <div className={`font-bold text-lg ${isBento ? 'text-black font-black group-hover/req:underline' : 'text-gray-900 dark:text-white group-hover/req:text-indigo-600 transition-colors'}`}>{user?.name || 'Unknown'}</div>
                                         <div className={`text-xs font-semibold ${isBento ? 'text-gray-700' : 'text-gray-500'}`}>
-                                            {isBento ? '⚡ WANTS TO JOIN YOUR SQUAD' : 'Wants to act friendly'}
+                                            {isBento ? '⚡ WANTS TO JOIN YOUR SQUAD' : 'Wants to add you as friend'}
                                         </div>
                                     </div>
                                 </div>
@@ -390,8 +402,12 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                             ? 'bg-white rounded-xl border-[2.5px] border-black shadow-[4px_4px_0px_#000]'
                                             : 'bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5'
                                     }`}>
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 flex items-center justify-center text-lg font-bold overflow-hidden ${
+                                        <div
+                                            onClick={() => user.userId && openUserProfile(user.userId)}
+                                            className="flex items-center gap-4 cursor-pointer group/search"
+                                            title="View user profile"
+                                        >
+                                            <div className={`w-12 h-12 flex items-center justify-center text-lg font-bold overflow-hidden group-hover/search:scale-105 transition-transform ${
                                                 isBento
                                                     ? 'rounded-xl border-[2.5px] border-black shadow-[2px_2px_0px_#000]'
                                                     : 'rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 text-white border border-white/10'
@@ -403,7 +419,7 @@ const FriendList: React.FC<FriendListProps> = ({ currentUser, allUsers, onRefres
                                                 )}
                                             </div>
                                             <div>
-                                                <div className={`font-bold text-lg ${isBento ? 'text-black font-black' : 'text-gray-900 dark:text-white'}`}>{user.name}</div>
+                                                <div className={`font-bold text-lg ${isBento ? 'text-black font-black group-hover/search:underline' : 'text-gray-900 dark:text-white group-hover/search:text-indigo-600 transition-colors'}`}>{user.name}</div>
                                                 <div className={`text-xs font-medium ${isBento ? 'text-gray-600' : 'text-gray-500'}`}>{user.email}</div>
                                             </div>
                                         </div>

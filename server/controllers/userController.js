@@ -1,11 +1,13 @@
 import { User } from '../models/User.js';
 import { Attempt } from '../models/Attempt.js';
 import { Badge } from '../models/Badge.js';
+import { Clan } from '../models/Clan.js';
 import { Challenge } from '../models/Challenge.js';
 import { ShopItem } from '../models/ShopItem.js';
 import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
 import { updateSkillTrackProgress, syncRoadmapProgress } from '../services/progressService.js';
 import { getEnrichedUser } from '../services/userService.js';
+import { evaluateAndAwardBadges } from '../services/badgeService.js';
 import { escapeRegex } from '../utils/regexUtils.js';
 
 export const updateUser = async (req, res) => {
@@ -93,6 +95,9 @@ export const getUserData = async (req, res) => {
   try {
     const userId = req.user.userId;
 
+    // Automatically check and award any newly unlocked badges on profile / app load
+    await evaluateAndAwardBadges(userId).catch(() => {});
+
     // Fetch user and all core data concurrently
     const [enrichedUser, attempts, badges, leaderboard, challenges, shopItems] = await Promise.all([
       getEnrichedUser(userId),
@@ -100,7 +105,7 @@ export const getUserData = async (req, res) => {
       Badge.find({}).lean(),
       User.find(
         { role: { $ne: 'admin' }, isAdmin: { $ne: true } },
-        'userId name totalScore totalAttempts xp level streak lastLoginDate badges role'
+        'userId name totalScore totalAttempts xp level streak lastLoginDate badges role avatar equippedBadgeId'
       )
         .sort({ totalScore: -1 })
         .limit(100)
@@ -130,7 +135,7 @@ export const getUserData = async (req, res) => {
     const friendDocs = friendIds.size > 0
       ? await User.find(
         { userId: { $in: Array.from(friendIds) } },
-        'userId name totalScore totalAttempts xp level streak lastLoginDate badges role'
+        'userId name totalScore totalAttempts xp level streak lastLoginDate badges role avatar equippedBadgeId'
       ).lean()
       : [];
 
@@ -339,7 +344,7 @@ export const getPublicLeaderboard = async (req, res) => {
     try {
         const users = await User.find(
             { role: { $ne: 'admin' }, isAdmin: { $ne: true } },
-            'userId name totalScore totalAttempts xp level streak lastLoginDate badges role avatar'
+            'userId name totalScore totalAttempts xp level streak lastLoginDate badges role avatar equippedBadgeId'
         )
             .sort({ totalScore: -1 })
             .limit(100)
@@ -349,5 +354,132 @@ export const getPublicLeaderboard = async (req, res) => {
     } catch (error) {
         console.error('Error fetching public leaderboard:', error);
         res.status(500).json({ message: 'Error fetching leaderboard', error: error.message });
+    }
+};
+
+export const getPublicUserProfile = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const currentUserId = req.user?.userId;
+
+        if (!userId) {
+            return res.status(400).json({ message: 'User ID is required' });
+        }
+
+        const query = {
+            $or: [
+                { userId },
+                ...(userId.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: userId }] : [])
+            ]
+        };
+
+        const targetUser = await User.findOne(query)
+            .select('userId name role totalScore totalAttempts totalTime xp level streak lastLoginDate avatar badges equippedBadgeId friends friendRequests clanId createdAt skillTracks')
+            .lean();
+
+        if (!targetUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Rank calculation among non-admins
+        const rank = await User.countDocuments({
+            role: { $ne: 'admin' },
+            isAdmin: { $ne: true },
+            totalScore: { $gt: targetUser.totalScore || 0 }
+        }) + 1;
+
+        // Clan details if associated with a clan
+        let clan = null;
+        if (targetUser.clanId) {
+            const clanDoc = await Clan.findOne({ clanId: targetUser.clanId }).lean();
+            if (clanDoc) {
+                const member = clanDoc.members?.find(m => m.userId === targetUser.userId);
+                clan = {
+                    clanId: clanDoc.clanId,
+                    name: clanDoc.name,
+                    tag: clanDoc.tag,
+                    description: clanDoc.description,
+                    level: clanDoc.level,
+                    totalXP: clanDoc.totalXP,
+                    logo: clanDoc.logo,
+                    role: member?.role || 'member',
+                    contribution: member?.contribution || 0
+                };
+            }
+        }
+
+        // Fetch recent 25 public attempts
+        const attempts = await Attempt.find({ userId: targetUser.userId })
+            .sort({ completedAt: -1 })
+            .limit(25)
+            .select('attemptId quizId quizTitle score totalQuestions percentage timeTaken completedAt passed')
+            .lean();
+
+        // GitHub-Style 365-day Activity Heatmap
+        const oneYearAgo = new Date();
+        oneYearAgo.setDate(oneYearAgo.getDate() - 365);
+
+        const activityAgg = await Attempt.aggregate([
+            {
+                $match: {
+                    userId: targetUser.userId,
+                    completedAt: { $gte: oneYearAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: { $dateToString: { format: '%Y-%m-%d', date: '$completedAt' } },
+                    count: { $sum: 1 },
+                    avgPercentage: { $avg: '$percentage' },
+                    totalScore: { $sum: '$score' }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        const activityHeatmap = {};
+        let totalYearAttempts = 0;
+        activityAgg.forEach(a => {
+            activityHeatmap[a._id] = {
+                count: a.count,
+                avgPercentage: Math.round(a.avgPercentage || 0),
+                totalScore: a.totalScore
+            };
+            totalYearAttempts += a.count;
+        });
+
+        // Compute relationship with requesting user
+        let relationship = 'none'; // 'self' | 'friend' | 'pending_outgoing' | 'pending_incoming' | 'none'
+        if (currentUserId) {
+            if (currentUserId === targetUser.userId) {
+                relationship = 'self';
+            } else if (targetUser.friends?.includes(currentUserId) || (req.user?.friends || []).includes(targetUser.userId)) {
+                relationship = 'friend';
+            } else if (targetUser.friendRequests?.some(r => r.from === currentUserId && r.status === 'pending')) {
+                relationship = 'pending_outgoing';
+            } else if ((req.user?.friendRequests || []).some(r => r.from === targetUser.userId && r.status === 'pending')) {
+                relationship = 'pending_incoming';
+            }
+        }
+
+        // Hide sensitive/internal friend request details before sending
+        const { password, friendRequests, ...safeUser } = targetUser;
+
+        res.json({
+            user: {
+                ...safeUser,
+                rank,
+                friendsCount: targetUser.friends?.length || 0,
+                badgesCount: targetUser.badges?.length || 0
+            },
+            clan,
+            attempts,
+            activityHeatmap,
+            totalYearAttempts,
+            relationship
+        });
+    } catch (error) {
+        console.error('Error fetching public user profile:', error);
+        res.status(500).json({ message: 'Error fetching user profile', error: error.message });
     }
 };

@@ -389,10 +389,8 @@ const UserRoadmapView: React.FC<UserRoadmapViewProps> = ({
 
             {/* Module Details Modal */}
             {isDetailsOpen && selectedModule && (
-                <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${
-                    isBento ? 'bg-black/65' : 'bg-black/80 dark:bg-black/80 backdrop-blur-sm'
-                } animate-in fade-in duration-200`} role="dialog" aria-modal="true">
-                    <div className={`relative w-full max-w-2xl rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] ${
+                <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 dark:bg-black/60 backdrop-blur-md animate-in fade-in duration-200 !border-0 !shadow-none`}>
+                    <div role="dialog" aria-modal="true" className={`relative w-full max-w-2xl rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] ${
                         isBento
                             ? 'bg-white border-[3px] border-black shadow-[8px_8px_0px_#000] text-black'
                             : 'bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-white/10 shadow-2xl'

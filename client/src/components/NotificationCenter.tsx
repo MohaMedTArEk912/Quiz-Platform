@@ -32,7 +32,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [unreadCount, setUnreadCount] = useState<number>(0);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isLoading] = useState<boolean>(false);
     const [filter, setFilter] = useState<FilterCategory>('all');
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
@@ -88,45 +88,59 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
         };
     }, [isOpen]);
 
-    const handleMarkAsRead = async (notificationId: string) => {
-        try {
-            await api.markNotificationRead(notificationId);
-            setNotifications(prev =>
-                prev.map(n => n.notificationId === notificationId ? { ...n, isRead: true } : n)
-            );
-            setUnreadCount(prev => Math.max(0, prev - 1));
-        } catch (err) {
+    const handleMarkAsRead = (notificationId: string) => {
+        // Optimistic UI update: instantly mark as read
+        setNotifications(prev =>
+            prev.map(n => n.notificationId === notificationId ? { ...n, isRead: true } : n)
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+
+        // Fire-and-forget background sync
+        api.markNotificationRead(notificationId).catch(err => {
             console.error('Error marking notification as read:', err);
-        }
+        });
     };
 
-    const handleMarkAllAsRead = async () => {
-        try {
-            setIsLoading(true);
-            await api.markAllNotificationsRead();
-            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-            setUnreadCount(0);
-        } catch (err) {
+    const handleMarkAllAsRead = () => {
+        // Optimistic UI update: instantly mark all as read
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        setUnreadCount(0);
+
+        // Fire-and-forget background sync
+        api.markAllNotificationsRead().catch(err => {
             console.error('Error marking all notifications as read:', err);
-        } finally {
-            setIsLoading(false);
-        }
+        });
     };
 
-    const handleDelete = async (notificationId: string, e: React.MouseEvent) => {
+    const handleDelete = (notificationId: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        try {
-            await api.deleteNotification(notificationId);
-            setNotifications(prev => {
-                const target = prev.find(n => n.notificationId === notificationId);
-                if (target && !target.isRead) {
-                    setUnreadCount(c => Math.max(0, c - 1));
-                }
-                return prev.filter(n => n.notificationId !== notificationId);
-            });
-        } catch (err) {
-            console.error('Error deleting notification:', err);
-        }
+        // Optimistic UI update: instantly delete from list with zero delay
+        setNotifications(prev => {
+            const target = prev.find(n => n.notificationId === notificationId);
+            if (target && !target.isRead) {
+                setUnreadCount(c => Math.max(0, c - 1));
+            }
+            return prev.filter(n => n.notificationId !== notificationId);
+        });
+
+        // Fire-and-forget background delete
+        api.deleteNotification(notificationId).catch(err => {
+            console.error('Error deleting notification in background:', err);
+        });
+    };
+
+    const handleClearAll = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (notifications.length === 0) return;
+        const ids = notifications.map(n => n.notificationId);
+        // Optimistic UI update: clear entire list instantly
+        setNotifications([]);
+        setUnreadCount(0);
+
+        // Background batch delete
+        Promise.allSettled(ids.map(id => api.deleteNotification(id))).catch(err => {
+            console.error('Error deleting notifications:', err);
+        });
     };
 
     const handleItemClick = (notification: AppNotification) => {
@@ -305,6 +319,21 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                         >
                             <CheckCheck className="w-3.5 h-3.5" />
                             <span>Mark read</span>
+                        </button>
+                    )}
+
+                    {notifications.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={handleClearAll}
+                            title="Clear all notifications"
+                            className={`p-1.5 rounded-xl transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-white text-rose-600 border-2 border-black shadow-[1.5px_1.5px_0px_#000] hover:bg-rose-100'
+                                    : 'text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10'
+                            }`}
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
                         </button>
                     )}
 
@@ -503,7 +532,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`relative h-8 w-8 rounded-lg transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                className={`relative h-9 w-9 rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0 ${
                     isBento
                         ? 'bg-[#93c5fd] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_#000]'
                         : 'bg-gray-100/80 hover:bg-gray-200/80 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 hover:scale-105 active:scale-95 shadow-sm border border-gray-200/50 dark:border-white/5'

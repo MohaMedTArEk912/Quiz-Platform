@@ -1,29 +1,33 @@
-import React, { useRef, useState } from 'react';
-import type { UserData, AttemptData } from '../types/index.ts';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
+import type { UserData, AttemptData, BadgeDefinition } from '../types/index.ts';
 import {
-    Trophy, TrendingUp, Award, Loader2, Star, Zap, Flame,
+    Trophy, Download, Award, Loader2, Star, Zap, Flame,
     Settings, Calendar, History, FileText, Eye,
     ShieldCheck, Gift, CheckCircle2, Sparkles, Pencil,
-    Search, ChevronLeft, ChevronRight, CheckCircle, Package, X, Lock
+    Search, ChevronLeft, ChevronRight, CheckCircle, Package, X, Lock,
+    LayoutDashboard, Palette, RefreshCw, Check, Compass, Swords, Shield,
+    ShoppingBag, BarChart2, ArrowRight
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from './Navbar.tsx';
 import { AmbientBackground } from './AmbientBackground';
 import { Certificate } from './Certificate.tsx';
 import { calculateLevel } from '../lib/gamification';
+import { api } from '../lib/api';
+import { useNotification } from '../context/NotificationContext';
 import {
     exportQuizHistoryToPDF,
     exportAttemptToPDF
 } from '../lib/exportUtils';
 import AttemptDetailsModal from './admin/AttemptDetailsModal.tsx';
 import UserSettings from './UserSettings.tsx';
-import AnalyticsPanel from './engage/AnalyticsPanel.tsx';
 import Avatar from './Avatar';
 import AvatarEditor from './AvatarEditor';
 import { StreakRewardModal } from './gamification/StreakRewardModal';
 import { useTheme } from '../context/ThemeContext.tsx';
 import { useAuth } from '../context/AuthContext';
 import Footer from './Footer';
+import ThemeSkeletonPreviewCards from './ThemeSkeletonPreviewCards';
 
 interface UserProfileProps {
     user: UserData;
@@ -34,28 +38,170 @@ interface UserProfileProps {
 }
 
 const BadgeIcon = ({ icon, className }: { icon: string, className?: string }) => {
+    if (!icon) return <Award className={className} />;
+    if (/[\p{Emoji}\u200d]+/u.test(icon) || icon.length <= 4) {
+        return <span className="select-none leading-none inline-flex items-center justify-center text-lg">{icon}</span>;
+    }
     switch (icon) {
         case 'Trophy': return <Trophy className={className} />;
         case 'Star': return <Star className={className} />;
         case 'Zap': return <Zap className={className} />;
         case 'Flame': return <Flame className={className} />;
+        case 'Shield': return <Shield className={className} />;
+        case 'Swords': return <Swords className={className} />;
+        case 'Compass': return <Compass className={className} />;
         default: return <Award className={className} />;
     }
 };
 
+const getRarityBadgeClasses = (rarity?: string, isBento = false) => {
+    switch (rarity) {
+        case 'mythic':
+            return isBento
+                ? 'bg-[#f472b6] text-black border border-black shadow-[1.5px_1.5px_0px_#000]'
+                : 'bg-gradient-to-r from-rose-500 to-fuchsia-600 text-white shadow-rose-500/25';
+        case 'legendary':
+            return isBento
+                ? 'bg-[#fde047] text-black border border-black shadow-[1.5px_1.5px_0px_#000]'
+                : 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-amber-500/25';
+        case 'epic':
+            return isBento
+                ? 'bg-[#c084fc] text-black border border-black shadow-[1.5px_1.5px_0px_#000]'
+                : 'bg-gradient-to-r from-purple-500 to-violet-600 text-white shadow-purple-500/25';
+        case 'rare':
+            return isBento
+                ? 'bg-[#38bdf8] text-black border border-black shadow-[1.5px_1.5px_0px_#000]'
+                : 'bg-gradient-to-r from-sky-400 to-blue-600 text-white shadow-sky-500/25';
+        case 'common':
+        default:
+            return isBento
+                ? 'bg-slate-200 text-black border border-black shadow-[1.5px_1.5px_0px_#000]'
+                : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-200';
+    }
+};
+
+const getBadgeProgress = (badge: Partial<BadgeDefinition>, user: UserData, attempts: AttemptData[]) => {
+    const type = badge.criteria?.type || '';
+    const threshold = Number(badge.criteria?.threshold) || 1;
+
+    let current = 0;
+    let unit = '';
+
+    switch (type) {
+        case 'total_attempts':
+            current = Math.max(user.totalAttempts || 0, attempts.length);
+            unit = 'Quizzes';
+            break;
+        case 'perfect_score':
+            current = attempts.filter(a => a.percentage === 100).length;
+            unit = 'Perfect';
+            break;
+        case 'streak':
+            current = user.streak || 0;
+            unit = 'Days';
+            break;
+        case 'speed_demon': {
+            const passedAttempts = attempts.filter(a => a.passed && a.timeTaken > 0);
+            const fastest = passedAttempts.length > 0 ? Math.min(...passedAttempts.map(a => a.timeTaken)) : 0;
+            const pct = fastest > 0 && fastest <= threshold ? 100 : fastest > 0 ? Math.min(100, Math.round((threshold / fastest) * 100)) : 0;
+            return {
+                current: fastest > 0 ? `${fastest}s` : '—',
+                target: `${threshold}s`,
+                unit: '',
+                pct
+            };
+        }
+        case 'level':
+            current = user.level || 1;
+            unit = 'Lvl';
+            break;
+        case 'total_score':
+            current = user.totalScore || 0;
+            unit = 'Pts';
+            break;
+        case 'track_started':
+            current = (user.primaryTrackId || (user.skillTracks && user.skillTracks.length > 0)) ? 1 : 0;
+            unit = 'Road';
+            break;
+        case 'track_modules':
+            current = (user.skillTracks || []).reduce((acc, t) => acc + (t.completedModules?.length || 0), 0);
+            unit = 'Modules';
+            break;
+        case 'clans':
+            current = user.clanId ? 1 : 0;
+            unit = 'Clan';
+            break;
+        case 'clan_contribution': {
+            const userRecord = user as unknown as Record<string, unknown>;
+            current = Number(userRecord.clanContribution ?? userRecord.contribution ?? 0);
+            unit = 'XP';
+            break;
+        }
+        case 'friend_count':
+            current = user.friends?.length || 0;
+            unit = 'Friends';
+            break;
+        case 'challenges': {
+            const userRecord = user as unknown as Record<string, unknown>;
+            current = Number(userRecord.challengeCount ?? (Array.isArray(userRecord.challenges) ? userRecord.challenges.length : 0));
+            unit = 'Duels';
+            break;
+        }
+        case 'challenge_wins': {
+            const userRecord = user as unknown as Record<string, unknown>;
+            current = Number(userRecord.challengeWins ?? userRecord.challengesWon ?? 0);
+            unit = 'Wins';
+            break;
+        }
+        default:
+            current = 0;
+            unit = 'Goal';
+    }
+
+    const pct = Math.min(100, Math.max(0, Math.round((Number(current) / threshold) * 100)));
+    return { current, target: threshold, unit, pct };
+};
+
+export type ProfileTab =
+    | 'overview'
+    | 'badges'
+    | 'history'
+    | 'inventory'
+    | 'certificates'
+    | 'appearance'
+    | 'settings';
+
 const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onBack, onUserUpdate }) => {
-    const { isBento } = useTheme();
+    const { theme, isBento } = useTheme();
     const { logout } = useAuth();
+    const { showNotification } = useNotification();
     const navigate = useNavigate();
     const certificateRef = useRef<HTMLDivElement>(null);
     const [downloadingAttemptId, setDownloadingAttemptId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [searchParams] = useSearchParams();
+    const initialTab = useMemo<ProfileTab>(() => {
+        const t = searchParams.get('tab');
+        if (t === 'badges' || t === 'history' || t === 'inventory' || t === 'certificates' || t === 'appearance' || t === 'settings') {
+            return t;
+        }
+        return 'overview';
+    }, [searchParams]);
+    const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
     const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
     const [currentUser, setCurrentUser] = useState<UserData>(user);
     const [inspectingAttempt, setInspectingAttempt] = useState<AttemptData | null>(null);
     const [exportingAttemptId, setExportingAttemptId] = useState<string | null>(null);
+
+    // Badge Vault & Trophy Showcase state
+    const [allCatalogBadges, setAllCatalogBadges] = useState<BadgeDefinition[]>([]);
+    const [badgeFilterStatus, setBadgeFilterStatus] = useState<'all' | 'unlocked' | 'locked'>('all');
+    const [badgeFilterCategory, setBadgeFilterCategory] = useState<string>('all');
+    const [badgeSearch, setBadgeSearch] = useState<string>('');
+    const [isEvaluatingBadges, setIsEvaluatingBadges] = useState(false);
+    const [isEquippingBadgeId, setIsEquippingBadgeId] = useState<string | null>(null);
 
     const streak = currentUser.streak || 0;
     const dailyChallengeStreak = currentUser.dailyChallengeStreak || 0;
@@ -106,6 +252,255 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
             onUserUpdate(updatedUser);
         }
     };
+
+    // Fetch default catalog badges and auto-evaluate achievements on profile mount
+    useEffect(() => {
+        let isMounted = true;
+        const fetchBadgesAndEvaluate = async () => {
+            try {
+                const res = await api.getBadges();
+                if (isMounted && res?.data) {
+                    setAllCatalogBadges(res.data);
+                }
+            } catch (err) {
+                console.error('Failed to fetch badges catalog', err);
+            }
+
+            // Automatically check and award unlocked badges when loading profile
+            try {
+                const evalRes = await api.evaluateBadges(currentUser.userId);
+                if (isMounted && evalRes.success && evalRes.user) {
+                    handleUserUpdate(evalRes.user);
+                    const count = evalRes.newBadges?.length || 0;
+                    if (count > 0) {
+                        showNotification('success', `🎉 Unlocked ${count} new badge${count > 1 ? 's' : ''}! +${evalRes.xpGained || 0} XP`);
+                    }
+                }
+            } catch {
+                // Background evaluation silently completes
+            }
+        };
+        fetchBadgesAndEvaluate();
+        return () => { isMounted = false; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleSyncBadges = async () => {
+        setIsEvaluatingBadges(true);
+        try {
+            const res = await api.evaluateBadges(currentUser.userId);
+            if (res.success) {
+                if (res.user) {
+                    handleUserUpdate(res.user);
+                }
+                const count = res.newBadges?.length || 0;
+                if (count > 0) {
+                    showNotification('success', `🎉 Unlocked ${count} new badge${count > 1 ? 's' : ''}! +${res.xpGained || 0} XP`);
+                } else {
+                    showNotification('info', 'Trophies up to date! Keep playing to unlock more trophies.');
+                }
+            }
+        } catch (err) {
+            console.error('Failed to sync badges', err);
+            showNotification('error', 'Failed to sync badges. Please try again.');
+        } finally {
+            setIsEvaluatingBadges(false);
+        }
+    };
+
+    const handleEquipBadge = async (badgeId: string | null) => {
+        setIsEquippingBadgeId(badgeId || 'unequip');
+        try {
+            const res = await api.equipBadge(badgeId, currentUser.userId);
+            if (res.success && res.user) {
+                handleUserUpdate(res.user);
+                showNotification('success', badgeId ? 'Badge equipped to your title!' : 'Badge unequipped');
+            }
+        } catch (err) {
+            console.error('Failed to equip badge', err);
+            showNotification('error', 'Failed to equip badge');
+        } finally {
+            setIsEquippingBadgeId(null);
+        }
+    };
+
+    const equippedBadge = useMemo(() => {
+        if (!currentUser.equippedBadgeId) return null;
+        const earned = currentUser.badges?.find(b => b.id === currentUser.equippedBadgeId);
+        if (earned) return earned;
+        const catalog = allCatalogBadges.find(b => b.id === currentUser.equippedBadgeId || b._id === currentUser.equippedBadgeId);
+        if (catalog) {
+            return {
+                id: catalog.id || catalog._id || '',
+                name: catalog.name,
+                description: catalog.description,
+                icon: catalog.icon,
+                title: catalog.title,
+                rarity: catalog.rarity,
+                category: catalog.category,
+                xpReward: catalog.xpReward,
+                dateEarned: new Date().toISOString()
+            };
+        }
+        return null;
+    }, [currentUser.equippedBadgeId, currentUser.badges, allCatalogBadges]);
+
+    const userEarnedMap = useMemo(() => {
+        const map = new Map<string, NonNullable<UserData['badges']>[number]>();
+        (currentUser.badges || []).forEach(b => {
+            map.set(b.id, b);
+        });
+        return map;
+    }, [currentUser.badges]);
+
+    const combinedBadgeList = useMemo(() => {
+        const list: Array<BadgeDefinition & { isUnlocked: boolean; dateEarned?: string }> = [];
+        const seenIds = new Set<string>();
+
+        allCatalogBadges.forEach(b => {
+            const id = b.id || b._id;
+            if (id && !seenIds.has(id)) {
+                seenIds.add(id);
+                const earned = userEarnedMap.get(id);
+                list.push({
+                    ...b,
+                    id,
+                    isUnlocked: Boolean(earned),
+                    dateEarned: earned?.dateEarned,
+                    rarity: b.rarity || earned?.rarity || 'common',
+                    category: b.category || earned?.category || 'milestones',
+                    xpReward: b.xpReward || earned?.xpReward || 50,
+                    title: b.title || earned?.title
+                });
+            }
+        });
+
+        (currentUser.badges || []).forEach(b => {
+            if (b.id && !seenIds.has(b.id)) {
+                seenIds.add(b.id);
+                list.push({
+                    id: b.id,
+                    name: b.name,
+                    description: b.description,
+                    icon: b.icon,
+                    title: b.title,
+                    isUnlocked: true,
+                    dateEarned: b.dateEarned,
+                    rarity: b.rarity || 'common',
+                    category: b.category || 'milestones',
+                    xpReward: b.xpReward || 50
+                });
+            }
+        });
+
+        return list;
+    }, [allCatalogBadges, userEarnedMap, currentUser.badges]);
+
+    const filteredBadges = useMemo(() => {
+        return combinedBadgeList.filter(badge => {
+            if (badgeFilterStatus === 'unlocked' && !badge.isUnlocked) return false;
+            if (badgeFilterStatus === 'locked' && badge.isUnlocked) return false;
+            if (badgeFilterCategory !== 'all') {
+                const bCat = badge.category || '';
+                const matchCategory =
+                    bCat === badgeFilterCategory ||
+                    (badgeFilterCategory === 'skills' && (bCat === 'tracks' || bCat === 'roadmaps')) ||
+                    (badgeFilterCategory === 'tracks' && (bCat === 'skills' || bCat === 'roadmaps')) ||
+                    (badgeFilterCategory === 'social' && (bCat === 'clans')) ||
+                    (badgeFilterCategory === 'clans' && (bCat === 'social'));
+                if (!matchCategory) return false;
+            }
+            if (badgeSearch.trim()) {
+                const query = badgeSearch.toLowerCase();
+                const matchName = badge.name?.toLowerCase().includes(query);
+                const matchTitle = badge.title?.toLowerCase().includes(query);
+                const matchDesc = badge.description?.toLowerCase().includes(query);
+                if (!matchName && !matchTitle && !matchDesc) return false;
+            }
+            return true;
+        });
+    }, [combinedBadgeList, badgeFilterStatus, badgeFilterCategory, badgeSearch]);
+
+    const unlockedBadgesCount = useMemo(() => {
+        return combinedBadgeList.filter(b => b.isUnlocked).length;
+    }, [combinedBadgeList]);
+
+    const totalEarnedBadgeXp = useMemo(() => {
+        return combinedBadgeList
+            .filter(b => b.isUnlocked)
+            .reduce((sum, b) => sum + (b.xpReward || 0), 0);
+    }, [combinedBadgeList]);
+
+    const perfectScoreCount = attempts.filter(a => a.percentage === 100).length;
+    const totalQuizzesCount = attempts.length;
+    const milestoneBadges = [
+        {
+            id: 'streak-7',
+            title: '7-Day Streak Flame',
+            description: 'Maintain an uninterrupted 7-day daily login streak',
+            icon: 'Flame',
+            current: streak,
+            target: 7,
+            unit: 'Days',
+            unlocked: streak >= 7,
+            gradient: 'from-orange-500 to-amber-500'
+        },
+        {
+            id: 'centurion',
+            title: 'Quiz Centurion',
+            description: 'Complete 100 quiz attempts across all study tracks',
+            icon: 'Trophy',
+            current: totalQuizzesCount,
+            target: 100,
+            unit: 'Quizzes',
+            unlocked: totalQuizzesCount >= 100,
+            gradient: 'from-indigo-500 to-purple-600'
+        },
+        {
+            id: 'master-100',
+            title: '100% Mastery Master',
+            description: 'Achieve a flawless 100% score on 5 assessments',
+            icon: 'Star',
+            current: perfectScoreCount,
+            target: 5,
+            unit: 'Quizzes',
+            unlocked: perfectScoreCount >= 5,
+            gradient: 'from-amber-400 to-yellow-500'
+        },
+        {
+            id: 'scholar-5',
+            title: 'Scholar Adept',
+            description: 'Advance to Scholar Level 5 through continuous learning',
+            icon: 'Zap',
+            current: level,
+            target: 5,
+            unit: 'Lvl',
+            unlocked: level >= 5,
+            gradient: 'from-emerald-500 to-teal-500'
+        },
+        {
+            id: 'scholar-10',
+            title: 'Grandmaster Tier',
+            description: 'Reach prestiged Level 10 status in the arena',
+            icon: 'Award',
+            current: level,
+            target: 10,
+            unit: 'Lvl',
+            unlocked: level >= 10,
+            gradient: 'from-purple-600 to-pink-600'
+        },
+        {
+            id: 'xp-titan',
+            title: 'Knowledge Vault',
+            description: 'Amass 2,500 total XP points across all categories',
+            icon: 'Sparkles',
+            current: currentXP,
+            target: 2500,
+            unit: 'XP',
+            unlocked: currentXP >= 2500,
+            gradient: 'from-blue-500 to-cyan-500'
+        }
+    ];
 
     // Full Activity state
     const [activitySearch, setActivitySearch] = useState('');
@@ -285,23 +680,158 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                 showActions={true}
             />
 
-            <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-10">
-                {/* Profile Card */}
-                <div className="relative glass-card rounded-3xl p-6 sm:p-8 overflow-hidden mb-8">
-                    {/* Settings Button - Moved to top right of card */}
-                    <button
-                        onClick={() => setIsSettingsOpen(true)}
-                        className="absolute top-5 right-5 z-30 p-2 glass-card hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 rounded-full transition-all hover:rotate-90 active:scale-95 cursor-pointer"
-                        title="Account Settings"
-                    >
-                        <Settings className="w-5 h-5" />
-                    </button>
+            {/* Mobile Sticky Tab Navigation */}
+            <div className={`lg:hidden sticky top-14 z-30 pt-2 pb-2 backdrop-blur-xl border-b px-3 flex items-center gap-1.5 overflow-x-auto scrollbar-none ${
+                isBento
+                    ? 'bg-white/95 border-b-2 border-black'
+                    : 'bg-white/90 dark:bg-[#090d16]/90 border-slate-200 dark:border-white/10'
+            }`}>
+                {[
+                    { id: 'overview' as ProfileTab, label: 'Overview', icon: LayoutDashboard },
+                    { id: 'badges' as ProfileTab, label: 'Badges', icon: Award, badge: `${unlockedBadgesCount}` },
+                    { id: 'history' as ProfileTab, label: 'Activity', icon: History, badge: `${attempts.length}` },
+                    { id: 'inventory' as ProfileTab, label: 'Backpack', icon: Package, badge: `${(currentUser.inventory || []).length}` },
+                    { id: 'certificates' as ProfileTab, label: 'Certificates', icon: ShieldCheck, badge: `${activityCounts.mastered}` },
+                    { id: 'appearance' as ProfileTab, label: 'Theme', icon: Palette },
+                    { id: 'settings' as ProfileTab, label: 'Settings', icon: Settings }
+                ].map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-black text-xs transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                                isActive
+                                    ? isBento
+                                        ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-indigo-600 text-white shadow-sm'
+                                    : isBento
+                                        ? 'text-black hover:bg-slate-100'
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                        >
+                            <Icon className="w-3.5 h-3.5" />
+                            <span>{tab.label}</span>
+                            {tab.badge && (
+                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                                    isActive
+                                        ? isBento ? 'bg-black text-[#bef264]' : 'bg-white/20 text-white'
+                                        : isBento ? 'bg-black/10 text-black' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300'
+                                }`}>
+                                    {tab.badge}
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
 
-                    <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-indigo-600/20 to-purple-600/20" />
+            <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-10 flex flex-col lg:flex-row gap-8 items-start">
+                {/* Desktop Left Sidebar Drawer */}
+                <aside className="hidden lg:flex flex-col w-80 shrink-0 sticky top-24 space-y-4">
+                    <div className={`p-4 rounded-2xl ${
+                        isBento
+                            ? 'bg-white text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                            : 'bg-white dark:bg-[#111625] border border-slate-200/90 dark:border-white/10 shadow-lg'
+                    }`}>
+                        <div className="px-3 py-2 mb-2 border-b border-slate-200/60 dark:border-white/10">
+                            <p className={`text-[10px] font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-slate-400'}`}>
+                                Profile Navigation
+                            </p>
+                        </div>
+
+                        <nav className="flex flex-col gap-1.5">
+                            {[
+                                { id: 'overview' as ProfileTab, label: 'Overview & Stats', icon: LayoutDashboard, badge: `Lvl ${level}` },
+                                { id: 'badges' as ProfileTab, label: 'Badges & Trophies', icon: Award, badge: `${unlockedBadgesCount} Earned` },
+                                { id: 'history' as ProfileTab, label: 'Activity & History', icon: History, badge: `${attempts.length} Quizzes` },
+                                { id: 'inventory' as ProfileTab, label: 'Backpack & Loot', icon: Package, badge: `${(currentUser.inventory || []).length} Items` },
+                                { id: 'certificates' as ProfileTab, label: 'Certificates', icon: ShieldCheck, badge: `${activityCounts.mastered} Earned` },
+                                { id: 'appearance' as ProfileTab, label: 'Theme Switcher', icon: Palette, badge: isBento ? 'BENTO' : theme.toUpperCase() },
+                                { id: 'settings' as ProfileTab, label: 'Account Settings', icon: Settings }
+                            ].map((tab) => {
+                                const Icon = tab.icon;
+                                const isActive = activeTab === tab.id;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`w-full h-11 px-3 rounded-xl font-black text-xs sm:text-[13px] flex items-center justify-between gap-2 transition-all cursor-pointer border-2 ${
+                                            isActive
+                                                ? isBento
+                                                    ? 'bg-[#bef264] text-black border-black shadow-[2.5px_2.5px_0px_#000]'
+                                                    : 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/25'
+                                                : isBento
+                                                    ? 'text-black border-transparent hover:bg-slate-100'
+                                                    : 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? (isBento ? 'text-black' : 'text-white') : ''}`} />
+                                            <span className="truncate whitespace-nowrap">{tab.label}</span>
+                                        </div>
+                                        {tab.badge && (
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap shrink-0 ${
+                                                isActive
+                                                    ? isBento ? 'bg-black text-white' : 'bg-white/20 text-white'
+                                                    : isBento ? 'bg-slate-200 text-black border border-black' : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400'
+                                            }`}>
+                                                {tab.badge}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                    </div>
+
+                    {/* Sidebar User Quick Card */}
+                    <div className={`p-4 rounded-2xl ${
+                        isBento
+                            ? 'bg-[#fef9c3] text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                            : 'bg-white dark:bg-[#111625] border border-slate-200/90 dark:border-white/10 shadow-sm'
+                    }`}>
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`w-10 h-10 rounded-xl overflow-hidden shrink-0 ${isBento ? 'border-2 border-black' : 'ring-2 ring-indigo-500/30'}`}>
+                                {currentUser.avatar ? (
+                                    <Avatar config={currentUser.avatar} size="sm" className="w-full h-full" />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center text-sm">
+                                        {currentUser.name.charAt(0)}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs font-black truncate">{currentUser.name}</p>
+                                <p className="text-[10px] text-slate-500 truncate">{currentUser.email}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] font-bold pt-2 border-t border-black/10 dark:border-white/10">
+                            <span className="opacity-75">Global Rank</span>
+                            <span className="font-black text-indigo-600 dark:text-indigo-400">#{rank}</span>
+                        </div>
+                    </div>
+                </aside>
+
+                {/* Main Content Area */}
+                <main className="flex-1 w-full min-w-0">
+                    {/* TAB 1: OVERVIEW & STATS */}
+                    {activeTab === 'overview' && (
+                        <div className="space-y-8 animate-in fade-in duration-200">
+                            {/* Profile Card */}
+                            <div className="relative glass-card rounded-2xl p-6 sm:p-8 overflow-hidden mb-8">
+                                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-indigo-600/20 to-purple-600/20" />
 
                     <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12 pt-4">
                         <div className="relative group">
-                            <div className="w-32 h-32 rounded-full ring-4 ring-indigo-500/50 shadow-2xl relative z-10 group-hover:scale-105 transition-transform duration-500 bg-white dark:bg-[#0a0a0b]">
+                            <div className={`w-32 h-32 rounded-full relative z-10 group-hover:scale-105 transition-transform duration-300 ${
+                                isBento
+                                    ? 'border-[3px] border-black shadow-[4px_4px_0px_#000] bg-white'
+                                    : 'ring-4 ring-indigo-500/50 shadow-2xl bg-white dark:bg-[#0a0a0b]'
+                            }`}>
                                 {currentUser.avatar ? (
                                     <Avatar config={currentUser.avatar} size="xl" className="w-full h-full" />
                                 ) : (
@@ -313,7 +843,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                             {/* Edit Avatar Button - Positioned nicely at bottom right */}
                             <button
                                 onClick={() => setIsAvatarEditorOpen(true)}
-                                className="absolute bottom-0 right-0 z-20 p-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-lg border-4 border-white dark:border-[#13141f] transition-all hover:scale-110 hover:shadow-indigo-500/25"
+                                className={`absolute bottom-0 right-0 z-20 p-2.5 rounded-full transition-all cursor-pointer hover:scale-110 ${
+                                    isBento
+                                        ? 'bg-[#bef264] text-black border-2 border-black shadow-[2.5px_2.5px_0px_#000] hover:bg-[#fde047]'
+                                        : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg border-4 border-white dark:border-[#13141f] hover:shadow-indigo-500/25'
+                                }`}
                                 title="Customize Avatar"
                             >
                                 <Pencil className="w-4 h-4" />
@@ -322,11 +856,25 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
 
                         <div className="flex-1 text-center md:text-left w-full">
                             <div className="mb-6">
-                                <h2 className="text-4xl font-black text-gray-900 dark:text-white mb-2 tracking-tight flex items-center justify-center md:justify-start gap-4 flex-wrap">
-                                    {currentUser.name}
+                                <h2 className="text-4xl font-black text-gray-900 dark:text-white mb-2 tracking-tight flex items-center justify-center md:justify-start gap-3 flex-wrap">
+                                    <span>{currentUser.name}</span>
                                     <span className="text-sm bg-gradient-to-r from-amber-400 to-orange-500 text-white px-3 py-1 rounded-full font-black shadow-sm border border-white/20 transform hover:scale-105 transition-transform cursor-default">
                                         Lvl {currentUser.level || 1}
                                     </span>
+                                    {equippedBadge && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const el = document.getElementById('badge-vault-section');
+                                                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                                            }}
+                                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider transition-all transform hover:scale-105 cursor-pointer shadow-sm ${getRarityBadgeClasses(equippedBadge.rarity, isBento)}`}
+                                            title={`Equipped: ${equippedBadge.name}${equippedBadge.title ? ` • ${equippedBadge.title}` : ''} (${(equippedBadge.rarity || 'common').toUpperCase()}) - Click to view in Vault`}
+                                        >
+                                            <BadgeIcon icon={equippedBadge.icon} className="w-3.5 h-3.5" />
+                                            <span>{equippedBadge.title || equippedBadge.name}</span>
+                                        </button>
+                                    )}
                                 </h2>
                                 <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">{currentUser.email}</p>
                             </div>
@@ -406,7 +954,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                     {/* 4 Stat Overview Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         {/* Current Streak */}
-                        <div className={`p-5 rounded-3xl relative overflow-hidden group transition-transform hover:-translate-y-0.5 ${
+                        <div className={`p-5 rounded-2xl relative overflow-hidden group transition-transform hover:-translate-y-0.5 ${
                             isBento
                                 ? 'profile-stat-card-yellow bg-[#fef08a] border-2 border-black shadow-[4px_4px_0px_#000] text-black'
                                 : 'bg-white dark:bg-[#13141f] border border-orange-200/80 dark:border-orange-500/20 shadow-sm dark:shadow-none text-gray-900 dark:text-white'
@@ -438,7 +986,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                         </div>
 
                         {/* Compiler Challenge Streak */}
-                        <div className={`p-5 rounded-3xl relative overflow-hidden group transition-transform hover:-translate-y-0.5 ${
+                        <div className={`p-5 rounded-2xl relative overflow-hidden group transition-transform hover:-translate-y-0.5 ${
                             isBento
                                 ? 'profile-stat-card-blue bg-[#bae6fd] border-2 border-black shadow-[4px_4px_0px_#000] text-black'
                                 : 'bg-white dark:bg-[#13141f] border border-sky-200/80 dark:border-sky-500/20 shadow-sm dark:shadow-none text-gray-900 dark:text-white'
@@ -462,7 +1010,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                         </div>
 
                         {/* Current Cycle */}
-                        <div className={`p-5 rounded-3xl relative overflow-hidden group transition-transform hover:-translate-y-0.5 ${
+                        <div className={`p-5 rounded-2xl relative overflow-hidden group transition-transform hover:-translate-y-0.5 ${
                             isBento
                                 ? 'profile-stat-card-purple bg-[#ddd6fe] border-2 border-black shadow-[4px_4px_0px_#000] text-black'
                                 : 'bg-white dark:bg-[#13141f] border border-purple-200/80 dark:border-purple-500/20 shadow-sm dark:shadow-none text-gray-900 dark:text-white'
@@ -486,7 +1034,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                         </div>
 
                         {/* Streak Shield Protection */}
-                        <div className={`p-5 rounded-3xl relative overflow-hidden group transition-transform hover:-translate-y-0.5 ${
+                        <div className={`p-5 rounded-2xl relative overflow-hidden group transition-transform hover:-translate-y-0.5 ${
                             isBento
                                 ? 'profile-stat-card-green bg-[#d9f99d] border-2 border-black shadow-[4px_4px_0px_#000] text-black'
                                 : 'bg-white dark:bg-[#13141f] border border-emerald-200/80 dark:border-emerald-500/20 shadow-sm dark:shadow-none text-gray-900 dark:text-white'
@@ -511,9 +1059,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                     </div>
 
                     {/* 7-Day Visual Progress Track */}
-                    <div className={`profile-section-card rounded-3xl p-6 ${
+                    <div className={`profile-section-card rounded-2xl p-6 ${
                         isBento
-                            ? 'bg-white border-3 border-black shadow-[6px_6px_0px_#000]'
+                            ? 'bg-white border-2 border-black shadow-[4px_4px_0px_#000]'
                             : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-none'
                     }`}>
                         <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-2 border-b border-gray-200/80 dark:border-white/10">
@@ -563,7 +1111,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                 return (
                                     <div
                                         key={milestone.day}
-                                        className={`p-3.5 rounded-2xl flex flex-col items-center justify-between text-center transition-all relative overflow-hidden group hover:-translate-y-1 ${cardClass}`}
+                                        className={`p-3.5 rounded-xl flex flex-col items-center justify-between text-center transition-all relative overflow-hidden group hover:-translate-y-1 ${cardClass}`}
                                     >
                                         {milestone.day === 7 && (
                                             <span className={`absolute -top-0.5 right-1.5 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
@@ -639,53 +1187,558 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                     </div>
                 </div>
 
-
-                {/* Badges Section */}
-                {currentUser.badges && currentUser.badges.length > 0 && (
-                    <div className="mb-12">
-                        <div className="flex items-center gap-3 mb-6">
-                            <Award className="w-6 h-6 text-yellow-500 dark:text-yellow-400" />
-                            <h3 className="text-2xl font-black text-gray-900 dark:text-white">Badges Earned</h3>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                            {currentUser.badges.map(badge => (
-                                <div key={badge.id} className="group bg-white dark:bg-[#13141f] p-6 rounded-[2rem] border border-gray-200 dark:border-white/5 flex flex-col items-center text-center hover:bg-gray-50 dark:hover:bg-white/10 transition-colors duration-300 shadow-lg dark:shadow-none">
-                                    <div className="relative mb-4">
-                                        <div className="absolute inset-0 bg-yellow-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-600 flex items-center justify-center text-white shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                                            <BadgeIcon icon={badge.icon} className="w-8 h-8" />
-                                        </div>
-                                    </div>
-                                    <h4 className="font-bold text-gray-900 dark:text-white mb-1">{badge.name}</h4>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-3 leading-relaxed">{badge.description}</p>
-                                    <span className="text-[10px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-wider bg-gray-100 dark:bg-black/20 px-2 py-1 rounded-lg">
-                                        {new Date(badge.dateEarned).toLocaleDateString()}
-                                    </span>
+                {/* Overview Quick Navigation Hub Cards */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* 1. Performance Analytics Page Link Card */}
+                    <div className={`p-6 rounded-2xl flex flex-col justify-between transition-all ${
+                        isBento
+                            ? 'bg-[#c4b5fd] text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                            : 'bg-gradient-to-br from-indigo-600/10 via-purple-600/10 to-pink-600/10 dark:from-indigo-500/15 dark:via-purple-500/15 dark:to-pink-500/10 border border-indigo-500/30 text-slate-900 dark:text-white shadow-sm'
+                    }`}>
+                        <div>
+                            <div className="flex items-center justify-between gap-3 mb-4">
+                                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                                }`}>
+                                    <BarChart2 className="w-5 h-5" />
                                 </div>
-                            ))}
+                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                    isBento
+                                        ? 'bg-[#bef264] text-black border border-black shadow-[1px_1px_0px_#000]'
+                                        : 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border border-indigo-500/25'
+                                }`}>
+                                    Dedicated Hub
+                                </span>
+                            </div>
+                            <h4 className="text-lg font-black tracking-tight mb-1.5">
+                                Performance Analytics &amp; Insights
+                            </h4>
+                            <p className={`text-xs font-medium leading-relaxed mb-5 ${
+                                isBento ? 'text-black/80' : 'text-slate-600 dark:text-slate-300'
+                            }`}>
+                                Deep-dive into your subject mastery, personalized weak-spot diagnostics, pass rates, and AI study roadmap on the full Analytics page.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/analytics')}
+                            className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-black text-white border-2 border-black hover:bg-neutral-800'
+                                    : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/25'
+                            }`}
+                        >
+                            <span>Open Full Analytics Page</span>
+                            <ArrowRight className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {/* 2. Badges & Achievements Preview Card */}
+                    <div className={`p-6 rounded-2xl flex flex-col justify-between transition-all ${
+                        isBento
+                            ? 'bg-white text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                            : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm'
+                    }`}>
+                        <div>
+                            <div className="flex items-center justify-between gap-2 mb-4">
+                                <div className="flex items-center gap-2.5">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                        isBento
+                                            ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                            : 'bg-amber-500/15 text-amber-500'
+                                    }`}>
+                                        <Award className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-base font-black text-gray-900 dark:text-white tracking-tight">
+                                            Badges &amp; Trophies
+                                        </h4>
+                                        <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                                            {unlockedBadgesCount} of {combinedBadgeList.length} unlocked
+                                        </p>
+                                    </div>
+                                </div>
+                                <span className="text-xs font-black text-amber-600 dark:text-amber-400">
+                                    +{totalEarnedBadgeXp} XP
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 mb-5">
+                                {combinedBadgeList.slice(0, 6).map((b) => (
+                                    <div
+                                        key={b.id}
+                                        className={`p-2 rounded-xl flex flex-col items-center text-center border ${
+                                            b.isUnlocked
+                                                ? isBento
+                                                    ? 'bg-[#fef9c3] border-black text-black'
+                                                    : 'bg-amber-500/5 border-amber-500/20 text-gray-900 dark:text-white'
+                                                : 'bg-gray-50 dark:bg-white/[0.02] border-gray-200/60 dark:border-white/5 opacity-50'
+                                        }`}
+                                    >
+                                        <BadgeIcon icon={b.icon} className="w-5 h-5 mb-1" />
+                                        <span className="text-[10px] font-bold truncate w-full">{b.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('badges')}
+                            className={`w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                    : 'bg-gray-100 dark:bg-white/5 hover:bg-indigo-600 hover:text-white text-gray-800 dark:text-gray-200'
+                            }`}
+                        >
+                            <span>Explore Badge Vault</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+
+                    {/* 3. Recent Activity Preview Card */}
+                    <div className={`p-6 rounded-2xl flex flex-col justify-between transition-all ${
+                        isBento
+                            ? 'bg-white text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                            : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm'
+                    }`}>
+                        <div>
+                            <div className="flex items-center justify-between gap-2 mb-4">
+                                <div className="flex items-center gap-2.5">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                        isBento
+                                            ? 'bg-[#bae6fd] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                            : 'bg-purple-500/15 text-purple-500'
+                                    }`}>
+                                        <History className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-base font-black text-gray-900 dark:text-white tracking-tight">
+                                            Recent Activity
+                                        </h4>
+                                        <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                                            {activityCounts.total} total attempts • {activityCounts.mastered} diplomas
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {sortedAttempts.length === 0 ? (
+                                <div className="py-6 text-center text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                    No quiz attempts recorded yet. Start a quiz to build your history!
+                                </div>
+                            ) : (
+                                <div className="space-y-2 mb-5">
+                                    {sortedAttempts.slice(0, 3).map((att) => (
+                                        <div
+                                            key={att.attemptId}
+                                            className={`px-3 py-2 rounded-xl flex items-center justify-between gap-2 text-xs ${
+                                                isBento
+                                                    ? 'bg-slate-50 border border-black text-black'
+                                                    : 'bg-gray-50 dark:bg-white/[0.03] border border-gray-200/60 dark:border-white/5'
+                                            }`}
+                                        >
+                                            <span className="font-bold truncate">{att.quizTitle}</span>
+                                            <span className={`font-black shrink-0 ${
+                                                (att.percentage || 0) >= 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'
+                                            }`}>
+                                                {Math.round(att.percentage || 0)}%
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('history')}
+                            className={`w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                    : 'bg-gray-100 dark:bg-white/5 hover:bg-indigo-600 hover:text-white text-gray-800 dark:text-gray-200'
+                            }`}
+                        >
+                            <span>View All Activity ({activityCounts.total})</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* TAB 2: BADGES & TROPHY VAULT */}
+        {activeTab === 'badges' && (
+            <div className="space-y-8 animate-in fade-in duration-200">
+                {/* Unique Milestone Badges Showcase Grid */}
+                <div className={`profile-section-card rounded-2xl p-6 sm:p-8 ${
+                    isBento
+                        ? 'bg-white border-2 border-black shadow-[4px_4px_0px_#000]'
+                        : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-none'
+                }`}>
+                    <div>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <Award className="w-5 h-5 text-amber-500" />
+                                    <h4 className="text-base sm:text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                                        Milestone Badges &amp; Achievements
+                                    </h4>
+                                </div>
+                                <span className="text-xs font-black text-indigo-600 dark:text-indigo-400">
+                                    {milestoneBadges.filter(m => m.unlocked).length} / {milestoneBadges.length} Unlocked
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                                {milestoneBadges.map((milestone) => {
+                                    const progressPct = Math.min(100, Math.round((milestone.current / milestone.target) * 100));
+                                    return (
+                                        <div
+                                            key={milestone.id}
+                                            className={`p-4 rounded-xl transition-all relative overflow-hidden flex flex-col justify-between ${
+                                                isBento
+                                                    ? milestone.unlocked
+                                                        ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                                                        : 'bg-white text-black border-2 border-black/70 shadow-[2px_2px_0px_#000]'
+                                                    : milestone.unlocked
+                                                        ? 'bg-gradient-to-br from-indigo-500/10 to-purple-500/10 dark:from-indigo-500/20 dark:to-purple-500/20 border border-indigo-500/30 text-slate-900 dark:text-white shadow-sm'
+                                                        : 'bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-300'
+                                            }`}
+                                        >
+                                            <div className="flex items-start justify-between gap-3 mb-2.5">
+                                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                                                    isBento
+                                                        ? 'bg-white text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                                                        : milestone.unlocked
+                                                            ? `bg-gradient-to-br ${milestone.gradient} text-white shadow-md`
+                                                            : 'bg-slate-200 dark:bg-white/10 text-slate-400'
+                                                }`}>
+                                                    <BadgeIcon icon={milestone.icon} className="w-5 h-5" />
+                                                </div>
+
+                                                <div className="text-right">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                                        milestone.unlocked
+                                                            ? isBento ? 'bg-black text-white' : 'bg-emerald-500 text-white'
+                                                            : isBento ? 'bg-black/10 text-black' : 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400'
+                                                    }`}>
+                                                        {milestone.unlocked ? '✓ Unlocked' : `${progressPct}%`}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="mb-2">
+                                                <h5 className="font-black text-sm tracking-tight leading-snug">{milestone.title}</h5>
+                                                <p className="text-[11px] opacity-75 font-medium leading-relaxed mt-0.5 line-clamp-2">
+                                                    {milestone.description}
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-auto pt-2">
+                                                <div className="flex justify-between text-[10px] font-black mb-1 opacity-80">
+                                                    <span>Progress</span>
+                                                    <span>{milestone.current} / {milestone.target} {milestone.unit}</span>
+                                                </div>
+                                                <div className={`h-2 rounded-full overflow-hidden ${
+                                                    isBento ? 'bg-black/10 border border-black' : 'bg-slate-200 dark:bg-white/10'
+                                                }`}>
+                                                    <div
+                                                        className={`h-full transition-all duration-700 ${
+                                                            isBento
+                                                                ? 'bg-black'
+                                                                : milestone.unlocked ? 'bg-emerald-500' : 'bg-indigo-600 dark:bg-indigo-500'
+                                                        }`}
+                                                        style={{ width: `${progressPct}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
-                )}
 
-                {/* Stats & Analytics */}
-                <div className="mb-12">
-                    <div className="flex items-center gap-3 mb-6">
-                        <TrendingUp className="w-6 h-6 text-blue-500 dark:text-blue-400" />
-                        <h3 className="text-2xl font-black text-gray-900 dark:text-white">Performance Analytics</h3>
-                    </div>
-                    <div className={`profile-section-card rounded-[2.5rem] p-6 sm:p-8 ${
+
+                {/* Badge Vault & Trophy Showcase */}
+                <div id="badge-vault-section" className="mb-12 scroll-mt-24">
+                    <div className={`rounded-[2.5rem] p-6 sm:p-8 transition-all ${
                         isBento
                             ? 'bg-white border-3 border-black shadow-[6px_6px_0px_#000]'
                             : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-none'
                     }`}>
-                        <AnalyticsPanel user={currentUser} />
+                        {/* Header with Title, Stats & Sync Button */}
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-amber-500/10 rounded-2xl">
+                                        <Trophy className="w-6 h-6 text-amber-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                                            Badge Vault & Trophy Showcase
+                                        </h3>
+                                        <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                                            Unlock achievements, earn XP boosts, and equip your title across clans and leaderboards
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3">
+                                <div className="px-3.5 py-1.5 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-black text-xs uppercase tracking-wider border border-indigo-500/20">
+                                    🏆 {unlockedBadgesCount} / {combinedBadgeList.length} Unlocked
+                                </div>
+                                <div className="px-3.5 py-1.5 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-black text-xs uppercase tracking-wider border border-amber-500/20">
+                                    ⚡ +{totalEarnedBadgeXp} XP Boost
+                                </div>
+                                <button
+                                    onClick={handleSyncBadges}
+                                    disabled={isEvaluatingBadges}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                        isBento
+                                            ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] disabled:opacity-50'
+                                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20 disabled:opacity-50'
+                                    }`}
+                                    title="Evaluate all recent progress and sync new badge unlocks"
+                                >
+                                    <RefreshCw className={`w-3.5 h-3.5 ${isEvaluatingBadges ? 'animate-spin' : ''}`} />
+                                    <span>{isEvaluatingBadges ? 'Checking...' : 'Sync Badges'}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Filter Toolbar: Status tabs, Categories, and Search */}
+                        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-100 dark:border-white/5">
+                            {/* Status Tabs */}
+                            <div className="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-black/30 rounded-2xl border border-gray-200 dark:border-white/5">
+                                {(
+                                    [
+                                        { id: 'all', label: `All (${combinedBadgeList.length})` },
+                                        { id: 'unlocked', label: `Unlocked (${unlockedBadgesCount})` },
+                                        { id: 'locked', label: `Locked (${Math.max(0, combinedBadgeList.length - unlockedBadgesCount)})` },
+                                    ] as const
+                                ).map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setBadgeFilterStatus(tab.id)}
+                                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                            badgeFilterStatus === tab.id
+                                                ? isBento
+                                                    ? 'bg-black text-white shadow-sm'
+                                                    : 'bg-white dark:bg-white/10 text-indigo-600 dark:text-white shadow-sm'
+                                                : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Search Input */}
+                            <div className="relative flex-1 max-w-xs">
+                                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                <input
+                                    type="text"
+                                    value={badgeSearch}
+                                    onChange={(e) => setBadgeSearch(e.target.value)}
+                                    placeholder="Search badges or titles..."
+                                    className="w-full pl-9 pr-8 py-2 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                />
+                                {badgeSearch && (
+                                    <button
+                                        onClick={() => setBadgeSearch('')}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Category Pills */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
+                            {[
+                                { id: 'all', label: 'All Categories' },
+                                { id: 'milestones', label: 'Milestones' },
+                                { id: 'perfection', label: 'Perfection' },
+                                { id: 'streaks', label: 'Streaks' },
+                                { id: 'speed', label: 'Speed' },
+                                { id: 'xp', label: 'XP & Levels' },
+                                { id: 'tracks', label: 'Roadmaps' },
+                                { id: 'clans', label: 'Clans & Social' },
+                                { id: 'arena', label: 'Arena' },
+                            ].map(cat => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => setBadgeFilterCategory(cat.id)}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                                        badgeFilterCategory === cat.id
+                                            ? isBento
+                                                ? 'bg-[#fde047] text-black border border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-indigo-600 text-white shadow-sm'
+                                            : isBento
+                                                ? 'bg-white text-gray-700 border border-black hover:bg-gray-100'
+                                                : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10'
+                                    }`}
+                                >
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Badges Grid */}
+                        {filteredBadges.length === 0 ? (
+                            <div className="text-center py-16 px-4 bg-gray-50/50 dark:bg-black/10 rounded-3xl border border-dashed border-gray-200 dark:border-white/5">
+                                <Award className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                                <h4 className="text-base font-bold text-gray-900 dark:text-white mb-1">No Badges Found</h4>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+                                    No badges match your active filters or search terms. Try clearing filters or sync your badges!
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                {filteredBadges.map((badge) => {
+                                    const isEquipped = currentUser.equippedBadgeId === badge.id;
+                                    const progress = getBadgeProgress(badge, currentUser, attempts);
+
+                                    return (
+                                        <div
+                                            key={badge.id}
+                                            className={`group relative rounded-3xl p-5 flex flex-col justify-between transition-all duration-300 ${
+                                                badge.isUnlocked
+                                                    ? isBento
+                                                        ? 'bg-white border-2 border-black shadow-[4px_4px_0px_#000] hover:shadow-[6px_6px_0px_#000] hover:-translate-y-0.5'
+                                                        : 'bg-white dark:bg-[#1a1b26] border border-gray-200/80 dark:border-white/10 shadow-sm hover:shadow-xl hover:border-indigo-500/40 hover:-translate-y-0.5'
+                                                    : isBento
+                                                        ? 'bg-gray-50 border border-black/40 opacity-80'
+                                                        : 'bg-gray-50/60 dark:bg-[#12131c]/60 border border-gray-200/50 dark:border-white/5 opacity-75 hover:opacity-90'
+                                            }`}
+                                        >
+                                            {/* Top Row: Rarity tag, XP reward, Lock / Equip indicator */}
+                                            <div className="flex items-center justify-between gap-2 mb-3">
+                                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                                                    badge.isUnlocked
+                                                        ? getRarityBadgeClasses(badge.rarity, isBento)
+                                                        : 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-gray-400'
+                                                }`}>
+                                                    {badge.rarity || 'common'}
+                                                </span>
+
+                                                <div className="flex items-center gap-1.5">
+                                                    {badge.xpReward && (
+                                                        <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                                                            +{badge.xpReward} XP
+                                                        </span>
+                                                    )}
+                                                    {!badge.isUnlocked && (
+                                                        <Lock className="w-3.5 h-3.5 text-gray-400" />
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Badge Icon & Name */}
+                                            <div className="flex items-center gap-3.5 mb-3">
+                                                <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105 ${
+                                                    badge.isUnlocked
+                                                        ? isBento
+                                                            ? 'bg-amber-100 border border-black shadow-[2px_2px_0px_#000]'
+                                                            : 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white shadow-md'
+                                                        : 'bg-gray-200 dark:bg-white/5 text-gray-400'
+                                                }`}>
+                                                    <BadgeIcon icon={badge.icon} className={`w-7 h-7 ${badge.isUnlocked ? '' : 'grayscale opacity-60'}`} />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <h4 className="font-black text-gray-900 dark:text-white text-sm tracking-tight truncate">
+                                                        {badge.name}
+                                                    </h4>
+                                                    {badge.title && (
+                                                        <p className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 truncate">
+                                                            «{badge.title}»
+                                                        </p>
+                                                    )}
+                                                    <span className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold block">
+                                                        {badge.category || 'Achievement'}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Description */}
+                                            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed mb-4">
+                                                {badge.description}
+                                            </p>
+
+                                            {/* Footer: Unlocked Action vs Locked Progress Bar */}
+                                            <div className="pt-3 border-t border-gray-100 dark:border-white/5 mt-auto">
+                                                {badge.isUnlocked ? (
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-[10px] font-medium text-gray-400">
+                                                            {badge.dateEarned ? `Unlocked ${new Date(badge.dateEarned).toLocaleDateString()}` : 'Unlocked'}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => handleEquipBadge(isEquipped ? null : badge.id)}
+                                                            disabled={isEquippingBadgeId === badge.id}
+                                                            className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                                isEquipped
+                                                                    ? isBento
+                                                                        ? 'bg-[#bef264] text-black border border-black shadow-[2px_2px_0px_#000]'
+                                                                        : 'bg-emerald-600 text-white shadow-sm'
+                                                                    : isBento
+                                                                        ? 'bg-white text-black border border-black hover:bg-gray-100 shadow-[1px_1px_0px_#000]'
+                                                                        : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:bg-indigo-600 hover:text-white'
+                                                            }`}
+                                                            title={isEquipped ? 'Click to unequip badge title' : 'Equip this badge as your displayed title'}
+                                                        >
+                                                            {isEquippingBadgeId === badge.id ? (
+                                                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                                            ) : isEquipped ? (
+                                                                <>
+                                                                    <Check className="w-3 h-3" />
+                                                                    <span>Equipped</span>
+                                                                </>
+                                                            ) : (
+                                                                <span>Equip</span>
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-1.5">
+                                                        <div className="flex items-center justify-between text-[11px] font-bold">
+                                                            <span className="text-gray-400 uppercase tracking-wider text-[10px]">Progress</span>
+                                                            <span className="text-gray-700 dark:text-gray-300 font-mono">
+                                                                {progress.current} / {progress.target} {progress.unit}
+                                                            </span>
+                                                        </div>
+                                                        <div className="h-2 bg-gray-200 dark:bg-black/30 rounded-full overflow-hidden">
+                                                            <div
+                                                                className={`h-full rounded-full transition-all duration-700 ${
+                                                                    isBento ? 'bg-black' : 'bg-gradient-to-r from-indigo-500 to-purple-500'
+                                                                }`}
+                                                                style={{ width: `${progress.pct}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 </div>
+            </div>
+        )}
 
+        {/* TAB 3: ACTIVITY & HISTORY */}
+        {activeTab === 'history' && (
+            <div className="animate-in fade-in duration-200">
                 {/* Full Activity & History */}
-                <div className={`profile-section-card rounded-[2.5rem] overflow-hidden ${
+                <div className={`profile-section-card rounded-2xl overflow-hidden ${
                     isBento
-                        ? 'bg-white border-3 border-black shadow-[6px_6px_0px_#000]'
+                        ? 'bg-white border-2 border-black shadow-[4px_4px_0px_#000]'
                         : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-none'
                 }`}>
                     {/* Header */}
@@ -737,19 +1790,19 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                     </div>
 
                     {/* Filter & Search Bar */}
-                    <div className={`p-4 sm:p-6 flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center ${
+                    <div className={`p-4 sm:p-5 flex flex-col gap-4 ${
                         isBento
                             ? 'border-b-2 border-black bg-white'
                             : 'border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#13141f]'
                     }`}>
-                        {/* Filter Tabs */}
-                        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none select-none">
+                        {/* Top: Filter Tabs */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none select-none flex-wrap">
                             <button
                                 type="button"
                                 onClick={() => { setActivityFilter('all'); setCurrentPage(1); }}
                                 className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                                     isBento
-                                        ? `border-2 border-black ${activityFilter === 'all' ? 'bg-[#8b5cf6] text-white shadow-[2.5px_2.5px_0px_#000]' : 'bg-white text-gray-800 hover:bg-gray-100 shadow-[1px_1px_0px_#000]'}`
+                                        ? `border-2 border-black ${activityFilter === 'all' ? 'bg-[#8b5cf6] text-white shadow-[2px_2px_0px_#000]' : 'bg-white text-gray-800 hover:bg-gray-100 shadow-[1px_1px_0px_#000]'}`
                                         : activityFilter === 'all'
                                             ? 'bg-purple-600 text-white shadow-sm'
                                             : 'bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 border border-transparent'
@@ -768,7 +1821,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                 onClick={() => { setActivityFilter('pools'); setCurrentPage(1); }}
                                 className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                                     isBento
-                                        ? `border-2 border-black ${activityFilter === 'pools' ? 'bg-[#38bdf8] text-black shadow-[2.5px_2.5px_0px_#000]' : 'bg-white text-gray-800 hover:bg-gray-100 shadow-[1px_1px_0px_#000]'}`
+                                        ? `border-2 border-black ${activityFilter === 'pools' ? 'bg-[#38bdf8] text-black shadow-[2px_2px_0px_#000]' : 'bg-white text-gray-800 hover:bg-gray-100 shadow-[1px_1px_0px_#000]'}`
                                         : activityFilter === 'pools'
                                             ? 'bg-blue-600 text-white shadow-sm'
                                             : 'bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 border border-transparent'
@@ -788,7 +1841,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                 onClick={() => { setActivityFilter('mastered'); setCurrentPage(1); }}
                                 className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                                     isBento
-                                        ? `border-2 border-black ${activityFilter === 'mastered' ? 'bg-[#fde047] text-black shadow-[2.5px_2.5px_0px_#000]' : 'bg-white text-gray-800 hover:bg-gray-100 shadow-[1px_1px_0px_#000]'}`
+                                        ? `border-2 border-black ${activityFilter === 'mastered' ? 'bg-[#fde047] text-black shadow-[2px_2px_0px_#000]' : 'bg-white text-gray-800 hover:bg-gray-100 shadow-[1px_1px_0px_#000]'}`
                                         : activityFilter === 'mastered'
                                             ? 'bg-amber-500 text-white shadow-sm'
                                             : 'bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 border border-transparent'
@@ -808,7 +1861,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                 onClick={() => { setActivityFilter('passed'); setCurrentPage(1); }}
                                 className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                                     isBento
-                                        ? `border-2 border-black ${activityFilter === 'passed' ? 'bg-[#bef264] text-black shadow-[2.5px_2.5px_0px_#000]' : 'bg-white text-gray-800 hover:bg-gray-100 shadow-[1px_1px_0px_#000]'}`
+                                        ? `border-2 border-black ${activityFilter === 'passed' ? 'bg-[#bef264] text-black shadow-[2px_2px_0px_#000]' : 'bg-white text-gray-800 hover:bg-gray-100 shadow-[1px_1px_0px_#000]'}`
                                         : activityFilter === 'passed'
                                             ? 'bg-emerald-600 text-white shadow-sm'
                                             : 'bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 border border-transparent'
@@ -824,16 +1877,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                             </button>
                         </div>
 
-                        {/* Search & Page Size */}
-                        <div className="flex items-center gap-3 flex-1 md:max-w-md justify-end">
-                            <div className="relative flex-1">
-                                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        {/* Bottom: Search Input & Page Size Selector */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
+                            <div className="relative flex-1 min-w-0">
+                                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                                 <input
                                     type="text"
                                     value={activitySearch}
                                     onChange={(e) => { setActivitySearch(e.target.value); setCurrentPage(1); }}
                                     placeholder="Search quiz, score or date..."
-                                    className={`w-full pl-9 pr-8 py-2 text-xs font-bold text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none ${
+                                    className={`w-full pl-10 pr-9 py-2 text-xs font-bold text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none ${
                                         isBento
                                             ? 'bg-white border-2 border-black rounded-xl shadow-[2px_2px_0px_#000]'
                                             : 'bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-purple-500'
@@ -843,7 +1896,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                                     <button
                                         type="button"
                                         onClick={() => { setActivitySearch(''); setCurrentPage(1); }}
-                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white"
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer"
                                         title="Clear search"
                                     >
                                         <X className="w-3.5 h-3.5" />
@@ -852,25 +1905,30 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                             </div>
 
                             {/* Page Size Selector */}
-                            <div className={`flex items-center gap-1 p-0.5 rounded-xl shrink-0 ${
-                                isBento
-                                    ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000]'
-                                    : 'bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10'
-                            }`}>
-                                {([10, 25, 50, 'all'] as const).map((size) => (
-                                    <button
-                                        key={size}
-                                        type="button"
-                                        onClick={() => { setPageSize(size); setCurrentPage(1); }}
-                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all cursor-pointer ${
-                                            pageSize === size
-                                                ? 'bg-[#8b5cf6] text-white shadow-sm'
-                                                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                                        }`}
-                                    >
-                                        {size === 'all' ? 'All' : size}
-                                    </button>
-                                ))}
+                            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                                <span className={`text-[11px] font-bold ${isBento ? 'text-gray-700' : 'text-gray-500'}`}>
+                                    Show:
+                                </span>
+                                <div className={`flex items-center gap-1 p-0.5 rounded-xl ${
+                                    isBento
+                                        ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10'
+                                }`}>
+                                    {([10, 25, 50, 'all'] as const).map((size) => (
+                                        <button
+                                            key={size}
+                                            type="button"
+                                            onClick={() => { setPageSize(size); setCurrentPage(1); }}
+                                            className={`px-3 py-1 rounded-lg text-[11px] font-black transition-all cursor-pointer ${
+                                                pageSize === size
+                                                    ? 'bg-[#8b5cf6] text-white shadow-sm'
+                                                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                                            }`}
+                                        >
+                                            {size === 'all' ? 'All' : size}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1302,6 +2360,279 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
                         </div>
                     )}
                 </div>
+                        </div>
+                    )}
+
+                    {/* TAB 4: BACKPACK & LOOT (INVENTORY) */}
+                    {activeTab === 'inventory' && (
+                        <div className={`p-6 sm:p-8 rounded-2xl animate-in fade-in duration-200 ${
+                            isBento
+                                ? 'bg-white text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                                : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm'
+                        }`}>
+                            <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-200/80 dark:border-white/10">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                                        isBento
+                                            ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                            : 'bg-amber-500/15 text-amber-500'
+                                    }`}>
+                                        <ShoppingBag className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+                                            Backpack &amp; Power-Up Loot
+                                        </h3>
+                                        <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                                            Manage your active shields, quiz power-ups, and daily challenge tier gifts
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/shop')}
+                                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                                        isBento
+                                            ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
+                                            : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20'
+                                    }`}
+                                >
+                                    <span>Visit Power-Up Shop</span>
+                                    <ArrowRight className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {(!currentUser.inventory || currentUser.inventory.length === 0) ? (
+                                <div className="text-center py-14 px-4 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02]">
+                                    <ShoppingBag className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                                    <h4 className="text-base font-black text-gray-900 dark:text-white mb-1">
+                                        Your Backpack is Empty
+                                    </h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-5">
+                                        Solve daily coding challenges, claim 7-day streak milestones, or visit the shop to stock up on Streak Shields, 50/50 eliminators, and Time Freezes.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/shop')}
+                                        className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider inline-flex items-center gap-2 cursor-pointer ${
+                                            isBento
+                                                ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-indigo-600 text-white hover:bg-indigo-500'
+                                        }`}
+                                    >
+                                        <span>Browse Shop Items</span>
+                                        <ArrowRight className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {currentUser.inventory.map((item, idx) => {
+                                        const cleanName = item.itemId
+                                            .replace(/[-_]/g, ' ')
+                                            .replace(/\b\w/g, c => c.toUpperCase());
+                                        const isShield = item.itemId.toLowerCase().includes('shield');
+                                        const isHint = item.itemId.toLowerCase().includes('hint') || item.itemId.toLowerCase().includes('50');
+                                        const isFreeze = item.itemId.toLowerCase().includes('freeze') || item.itemId.toLowerCase().includes('time');
+                                        const emoji = isShield ? '🛡️' : isHint ? '💡' : isFreeze ? '⏳' : '🎁';
+
+                                        return (
+                                            <div
+                                                key={`${item.itemId}-${idx}`}
+                                                className={`p-5 rounded-2xl flex flex-col justify-between transition-all ${
+                                                    isBento
+                                                        ? 'bg-[#fefce8] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                                                        : 'bg-gray-50 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/10'
+                                                }`}
+                                            >
+                                                <div className="flex items-start justify-between gap-3 mb-3">
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${
+                                                        isBento
+                                                            ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                            : 'bg-white dark:bg-white/10 shadow-sm'
+                                                    }`}>
+                                                        {emoji}
+                                                    </div>
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                                                        isBento
+                                                            ? 'bg-black text-white'
+                                                            : 'bg-indigo-600 text-white'
+                                                    }`}>
+                                                        x{item.quantity} Owned
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-black text-base text-gray-900 dark:text-white tracking-tight">
+                                                        {cleanName}
+                                                    </h4>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                        {isShield
+                                                            ? 'Automatically protects your daily login & coding streak if you miss a day.'
+                                                            : isHint
+                                                                ? 'Available inside quizzes to eliminate wrong options or reveal guided hints.'
+                                                                : isFreeze
+                                                                    ? 'Pauses the countdown timer during high-stakes quiz sessions.'
+                                                                    : 'Special reward item unlocked from challenges or milestones.'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* TAB 5: EARNED CERTIFICATES & DIPLOMAS */}
+                    {activeTab === 'certificates' && (
+                        <div className={`p-6 sm:p-8 rounded-2xl animate-in fade-in duration-200 ${
+                            isBento
+                                ? 'bg-white text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                                : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm'
+                        }`}>
+                            <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-200/80 dark:border-white/10">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                                        isBento
+                                            ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                            : 'bg-emerald-500/15 text-emerald-500'
+                                    }`}>
+                                        <Award className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+                                            Official Certificates &amp; Diplomas
+                                        </h3>
+                                        <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                                            Download high-resolution verifiable PDF diplomas for 100% mastered quizzes and question pools
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <span className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider ${
+                                    isBento
+                                        ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                        : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                }`}>
+                                    🎓 {activityCounts.mastered} Earned
+                                </span>
+                            </div>
+
+                            {sortedAttempts.filter(isCertificateEligible).length === 0 ? (
+                                <div className="text-center py-14 px-4 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02]">
+                                    <Award className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                                    <h4 className="text-base font-black text-gray-900 dark:text-white mb-1">
+                                        No Certificates Unlocked Yet
+                                    </h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-5">
+                                        Score 100% on any quiz or complete a full Question Pool cycle to unlock an official downloadable PDF certificate.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/')}
+                                        className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider inline-flex items-center gap-2 cursor-pointer ${
+                                            isBento
+                                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                                : 'bg-indigo-600 text-white hover:bg-indigo-500'
+                                        }`}
+                                    >
+                                        <span>Explore Quizzes</span>
+                                        <ArrowRight className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {sortedAttempts.filter(isCertificateEligible).map((attempt) => (
+                                        <div
+                                            key={attempt.attemptId}
+                                            className={`p-5 rounded-2xl flex flex-col justify-between gap-4 transition-all ${
+                                                isBento
+                                                    ? 'bg-[#fefce8] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                                                    : 'bg-gray-50 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/10'
+                                            }`}
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <span className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider mb-2 ${
+                                                        isBento
+                                                            ? 'bg-[#bef264] text-black border border-black'
+                                                            : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                                    }`}>
+                                                        ✓ Verified Mastery ({Math.round(attempt.percentage || 100)}%)
+                                                    </span>
+                                                    <h4 className="font-black text-base text-gray-900 dark:text-white tracking-tight">
+                                                        {attempt.quizTitle}
+                                                    </h4>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                        Issued on {new Date(attempt.completedAt).toLocaleDateString()} • ID #{attempt.attemptId.slice(0, 8).toUpperCase()}
+                                                    </p>
+                                                </div>
+                                                <Award className="w-8 h-8 text-amber-500 shrink-0" />
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDownloadCertificate(attempt)}
+                                                disabled={downloadingAttemptId === attempt.attemptId}
+                                                className={`w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                                    isBento
+                                                        ? 'bg-black text-white border-2 border-black hover:bg-neutral-800 disabled:opacity-50'
+                                                        : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm disabled:opacity-50'
+                                                }`}
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                <span>
+                                                    {downloadingAttemptId === attempt.attemptId ? 'Generating PDF...' : 'Download Certificate (PDF)'}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* TAB 6: ACCOUNT SETTINGS */}
+                    {activeTab === 'settings' && (
+                        <div className="animate-in fade-in duration-200">
+                            <UserSettings
+                                user={currentUser}
+                                onUpdate={handleUserUpdate}
+                                embedded={true}
+                            />
+                        </div>
+                    )}
+
+                    {/* TAB 3: APPEARANCE & THEME SWITCHER */}
+                    {activeTab === 'appearance' && (
+                        <div className={`p-6 sm:p-8 rounded-2xl animate-in fade-in duration-200 ${
+                            isBento
+                                ? 'bg-white text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                                : 'bg-white dark:bg-[#111625] border border-slate-200/90 dark:border-white/10 shadow-sm'
+                        }`}>
+                            <div className="mb-8">
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-2 select-none">
+                                    <span className={`px-2.5 py-0.5 rounded-full flex items-center gap-1.5 ${
+                                        isBento
+                                            ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                                            : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
+                                    }`}>
+                                        <Palette className="w-3.5 h-3.5" />
+                                        Visual Appearance
+                                    </span>
+                                </div>
+                                <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-2">
+                                    Interface Theme Switcher
+                                </h3>
+                                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium max-w-xl">
+                                    Preview and select your preferred visual style. Changes apply immediately to every screen and persist in your browser localStorage.
+                                </p>
+                            </div>
+
+                            <ThemeSkeletonPreviewCards />
+                        </div>
+                    )}
+                </main>
             </div>
 
             {/* Inspect Attempt Modal */}

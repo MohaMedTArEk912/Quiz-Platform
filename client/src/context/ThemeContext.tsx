@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import ThemeSelectionModal from '../components/ThemeSelectionModal';
 
 export type AppTheme = 'light' | 'dark' | 'bento';
 
@@ -11,6 +12,9 @@ interface ThemeContextType {
     setTheme: (theme: AppTheme) => void;
     cycleTheme: () => void;
     toggleTheme: () => void;
+    isThemeModalOpen: boolean;
+    openThemeModal: () => void;
+    closeThemeModal: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -24,11 +28,26 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+    // Check if user has an existing saved theme choice in localStorage
+    const [hasExistingThemeChoice] = useState<boolean>(() => {
+        try {
+            return Boolean(localStorage.getItem('theme'));
+        } catch {
+            return true;
+        }
+    });
+
+    const [isThemeModalOpen, setIsThemeModalOpen] = useState<boolean>(!hasExistingThemeChoice);
+
     const [theme, setThemeState] = useState<AppTheme>(() => {
         // Check localStorage then sessionStorage
-        const saved = localStorage.getItem('theme') || sessionStorage.getItem('theme');
-        if (saved === 'bento' || saved === 'dark' || saved === 'light') {
-            return saved;
+        try {
+            const saved = localStorage.getItem('theme') || sessionStorage.getItem('theme');
+            if (saved === 'bento' || saved === 'dark' || saved === 'light') {
+                return saved;
+            }
+        } catch {
+            // Storage access safeguard
         }
         // Check system preference
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -36,43 +55,70 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         // Apply theme to document
+        const root = document.documentElement;
         if (theme === 'bento') {
-            document.documentElement.setAttribute('data-layout', 'bento');
-            document.documentElement.setAttribute('data-theme', 'bento');
-            document.documentElement.classList.remove('dark');
+            root.setAttribute('data-layout', 'bento');
+            root.setAttribute('data-theme', 'bento');
+            root.classList.remove('dark');
+            root.classList.add('bento');
         } else if (theme === 'dark') {
-            document.documentElement.removeAttribute('data-layout');
-            document.documentElement.setAttribute('data-theme', 'dark');
-            document.documentElement.classList.add('dark');
+            root.removeAttribute('data-layout');
+            root.setAttribute('data-theme', 'dark');
+            root.classList.remove('bento');
+            root.classList.add('dark');
         } else {
-            document.documentElement.removeAttribute('data-layout');
-            document.documentElement.setAttribute('data-theme', 'light');
-            document.documentElement.classList.remove('dark');
+            root.removeAttribute('data-layout');
+            root.setAttribute('data-theme', 'light');
+            root.classList.remove('dark', 'bento');
         }
-
-        // Save preference
-        localStorage.setItem('theme', theme);
-        sessionStorage.setItem('theme', theme);
     }, [theme]);
 
     const setTheme = (nextTheme: AppTheme) => {
         setThemeState(nextTheme);
+        try {
+            localStorage.setItem('theme', nextTheme);
+            sessionStorage.setItem('theme', nextTheme);
+        } catch {
+            // Storage access safeguard
+        }
     };
 
     const cycleTheme = () => {
         setThemeState(current => {
-            if (current === 'light') return 'dark';
-            if (current === 'dark') return 'bento';
-            return 'light';
+            const next = current === 'light' ? 'dark' : current === 'dark' ? 'bento' : 'light';
+            try {
+                localStorage.setItem('theme', next);
+                sessionStorage.setItem('theme', next);
+            } catch {
+                // Storage access safeguard
+            }
+            return next;
         });
     };
+
+    const openThemeModal = () => setIsThemeModalOpen(true);
+    const closeThemeModal = () => setIsThemeModalOpen(false);
 
     const isDark = theme === 'dark';
     const isBento = theme === 'bento';
 
     return (
-        <ThemeContext.Provider value={{ theme, isDark, isBento, setTheme, cycleTheme, toggleTheme: cycleTheme }}>
+        <ThemeContext.Provider value={{
+            theme,
+            isDark,
+            isBento,
+            setTheme,
+            cycleTheme,
+            toggleTheme: cycleTheme,
+            isThemeModalOpen,
+            openThemeModal,
+            closeThemeModal
+        }}>
             {children}
+            <ThemeSelectionModal
+                isOpen={isThemeModalOpen}
+                onClose={closeThemeModal}
+            />
         </ThemeContext.Provider>
     );
 };

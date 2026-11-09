@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../lib/api';
 import type { BadgeNode } from '../../types';
-import { Plus, Edit2, Trash2, Award, Download, Upload, MoreVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, Award, Download, Upload, MoreVertical, Sparkles, RefreshCw } from 'lucide-react';
 import BadgeNodeEditor from './BadgeNodeEditor';
 import { BADGE_RARITY_COLORS } from '../../constants/badgeDefaults';
 import { useConfirm } from '../../hooks/useConfirm';
 import ConfirmDialog from '../ConfirmDialog';
+import { useTheme } from '../../context/ThemeContext.tsx';
 
 interface BadgeManagementProps {
     adminId: string;
@@ -13,9 +14,11 @@ interface BadgeManagementProps {
 }
 
 const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotification }) => {
+    const { isBento } = useTheme();
     const { confirm, confirmState, handleCancel } = useConfirm();
     const [badges, setBadges] = useState<BadgeNode[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isSeeding, setIsSeeding] = useState(false);
     const [showBadgeEditor, setShowBadgeEditor] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [editingBadge, setEditingBadge] = useState<Partial<BadgeNode> | null>(null);
@@ -46,6 +49,25 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [loadData]);
+
+    const handleSeedBadges = async () => {
+        try {
+            setIsSeeding(true);
+            const res = await api.seedBadges(adminId);
+            if (res.success) {
+                onNotification('success', `Successfully seeded default achievement badges!`);
+                await loadData();
+            } else {
+                onNotification('error', res.message || 'Failed to seed badges');
+            }
+        } catch (error) {
+            console.error('Failed to seed badges:', error);
+            const msg = error instanceof Error ? error.message : 'Failed to seed default badges';
+            onNotification('error', msg);
+        } finally {
+            setIsSeeding(false);
+        }
+    };
 
     const handleDownloadSample = () => {
         const a = document.createElement('a');
@@ -142,10 +164,16 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
     return (
         <div className="space-y-4 animate-in fade-in duration-500">
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-white/20 dark:border-white/5 shadow-sm gap-4">
+            <div className={`flex flex-col sm:flex-row justify-between items-center p-4 sm:p-5 rounded-3xl gap-4 transition-all relative z-20 ${
+                isBento
+                    ? 'bg-white border-2 border-black shadow-[4px_4px_0px_#000]'
+                    : 'bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-sm'
+            }`}>
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-indigo-500/10 rounded-2xl">
-                        <Award className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                    <div className={`p-2.5 rounded-2xl ${
+                        isBento ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000]' : 'bg-indigo-500/10'
+                    }`}>
+                        <Award className={`w-6 h-6 ${isBento ? 'text-black' : 'text-indigo-600 dark:text-indigo-400'}`} />
                     </div>
                     <div>
                         <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Achievement Badges</h2>
@@ -155,33 +183,86 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="relative" ref={menuRef}>
                         <button
-                            onClick={() => setShowMenu(!showMenu)}
-                            className="p-3 bg-white/50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 text-gray-500 rounded-2xl transition-all border border-white/20 dark:border-white/5 shadow-sm"
+                            type="button"
+                            onClick={() => setShowMenu(prev => !prev)}
+                            className={`p-3 rounded-2xl transition-all cursor-pointer ${
+                                isBento
+                                    ? showMenu
+                                        ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000] translate-x-0.5 translate-y-0.5'
+                                        : 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5'
+                                    : showMenu
+                                        ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30'
+                                        : 'bg-white/50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 border border-white/20 dark:border-white/5 shadow-sm'
+                            }`}
+                            title="More badge actions"
+                            aria-label="More badge actions"
                         >
                             <MoreVertical className="w-5 h-5" />
                         </button>
 
                         {showMenu && (
-                            <div className="absolute right-0 top-full mt-2 w-48 bg-white/90 dark:bg-[#1e1e2d]/90 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                            <div className={`absolute right-0 top-full mt-2 w-56 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200 p-1.5 ${
+                                isBento
+                                    ? 'bg-white text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                                    : 'bg-white/95 dark:bg-[#1e1e2d]/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white'
+                            }`}>
                                 <button
-                                    onClick={handleDownloadSample}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-indigo-500/10 text-gray-700 dark:text-gray-200 transition-colors font-bold text-xs uppercase tracking-widest"
+                                    type="button"
+                                    onClick={() => {
+                                        setShowMenu(false);
+                                        handleDownloadSample();
+                                    }}
+                                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left transition-colors font-bold text-xs uppercase tracking-wider cursor-pointer ${
+                                        isBento
+                                            ? 'hover:bg-[#fde047] text-black font-mono'
+                                            : 'hover:bg-purple-500/10 text-gray-700 dark:text-gray-200'
+                                    }`}
                                 >
-                                    <Download className="w-4 h-4 text-purple-500" />
-                                    Sample JSON
+                                    <div className={`p-1.5 rounded-lg shrink-0 ${
+                                        isBento ? 'bg-[#fde047] text-black border border-black' : 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                                    }`}>
+                                        <Download className="w-4 h-4" />
+                                    </div>
+                                    <span>Download Sample JSON</span>
                                 </button>
                                 <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-indigo-500/10 text-gray-700 dark:text-gray-200 transition-colors font-bold text-xs uppercase tracking-widest border-t border-white/10"
+                                    type="button"
+                                    onClick={() => {
+                                        setShowMenu(false);
+                                        fileInputRef.current?.click();
+                                    }}
+                                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left transition-colors font-bold text-xs uppercase tracking-wider cursor-pointer ${
+                                        isBento
+                                            ? 'hover:bg-[#bef264] text-black font-mono'
+                                            : 'hover:bg-indigo-500/10 text-gray-700 dark:text-gray-200'
+                                    }`}
                                 >
-                                    <Upload className="w-4 h-4 text-indigo-500" />
-                                    Upload JSON
+                                    <div className={`p-1.5 rounded-lg shrink-0 ${
+                                        isBento ? 'bg-[#bef264] text-black border border-black' : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                                    }`}>
+                                        <Upload className="w-4 h-4" />
+                                    </div>
+                                    <span>Upload Badges JSON</span>
                                 </button>
                             </div>
                         )}
                     </div>
 
                     <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".json" className="hidden" />
+
+                    <button
+                        onClick={handleSeedBadges}
+                        disabled={isSeeding}
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer ${
+                            isBento
+                                ? 'bg-[#fde047] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 font-mono disabled:opacity-50'
+                                : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25 hover:-translate-y-0.5 disabled:opacity-50'
+                        }`}
+                        title="Auto-seed 30 comprehensive achievement badges across 8 categories"
+                    >
+                        {isSeeding ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                        {isSeeding ? 'Seeding...' : 'Seed Defaults'}
+                    </button>
 
                     <button
                         onClick={() => {
@@ -198,19 +279,27 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
                             });
                             setShowBadgeEditor(true);
                         }}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all transform hover:-translate-y-0.5"
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer ${
+                            isBento
+                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 font-mono'
+                                : 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-600/25 hover:shadow-purple-600/40 hover:-translate-y-0.5'
+                        }`}
                     >
-                        <Plus className="w-4 h-4" /> New Badge
+                        <Plus className={`w-4 h-4 ${isBento ? 'text-black' : 'text-white'}`} /> New Badge
                     </button>
                 </div>
             </div>
 
             {/* Badges Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {badges.map(badge => (
+                {badges.map((badge) => (
                     <div
                         key={badge.badgeId}
-                        className="bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl rounded-[2.5rem] p-5 border border-white/20 dark:border-white/5 hover:border-indigo-500/30 transition-all group shadow-sm hover:shadow-xl relative overflow-hidden"
+                        className={`rounded-[2.5rem] p-5 transition-all group relative overflow-hidden ${
+                            isBento
+                                ? 'bg-white border-2 border-black shadow-[4px_4px_0px_#000] hover:shadow-[6px_6px_0px_#000] hover:-translate-y-0.5'
+                                : 'bg-white/60 dark:bg-[#1e1e2d]/60 backdrop-blur-xl border border-white/20 dark:border-white/5 hover:border-indigo-500/30 shadow-sm hover:shadow-xl'
+                        }`}
                     >
                         <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full -mr-12 -mt-12 pointer-events-none" />
 
@@ -221,9 +310,19 @@ const BadgeManagement: React.FC<BadgeManagementProps> = ({ adminId, onNotificati
                                 </div>
                                 <div className="space-y-1">
                                     <h4 className="font-black text-gray-900 dark:text-white uppercase tracking-tighter text-base leading-none">{badge.name}</h4>
-                                    <span className={`inline-block text-[10px] px-2 py-0.5 rounded-lg bg-white/20 text-white font-black uppercase tracking-widest backdrop-blur-md border border-white/10 shadow-sm`}>
-                                        {badge.rarity}
-                                    </span>
+                                    {badge.title && (
+                                        <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400">"{badge.title}"</p>
+                                    )}
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className={`inline-block text-[10px] px-2 py-0.5 rounded-lg bg-white/20 text-white font-black uppercase tracking-widest backdrop-blur-md border border-white/10 shadow-sm`}>
+                                            {badge.rarity}
+                                        </span>
+                                        {badge.category && (
+                                            <span className="inline-block text-[9px] px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-wider border border-indigo-500/20">
+                                                {badge.category}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex gap-1.5 translate-x-2 -translate-y-2">

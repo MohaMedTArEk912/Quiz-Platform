@@ -2,13 +2,17 @@ import type {
     UserData,
     AttemptData,
     Quiz,
+    Badge,
     BadgeDefinition,
     ChallengeData,
     ShopItem,
     SkillTrack,
     Tournament,
     Clan,
+    ClanLeaderboardEntry,
+    ClanLogo,
     ClanAnnouncement,
+    ClanChatMessage,
     DailyChallengeDef,
     StudyCard,
     BadgeNode,
@@ -86,6 +90,40 @@ const getHeaders = (tokenOrOptions?: string | { token?: string; userId?: string 
 
     return headers;
 };
+
+// Client-side in-memory cache for clan acceleration (30s TTL)
+interface ClanCacheEntry<T> {
+    data: T;
+    timestamp: number;
+}
+const clanClientCache = new Map<string, ClanCacheEntry<unknown>>();
+const CLAN_CLIENT_CACHE_TTL = 30000;
+
+export function getCachedClanData<T>(key: string): T | null {
+    const entry = clanClientCache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.timestamp > CLAN_CLIENT_CACHE_TTL) {
+        clanClientCache.delete(key);
+        return null;
+    }
+    return entry.data as T;
+}
+
+export function setCachedClanData<T>(key: string, data: T): void {
+    clanClientCache.set(key, { data, timestamp: Date.now() });
+}
+
+export function invalidateClanClientCache(clanId?: string): void {
+    if (clanId) {
+        clanClientCache.delete(`clan_${clanId}`);
+    }
+    clanClientCache.delete('clan_leaderboard');
+    for (const key of Array.from(clanClientCache.keys())) {
+        if (key.startsWith('clan_search_')) {
+            clanClientCache.delete(key);
+        }
+    }
+}
 
 export const api = {
     async register(userData: Partial<UserData>) {
@@ -338,10 +376,22 @@ export const api = {
         return response.json();
     },
 
-    async getBadges() {
+    async getPublicUserProfile(targetUserId: string, currentUserId?: string) {
+        const response = await fetchWithFallback(`/users/${encodeURIComponent(targetUserId)}/public`, {
+            headers: getHeaders(currentUserId)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch user profile');
+        }
+        return response.json();
+    },
+
+    async getBadges(): Promise<{ success: boolean; data: BadgeDefinition[] }> {
         const response = await fetchWithFallback('/badges');
         if (!response.ok) throw new Error('Failed to fetch badges');
-        return response.json();
+        const data = await response.json();
+        return { success: true, data: Array.isArray(data) ? data : (data.badges || []) };
     },
 
     async createBadge(badgeData: BadgeDefinition, adminId: string) {
@@ -360,6 +410,52 @@ export const api = {
             headers: getHeaders(adminId)
         });
         if (!response.ok) throw new Error('Failed to delete badge');
+        return response.json();
+    },
+
+    async seedBadges(adminId?: string): Promise<{ success: boolean; message: string; count?: number; badges?: BadgeDefinition[] }> {
+        const response = await fetchWithFallback('/badges/seed', {
+            method: 'POST',
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || 'Failed to seed badges');
+        }
+        return response.json();
+    },
+
+    async evaluateBadges(userId?: string): Promise<{ success: boolean; newlyUnlocked: Badge[]; newBadges: Badge[]; user?: UserData; xpGained?: number }> {
+        const response = await fetchWithFallback('/badges/evaluate', {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ userId })
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || 'Failed to evaluate badges');
+        }
+        const data = await response.json();
+        const newlyUnlocked: Badge[] = data.newlyUnlocked || data.newBadges || [];
+        return {
+            success: true,
+            newlyUnlocked,
+            newBadges: newlyUnlocked,
+            user: data.user,
+            xpGained: newlyUnlocked.reduce((sum: number, b: Badge) => sum + (b.xpReward || 0), 0)
+        };
+    },
+
+    async equipBadge(badgeId: string | null, userId?: string): Promise<{ success: boolean; equippedBadgeId: string | null; user?: UserData }> {
+        const response = await fetchWithFallback('/badges/equip', {
+            method: 'PUT',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ badgeId, userId })
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || 'Failed to equip badge');
+        }
         return response.json();
     },
 
@@ -393,15 +489,37 @@ export const api = {
         return response.json();
     },
 
-    async resetPassword(email: string, newPassword: string) {
+    async resetPassword(email: string, newPassword: string, code?: string) {
         const response = await fetchWithFallback('/reset-password', {
             method: 'POST',
             headers: getHeaders(),
-            body: JSON.stringify({ email, newPassword }),
+            body: JSON.stringify({ email, newPassword, code }),
         });
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.message || 'Failed to reset password');
+        }
+        return response.json();
+    },
+
+    async emailQuizResult(data: {
+        email?: string;
+        name?: string;
+        quizTitle: string;
+        score: number;
+        totalQuestions: number;
+        percentage: number;
+        passed: boolean;
+        timeTaken: number;
+    }) {
+        const response = await fetchWithFallback('/attempts/email-result', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to email scorecard');
         }
         return response.json();
     },
@@ -581,8 +699,9 @@ export const api = {
 
 
     // Daily Compiler Challenge
-    async getDailyChallenge(userId: string) {
-        const response = await fetchWithFallback('/daily-challenge', {
+    async getDailyChallenge(userId: string, date?: string) {
+        const url = date ? `/daily-challenge?date=${encodeURIComponent(date)}` : '/daily-challenge';
+        const response = await fetchWithFallback(url, {
             headers: getHeaders(userId)
         });
         if (!response.ok) {
@@ -592,11 +711,26 @@ export const api = {
         return response.json();
     },
 
-    async submitCompilerAnswer(code: string, userId: string) {
+    async getDailyChallengeCalendar(userId: string, month?: number, year?: number) {
+        const params = new URLSearchParams();
+        if (month !== undefined) params.append('month', month.toString());
+        if (year !== undefined) params.append('year', year.toString());
+        const query = params.toString() ? `?${params.toString()}` : '';
+        const response = await fetchWithFallback(`/daily-challenge/calendar${query}`, {
+            headers: getHeaders(userId)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to load challenge calendar');
+        }
+        return response.json();
+    },
+
+    async submitCompilerAnswer(code: string, userId: string, questionId?: string, tier?: string, date?: string) {
         const response = await fetchWithFallback('/daily-challenge/submit', {
             method: 'POST',
             headers: getHeaders(userId),
-            body: JSON.stringify({ code })
+            body: JSON.stringify({ code, questionId, tier, date })
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
@@ -688,6 +822,30 @@ export const api = {
             body: JSON.stringify(data)
         });
         if (!response.ok) throw new Error('Failed to create daily challenge');
+        return response.json();
+    },
+
+    async generateAiDailyChallenge(data: {
+        date?: string;
+        referenceQuizId?: string;
+        language?: string;
+        customTopic?: string;
+        tierRewards?: {
+            easy?: { coins?: number; xp?: number; giftLabel?: string };
+            medium?: { coins?: number; xp?: number; giftLabel?: string };
+            hard?: { coins?: number; xp?: number; giftLabel?: string };
+        };
+        saveDirectly?: boolean;
+    }, adminId: string) {
+        const response = await fetchWithFallback('/daily-challenge/admin/ai-generate', {
+            method: 'POST',
+            headers: getHeaders(adminId),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to generate challenge with AI');
+        }
         return response.json();
     },
 
@@ -882,10 +1040,28 @@ export const api = {
 
     // Analytics
     async getAnalyticsSummary(userId: string) {
-        const response = await fetchWithFallback('/analytics/summary', {
-            headers: getHeaders(userId)
+        try {
+            const response = await fetchWithFallback('/analytics/summary', {
+                headers: getHeaders(userId)
+            });
+            if (!response.ok) {
+                return { totalAttempts: 0, avgScore: 0, categoryStats: [], strengths: [], weakAreas: [], recentAttempts: [], wrongAnswers: [], weakTopics: [] };
+            }
+            return await response.json();
+        } catch {
+            return { totalAttempts: 0, avgScore: 0, categoryStats: [], strengths: [], weakAreas: [], recentAttempts: [], wrongAnswers: [], weakTopics: [] };
+        }
+    },
+
+    async getAiMistakeAnalysis(userId: string) {
+        const response = await fetchWithFallback('/analytics/ai-analysis', {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ userId })
         });
-        if (!response.ok) throw new Error('Failed to load analytics');
+        if (!response.ok) {
+            throw new Error('Failed to generate AI mistake analysis');
+        }
         return response.json();
     },
 
@@ -1143,7 +1319,7 @@ export const api = {
 
     // Clans
 
-    async createClan(data: { name: string; tag: string; description: string; isPublic: boolean }, userId: string) {
+    async createClan(data: { name: string; tag: string; description: string; isPublic: boolean; logo?: ClanLogo }, userId: string) {
         const response = await fetchWithFallback('/clans/create', {
             method: 'POST',
             headers: getHeaders(userId),
@@ -1156,20 +1332,34 @@ export const api = {
         return response.json();
     },
 
-    async getClan(clanId: string, userId: string): Promise<Clan> {
+    async getClan(clanId: string, userId: string, forceRefresh = false): Promise<Clan> {
+        const cacheKey = `clan_${clanId}`;
+        if (!forceRefresh) {
+            const cached = getCachedClanData<Clan>(cacheKey);
+            if (cached) return cached;
+        }
         const response = await fetchWithFallback(`/clans/${clanId}`, {
             headers: getHeaders(userId)
         });
         if (!response.ok) throw new Error('Failed to fetch clan');
-        return response.json();
+        const data = await response.json();
+        setCachedClanData(cacheKey, data);
+        return data;
     },
 
-    async searchClans(query: string, userId: string): Promise<Clan[]> {
+    async searchClans(query: string, userId: string, forceRefresh = false): Promise<Clan[]> {
+        const cacheKey = `clan_search_${query.toLowerCase()}`;
+        if (!forceRefresh) {
+            const cached = getCachedClanData<Clan[]>(cacheKey);
+            if (cached) return cached;
+        }
         const response = await fetchWithFallback(`/clans/search?query=${encodeURIComponent(query)}`, {
             headers: getHeaders(userId)
         });
         if (!response.ok) throw new Error('Failed to search clans');
-        return response.json();
+        const data = await response.json();
+        setCachedClanData(cacheKey, data);
+        return data;
     },
 
     async joinClan(clanId: string, userId: string) {
@@ -1182,6 +1372,7 @@ export const api = {
             const error = await response.json();
             throw new Error(error.message || 'Failed to join clan');
         }
+        invalidateClanClientCache(clanId);
         return response.json();
     },
 
@@ -1194,13 +1385,21 @@ export const api = {
             const error = await response.json();
             throw new Error(error.message || 'Failed to leave clan');
         }
+        invalidateClanClientCache();
         return response.json();
     },
 
-    async getClanLeaderboard() {
+    async getClanLeaderboard<T = ClanLeaderboardEntry[]>(forceRefresh = false): Promise<T> {
+        const cacheKey = 'clan_leaderboard';
+        if (!forceRefresh) {
+            const cached = getCachedClanData<T>(cacheKey);
+            if (cached) return cached;
+        }
         const response = await fetchWithFallback('/clans/leaderboard');
         if (!response.ok) throw new Error('Failed to fetch clan leaderboard');
-        return response.json();
+        const data = await response.json();
+        setCachedClanData(cacheKey, data);
+        return data as T;
     },
 
     async getLeaderboard(): Promise<UserData[]> {
@@ -1219,6 +1418,7 @@ export const api = {
             const error = await response.json();
             throw new Error(error.message || 'Failed to update clan');
         }
+        invalidateClanClientCache(clanId);
         return response.json();
     },
 
@@ -1245,6 +1445,7 @@ export const api = {
             const error = await response.json();
             throw new Error(error.message || 'Failed to respond to invite');
         }
+        invalidateClanClientCache(clanId);
         return response.json();
     },
 
@@ -1258,6 +1459,7 @@ export const api = {
             const error = await response.json();
             throw new Error(error.message || 'Failed to handle request');
         }
+        invalidateClanClientCache(clanId);
         return response.json();
     },
 
@@ -1271,6 +1473,7 @@ export const api = {
             const error = await response.json();
             throw new Error(error.message || 'Failed to kick member');
         }
+        invalidateClanClientCache(clanId);
         return response.json();
     },
 
@@ -1284,7 +1487,61 @@ export const api = {
             const error = await response.json();
             throw new Error(error.message || 'Failed to update role');
         }
+        invalidateClanClientCache(clanId);
         return response.json();
+    },
+
+    async getClanMessages(clanId: string, userId: string): Promise<ClanChatMessage[]> {
+        const response = await fetchWithFallback(`/clans/${clanId}/messages`, {
+            headers: getHeaders(userId)
+        });
+        if (!response.ok) throw new Error('Failed to fetch clan chat messages');
+        return response.json();
+    },
+
+    async sendClanMessage(clanId: string, content: string, userId: string): Promise<ClanChatMessage> {
+        const response = await fetchWithFallback(`/clans/${clanId}/messages`, {
+            method: 'POST',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ content })
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to send clan message');
+        }
+        invalidateClanClientCache(clanId);
+        return response.json();
+    },
+
+    async editClanMessage(clanId: string, messageId: string, content: string, userId: string): Promise<ClanChatMessage> {
+        const response = await fetchWithFallback(`/clans/${clanId}/messages/${messageId}`, {
+            method: 'PUT',
+            headers: getHeaders(userId),
+            body: JSON.stringify({ content })
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to edit clan message');
+        }
+        invalidateClanClientCache(clanId);
+        return response.json();
+    },
+
+    async deleteClanMessage(clanId: string, messageId: string, userId: string): Promise<{ messageId: string }> {
+        const response = await fetchWithFallback(`/clans/${clanId}/messages/${messageId}`, {
+            method: 'DELETE',
+            headers: getHeaders(userId)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to delete clan message');
+        }
+        invalidateClanClientCache(clanId);
+        return response.json();
+    },
+
+    invalidateClanCache(clanId?: string) {
+        invalidateClanClientCache(clanId);
     },
 
     async compileCode(sourceCode: string, language: string) {
@@ -1836,6 +2093,72 @@ export const api = {
             throw new Error('Failed to fetch support tickets');
         }
         return response.json();
+    },
+
+    // Weekly Challenges & Learning Tracks Newsletter
+    async getNewsletterStatus(email?: string, userId?: string): Promise<{ subscribed: boolean; email?: string; subscribedAt?: string }> {
+        const query = email ? `?email=${encodeURIComponent(email)}` : '';
+        const response = await fetchWithFallback(`/newsletter/status${query}`, {
+            headers: getHeaders(userId)
+        });
+        if (!response.ok) {
+            return { subscribed: false };
+        }
+        return response.json();
+    },
+
+    async subscribeNewsletter(email: string, name?: string): Promise<{ success: boolean; message: string; alreadySubscribed?: boolean }> {
+        const response = await fetchWithFallback('/newsletter/subscribe', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ email, name })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to subscribe to weekly challenges updates.');
+        }
+        return data;
+    },
+
+    async unsubscribeNewsletter(email: string, token?: string): Promise<{ success: boolean; message: string }> {
+        const response = await fetchWithFallback('/newsletter/unsubscribe', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ email, token })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to unsubscribe.');
+        }
+        return data;
+    },
+
+    async getNewsletterSubscribers(adminId: string): Promise<{ success: boolean; total: number; active: number; subscribers: unknown[] }> {
+        const response = await fetchWithFallback('/newsletter/subscribers', {
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch newsletter subscribers');
+        }
+        return response.json();
+    },
+
+    async broadcastChallengeDrop(data: {
+        challengeTitle: string;
+        challengeDescription?: string;
+        trackCategory?: string;
+        challengeUrl?: string;
+    }, adminId: string): Promise<{ success: boolean; message: string; sentCount: number }> {
+        const response = await fetchWithFallback('/newsletter/broadcast', {
+            method: 'POST',
+            headers: getHeaders(adminId),
+            body: JSON.stringify(data)
+        });
+        const resData = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(resData.message || 'Failed to broadcast challenge notification.');
+        }
+        return resData;
     }
 };
 

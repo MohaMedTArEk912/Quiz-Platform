@@ -21,16 +21,20 @@ import {
     Inbox,
     AlertTriangle,
     Layers,
+    Sun,
+    Moon,
+    LayoutGrid,
+    Sliders,
+    ChevronDown,
     type LucideIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import type { UserData, Quiz, AttemptData } from '../types/index.ts';
 import { api } from '../lib/api.ts';
-import ThemeToggle from './ThemeToggle.tsx';
 import NotificationCenter from './NotificationCenter.tsx';
 import Avatar from './Avatar.tsx';
-import { useTheme } from '../context/ThemeContext.tsx';
+import { useTheme, type AppTheme } from '../context/ThemeContext.tsx';
 
 // Import Admin Sub-Components
 import UserManagement from './admin/UserManagement.tsx';
@@ -81,9 +85,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onLogout
 }) => {
     const navigate = useNavigate();
-    const { isBento } = useTheme();
+    const { theme, setTheme, isBento } = useTheme();
 
     // --- State ---
+    const [isSettingsDropdownOpen, setIsSettingsDropdownOpen] = useState(false);
+    const settingsDropdownRef = useRef<HTMLDivElement>(null);
     const [selectedTab, setSelectedTab] = useState<AdminTab>('main');
     const [pendingReviews, setPendingReviews] = useState<AttemptData[]>([]);
     const [pendingTrackRequests, setPendingTrackRequests] = useState<number>(0);
@@ -123,6 +129,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             setPendingTrackRequests(0);
         }
     }, [currentUser.userId]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (settingsDropdownRef.current && !settingsDropdownRef.current.contains(event.target as Node)) {
+                setIsSettingsDropdownOpen(false);
+            }
+        };
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setIsSettingsDropdownOpen(false);
+            }
+        };
+        if (isSettingsDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('keydown', handleKeyDown);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isSettingsDropdownOpen]);
 
     useEffect(() => {
         const refreshTimer = setTimeout(() => {
@@ -255,28 +282,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     {/* Right Actions */}
                     <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-                        {/* Switch to Student / Home View */}
-                        <button
-                            type="button"
-                            onClick={() => navigate('/')}
-                            className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                                isBento
-                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 font-mono'
-                                    : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 shadow-sm hover:scale-105 active:scale-95'
-                            }`}
-                            title="Switch to Student / Home View"
-                        >
-                            <Home className="w-4 h-4" />
-                            <span className="hidden sm:inline">Student View</span>
-                        </button>
-
                         <NotificationCenter currentUser={currentUser} />
-                        <ThemeToggle />
 
                         {/* Admin Info (Desktop only) */}
-                        <div className={`hidden lg:flex items-center gap-2 pl-2 border-l ${
-                            isBento ? 'border-black/20' : 'border-gray-200 dark:border-white/10'
-                        }`}>
+                        <div
+                            onClick={() => setIsSettingsDropdownOpen(prev => !prev)}
+                            className={`hidden lg:flex items-center gap-2 pl-2 border-l cursor-pointer select-none hover:opacity-80 transition-opacity ${
+                                isBento ? 'border-black/20' : 'border-gray-200 dark:border-white/10'
+                            }`}
+                            title="Admin Menu & Settings"
+                        >
                             <div className="text-right">
                                 <div className={`text-xs font-bold leading-tight truncate max-w-[120px] ${
                                     isBento ? 'text-black font-mono' : 'text-gray-900 dark:text-white'
@@ -296,9 +311,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {/* Admin Avatar Button */}
                         <button
                             type="button"
-                            onClick={() => setSelectedTab('main')}
-                            aria-label="Go to Main Dashboard"
-                            title="Go to Main Overview"
+                            onClick={() => setIsSettingsDropdownOpen(prev => !prev)}
+                            aria-label="Admin Settings & Menu"
+                            title="Admin Settings & Menu"
                             className={`hidden sm:block w-8 h-8 sm:w-9 sm:h-9 rounded-xl transition-all cursor-pointer overflow-hidden ${
                                 isBento
                                     ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
@@ -320,34 +335,232 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
                         </button>
 
-                        {/* Settings Button */}
-                        <button
-                            onClick={() => setIsSettingsOpen(true)}
-                            className={`p-2 rounded-xl transition-all cursor-pointer ${
-                                isBento
-                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5'
-                                    : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:scale-105 active:scale-95'
-                            }`}
-                            title="Admin Settings"
-                            aria-label="Admin Settings"
-                        >
-                            <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>
+                        {/* Settings Button with Consolidated Dropdown Menu (Student View + Theme Switcher + Platform Config + Logout) */}
+                        <div className="relative" ref={settingsDropdownRef}>
+                            <button
+                                type="button"
+                                onClick={() => setIsSettingsDropdownOpen(prev => !prev)}
+                                aria-expanded={isSettingsDropdownOpen}
+                                aria-haspopup="true"
+                                className={`flex items-center gap-1.5 p-2 sm:px-2.5 sm:py-2 rounded-xl transition-all cursor-pointer ${
+                                    isBento
+                                        ? isSettingsDropdownOpen
+                                            ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000] translate-x-0.5 translate-y-0.5'
+                                            : 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5'
+                                        : isSettingsDropdownOpen
+                                            ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 shadow-sm'
+                                            : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:scale-105 active:scale-95'
+                                }`}
+                                title="Admin Settings & Menu"
+                                aria-label="Admin Settings & Menu"
+                            >
+                                <Settings className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${isSettingsDropdownOpen ? 'rotate-90 text-purple-600 dark:text-purple-400' : ''}`} />
+                                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 hidden sm:block ${isSettingsDropdownOpen ? 'rotate-180' : ''}`} />
+                            </button>
 
-                        {/* Prominent Header Logout Button */}
-                        <button
-                            onClick={() => setIsLogoutConfirmOpen(true)}
-                            className={`flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-xl transition-all cursor-pointer font-bold text-xs ${
-                                isBento
-                                    ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 font-mono'
-                                    : 'text-red-500 hover:text-red-600 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:scale-105 active:scale-95'
-                            }`}
-                            title="Log Out of Admin"
-                            aria-label="Log Out of Admin"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            <span className="hidden sm:inline">Logout</span>
-                        </button>
+                            {isSettingsDropdownOpen && (
+                                <div
+                                    className={`absolute right-0 mt-2 w-80 sm:w-88 rounded-2xl z-50 p-2.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 origin-top-right ${
+                                        isBento
+                                            ? 'bg-white border-[3px] border-black shadow-[6px_6px_0px_#000] text-black'
+                                            : 'bg-white/95 dark:bg-[#0f1117]/95 backdrop-blur-xl border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white shadow-purple-500/10'
+                                    }`}
+                                >
+                                    {/* Header: Admin Info */}
+                                    <div className={`p-3 rounded-xl mb-2 flex items-center gap-3 ${
+                                        isBento
+                                            ? 'bg-[#fde047] border-2 border-black shadow-[2px_2px_0px_#000]'
+                                            : 'bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-transparent border border-purple-500/15'
+                                    }`}>
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden ${
+                                            isBento ? 'bg-white border-2 border-black text-black' : 'bg-purple-600 text-white shadow-md'
+                                        }`}>
+                                            {currentUser?.avatar ? (
+                                                <Avatar config={currentUser.avatar} size="sm" className="w-full h-full" />
+                                            ) : (
+                                                (currentUser?.name || currentUser?.userId || 'A').charAt(0).toUpperCase()
+                                            )}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className={`text-sm font-black truncate ${isBento ? 'font-mono text-black' : 'text-gray-900 dark:text-white'}`}>
+                                                    {currentUser?.name || currentUser?.userId || 'Admin'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                <span className={`text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                                                    isBento
+                                                        ? 'bg-black text-[#bef264] font-mono text-[9px]'
+                                                        : 'bg-purple-500/20 text-purple-600 dark:text-purple-300 font-bold'
+                                                }`}>
+                                                    Administrator
+                                                </span>
+                                                {currentUser?.email && (
+                                                    <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate max-w-[130px]">
+                                                        {currentUser.email}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Section 1: Switch to Student View */}
+                                    <div className="mb-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsSettingsDropdownOpen(false);
+                                                navigate('/');
+                                            }}
+                                            className={`w-full flex items-center justify-between gap-3 p-2.5 rounded-xl transition-all cursor-pointer group text-left ${
+                                                isBento
+                                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 font-mono'
+                                                    : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/20 hover:scale-[1.01]'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                <div className={`p-1.5 rounded-lg shrink-0 ${
+                                                    isBento ? 'bg-white border border-black' : 'bg-purple-500/20 text-purple-600 dark:text-purple-400'
+                                                }`}>
+                                                    <Home className="w-4 h-4" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="text-xs font-black tracking-tight flex items-center gap-1">
+                                                        Student View
+                                                        <span className={`text-[9px] px-1 py-0.2 rounded uppercase tracking-wider font-bold ${
+                                                            isBento ? 'bg-black text-white' : 'bg-purple-200 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200'
+                                                        }`}>
+                                                            Learning Mode
+                                                        </span>
+                                                    </div>
+                                                    <div className={`text-[10px] truncate ${isBento ? 'text-black/70' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                        Exit admin & return to student home
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <ArrowRight className={`w-4 h-4 shrink-0 transition-transform group-hover:translate-x-1 ${
+                                                isBento ? 'text-black' : 'text-purple-600 dark:text-purple-400'
+                                            }`} />
+                                        </button>
+                                    </div>
+
+                                    {/* Section 2: Appearance & Theme Dropdown / Switcher */}
+                                    <div className={`p-2.5 rounded-xl mb-2 ${
+                                        isBento
+                                            ? 'bg-neutral-50 border-2 border-black'
+                                            : 'bg-gray-50/80 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/5'
+                                    }`}>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className={`text-[11px] font-black uppercase tracking-wider ${
+                                                isBento ? 'text-black font-mono' : 'text-gray-500 dark:text-gray-400'
+                                            }`}>
+                                                Appearance & Theme
+                                            </span>
+                                            <span className={`text-[10px] font-bold capitalize px-1.5 py-0.5 rounded ${
+                                                isBento
+                                                    ? 'bg-[#bae6fd] text-black font-mono border border-black'
+                                                    : 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                                            }`}>
+                                                {theme === 'bento' ? 'Neo-Brutalist' : theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                                            </span>
+                                        </div>
+
+                                        {/* 3-Way Segmented Theme Buttons */}
+                                        <div className="grid grid-cols-3 gap-1.5">
+                                            {[
+                                                { id: 'light', label: 'Light', icon: Sun, color: 'text-amber-500' },
+                                                { id: 'dark', label: 'Dark', icon: Moon, color: 'text-indigo-400' },
+                                                { id: 'bento', label: 'Bento', icon: LayoutGrid, color: 'text-emerald-500' }
+                                            ].map(opt => {
+                                                const Icon = opt.icon;
+                                                const isSelected = theme === opt.id;
+                                                return (
+                                                    <button
+                                                        key={opt.id}
+                                                        type="button"
+                                                        onClick={() => setTheme(opt.id as AppTheme)}
+                                                        className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                                            isBento
+                                                                ? isSelected
+                                                                    ? 'bg-black text-white border-2 border-black shadow-[2px_2px_0px_#bef264]'
+                                                                    : 'bg-white text-black border border-black hover:bg-neutral-100'
+                                                                : isSelected
+                                                                    ? 'bg-purple-600 text-white shadow-sm shadow-purple-600/30'
+                                                                    : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center gap-1 mb-0.5">
+                                                            <Icon className={`w-3.5 h-3.5 ${isSelected ? (isBento ? 'text-[#bef264]' : 'text-white') : opt.color}`} />
+                                                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                                        </div>
+                                                        <span className={`text-[11px] ${isBento ? 'font-mono' : ''}`}>{opt.label}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Section 3: Platform Settings (Opens AdminSettings Modal) */}
+                                    <div className="space-y-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsSettingsDropdownOpen(false);
+                                                setIsSettingsOpen(true);
+                                            }}
+                                            className={`w-full flex items-center justify-between gap-2.5 p-2 rounded-xl transition-all cursor-pointer text-left ${
+                                                isBento
+                                                    ? 'bg-white hover:bg-[#bae6fd] text-black border-2 border-black hover:shadow-[2px_2px_0px_#000] font-mono'
+                                                    : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-700 dark:text-gray-200'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                <div className={`p-1.5 rounded-lg shrink-0 ${
+                                                    isBento ? 'bg-[#bae6fd] border border-black' : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300'
+                                                }`}>
+                                                    <Sliders className="w-4 h-4" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="text-xs font-bold leading-tight">Platform Configuration</div>
+                                                    <div className={`text-[10px] truncate ${isBento ? 'text-black/60' : 'text-gray-400'}`}>
+                                                        Quiz limits, API, & platform settings
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <ArrowRight className="w-3.5 h-3.5 opacity-40 shrink-0" />
+                                        </button>
+
+                                        {/* Section 4: Log Out */}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsSettingsDropdownOpen(false);
+                                                setIsLogoutConfirmOpen(true);
+                                            }}
+                                            className={`w-full flex items-center justify-between gap-2.5 p-2 rounded-xl transition-all cursor-pointer text-left ${
+                                                isBento
+                                                    ? 'bg-white hover:bg-[#fecdd3] text-red-600 border-2 border-black hover:shadow-[2px_2px_0px_#000] font-mono'
+                                                    : 'hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                <div className={`p-1.5 rounded-lg shrink-0 ${
+                                                    isBento ? 'bg-[#fecdd3] text-black border border-black' : 'bg-red-500/10 text-red-500'
+                                                }`}>
+                                                    <LogOut className="w-4 h-4" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="text-xs font-bold leading-tight">Log Out of Admin</div>
+                                                    <div className={`text-[10px] truncate ${isBento ? 'text-black/60' : 'text-red-400/80'}`}>
+                                                        Terminate active administrative session
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

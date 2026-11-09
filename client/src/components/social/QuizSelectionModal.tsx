@@ -26,13 +26,11 @@ const QuizSelectionModal: React.FC<QuizSelectionModalProps> = ({ quizzes, isOpen
     });
 
     return (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 ${
-            isBento ? 'bg-black/60' : 'bg-black/50 backdrop-blur-sm'
-        }`}>
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
             <div className={`rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden relative ${
                 isBento
-                    ? 'bg-white border-[3px] border-black shadow-[8px_8px_0px_#000]'
-                    : 'bg-white dark:bg-[#1a1b26] rounded-3xl border border-white/10'
+                    ? 'bg-white border-[3px] border-black shadow-[6px_6px_0px_#000]'
+                    : 'bg-white dark:bg-[#1a1b26] rounded-2xl border border-white/10'
             }`}>
                 {/* Close Button */}
                 <button

@@ -629,13 +629,19 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                     {viewMode === 'list' && (
                         <button
                             onClick={() => { setViewMode('stacks'); setSelectedStackId(null); }}
-                            className="p-2 bg-gray-100 dark:bg-white/10 rounded-xl hover:bg-gray-200 dark:hover:bg-white/20 transition-colors cursor-pointer shrink-0"
+                            className={`p-2 rounded-xl transition-all cursor-pointer shrink-0 ${
+                                isBento
+                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5'
+                                    : 'bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-700 dark:text-gray-300'
+                            }`}
                             title="Back to Collections"
                         >
-                            <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                            <ArrowLeft className={`w-5 h-5 ${isBento ? 'text-black' : ''}`} />
                         </button>
                     )}
-                    <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white truncate">
+                    <h2 className={`text-xl sm:text-2xl font-black truncate ${
+                        isBento ? 'text-black font-mono' : 'text-gray-900 dark:text-white'
+                    }`}>
                         {viewMode === 'stacks' ? 'Quiz Collections' : activeSubjectTitle}
                     </h2>
                 </div>
@@ -643,21 +649,33 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                     <div className="relative">
                         <button
                             onClick={() => setActiveHeaderMenu(!activeHeaderMenu)}
-                            className="p-2.5 sm:p-3 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50 rounded-xl transition-colors cursor-pointer"
+                            className={`p-2.5 sm:p-3 rounded-xl transition-all cursor-pointer ${
+                                isBento
+                                    ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5'
+                                    : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50'
+                            }`}
                             title="More Options"
                         >
-                            <MoreVertical className="w-5 h-5" />
+                            <MoreVertical className={`w-5 h-5 ${isBento ? 'text-black' : ''}`} />
                         </button>
                         {activeHeaderMenu && (
-                            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1e1e2d] rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                            <div className={`absolute right-0 top-full mt-2 w-48 rounded-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 ${
+                                isBento
+                                    ? 'bg-white border-2 border-black shadow-[4px_4px_0px_#000] text-black font-mono'
+                                    : 'bg-white dark:bg-[#1e1e2d] shadow-xl border border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-200'
+                            }`}>
                                 <button
                                     onClick={() => { handleDownloadSample(); setActiveHeaderMenu(false); }}
-                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer"
+                                    className={`w-full text-left px-4 py-3 flex items-center gap-2 text-sm font-medium cursor-pointer ${
+                                        isBento ? 'hover:bg-neutral-100 text-black' : 'hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-200'
+                                    }`}
                                 >
-                                    <Download className="w-4 h-4 text-gray-400" /> Sample JSON
+                                    <Download className={`w-4 h-4 ${isBento ? 'text-black' : 'text-gray-400'}`} /> Sample JSON
                                 </button>
-                                <label className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer">
-                                    <Upload className="w-4 h-4 text-emerald-500" /> {isImporting ? 'Importing...' : 'Import JSON'}
+                                <label className={`w-full text-left px-4 py-3 flex items-center gap-2 text-sm font-medium cursor-pointer ${
+                                    isBento ? 'hover:bg-neutral-100 text-black' : 'hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-200'
+                                }`}>
+                                    <Upload className={`w-4 h-4 ${isBento ? 'text-black' : 'text-emerald-500'}`} /> {isImporting ? 'Importing...' : 'Import JSON'}
                                     <input
                                         ref={fileInputRef}
                                         type="file"
@@ -674,10 +692,14 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
 
                     <button
                         onClick={() => setEditingQuiz(getEmptyQuiz())}
-                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs sm:text-sm transition-all shadow-lg hover:shadow-violet-500/25 flex items-center gap-2 cursor-pointer shrink-0"
+                        className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+                            isBento
+                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 font-mono'
+                                : 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-600/25 hover:shadow-purple-600/40 hover:-translate-y-0.5'
+                        }`}
                     >
-                        <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                        <span>Create Quiz</span>
+                        <Plus className={`w-4 h-4 sm:w-5 sm:h-5 ${isBento ? 'text-black' : 'text-white'}`} />
+                        <span className={isBento ? 'font-mono text-black font-black' : ''}>Create Quiz</span>
                     </button>
                 </div>
             </div>
@@ -696,8 +718,12 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                         onClick={() => setQuizTypeFilter('all')}
                         className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shrink-0 cursor-pointer ${
                             quizTypeFilter === 'all'
-                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-                                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
+                                ? isBento
+                                    ? 'bg-black text-white border-2 border-black shadow-[2px_2px_0px_#bef264] font-mono'
+                                    : 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
+                                : isBento
+                                    ? 'bg-white text-black border-2 border-black hover:bg-neutral-100 font-mono'
+                                    : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
                         }`}
                     >
                         All Quizzes
@@ -706,8 +732,12 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                         onClick={() => setQuizTypeFilter('session')}
                         className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shrink-0 cursor-pointer ${
                             quizTypeFilter === 'session'
-                                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
-                                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
+                                ? isBento
+                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] font-mono'
+                                    : 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
+                                : isBento
+                                    ? 'bg-white text-black border-2 border-black hover:bg-neutral-100 font-mono'
+                                    : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
                         }`}
                     >
                         Session
@@ -716,8 +746,12 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                         onClick={() => setQuizTypeFilter('homework')}
                         className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shrink-0 cursor-pointer ${
                             quizTypeFilter === 'homework'
-                                ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/30'
-                                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
+                                ? isBento
+                                    ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000] font-mono'
+                                    : 'bg-amber-600 text-white shadow-lg shadow-amber-500/30'
+                                : isBento
+                                    ? 'bg-white text-black border-2 border-black hover:bg-neutral-100 font-mono'
+                                    : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
                         }`}
                     >
                         Homework
@@ -726,8 +760,12 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                         onClick={() => setQuizTypeFilter('exam')}
                         className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shrink-0 cursor-pointer ${
                             quizTypeFilter === 'exam'
-                                ? 'bg-red-600 text-white shadow-lg shadow-red-500/30'
-                                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
+                                ? isBento
+                                    ? 'bg-[#ff6b6b] text-black border-2 border-black shadow-[2px_2px_0px_#000] font-mono'
+                                    : 'bg-red-600 text-white shadow-lg shadow-red-500/30'
+                                : isBento
+                                    ? 'bg-white text-black border-2 border-black hover:bg-neutral-100 font-mono'
+                                    : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
                         }`}
                     >
                         Exams
@@ -736,8 +774,12 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                         onClick={() => setQuizTypeFilter('pool')}
                         className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
                             quizTypeFilter === 'pool'
-                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
+                                ? isBento
+                                    ? 'bg-[#bae6fd] text-black border-2 border-black shadow-[2px_2px_0px_#000] font-mono'
+                                    : 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                                : isBento
+                                    ? 'bg-white text-black border-2 border-black hover:bg-neutral-100 font-mono'
+                                    : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20'
                         }`}
                     >
                         <span>📦</span> Question Banks

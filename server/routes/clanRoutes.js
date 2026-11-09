@@ -1,6 +1,26 @@
 import express from 'express';
 import { verifyUser } from '../middleware/authMiddleware.js';
-import { createClan, getClan, searchClans, joinClan, leaveClan, getClanLeaderboard, updateClan, inviteToClan, respondToClanInvite, handleJoinRequest, kickMember, updateMemberRole, createClanAnnouncement, deleteClanAnnouncement, pinClanAnnouncement } from '../controllers/clanController.js';
+import { 
+  createClan, 
+  getClan, 
+  searchClans, 
+  joinClan, 
+  leaveClan, 
+  getClanLeaderboard, 
+  updateClan, 
+  inviteToClan, 
+  respondToClanInvite, 
+  handleJoinRequest, 
+  kickMember, 
+  updateMemberRole, 
+  createClanAnnouncement, 
+  deleteClanAnnouncement, 
+  pinClanAnnouncement,
+  getClanMessages,
+  sendClanMessage,
+  editClanMessage,
+  deleteClanMessage
+} from '../controllers/clanController.js';
 
 const router = express.Router();
 
@@ -22,5 +42,11 @@ router.put('/:clanId', verifyUser, updateClan);
 router.post('/:clanId/announcements', verifyUser, createClanAnnouncement);
 router.delete('/:clanId/announcements/:announcementId', verifyUser, deleteClanAnnouncement);
 router.put('/:clanId/announcements/:announcementId/pin', verifyUser, pinClanAnnouncement);
+
+// Clan Chat REST Endpoints
+router.get('/:clanId/messages', verifyUser, getClanMessages);
+router.post('/:clanId/messages', verifyUser, sendClanMessage);
+router.put('/:clanId/messages/:messageId', verifyUser, editClanMessage);
+router.delete('/:clanId/messages/:messageId', verifyUser, deleteClanMessage);
 
 export default router;

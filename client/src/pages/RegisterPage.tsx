@@ -8,10 +8,9 @@ const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
 
     const handleRegister = async (name: string, email: string, password: string) => {
-        await register(name, email, password);
-        const session = sessionStorage.getItem('userSession');
-        const isAdmin = session ? JSON.parse(session).isAdmin : false;
-        navigate(isAdmin ? '/admin' : '/'); // Redirect based on role
+        const result = await register(name, email, password);
+        const isAdmin = Boolean(result?.isAdmin || result?.user?.role === 'admin');
+        navigate(isAdmin ? '/admin' : '/', { replace: true });
     };
 
     return (

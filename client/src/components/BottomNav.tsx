@@ -1,43 +1,29 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Compass, Trophy, Award, User, Shield } from 'lucide-react';
+import { User, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useNavArrangement } from '../context/NavArrangementContext';
 
 export const BottomNav: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { currentUser } = useAuth();
     const { isBento } = useTheme();
+    const { bottomNavItems } = useNavArrangement();
 
     const isGuest = !currentUser || currentUser.userId === 'guest' || !currentUser.email;
 
     const navItems = [
-        {
-            path: '/',
-            label: 'Home',
-            icon: Home,
-            isActive: location.pathname === '/' || location.pathname === '/dashboard'
-        },
-        {
-            path: '/tracks',
-            label: 'Tracks',
-            icon: Compass,
-            isActive: location.pathname === '/tracks' || location.pathname.startsWith('/badge-tree')
-        },
-        {
-            path: '/tournaments',
-            label: 'Arenas',
-            icon: Trophy,
-            isActive: location.pathname === '/tournaments'
-        },
-        {
-            path: '/leaderboard',
-            label: 'Rankings',
-            icon: Award,
-            isActive: location.pathname === '/leaderboard'
-        },
-        currentUser?.role === 'admin'
+        ...bottomNavItems.map(item => ({
+            path: item.path,
+            label: item.shortLabel || item.label,
+            icon: item.icon,
+            isActive: item.path === '/'
+                ? (location.pathname === '/' || location.pathname === '/dashboard')
+                : (location.pathname === item.path || location.pathname.startsWith(`${item.path}/`))
+        })),
+        currentUser?.role === 'admin' && !bottomNavItems.some(i => i.path === '/admin')
             ? {
                 path: '/admin',
                 label: 'Admin',

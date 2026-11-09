@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTheme } from '../../../context/ThemeContext';
 import { Plus, Check, Link2, Unlink, Loader2, Edit, GraduationCap } from 'lucide-react';
 import type { Quiz } from '../../../types';
 
@@ -19,6 +20,7 @@ const RoadQuizzes: React.FC<RoadQuizzesProps> = ({
     onEditQuiz,
     onCreateQuiz
 }) => {
+    const { isBento } = useTheme();
     return (
         <div className="h-full overflow-y-auto space-y-6">
             {/* Assigned Quizzes Section */}
@@ -32,9 +34,14 @@ const RoadQuizzes: React.FC<RoadQuizzesProps> = ({
                     </h3>
                     <button
                         onClick={onCreateQuiz}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all"
+                        className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                            isBento
+                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 font-mono'
+                                : 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-600/20'
+                        }`}
                     >
-                        <Plus className="w-4 h-4" /> Create New Quiz
+                        <Plus className={`w-4 h-4 ${isBento ? 'text-black' : 'text-white'}`} />
+                        <span className={isBento ? 'font-mono text-black font-black' : ''}>Create New Quiz</span>
                     </button>
                 </div>
                 {assignedQuizzes.length === 0 ? (

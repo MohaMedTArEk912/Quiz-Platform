@@ -25,6 +25,22 @@ const clanSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
   }],
 
+  logo: {
+    shape: { type: String, default: 'rounded' },
+    icon: { type: String, default: 'Shield' },
+    bgColor: { type: String, default: '#fde047' },
+    iconColor: { type: String, default: '#000000' },
+    showTag: { type: Boolean, default: true },
+    customUrl: { type: String, default: '' }
+  },
+
+  announcementBanner: {
+    text: { type: String, default: '' },
+    url: { type: String, default: '' },
+    buttonText: { type: String, default: '' },
+    updatedAt: { type: Date, default: Date.now }
+  },
+
   announcements: [{
     id: { type: String, required: true },
     authorId: { type: String, required: true },
@@ -39,8 +55,13 @@ const clanSchema = new mongoose.Schema({
     id: { type: String, required: true },
     senderId: { type: String, required: true },
     senderName: { type: String, required: true },
+    senderAvatar: { type: mongoose.Schema.Types.Mixed, default: null },
+    senderRole: { type: String, enum: ['leader', 'elder', 'member'], default: 'member' },
+    senderBadge: { type: mongoose.Schema.Types.Mixed, default: null },
     content: { type: String, required: true, maxlength: 500 },
-    createdAt: { type: Date, default: Date.now }
+    isEdited: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date }
   }],
 
   settings: {

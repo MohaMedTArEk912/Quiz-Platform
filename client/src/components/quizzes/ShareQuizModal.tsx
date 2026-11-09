@@ -66,7 +66,7 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({ quiz, isOpen, onClose }
             onClick={onClose}
         >
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-black/30 dark:bg-black/45 backdrop-blur-md" />
 
             {/* Modal */}
             <div

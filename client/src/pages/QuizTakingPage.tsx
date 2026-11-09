@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { api } from '../lib/api';
 import type { AttemptData } from '../lib/api';
-import type { Quiz, QuizResult, PoolProgressData } from '../types';
+import type { Quiz, QuizResult, PoolProgressData, Badge } from '../types';
 import { calculateLevel } from '../lib/gamification';
 import { saveAttemptWithOfflineFallback, initOfflineSyncListener } from '../lib/offlineSync';
 
@@ -170,29 +170,43 @@ const QuizTakingPage: React.FC = () => {
             const newXP = (currentUser.xp || 0) + xpGained;
             const newCoins = (currentUser.coins || 0) + coinsGained;
 
-            const userUpdates = {
-                totalScore: (currentUser.totalScore || 0) + result.score,
-                totalAttempts: (currentUser.totalAttempts || 0) + 1,
-                totalTime: (currentUser.totalTime || 0) + (result.timeTaken || 0),
-                xp: newXP,
-                level: calculateLevel(newXP),
-                coins: newCoins,
-                badges: [
-                    ...(currentUser.badges || []),
-                    ...(savedAttempt.newBadges || [])
-                ],
-            };
-            updateUser(userUpdates);
+            const badgeBonusXp = (savedAttempt.newBadges || []).reduce((sum: number, b: Badge) => sum + (b.xpReward || 0), 0);
+            const finalXP = (savedAttempt.user?.xp !== undefined) ? savedAttempt.user.xp : (newXP + badgeBonusXp);
 
-            // Attach final poolProgress and questions to the result
+            if (savedAttempt.user) {
+                updateUser({
+                    ...savedAttempt.user,
+                    totalScore: (currentUser.totalScore || 0) + result.score,
+                    totalAttempts: (currentUser.totalAttempts || 0) + 1,
+                    totalTime: (currentUser.totalTime || 0) + (result.timeTaken || 0),
+                    coins: (currentUser.coins || 0) + coinsGained
+                });
+            } else {
+                const userUpdates = {
+                    totalScore: (currentUser.totalScore || 0) + result.score,
+                    totalAttempts: (currentUser.totalAttempts || 0) + 1,
+                    totalTime: (currentUser.totalTime || 0) + (result.timeTaken || 0),
+                    xp: finalXP,
+                    level: calculateLevel(finalXP),
+                    coins: newCoins,
+                    badges: [
+                        ...(currentUser.badges || []),
+                        ...(savedAttempt.newBadges || [])
+                    ],
+                };
+                updateUser(userUpdates);
+            }
+
+            // Attach final poolProgress, questions, and newly unlocked badges to the result
             const finalResult: QuizResult = {
                 ...result,
                 isQuestionPool: isPool,
                 poolProgress: savedAttempt.poolProgress || poolProgress || undefined,
-                attemptQuestions: activeQuiz.questions
+                attemptQuestions: activeQuiz.questions,
+                newBadges: savedAttempt.newBadges || []
             };
 
-            // 3. Navigate to results IMMEDIATELY with attempt questions and pool progress
+            // 3. Navigate to results IMMEDIATELY with attempt questions, pool progress, and new badges
             navigate('/results', {
                 state: {
                     result: finalResult,

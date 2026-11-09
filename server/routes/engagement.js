@@ -9,6 +9,7 @@ router.post('/streak/claim', verifyUser, engagementController.claimDailyStreak);
 router.get('/streak/status', verifyUser, engagementController.getStreakStatus); // GET /api/streak/status
 
 // Daily Compiler Challenge
+router.get('/daily-challenge/calendar', verifyUser, engagementController.getDailyChallengeCalendar); // GET /api/daily-challenge/calendar
 router.get('/daily-challenge', verifyUser, engagementController.getDailyChallenge); // GET /api/daily-challenge
 router.post('/daily-challenge/submit', verifyUser, engagementController.submitCompilerAnswer); // POST /api/daily-challenge/submit
 router.post('/daily-challenge/complete', verifyUser, engagementController.completeDailyChallenge); // POST /api/daily-challenge/complete (legacy)
@@ -16,6 +17,7 @@ router.post('/daily-challenge/complete', verifyUser, engagementController.comple
 // Daily Challenge Management (Admin)
 router.get('/daily-challenge/admin/all', verifyUser, verifyAdmin, engagementController.getDailyChallengesAdmin);
 router.post('/daily-challenge/admin', verifyUser, verifyAdmin, engagementController.createDailyChallenge);
+router.post('/daily-challenge/admin/ai-generate', verifyUser, verifyAdmin, engagementController.generateAiDailyChallenge);
 router.put('/daily-challenge/admin/:id', verifyUser, verifyAdmin, engagementController.updateDailyChallenge);
 router.delete('/daily-challenge/admin/:id', verifyUser, verifyAdmin, engagementController.deleteDailyChallenge);
 

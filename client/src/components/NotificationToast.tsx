@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
     CheckCircle2,
     AlertCircle,
@@ -215,8 +216,8 @@ export const ToastCard: React.FC<ToastCardProps> = ({ notification, onClose }) =
             }}
             className={`pointer-events-auto relative overflow-hidden p-3.5 sm:p-4 w-full transition-all duration-200 animate-in fade-in slide-in-from-top-3 duration-300 ${
                 isBento
-                    ? 'bg-white border-[2.5px] border-black rounded-2xl shadow-[5px_5px_0px_#000]'
-                    : `bg-white/95 dark:bg-[#12131f]/95 backdrop-blur-2xl border ${config.borderColor} rounded-2xl sm:rounded-3xl shadow-2xl ${config.glow} ring-1 ring-black/5 dark:ring-white/10`
+                    ? 'bg-white border-[3px] border-black rounded-2xl shadow-[6px_6px_0px_#000]'
+                    : `bg-white dark:bg-[#141624] border-2 ${config.borderColor} rounded-2xl sm:rounded-3xl shadow-2xl ${config.glow} ring-1 ring-black/10 dark:ring-white/10`
             }`}
         >
             <div className="flex items-start gap-3">
@@ -303,20 +304,19 @@ export const NotificationToastContainer: React.FC<NotificationToastContainerProp
     onClose
 }) => {
     if (!notifications || notifications.length === 0) return null;
+    if (typeof document === 'undefined') return null;
 
-    return (
+    return createPortal(
         <div
             aria-live="polite"
             aria-atomic="false"
-            style={{
-                top: 'max(64px, calc(env(safe-area-inset-top, 0px) + 16px))'
-            }}
-            className="fixed left-3 right-3 sm:left-auto sm:right-6 sm:!top-6 sm:w-[380px] z-[9999] pointer-events-none flex flex-col gap-2.5"
+            className="fixed top-5 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-[440px] z-[999999] pointer-events-none flex flex-col items-center gap-2.5"
         >
             {notifications.map((notif) => (
                 <ToastCard key={notif.id} notification={notif} onClose={onClose} />
             ))}
-        </div>
+        </div>,
+        document.body
     );
 };
 
@@ -329,15 +329,15 @@ const NotificationToast: React.FC<{ notification: Notification; onClose: () => v
         id: 'single',
         ...notification
     };
-    return (
+    if (typeof document === 'undefined') return null;
+
+    return createPortal(
         <div
-            style={{
-                top: 'max(64px, calc(env(safe-area-inset-top, 0px) + 16px))'
-            }}
-            className="fixed left-3 right-3 sm:left-auto sm:right-6 sm:!top-6 sm:w-[380px] z-[9999] pointer-events-none"
+            className="fixed top-5 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-[440px] z-[999999] pointer-events-none flex flex-col items-center"
         >
             <ToastCard notification={item} onClose={onClose} />
-        </div>
+        </div>,
+        document.body
     );
 };
 

@@ -4,6 +4,9 @@ import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { SocketProvider } from './context/SocketContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ChatProvider } from './context/ChatContext';
+import { NavArrangementProvider } from './context/NavArrangementContext';
+import { UserProfileModalProvider } from './context/UserProfileModalContext';
 import { ProtectedRoute, AdminRoute } from './components/RouteGuards';
 import MainLayout from './layouts/MainLayout';
 import PageLoader from './components/PageLoader.tsx';
@@ -42,6 +45,7 @@ const QuizResultsPage = lazy(() => import('./pages/QuizResultsPage'));
 const AsyncChallengePage = lazy(() => import('./pages/AsyncChallengePage'));
 const VsGamePage = lazy(() => import('./pages/VsGamePage'));
 const BadgeTreeDetailPage = lazy(() => import('./pages/BadgeTreeDetailPage'));
+const ClassroomPage = lazy(() => import('./pages/ClassroomPage'));
 
 import ScrollToTop from './components/ScrollToTop';
 
@@ -80,55 +84,66 @@ const App: React.FC = () => {
           <NotificationProvider>
             <SocketProvider>
               <DataProvider>
-                <AiJobProvider>
-                  <Suspense fallback={<PageLoader />}>
-                    <Routes>
-                      {/* Public Routes */}
-                      <Route path="/login" element={<LoginPage />} />
-                      <Route path="/register" element={<RegisterPage />} />
-                      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <ChatProvider>
+                  <NavArrangementProvider>
+                    <UserProfileModalProvider>
+                      <AiJobProvider>
+                        <Suspense fallback={<PageLoader />}>
+                          <Routes>
+                            {/* Public Routes */}
+                            <Route path="/login" element={<LoginPage />} />
+                            <Route path="/register" element={<RegisterPage />} />
+                            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-                      {/* Async Challenge (Can be accessed with link) */}
-                      <Route path="/challenge/:token" element={
-                        <ProtectedRoute>
-                          <AsyncChallengePage />
-                        </ProtectedRoute>
-                      } />
+                            {/* Async Challenge (Can be accessed with link) */}
+                            <Route path="/challenge/:token" element={
+                              <ProtectedRoute>
+                                <AsyncChallengePage />
+                              </ProtectedRoute>
+                            } />
 
-                      {/* Admin Route */}
-                      <Route path="/admin" element={
-                        <AdminRoute>
-                          <AdminDashboardPage />
-                        </AdminRoute>
-                      } />
+                            {/* Admin Route */}
+                            <Route path="/admin" element={
+                              <AdminRoute>
+                                <AdminDashboardPage />
+                              </AdminRoute>
+                            } />
 
-                      {/* User Routes wrapped in MainLayout */}
-                      <Route element={<MainLayout />}>
-                        {/* Public Browsing Routes */}
-                        <Route path="/" element={<DashboardPage />} />
-                        <Route path="/leaderboard" element={<LeaderboardPage />} />
-                        <Route path="/tracks" element={<SkillTracksPage />} />
-                        <Route path="/study" element={<StudyModePage />} />
-                        <Route path="/tournaments" element={<TournamentsPage />} />
-                        <Route path="/badge-tree/:treeId" element={<BadgeTreeDetailPage />} />
+                            {/* User Routes wrapped in MainLayout */}
+                            <Route element={<MainLayout />}>
+                              {/* Public Browsing Routes */}
+                              <Route path="/" element={<DashboardPage />} />
+                              <Route path="/dashboard" element={<DashboardPage />} />
+                              <Route path="/quizzes" element={<DashboardPage />} />
+                              <Route path="/leaderboard" element={<LeaderboardPage />} />
+                              <Route path="/tracks" element={<SkillTracksPage />} />
+                              <Route path="/study" element={<StudyModePage />} />
+                              <Route path="/study-cards" element={<StudyModePage />} />
+                              <Route path="/tournaments" element={<TournamentsPage />} />
+                              <Route path="/badge-tree/:treeId" element={<BadgeTreeDetailPage />} />
+                              <Route path="/classroom" element={<ClassroomPage />} />
+                              <Route path="/profile/:userId" element={<ProfilePage />} />
 
-                        {/* Protected Routes (require login) */}
-                        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                        <Route path="/quiz/:quizId" element={<ProtectedRoute><QuizTakingPage /></ProtectedRoute>} />
-                        <Route path="/results" element={<ProtectedRoute><QuizResultsPage /></ProtectedRoute>} />
-                        <Route path="/game/vs" element={<ProtectedRoute><VsGamePage /></ProtectedRoute>} />
-                        <Route path="/shop" element={<ProtectedRoute><ShopPage /></ProtectedRoute>} />
-                        <Route path="/social" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
-                        <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-                        <Route path="/daily" element={<ProtectedRoute><DailyChallengePage /></ProtectedRoute>} />
-                        <Route path="/clans" element={<ProtectedRoute><ClanPage /></ProtectedRoute>} />
-                      </Route>
+                              {/* Protected Routes (require login) */}
+                              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                              <Route path="/quiz/:quizId" element={<ProtectedRoute><QuizTakingPage /></ProtectedRoute>} />
+                              <Route path="/results" element={<ProtectedRoute><QuizResultsPage /></ProtectedRoute>} />
+                              <Route path="/game/vs" element={<ProtectedRoute><VsGamePage /></ProtectedRoute>} />
+                              <Route path="/shop" element={<ProtectedRoute><ShopPage /></ProtectedRoute>} />
+                              <Route path="/social" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
+                              <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+                              <Route path="/daily" element={<ProtectedRoute><DailyChallengePage /></ProtectedRoute>} />
+                              <Route path="/clans" element={<ProtectedRoute><ClanPage /></ProtectedRoute>} />
 
-                      {/* Custom 404 Not Found Route */}
-                      <Route path="*" element={<NotFoundPage />} />
-                    </Routes>
-                  </Suspense>
-                </AiJobProvider>
+                              {/* Custom 404 Not Found Route */}
+                              <Route path="*" element={<NotFoundPage />} />
+                            </Route>
+                          </Routes>
+                        </Suspense>
+                      </AiJobProvider>
+                    </UserProfileModalProvider>
+                  </NavArrangementProvider>
+                </ChatProvider>
               </DataProvider>
             </SocketProvider>
           </NotificationProvider>

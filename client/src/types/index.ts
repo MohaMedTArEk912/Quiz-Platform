@@ -69,7 +69,11 @@ export interface Badge {
     name: string;
     description: string;
     icon: string;
-    dateEarned: string;
+    dateEarned?: string;
+    rarity?: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+    category?: string;
+    title?: string;
+    xpReward?: number;
 }
 
 export interface BadgeCriteria {
@@ -77,7 +81,8 @@ export interface BadgeCriteria {
     'perfect_score' | 'speed_demon' | 'quiz_completion' |
     'exam_pass' | 'tournament_win' | 'tournament_participate' |
     'track_completion' | 'module_completion' | 'friend_count' |
-    'challenge_wins' | 'manual';
+    'challenge_wins' | 'manual' | 'clans' | 'clan_contribution' |
+    'track_started' | 'track_modules' | 'challenges' | string;
     threshold?: number;
     quizId?: string;
     trackId?: string;
@@ -86,11 +91,16 @@ export interface BadgeCriteria {
 }
 
 export interface BadgeDefinition {
+    _id?: string;
     id: string;
     name: string;
     description: string;
     icon: string;
-    criteria: BadgeCriteria;
+    criteria?: BadgeCriteria;
+    rarity?: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+    category?: string;
+    title?: string;
+    xpReward?: number;
 }
 
 export interface UserData {
@@ -112,6 +122,7 @@ export interface UserData {
     lastLoginDate: string;
     lastStreakClaimDate?: string;
     badges: Badge[];
+    equippedBadgeId?: string | null;
     avatar?: AvatarConfig;
     unlockedItems?: string[];
     createdAt?: string;
@@ -259,6 +270,7 @@ export interface QuizResult {
     poolProgress?: PoolProgressData;
     attemptQuestions?: Question[];
     telemetry?: IntegrityTelemetry;
+    newBadges?: Badge[];
 }
 
 export interface ChallengeData {
@@ -455,13 +467,40 @@ export interface CompilerSubmissionResult {
     feedback: string;
     passed: boolean;
     passThreshold: number;
+    tier?: string;
+    giftLabel?: string;
+    allTiersCompleted?: boolean;
     rewards: {
         coins: number;
         xp: number;
         streak: number;
+        giftLabel?: string;
+        allTiersCompleted?: boolean;
+        passedCount?: number;
     } | null;
     streak: number;
     alreadyCompleted?: boolean;
+}
+
+export interface DailyChallengeTier {
+    questionId: string;
+    question: {
+        questionId: string;
+        title: string;
+        description: string;
+        language: string;
+        difficulty: 'easy' | 'medium' | 'hard';
+        category: string;
+        hints: string[];
+    };
+    rewards: {
+        coins: number;
+        xp: number;
+        giftLabel?: string;
+        badgeId?: string;
+        itemId?: string;
+    };
+    completed: boolean;
 }
 
 export interface DailyCompilerChallenge {
@@ -479,12 +518,51 @@ export interface DailyCompilerChallenge {
     rewards: {
         coins: number;
         xp: number;
+        giftLabel?: string;
         badgeId?: string;
         itemId?: string;
     };
+    tiers?: {
+        easy?: DailyChallengeTier | null;
+        medium?: DailyChallengeTier | null;
+        hard?: DailyChallengeTier | null;
+    };
+    completedCount?: number;
+    totalTiers?: number;
+    allCompleted?: boolean;
     streak: number;
     completed: boolean;
     passThreshold: number;
+    isArchived?: boolean;
+}
+
+export interface DailyChallengeCalendarTier {
+    questionId: string;
+    title: string;
+    difficulty: string;
+    completed: boolean;
+    giftLabel?: string;
+}
+
+export interface DailyChallengeCalendarDay {
+    challengeId: string;
+    date: string;
+    dateString: string;
+    totalTiers: number;
+    completedTiers: number;
+    allCompleted: boolean;
+    isPartiallyCompleted: boolean;
+    tiers: {
+        easy?: DailyChallengeCalendarTier | null;
+        medium?: DailyChallengeCalendarTier | null;
+        hard?: DailyChallengeCalendarTier | null;
+    };
+}
+
+export interface DailyChallengeCalendarResponse {
+    month: number;
+    year: number;
+    days: DailyChallengeCalendarDay[];
 }
 
 export interface StudyCard {
@@ -513,7 +591,9 @@ export interface BadgeNode {
         powerUps?: { type: string; quantity: number }[];
     };
     color?: string;
-    rarity: 'common' | 'rare' | 'epic' | 'legendary';
+    rarity: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+    category?: string;
+    title?: string;
     trees: string[];
     createdAt: string;
     updatedAt?: string;
@@ -568,6 +648,23 @@ export interface ClanMember {
     name?: string;
     avatar?: AvatarConfig;
     totalScore?: number;
+    equippedBadgeId?: string | null;
+    equippedBadge?: {
+        id: string;
+        name: string;
+        title?: string;
+        icon: string;
+        rarity?: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+    } | null;
+}
+
+export interface ClanLogo {
+    shape?: "rounded" | "circle" | "shield" | "hexagon" | "diamond";
+    icon?: string;
+    bgColor?: string;
+    iconColor?: string;
+    showTag?: boolean;
+    customUrl?: string;
 }
 
 export interface Clan {
@@ -576,6 +673,9 @@ export interface Clan {
     tag: string;
     description: string;
     leaderId: string;
+    logo?: ClanLogo;
+    leaderName?: string;
+    memberCount?: number;
     totalXP: number;
     level: number;
     isPublic: boolean;
@@ -584,9 +684,30 @@ export interface Clan {
         userId: string;
         createdAt: string;
     }[];
+    announcementBanner?: {
+        text: string;
+        url: string;
+        buttonText?: string;
+        updatedAt?: string;
+    };
     announcements?: ClanAnnouncement[];
     chatMessages?: ClanChatMessage[];
     createdAt: string;
+}
+
+export interface ClanLeaderboardEntry {
+    clanId: string;
+    name: string;
+    tag: string;
+    totalXp?: number;
+    totalXP?: number;
+    level: number;
+    memberCount: number;
+    leaderName?: string;
+    rank?: number;
+    description?: string;
+    isPublic?: boolean;
+    logo?: ClanLogo;
 }
 
 export interface SubjectQuestion {
@@ -639,8 +760,19 @@ export interface ClanChatMessage {
     id: string;
     senderId: string;
     senderName: string;
+    senderAvatar?: AvatarConfig | string | null;
+    senderRole?: 'leader' | 'elder' | 'member';
+    senderBadge?: {
+        id: string;
+        name: string;
+        title?: string;
+        icon: string;
+        rarity?: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+    } | null;
     content: string;
+    isEdited?: boolean;
     createdAt: string;
+    updatedAt?: string;
 }
 
 export interface DirectChatMessage {
@@ -665,6 +797,16 @@ export interface DailyChallengeItem {
     date: string;
     compilerQuestionId?: string;
     compilerQuestion?: CompilerQuestion;
+    tiers?: {
+        easy?: { compilerQuestionId: string; rewardCoins: number; rewardXP: number; rewardBadgeId?: string; rewardItemId?: string; giftLabel?: string };
+        medium?: { compilerQuestionId: string; rewardCoins: number; rewardXP: number; rewardBadgeId?: string; rewardItemId?: string; giftLabel?: string };
+        hard?: { compilerQuestionId: string; rewardCoins: number; rewardXP: number; rewardBadgeId?: string; rewardItemId?: string; giftLabel?: string };
+    };
+    populatedTiers?: {
+        easy?: { compilerQuestionId: string; rewardCoins: number; rewardXP: number; giftLabel?: string; question?: CompilerQuestion | null };
+        medium?: { compilerQuestionId: string; rewardCoins: number; rewardXP: number; giftLabel?: string; question?: CompilerQuestion | null };
+        hard?: { compilerQuestionId: string; rewardCoins: number; rewardXP: number; giftLabel?: string; question?: CompilerQuestion | null };
+    };
     rewardCoins?: number;
     rewardXP?: number;
     rewardBadgeId?: string;

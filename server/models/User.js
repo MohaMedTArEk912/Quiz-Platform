@@ -24,10 +24,15 @@ const userSchema = new mongoose.Schema({
   badges: [{
     id: String,
     name: String,
+    title: String,
     description: String,
     icon: String,
+    rarity: String,
+    category: String,
+    xpReward: Number,
     dateEarned: { type: Date, default: Date.now }
   }],
+  equippedBadgeId: { type: String, default: null },
   createdAt: { type: Date, default: Date.now },
   friends: [{ type: String, ref: 'User' }], // Stores userIds
   friendRequests: [{
@@ -69,7 +74,9 @@ const userSchema = new mongoose.Schema({
   // Road / Track access control
   primaryTrackId: { type: String }, // Initial chosen track/road ID (subjectId)
   unlockedTracks: [{ type: String }], // List of track/subject IDs user has access to
-  clanId: { type: String } // Simplified link to clan
+  clanId: { type: String }, // Simplified link to clan
+  resetPasswordCode: { type: String },
+  resetPasswordExpires: { type: Date }
 });
 
 // Indexes to speed up lookups, authentication, and leaderboards

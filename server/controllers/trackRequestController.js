@@ -3,6 +3,7 @@ import { User } from '../models/User.js';
 import { Subject } from '../models/Subject.js';
 import { createAndSendNotification } from './notificationController.js';
 import crypto from 'crypto';
+import { sendTrackApprovalEmail, sendTrackRejectionEmail } from '../services/emailService.js';
 
 /**
  * Select initial track for a user upon first login / onboarding
@@ -298,6 +299,16 @@ export const approveTrackRequest = async (req, res) => {
       }
       await targetUser.save();
 
+      // Dispatch Track Approval Email (non-blocking)
+      if (targetUser.email) {
+        sendTrackApprovalEmail({
+          email: targetUser.email,
+          name: targetUser.name,
+          subjectTitle: request.subjectTitle,
+          adminNote: request.adminNote
+        }).catch(err => console.warn('⚠️ [TrackApproval] Email error:', err.message));
+      }
+
       // Create persistent notification for student
       await createAndSendNotification(req.app, {
         recipientId: request.userId,
@@ -356,6 +367,17 @@ export const rejectTrackRequest = async (req, res) => {
     request.reviewedAt = new Date();
     request.reviewedBy = adminId;
     await request.save();
+
+    // Look up user to dispatch track rejection email
+    const targetUser = await User.findOne({ userId: request.userId });
+    if (targetUser && targetUser.email) {
+      sendTrackRejectionEmail({
+        email: targetUser.email,
+        name: targetUser.name,
+        subjectTitle: request.subjectTitle,
+        adminNote: request.adminNote
+      }).catch(err => console.warn('⚠️ [TrackRejection] Email error:', err.message));
+    }
 
     // Create persistent notification for student with the admin's note
     await createAndSendNotification(req.app, {

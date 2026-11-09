@@ -1,6 +1,6 @@
 import express from 'express';
 import * as userController from '../controllers/userController.js';
-import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
+import { verifyUser, verifyAdmin, extractOptionalUser } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -10,6 +10,7 @@ router.delete('/users/:userId', verifyAdmin, userController.deleteUser);
 router.get(['/leaderboard', '/users/leaderboard'], userController.getPublicLeaderboard);
 router.get('/user/data', verifyUser, userController.getUserData);
 router.get('/users/search', verifyUser, userController.searchUsers);
+router.get('/users/:userId/public', extractOptionalUser, userController.getPublicUserProfile);
 router.post('/friends/request', verifyUser, userController.sendFriendRequest);
 router.post('/friends/respond', verifyUser, userController.respondToFriendRequest);
 

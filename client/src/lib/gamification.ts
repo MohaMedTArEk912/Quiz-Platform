@@ -1,8 +1,8 @@
 import type { UserData, BadgeDefinition, Badge } from '../types';
 
 export const calculateLevel = (xp: number): number => {
-    // Level = sqrt(XP / 100) + 1
-    return Math.floor(Math.sqrt(Math.max(0, xp) / 100)) + 1;
+    // Level = 1 + floor(XP / 1000), consistent with backend progression and milestone badges
+    return 1 + Math.floor(Math.max(0, xp) / 1000);
 };
 
 export const calculateXPForQuiz = (score: number, maxScore: number, timeTakenSeconds: number): number => {
@@ -36,7 +36,7 @@ export const checkNewBadges = (
     const existingBadgeIds = new Set((user.badges || []).map(b => b.id));
 
     for (const def of allBadges) {
-        if (existingBadgeIds.has(def.id)) continue;
+        if (existingBadgeIds.has(def.id) || !def.criteria) continue;
 
         let earned = false;
         const { type, threshold = 1 } = def.criteria;

@@ -52,7 +52,24 @@ export const validateEnv = () => {
     }
   }
 
-  // 3. Log diagnostics
+  // 3. Validate Email Service Configuration
+  const hasGmailUser = Boolean(process.env.GMAIL_USER?.trim());
+  const hasGmailPass = Boolean(process.env.GMAIL_APP_PASSWORD?.trim());
+  const hasSmtp = Boolean(process.env.SMTP_HOST?.trim() && process.env.SMTP_USER?.trim() && process.env.SMTP_PASS?.trim());
+
+  if (hasGmailUser && !hasGmailPass) {
+    warnings.push('GMAIL_USER is set but GMAIL_APP_PASSWORD is missing. Emails will fail to send.');
+  } else if (!hasGmailUser && hasGmailPass) {
+    warnings.push('GMAIL_APP_PASSWORD is set but GMAIL_USER is missing. Emails will fail to send.');
+  } else if (!hasGmailUser && !hasSmtp) {
+    if (isProduction) {
+      warnings.push('No email credentials configured (GMAIL_USER/GMAIL_APP_PASSWORD or SMTP_*). Transactional emails will fail in production.');
+    } else {
+      warnings.push('No live email credentials found. Nodemailer will run in simulated development mode.');
+    }
+  }
+
+  // 4. Log diagnostics
   if (warnings.length > 0) {
     warnings.forEach((warn) => console.warn(`⚠️  [ENV WARNING] ${warn}`));
   }

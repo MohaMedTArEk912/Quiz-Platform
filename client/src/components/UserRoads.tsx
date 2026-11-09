@@ -829,7 +829,7 @@ const UserRoads: React.FC<UserRoadsProps> = ({ quizzes: quizzesProp, subjects: s
 
                     {/* Live Classroom / Multiplayer Gamepad Card */}
                     <div
-                        onClick={() => setIsLivePlayerOpen(true)}
+                        onClick={() => navigate('/classroom')}
                         className="glass-card p-5 rounded-3xl flex items-center justify-between cursor-pointer group active:scale-[0.99] transition-all"
                     >
                         <div className="flex items-center gap-3.5 min-w-0">

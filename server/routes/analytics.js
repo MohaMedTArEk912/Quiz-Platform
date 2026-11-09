@@ -1,11 +1,12 @@
 import express from 'express';
 import * as analyticsController from '../controllers/analyticsController.js';
-import { verifyUser } from '../middleware/authMiddleware.js';
+import { verifyUser, extractOptionalUser } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 // Mount at /api
-router.get('/analytics/summary', verifyUser, analyticsController.getAnalyticsSummary);
+router.get('/analytics/summary', extractOptionalUser, analyticsController.getAnalyticsSummary);
+router.post('/analytics/ai-analysis', extractOptionalUser, analyticsController.getAiMistakeAnalysis);
 router.get('/analytics/questions', verifyUser, analyticsController.getQuestionAnalytics);
 router.get('/analytics/cohorts', verifyUser, analyticsController.getCohortAnalytics);
 router.get('/analytics/live-proctoring', verifyUser, analyticsController.getLiveProctoringData);

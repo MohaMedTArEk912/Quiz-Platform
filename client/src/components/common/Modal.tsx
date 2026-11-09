@@ -33,44 +33,50 @@ const Modal: React.FC<ModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
+            document.body.classList.add('modal-open');
         } else {
             document.body.style.overflow = 'unset';
+            document.body.classList.remove('modal-open');
         }
         return () => {
             document.body.style.overflow = 'unset';
+            document.body.classList.remove('modal-open');
         };
     }, [isOpen]);
 
     if (!isOpen || typeof document === 'undefined') return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 pt-safe pb-safe pl-safe pr-safe" role="dialog" aria-modal="true">
-            {/* Backdrop */}
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 pt-safe pb-safe pl-safe pr-safe !bg-transparent !border-0 !shadow-none">
+            {/* Backdrop: translucent blur showing page underneath */}
             <div
-                className={`absolute inset-0 transition-opacity animate-in fade-in duration-200 ${
-                    isBento ? 'bg-black/60' : 'bg-black/60 backdrop-blur-md'
-                }`}
+                className="modal-backdrop absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
                 onClick={onClose}
+                aria-hidden="true"
             />
 
             {/* Modal Content */}
-            <div className={`relative w-full ${maxWidth} max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-2rem)] flex flex-col transform transition-all animate-in fade-in zoom-in-95 duration-200 ${
-                isBento
-                    ? 'bg-white rounded-3xl border-[3px] border-black shadow-[8px_8px_0px_#000] text-black'
-                    : 'bg-white dark:bg-[#0f1117] rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white'
-            }`}>
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-label={title}
+                className={`relative w-full ${maxWidth} max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-2rem)] flex flex-col transform transition-all animate-in fade-in zoom-in-95 duration-200 ${
+                    isBento
+                        ? 'bg-white rounded-2xl border-[3px] border-black shadow-[6px_6px_0px_#000] text-black'
+                        : 'bg-white/95 dark:bg-[#0f1117]/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white'
+                }`}>
                 {/* Header */}
                 <div className={`p-5 sm:p-6 flex items-center justify-between ${
                     isBento
-                        ? 'border-b-[2.5px] border-black bg-white rounded-t-[1.35rem]'
-                        : 'border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-white/5 rounded-t-3xl backdrop-blur-sm'
+                        ? 'border-b-[2.5px] border-black bg-white rounded-t-2xl'
+                        : 'border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-white/5 rounded-t-2xl backdrop-blur-sm'
                 }`}>
                     <div>
                         <h2 className={`text-xl sm:text-2xl font-black flex items-center gap-3 ${
                             isBento ? 'text-black' : 'text-gray-900 dark:text-white'
                         }`}>
                             {icon && (
-                                <div className={`p-2 rounded-xl flex items-center justify-center shrink-0 ${
+                                <div className={`p-2 rounded-lg flex items-center justify-center shrink-0 ${
                                     iconContainerClassName ?? (
                                         isBento
                                             ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
@@ -94,7 +100,7 @@ const Modal: React.FC<ModalProps> = ({
                         type="button"
                         onClick={onClose}
                         aria-label="Close dialog"
-                        className={`p-2.5 rounded-xl transition-all cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center touch-target outline-none focus:outline-none ${
+                        className={`p-2.5 rounded-lg transition-all cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center touch-target outline-none focus:outline-none ${
                             isBento
                                 ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#fde047] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] text-black'
                                 : 'hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 border-0'
@@ -113,8 +119,8 @@ const Modal: React.FC<ModalProps> = ({
                 {footer && (
                     <div className={`p-6 flex justify-end gap-3 ${
                         isBento
-                            ? 'border-t-[2.5px] border-black bg-white rounded-b-[1.35rem]'
-                            : 'border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20 rounded-b-3xl backdrop-blur-sm'
+                            ? 'border-t-[2.5px] border-black bg-white rounded-b-2xl'
+                            : 'border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20 rounded-b-2xl backdrop-blur-sm'
                     }`}>
                         {footer}
                     </div>

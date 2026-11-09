@@ -9,6 +9,7 @@ import { AmbientBackground } from './AmbientBackground';
 import { api } from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useUserProfileModal } from '../context/UserProfileModalContext';
 
 
 interface ClanLeaderboardEntry {
@@ -34,6 +35,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
     const navigate = useNavigate();
     const { logout } = useAuth();
     const { isBento } = useTheme();
+    const { openUserProfile } = useUserProfileModal();
     const [activeTab, setActiveTab] = useState<'players' | 'clans'>('players');
     const [clanLeaderboard, setClanLeaderboard] = useState<ClanLeaderboardEntry[]>([]);
     const [loadingClans, setLoadingClans] = useState(false);
@@ -43,7 +45,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
         const fetchClanLeaderboard = async () => {
             setLoadingClans(true);
             try {
-                const data = await api.getClanLeaderboard();
+                const data = await api.getClanLeaderboard<ClanLeaderboardEntry[]>();
                 setClanLeaderboard(data);
             } catch (error) {
                 console.error('Failed to load clan leaderboard:', error);
@@ -100,7 +102,17 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
         };
 
         return (
-            <div className={`flex flex-col items-center justify-end ${orderMap[rank as 1 | 2 | 3]} w-1/3 md:w-44 group cursor-pointer`}>
+            <div
+                onClick={() => {
+                    if (user.userId === currentUser.userId) {
+                        navigate('/profile');
+                    } else {
+                        openUserProfile(user.userId);
+                    }
+                }}
+                title={`View ${user.name}'s profile`}
+                className={`flex flex-col items-center justify-end ${orderMap[rank as 1 | 2 | 3]} w-1/3 md:w-44 group cursor-pointer`}
+            >
                 {/* User Info above podium */}
                 <div className="mb-4 flex flex-col items-center transform transition-transform duration-300 group-hover:-translate-y-2">
                     <div className="relative mb-3">
@@ -117,6 +129,22 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                     </div>
                     <div className="text-center">
                         <div className={`font-bold text-sm truncate max-w-[120px] mb-1 ${isBento ? 'text-black font-black' : 'text-slate-900 dark:text-white'}`}>{user.name}</div>
+                        {user.equippedBadgeId && user.badges && (
+                            (() => {
+                                const eqBadge = user.badges.find(b => b.id === user.equippedBadgeId);
+                                if (!eqBadge) return null;
+                                return (
+                                    <div className="mb-1">
+                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black truncate max-w-[120px] ${
+                                            isBento ? 'bg-black text-white border border-black' : 'bg-amber-400/20 text-amber-600 dark:text-amber-400 border border-amber-400/30'
+                                        }`} title={eqBadge.name}>
+                                            <span>{eqBadge.icon}</span>
+                                            <span className="truncate">{eqBadge.title || eqBadge.name}</span>
+                                        </span>
+                                    </div>
+                                );
+                            })()
+                        )}
                         <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full shadow-sm ${
                             isBento
                                 ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] font-black'
@@ -320,7 +348,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                                         {restOfUsers.map((user) => (
                                             <div
                                                 key={user.userId}
-                                                className={`group p-4 sm:p-5 flex items-center gap-4 sm:gap-5 transition-colors ${
+                                                onClick={() => {
+                                                    if (user.userId === currentUser.userId) {
+                                                        navigate('/profile');
+                                                    } else {
+                                                        openUserProfile(user.userId);
+                                                    }
+                                                }}
+                                                title={`View ${user.name}'s profile`}
+                                                className={`group p-4 sm:p-5 flex items-center gap-4 sm:gap-5 transition-colors cursor-pointer ${
                                                     isBento
                                                         ? user.userId === currentUser.userId
                                                             ? 'bg-[#ddd6fe]/60 border-l-6 border-black'
@@ -349,8 +385,22 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ users, currentUser, onBack })
                                                 </div>
 
                                                 <div className="flex-grow min-w-0">
-                                                    <div className="flex items-center gap-2.5 mb-0.5">
+                                                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                                         <span className={`font-black text-sm sm:text-base truncate ${isBento ? 'text-black' : 'text-slate-900 dark:text-slate-100'}`}>{user.name}</span>
+                                                        {user.equippedBadgeId && user.badges && (
+                                                            (() => {
+                                                                const eqBadge = user.badges.find(b => b.id === user.equippedBadgeId);
+                                                                if (!eqBadge) return null;
+                                                                return (
+                                                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                                                        isBento ? 'bg-[#fef08a] text-black border border-black shadow-[1px_1px_0px_#000]' : 'bg-amber-400/15 text-amber-600 dark:text-amber-400 border border-amber-400/25'
+                                                                    }`} title={eqBadge.name}>
+                                                                        <span>{eqBadge.icon}</span>
+                                                                        <span>{eqBadge.title || eqBadge.name}</span>
+                                                                    </span>
+                                                                );
+                                                            })()
+                                                        )}
                                                         {user.userId === currentUser.userId && (
                                                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
                                                                 isBento ? 'bg-black text-white' : 'bg-indigo-600 text-white'

@@ -4,6 +4,8 @@ import { Plus, Trash2, Save, Sparkles, ChevronDown } from 'lucide-react';
 import Modal from '../common/Modal';
 import { BADGE_CRITERIA_TYPES } from '../../constants/badgeDefaults';
 
+import { useTheme } from '../../context/ThemeContext';
+
 interface BadgeNodeEditorProps {
     badge?: BadgeNode;
     onSave: (badge: Partial<BadgeNode>) => void;
@@ -11,15 +13,18 @@ interface BadgeNodeEditorProps {
 }
 
 const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClose }) => {
+    const { isBento } = useTheme();
     const [formData, setFormData] = useState<Partial<BadgeNode>>({
         badgeId: badge?.badgeId || '',
         name: badge?.name || '',
+        title: badge?.title || '',
+        category: badge?.category || 'milestones',
         description: badge?.description || '',
         icon: badge?.icon || '🏆',
         rarity: badge?.rarity || 'common',
         color: badge?.color || '#3B82F6',
         unlockCriteria: badge?.unlockCriteria || [],
-        rewards: badge?.rewards || { xp: 0, coins: 0, powerUps: [] },
+        rewards: badge?.rewards || { xp: 50, coins: 25, powerUps: [] },
         trees: badge?.trees || []
     });
 
@@ -68,14 +73,22 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 py-3 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                        className={`flex-1 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
+                            isBento
+                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
+                                : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
+                        }`}
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         form="badge-form"
-                        className="flex-[2] py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-transform hover:-translate-y-0.5"
+                        className={`flex-[2] py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg ${
+                            isBento
+                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000]'
+                                : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-purple-500/25'
+                        }`}
                     >
                         <Save className="w-4 h-4" />
                         Save Badge
@@ -85,7 +98,7 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
         >
             <form id="badge-form" onSubmit={handleSubmit} className="space-y-6">
                 {/* Basic Info */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Badge ID</label>
                         <input
@@ -95,6 +108,7 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                             className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all placeholder:text-gray-400"
                             required
                             disabled={!!badge}
+                            placeholder="e.g. first-step"
                         />
                     </div>
 
@@ -106,7 +120,43 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all placeholder:text-gray-400"
                             required
+                            placeholder="e.g. First Step"
                         />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Equip Title / Honorific</label>
+                        <input
+                            type="text"
+                            value={formData.title}
+                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                            className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-bold outline-none transition-all placeholder:text-gray-400"
+                            placeholder="e.g. Novice Quizzer"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">Category</label>
+                        <div className="relative">
+                            <select
+                                value={formData.category}
+                                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                className="w-full bg-gray-50 dark:bg-[#1a1b26] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500/50 rounded-xl px-4 py-3.5 text-gray-900 dark:text-white font-bold outline-none transition-all appearance-none cursor-pointer"
+                            >
+                                <option value="milestones">Milestones</option>
+                                <option value="perfection">Perfection</option>
+                                <option value="streaks">Streaks</option>
+                                <option value="speed">Speed</option>
+                                <option value="xp">XP & Levels</option>
+                                <option value="skills">Roadmaps & Skills</option>
+                                <option value="social">Clans & Social</option>
+                                <option value="arena">Arena & Duels</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
                     </div>
                 </div>
 
@@ -144,6 +194,7 @@ const BadgeNodeEditor: React.FC<BadgeNodeEditorProps> = ({ badge, onSave, onClos
                                 <option value="rare">Rare</option>
                                 <option value="epic">Epic</option>
                                 <option value="legendary">Legendary</option>
+                                <option value="mythic">Mythic</option>
                             </select>
                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         </div>

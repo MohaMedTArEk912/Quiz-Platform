@@ -6,9 +6,20 @@ import { useConfirm } from '../hooks/useConfirm';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const LoginPage: React.FC = () => {
-    const { login, googleLogin } = useAuth();
+    const { currentUser, isAdmin: authIsAdmin, login, googleLogin } = useAuth();
     const navigate = useNavigate();
     const { confirm, confirmState, handleCancel } = useConfirm();
+
+    // If user is already authenticated and visits /login, redirect directly based on role
+    useEffect(() => {
+        if (currentUser) {
+            if (currentUser.role === 'admin' || authIsAdmin) {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate('/', { replace: true });
+            }
+        }
+    }, [currentUser, authIsAdmin, navigate]);
 
     // Check for Google auth data in session storage (in case popup closed)
     useEffect(() => {
@@ -18,20 +29,24 @@ const LoginPage: React.FC = () => {
                 try {
                     const { email, name, sub } = JSON.parse(googleAuthData);
                     sessionStorage.removeItem('googleAuthData');
-                    await googleLogin({ email, name, googleId: sub });
+                    const result = await googleLogin({ email, name, googleId: sub });
                     sessionStorage.removeItem('suppressRedirectAfterLogin');
-                    
-                    // Wait a tick to ensure session storage is fully written
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    
-                    const session = sessionStorage.getItem('userSession');
-                    const isAdmin = session ? JSON.parse(session).isAdmin : false;
+
+                    const isAdminUser = Boolean(result?.isAdmin || result?.user?.role === 'admin');
+
+                    // Admin MUST open directly to the Admin Console (/admin), NOT student view
+                    if (isAdminUser) {
+                        sessionStorage.removeItem('redirectAfterLogin');
+                        navigate('/admin', { replace: true });
+                        return;
+                    }
+
                     const redirect = sessionStorage.getItem('redirectAfterLogin');
                     if (redirect) {
                         sessionStorage.removeItem('redirectAfterLogin');
                         navigate(redirect, { replace: true });
                     } else {
-                        navigate(isAdmin ? '/admin' : '/', { replace: true });
+                        navigate('/', { replace: true });
                     }
                 } catch (error) {
                     console.error('Error processing stored Google auth:', error);
@@ -42,16 +57,24 @@ const LoginPage: React.FC = () => {
     }, [googleLogin, navigate]);
 
     const handleLogin = async (email: string, password: string) => {
-        await login(email, password);
+        const result = await login(email, password);
         sessionStorage.removeItem('suppressRedirectAfterLogin');
-        const session = sessionStorage.getItem('userSession');
-        const isAdmin = session ? JSON.parse(session).isAdmin : false;
+
+        const isAdminUser = Boolean(result?.isAdmin || result?.user?.role === 'admin');
+
+        // Admin MUST open directly to the Admin Console (/admin), NOT student view
+        if (isAdminUser) {
+            sessionStorage.removeItem('redirectAfterLogin');
+            navigate('/admin', { replace: true });
+            return;
+        }
+
         const redirect = sessionStorage.getItem('redirectAfterLogin');
         if (redirect) {
             sessionStorage.removeItem('redirectAfterLogin');
             navigate(redirect, { replace: true });
         } else {
-            navigate(isAdmin ? '/admin' : '/', { replace: true });
+            navigate('/', { replace: true });
         }
     };
 
@@ -108,20 +131,24 @@ const LoginPage: React.FC = () => {
             if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
                 try {
                     const { email, name, sub } = event.data.profile;
-                    await googleLogin({ email, name, googleId: sub });
+                    const result = await googleLogin({ email, name, googleId: sub });
                     sessionStorage.removeItem('suppressRedirectAfterLogin');
-                    
-                    // Wait a tick to ensure session storage is fully written
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    
-                    const session = sessionStorage.getItem('userSession');
-                    const isAdmin = session ? JSON.parse(session).isAdmin : false;
+
+                    const isAdminUser = Boolean(result?.isAdmin || result?.user?.role === 'admin');
+
+                    // Admin MUST open directly to the Admin Console (/admin), NOT student view
+                    if (isAdminUser) {
+                        sessionStorage.removeItem('redirectAfterLogin');
+                        navigate('/admin', { replace: true });
+                        return;
+                    }
+
                     const redirect = sessionStorage.getItem('redirectAfterLogin');
                     if (redirect) {
                         sessionStorage.removeItem('redirectAfterLogin');
                         navigate(redirect, { replace: true });
                     } else {
-                        navigate(isAdmin ? '/admin' : '/', { replace: true });
+                        navigate('/', { replace: true });
                     }
                 } catch (error) {
                     console.error('Google login error:', error);

@@ -8,18 +8,57 @@ import { CompilerQuestion } from '../models/CompilerQuestion.js';
 import { CompilerSubmission } from '../models/CompilerSubmission.js';
 import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
 import { checkAndUnlockBadges } from './badgeNodeController.js';
+import { evaluateAndAwardBadges } from '../services/badgeService.js';
 import { completeSpecificModule } from '../services/progressService.js';
 import { evaluateSubmission, getPassThreshold } from '../services/compilerEvaluationService.js';
+import { generateThreeTierChallenges } from '../services/dailyChallengeAiService.js';
 import { syncClanXp } from '../utils/xpSync.js';
 
 // --- Daily Compiler Challenge ---
 
 /**
+ * Helper to sanitize question details sent to client (excluding reference solution)
+ */
+const sanitizeQuestionForUser = (q) => {
+  if (!q) return null;
+  return {
+    questionId: q.questionId,
+    title: q.title,
+    description: q.description,
+    language: q.language || 'javascript',
+    difficulty: q.difficulty,
+    category: q.category,
+    hints: q.hints || []
+  };
+};
+
+/**
+ * Helper to format a Date object as local YYYY-MM-DD
+ */
+const toLocalDateString = (d) => {
+  const dt = new Date(d);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+};
+
+/**
+ * Helper to parse a date input (including YYYY-MM-DD) as local midnight
+ */
+const parseLocalDate = (dateInput) => {
+  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput.trim())) {
+    const [y, m, d] = dateInput.trim().split('-').map(Number);
+    return new Date(y, m - 1, d, 0, 0, 0, 0);
+  }
+  const dt = dateInput ? new Date(dateInput) : new Date();
+  dt.setHours(0, 0, 0, 0);
+  return dt;
+};
+
+/**
  * Get today's daily compiler challenge.
- * If no challenge is scheduled, auto-selects a random question not used in 7 days.
+ * Returns challenges across 3 distinct tiers (Easy, Medium, Hard) if available.
  * 
  * @route GET /api/daily-challenge
- * @returns {Object} Challenge with question details (without reference code)
+ * @returns {Object} Challenge with 3 tiers and user completion status per tier
  */
 export const getDailyChallenge = async (req, res) => {
   try {
@@ -29,24 +68,38 @@ export const getDailyChallenge = async (req, res) => {
     }
     const userId = req.user.userId;
 
-    // Step 2: Get today's date (Midnight)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Step 2: Determine target date (Requested date or Today Midnight)
+    const isSpecificDate = Boolean(req.query.date);
+    const targetDate = isSpecificDate ? parseLocalDate(req.query.date) : parseLocalDate();
+    if (isNaN(targetDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid date format' });
+    }
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
 
-    // Step 3: Check if user already completed today's challenge
-    const hasPassedToday = await CompilerSubmission.hasPassedToday(userId, today);
+    const todayMidnight = parseLocalDate();
+    const isArchived = targetDate.getTime() < todayMidnight.getTime();
 
-    // Step 4: Fetch today's challenge from DB
+    // Step 3: Fetch passed question IDs for the user on targetDate
+    const passedQuestionIds = await CompilerSubmission.getPassedQuestionsToday(userId, targetDate);
+    const hasPassedAnyToday = passedQuestionIds.length > 0;
+
+    // Step 4: Fetch challenge from DB
     let challenge = await DailyChallenge.findOne({ 
-      date: { $gte: today, $lt: tomorrow } 
+      date: { $gte: targetDate, $lt: nextDay } 
     }).lean();
 
-    // Step 5: If no challenge exists, auto-create one with a random question
+    // Step 5: If no challenge exists
     if (!challenge) {
+      if (isSpecificDate) {
+        return res.status(404).json({ 
+          message: 'No challenge found for the selected date.',
+          reason: 'not_found'
+        });
+      }
+
+      // Auto-create only for today if missing
       const eligibleQuestion = await CompilerQuestion.findEligibleQuestion();
-      
       if (!eligibleQuestion) {
         return res.status(404).json({ 
           message: 'No compiler questions available. Please ask admin to add questions.',
@@ -54,51 +107,117 @@ export const getDailyChallenge = async (req, res) => {
         });
       }
 
-      // Create today's challenge
-      challenge = await DailyChallenge.create({
-        date: today,
+      const createdChallenge = await DailyChallenge.create({
+        date: targetDate,
         compilerQuestionId: eligibleQuestion.questionId
       });
-      
-      // Mark question as used
       await CompilerQuestion.markAsUsed(eligibleQuestion.questionId);
-      
-      challenge = challenge.toObject();
+      challenge = createdChallenge.toObject();
     }
 
-    // Step 6: Fetch the compiler question details
-    const question = await CompilerQuestion.findOne({ 
-      questionId: challenge.compilerQuestionId 
+    // Step 6: Fetch compiler questions for primary & all tiers
+    const questionIdsToFetch = new Set();
+    if (challenge.compilerQuestionId) questionIdsToFetch.add(challenge.compilerQuestionId);
+    if (challenge.tiers?.easy?.compilerQuestionId) questionIdsToFetch.add(challenge.tiers.easy.compilerQuestionId);
+    if (challenge.tiers?.medium?.compilerQuestionId) questionIdsToFetch.add(challenge.tiers.medium.compilerQuestionId);
+    if (challenge.tiers?.hard?.compilerQuestionId) questionIdsToFetch.add(challenge.tiers.hard.compilerQuestionId);
+
+    const questionsList = await CompilerQuestion.find({
+      questionId: { $in: Array.from(questionIdsToFetch) }
     }).lean();
 
-    if (!question) {
+    const questionsMap = new Map(questionsList.map(q => [q.questionId, q]));
+
+    // Helper to format tier object
+    const formatTier = (tierConfig, difficultyFallback) => {
+      if (!tierConfig || !tierConfig.compilerQuestionId) return null;
+      const q = questionsMap.get(tierConfig.compilerQuestionId);
+      if (!q) return null;
+      const isCompleted = passedQuestionIds.includes(tierConfig.compilerQuestionId);
+
+      return {
+        questionId: tierConfig.compilerQuestionId,
+        question: sanitizeQuestionForUser(q),
+        rewards: {
+          coins: tierConfig.rewardCoins ?? q.rewardCoins ?? 100,
+          xp: tierConfig.rewardXP ?? q.rewardXP ?? 150,
+          giftLabel: tierConfig.giftLabel || (difficultyFallback === 'easy' ? 'Bronze Novice Satchel' : difficultyFallback === 'hard' ? 'Gold Master Vault' : 'Silver Adept Cache'),
+          badgeId: tierConfig.rewardBadgeId,
+          itemId: tierConfig.rewardItemId
+        },
+        completed: isCompleted
+      };
+    };
+
+    const easyTier = formatTier(challenge.tiers?.easy, 'easy');
+    const mediumTier = formatTier(challenge.tiers?.medium, 'medium');
+    const hardTier = formatTier(challenge.tiers?.hard, 'hard');
+
+    const hasMultiTiers = Boolean(easyTier || mediumTier || hardTier);
+
+    // Primary question (defaulting to medium, or easy, or legacy compilerQuestionId)
+    const primaryQuestion = (mediumTier?.question) ||
+      (easyTier?.question) ||
+      (hardTier?.question) ||
+      sanitizeQuestionForUser(questionsMap.get(challenge.compilerQuestionId));
+
+    if (!primaryQuestion && !hasMultiTiers) {
       return res.status(404).json({ 
         message: 'Challenge question not found',
         reason: 'question_missing'
       });
     }
 
-    // Step 7: Send response (exclude reference code for security)
+    // Calculate completion count across available tiers
+    let completedCount = 0;
+    let totalAvailableTiers = 0;
+    if (easyTier) { totalAvailableTiers++; if (easyTier.completed) completedCount++; }
+    if (mediumTier) { totalAvailableTiers++; if (mediumTier.completed) completedCount++; }
+    if (hardTier) { totalAvailableTiers++; if (hardTier.completed) completedCount++; }
+
+    // Fallback if no multi-tiers
+    if (totalAvailableTiers === 0) {
+      totalAvailableTiers = 1;
+      completedCount = hasPassedAnyToday ? 1 : 0;
+    }
+
+    const allCompleted = completedCount > 0 && completedCount === totalAvailableTiers;
+
+    // Step 7: Send response
     const response = {
       challengeId: challenge._id,
-      date: today,
-      question: {
-        questionId: question.questionId,
-        title: question.title,
-        description: question.description,
-        language: question.language || 'javascript',
-        difficulty: question.difficulty,
-        category: question.category,
-        hints: question.hints || []
-      },
+      date: targetDate,
+      isArchived,
+      question: primaryQuestion,
       rewards: {
-        coins: challenge.rewardCoins || question.rewardCoins || 100,
-        xp: challenge.rewardXP || question.rewardXP || 150,
+        coins: challenge.rewardCoins || (primaryQuestion ? 100 : 0),
+        xp: challenge.rewardXP || (primaryQuestion ? 150 : 0),
         badgeId: challenge.rewardBadgeId,
         itemId: challenge.rewardItemId
       },
+      tiers: hasMultiTiers ? {
+        easy: easyTier,
+        medium: mediumTier,
+        hard: hardTier
+      } : {
+        medium: {
+          questionId: challenge.compilerQuestionId,
+          question: primaryQuestion,
+          rewards: {
+            coins: challenge.rewardCoins || 100,
+            xp: challenge.rewardXP || 150,
+            giftLabel: 'Daily Challenge Chest',
+            badgeId: challenge.rewardBadgeId,
+            itemId: challenge.rewardItemId
+          },
+          completed: hasPassedAnyToday
+        }
+      },
+      completedCount,
+      totalTiers: totalAvailableTiers,
+      allCompleted,
       streak: req.user.dailyChallengeStreak || 0,
-      completed: hasPassedToday,
+      completed: hasPassedAnyToday,
       passThreshold: getPassThreshold()
     };
     
@@ -114,12 +233,138 @@ export const getDailyChallenge = async (req, res) => {
 };
 
 /**
- * Submit code for today's daily compiler challenge.
- * Evaluates the submission using Groq AI and awards prizes if passed.
+ * Get daily challenge calendar for user.
+ * Returns challenges and user completion state per date in the requested month/year.
+ * @route GET /api/daily-challenge/calendar
+ */
+export const getDailyChallengeCalendar = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    const userId = req.user.userId;
+
+    const { month, year } = req.query;
+    const now = new Date();
+    const currentYear = year !== undefined ? parseInt(year) : now.getFullYear();
+    const currentMonth = month !== undefined ? parseInt(month) : now.getMonth();
+
+    // Start of the month (inclusive)
+    const startDate = new Date(currentYear, currentMonth, 1);
+    startDate.setHours(0, 0, 0, 0);
+
+    // End of the month (inclusive)
+    const endDate = new Date(currentYear, currentMonth + 1, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    // Fetch all challenges in this date range
+    const challenges = await DailyChallenge.find({
+      date: { $gte: startDate, $lte: endDate }
+    }).sort({ date: 1 }).lean();
+
+    // Fetch all passed submissions for this user in this date range
+    const submissions = await CompilerSubmission.find({
+      userId,
+      passed: true,
+      challengeDate: { $gte: startDate, $lte: endDate }
+    }).select('questionId challengeDate').lean();
+
+    // Group passed questionIds by local date string (YYYY-MM-DD)
+    const passedByDate = new Map();
+    submissions.forEach(sub => {
+      const dStr = toLocalDateString(sub.challengeDate);
+      if (!passedByDate.has(dStr)) passedByDate.set(dStr, new Set());
+      passedByDate.get(dStr).add(sub.questionId);
+    });
+
+    // Bulk fetch question details for titles and difficulties
+    const questionIds = new Set();
+    challenges.forEach(c => {
+      if (c.compilerQuestionId) questionIds.add(c.compilerQuestionId);
+      if (c.tiers?.easy?.compilerQuestionId) questionIds.add(c.tiers.easy.compilerQuestionId);
+      if (c.tiers?.medium?.compilerQuestionId) questionIds.add(c.tiers.medium.compilerQuestionId);
+      if (c.tiers?.hard?.compilerQuestionId) questionIds.add(c.tiers.hard.compilerQuestionId);
+    });
+
+    const questions = await CompilerQuestion.find({
+      questionId: { $in: Array.from(questionIds) }
+    }).select('questionId title difficulty category').lean();
+    const questionMap = new Map(questions.map(q => [q.questionId, q]));
+
+    // Format calendar days
+    const calendarDays = challenges.map(c => {
+      const dStr = toLocalDateString(c.date);
+      const userPassedQuestions = passedByDate.get(dStr) || new Set();
+
+      const tiers = {};
+      let totalTiers = 0;
+      let completedTiers = 0;
+
+      const checkTier = (tierConfig, key) => {
+        if (!tierConfig || !tierConfig.compilerQuestionId) return null;
+        totalTiers++;
+        const isPassed = userPassedQuestions.has(tierConfig.compilerQuestionId);
+        if (isPassed) completedTiers++;
+        const qInfo = questionMap.get(tierConfig.compilerQuestionId);
+        return {
+          questionId: tierConfig.compilerQuestionId,
+          title: qInfo?.title || 'Challenge Question',
+          difficulty: key,
+          completed: isPassed,
+          giftLabel: tierConfig.giftLabel || ''
+        };
+      };
+
+      if (c.tiers?.easy || c.tiers?.medium || c.tiers?.hard) {
+        tiers.easy = checkTier(c.tiers?.easy, 'easy');
+        tiers.medium = checkTier(c.tiers?.medium, 'medium');
+        tiers.hard = checkTier(c.tiers?.hard, 'hard');
+      } else if (c.compilerQuestionId) {
+        totalTiers = 1;
+        const isPassed = userPassedQuestions.has(c.compilerQuestionId);
+        if (isPassed) completedTiers = 1;
+        const qInfo = questionMap.get(c.compilerQuestionId);
+        tiers.medium = {
+          questionId: c.compilerQuestionId,
+          title: qInfo?.title || 'Challenge Question',
+          difficulty: 'medium',
+          completed: isPassed
+        };
+      }
+
+      return {
+        challengeId: c._id,
+        date: c.date,
+        dateString: dStr,
+        totalTiers,
+        completedTiers,
+        allCompleted: totalTiers > 0 && completedTiers >= totalTiers,
+        isPartiallyCompleted: completedTiers > 0 && completedTiers < totalTiers,
+        tiers
+      };
+    });
+
+    res.json({
+      month: currentMonth,
+      year: currentYear,
+      days: calendarDays
+    });
+  } catch (error) {
+    console.error('Daily Challenge Calendar Error:', error);
+    res.status(500).json({ message: 'Error fetching challenge calendar', error: error.message });
+  }
+};
+
+/**
+ * Submit code for a daily compiler challenge tier.
+ * Evaluates the submission using Groq AI and awards prizes for the specific tier.
+ * Users can solve and earn rewards for all 3 tiers (Easy, Medium, Hard).
  * 
  * @route POST /api/daily-challenge/submit
  * @param {string} code - User's submitted code
- * @returns {Object} Evaluation result with score, feedback, and pass status
+ * @param {string} [questionId] - Specific tier question ID being submitted
+ * @param {string} [tier] - Tier name ('easy' | 'medium' | 'hard')
+ * @returns {Object} Evaluation result with score, feedback, pass status, and rewards
  */
 export const submitCompilerAnswer = async (req, res) => {
   try {
@@ -130,47 +375,73 @@ export const submitCompilerAnswer = async (req, res) => {
     const user = req.user;
     const userId = user.userId;
 
-    // Step 2: Get submitted code
-    const { code } = req.body;
+    // Step 2: Get submitted code, question/tier info, and optional challenge date
+    const { code, questionId: submittedQuestionId, tier: submittedTier, date } = req.body;
     if (!code || typeof code !== 'string' || code.trim().length === 0) {
       return res.status(400).json({ message: 'Code submission is required' });
     }
 
-    // Step 3: Get today's date
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Step 3: Determine challenge date
+    const challengeDate = date ? parseLocalDate(date) : parseLocalDate();
+    if (isNaN(challengeDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid date parameter' });
+    }
+    const nextDay = new Date(challengeDate);
+    nextDay.setDate(nextDay.getDate() + 1);
 
-    // Step 4: Check if already completed today
-    const alreadyPassed = await CompilerSubmission.hasPassedToday(userId, today);
-    if (alreadyPassed) {
+    const todayMidnight = parseLocalDate();
+    const isToday = challengeDate.getTime() === todayMidnight.getTime();
+
+    // Step 4: Get challenge for this date
+    const challenge = await DailyChallenge.findOne({ 
+      date: { $gte: challengeDate, $lt: nextDay } 
+    }).lean();
+
+    if (!challenge) {
+      return res.status(404).json({ message: 'No challenge available for this date' });
+    }
+
+    // Step 5: Identify the target question ID
+    let targetQuestionId = submittedQuestionId;
+    let resolvedTier = submittedTier;
+
+    if (!targetQuestionId) {
+      // Determine question ID from tier name if provided
+      if (submittedTier && challenge.tiers?.[submittedTier]?.compilerQuestionId) {
+        targetQuestionId = challenge.tiers[submittedTier].compilerQuestionId;
+      } else {
+        targetQuestionId = challenge.compilerQuestionId;
+      }
+    }
+
+    // Resolve which tier this question belongs to in this challenge
+    if (!resolvedTier && challenge.tiers) {
+      if (challenge.tiers.easy?.compilerQuestionId === targetQuestionId) resolvedTier = 'easy';
+      else if (challenge.tiers.medium?.compilerQuestionId === targetQuestionId) resolvedTier = 'medium';
+      else if (challenge.tiers.hard?.compilerQuestionId === targetQuestionId) resolvedTier = 'hard';
+    }
+
+    // Step 6: Check if user already completed THIS specific question on challengeDate
+    const alreadyPassedThisQuestion = await CompilerSubmission.hasPassedQuestionToday(userId, challengeDate, targetQuestionId);
+    if (alreadyPassedThisQuestion) {
       return res.status(400).json({ 
-        message: 'You have already completed today\'s challenge',
+        message: `You have already completed this ${resolvedTier ? resolvedTier.toUpperCase() + ' ' : ''}challenge!`,
         alreadyCompleted: true,
+        tier: resolvedTier,
         streak: user.dailyChallengeStreak || 0
       });
     }
 
-    // Step 5: Get today's challenge
-    const challenge = await DailyChallenge.findOne({ 
-      date: { $gte: today, $lt: tomorrow } 
-    }).lean();
-
-    if (!challenge) {
-      return res.status(404).json({ message: 'No challenge available today' });
-    }
-
-    // Step 6: Get the question with reference code
+    // Step 7: Get the question with reference code
     const question = await CompilerQuestion.findOne({ 
-      questionId: challenge.compilerQuestionId 
+      questionId: targetQuestionId 
     }).lean();
 
     if (!question) {
       return res.status(404).json({ message: 'Challenge question not found' });
     }
 
-    // Step 7: Evaluate using Groq AI
+    // Step 8: Evaluate using Groq AI
     let evaluationResult;
     try {
       evaluationResult = await evaluateSubmission(question, code.trim());
@@ -184,7 +455,7 @@ export const submitCompilerAnswer = async (req, res) => {
 
     const { score, feedback, passed } = evaluationResult;
 
-    // Step 8: Save submission record
+    // Step 9: Save submission record
     await CompilerSubmission.create({
       userId,
       questionId: question.questionId,
@@ -192,86 +463,122 @@ export const submitCompilerAnswer = async (req, res) => {
       aiScore: score,
       aiFeedback: feedback,
       passed,
-      challengeDate: today
+      challengeDate
     });
 
-    // Step 9: If passed, award prizes and update streak
+    // Step 10: If passed, award prizes and update streak
     let coinsAwarded = 0;
     let xpAwarded = 0;
+    let giftLabel = '';
     let newStreak = user.dailyChallengeStreak || 0;
+    let allTiersCompleted = false;
 
     if (passed) {
-      // Calculate rewards
-      coinsAwarded = challenge.rewardCoins || question.rewardCoins || 100;
-      xpAwarded = challenge.rewardXP || question.rewardXP || 150;
+      // Determine tier-specific rewards
+      const tierConfig = resolvedTier && challenge.tiers?.[resolvedTier] ? challenge.tiers[resolvedTier] : null;
+      coinsAwarded = tierConfig?.rewardCoins ?? challenge.rewardCoins ?? question.rewardCoins ?? 100;
+      xpAwarded = tierConfig?.rewardXP ?? challenge.rewardXP ?? question.rewardXP ?? 150;
+      giftLabel = tierConfig?.giftLabel || (resolvedTier === 'easy' ? 'Bronze Novice Satchel' : resolvedTier === 'hard' ? 'Gold Master Vault' : 'Silver Adept Cache');
 
-      // Update streak
-      const lastChallengeDate = user.dailyChallengeDate ? new Date(user.dailyChallengeDate) : null;
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      
-      if (lastChallengeDate && lastChallengeDate.getTime() === yesterday.getTime()) {
-        // Consecutive day - increment streak
-        newStreak = (user.dailyChallengeStreak || 0) + 1;
-      } else if (lastChallengeDate && lastChallengeDate.getTime() === today.getTime()) {
-        // Same day - keep streak (shouldn't happen due to check above)
-        newStreak = user.dailyChallengeStreak || 1;
+      // Check user's total passed challenges on this challengeDate
+      const passedDateQuestionIds = await CompilerSubmission.getPassedQuestionsToday(userId, challengeDate);
+      const isFirstToday = passedDateQuestionIds.length === 1;
+
+      // Update streak only on today's first completed challenge
+      if (isToday) {
+        if (isFirstToday) {
+          const lastChallengeDate = user.dailyChallengeDate ? new Date(user.dailyChallengeDate) : null;
+          const yesterday = new Date(todayMidnight);
+          yesterday.setDate(yesterday.getDate() - 1);
+          
+          if (lastChallengeDate && lastChallengeDate.getTime() === yesterday.getTime()) {
+            newStreak = (user.dailyChallengeStreak || 0) + 1;
+          } else if (lastChallengeDate && lastChallengeDate.getTime() === todayMidnight.getTime()) {
+            newStreak = user.dailyChallengeStreak || 1;
+          } else {
+            newStreak = 1;
+          }
+
+          // Streak milestones
+          if (newStreak === 7) {
+            coinsAwarded += 50;
+            xpAwarded += 100;
+          } else if (newStreak === 30) {
+            coinsAwarded += 200;
+            xpAwarded += 500;
+          }
+        } else {
+          newStreak = user.dailyChallengeStreak || 1;
+        }
+
+        user.dailyChallengeCompleted = true;
+        user.dailyChallengeDate = todayMidnight;
+        user.dailyChallengeStreak = newStreak;
       } else {
-        // Streak broken - reset to 1
-        newStreak = 1;
+        newStreak = user.dailyChallengeStreak || 0;
       }
 
-      // Bonus for streak milestones
-      if (newStreak === 7) {
-        coinsAwarded += 50;
-        xpAwarded += 100;
-      } else if (newStreak === 30) {
-        coinsAwarded += 200;
-        xpAwarded += 500;
+      // Check if all tiers in this challenge have now been completed
+      const availableTierQIds = [
+        challenge.tiers?.easy?.compilerQuestionId,
+        challenge.tiers?.medium?.compilerQuestionId,
+        challenge.tiers?.hard?.compilerQuestionId
+      ].filter(Boolean);
+
+      if (availableTierQIds.length > 1 && availableTierQIds.every(qId => passedDateQuestionIds.includes(qId))) {
+        allTiersCompleted = true;
+        // Triple Crown mastery bonus for clearing all 3 tiers!
+        coinsAwarded += 75;
+        xpAwarded += 150;
       }
 
-      // Update user
+      // Update user balances
       user.coins = (user.coins || 0) + coinsAwarded;
       user.xp = (user.xp || 0) + xpAwarded;
       
       if (user.clanId) {
-          await syncClanXp(userId, xpAwarded, user.clanId);
+        await syncClanXp(userId, xpAwarded, user.clanId);
       }
 
       // Award Shop Item if present
-      if (challenge.rewardItemId) {
-          if (!user.inventory) user.inventory = [];
-          const existingItem = user.inventory.find(i => i.itemId === challenge.rewardItemId);
-          if (existingItem) {
-              existingItem.quantity += 1;
-          } else {
-              user.inventory.push({ itemId: challenge.rewardItemId, quantity: 1 });
-          }
+      const rewardItemId = tierConfig?.rewardItemId || challenge.rewardItemId;
+      if (rewardItemId) {
+        if (!user.inventory) user.inventory = [];
+        const existingItem = user.inventory.find(i => i.itemId === rewardItemId);
+        if (existingItem) {
+          existingItem.quantity += 1;
+        } else {
+          user.inventory.push({ itemId: rewardItemId, quantity: 1 });
+        }
       }
-
-      user.dailyChallengeCompleted = true;
-      user.dailyChallengeDate = today;
-      user.dailyChallengeStreak = newStreak;
 
       await user.save();
 
       // Check for badges
       await checkAndUnlockBadges(userId, 'daily_challenge_completed', {
         streak: newStreak,
-        score
+        score,
+        tier: resolvedTier,
+        allTiersCompleted
       });
+      await evaluateAndAwardBadges(userId).catch(() => {});
     }
 
-    // Step 10: Send response
+    // Step 11: Send response
     res.json({
       score,
       feedback,
       passed,
       passThreshold: getPassThreshold(),
+      tier: resolvedTier,
+      giftLabel,
+      allTiersCompleted,
       rewards: passed ? {
         coins: coinsAwarded,
         xp: xpAwarded,
-        streak: newStreak
+        giftLabel,
+        streak: newStreak,
+        allTiersCompleted
       } : null,
       streak: passed ? newStreak : (user.dailyChallengeStreak || 0)
     });
@@ -507,10 +814,43 @@ export const createDailyChallenge = async (req, res) => {
       return res.status(404).json({ message: 'Compiler question not found' });
     }
 
-    // Check for existing challenge on this date
+    // Check for existing challenge on this date - if exists, append/update seamlessly
     const existing = await DailyChallenge.findOne({ date: challengeDate });
     if (existing) {
-      return res.status(409).json({ message: 'Challenge already exists for this date' });
+      existing.compilerQuestionId = compilerQuestionId;
+      if (rewardCoins !== undefined) existing.rewardCoins = rewardCoins;
+      if (rewardXP !== undefined) existing.rewardXP = rewardXP;
+      if (rewardBadgeId !== undefined) existing.rewardBadgeId = rewardBadgeId;
+      if (rewardItemId !== undefined) existing.rewardItemId = rewardItemId;
+
+      if (!existing.tiers) existing.tiers = {};
+      const diff = question.difficulty || 'medium';
+      if (diff === 'easy' || diff === 'medium' || diff === 'hard') {
+        existing.tiers[diff] = {
+          compilerQuestionId,
+          rewardCoins: rewardCoins || (diff === 'easy' ? 50 : diff === 'medium' ? 100 : 200),
+          rewardXP: rewardXP || (diff === 'easy' ? 80 : diff === 'medium' ? 180 : 400),
+          rewardBadgeId,
+          rewardItemId,
+          giftLabel: existing.tiers[diff]?.giftLabel || `${diff.charAt(0).toUpperCase() + diff.slice(1)} Challenge Gift`
+        };
+      }
+
+      await existing.save();
+      return res.status(200).json({ ...existing.toObject(), question, updated: true });
+    }
+
+    const diff = question.difficulty || 'medium';
+    const initialTiers = {};
+    if (diff === 'easy' || diff === 'medium' || diff === 'hard') {
+      initialTiers[diff] = {
+        compilerQuestionId,
+        rewardCoins: rewardCoins || 100,
+        rewardXP: rewardXP || 50,
+        rewardBadgeId,
+        rewardItemId,
+        giftLabel: `${diff.charAt(0).toUpperCase() + diff.slice(1)} Challenge Gift`
+      };
     }
 
     const challenge = new DailyChallenge({
@@ -519,7 +859,8 @@ export const createDailyChallenge = async (req, res) => {
       rewardCoins,
       rewardXP,
       rewardBadgeId,
-      rewardItemId
+      rewardItemId,
+      tiers: Object.keys(initialTiers).length > 0 ? initialTiers : undefined
     });
 
     await challenge.save();
@@ -537,7 +878,7 @@ export const createDailyChallenge = async (req, res) => {
 export const updateDailyChallenge = async (req, res) => {
   try {
     const { id } = req.params;
-    const { compilerQuestionId, rewardCoins, rewardXP, rewardBadgeId, rewardItemId } = req.body;
+    const { compilerQuestionId, rewardCoins, rewardXP, rewardBadgeId, rewardItemId, date, tiers } = req.body;
 
     const updates = {};
     if (compilerQuestionId) updates.compilerQuestionId = compilerQuestionId;
@@ -545,6 +886,46 @@ export const updateDailyChallenge = async (req, res) => {
     if (rewardXP !== undefined) updates.rewardXP = rewardXP;
     if (rewardBadgeId !== undefined) updates.rewardBadgeId = rewardBadgeId;
     if (rewardItemId !== undefined) updates.rewardItemId = rewardItemId;
+    if (tiers !== undefined) updates.tiers = tiers;
+
+    if (date) {
+      const targetDate = new Date(date);
+      if (!isNaN(targetDate.getTime())) {
+        targetDate.setHours(0, 0, 0, 0);
+        // Check if another challenge exists on targetDate
+        const existingOnDate = await DailyChallenge.findOne({
+          _id: { $ne: id },
+          date: targetDate
+        });
+
+        if (existingOnDate) {
+          // Append/merge into existing challenge on target date
+          const currentDoc = await DailyChallenge.findById(id);
+          if (currentDoc) {
+            if (!existingOnDate.tiers) existingOnDate.tiers = {};
+            if (currentDoc.tiers) {
+              if (currentDoc.tiers.easy) existingOnDate.tiers.easy = currentDoc.tiers.easy;
+              if (currentDoc.tiers.medium) existingOnDate.tiers.medium = currentDoc.tiers.medium;
+              if (currentDoc.tiers.hard) existingOnDate.tiers.hard = currentDoc.tiers.hard;
+            }
+            if (compilerQuestionId) {
+              existingOnDate.compilerQuestionId = compilerQuestionId;
+            } else if (!existingOnDate.compilerQuestionId) {
+              existingOnDate.compilerQuestionId = currentDoc.compilerQuestionId;
+            }
+            if (rewardCoins !== undefined) existingOnDate.rewardCoins = rewardCoins;
+            if (rewardXP !== undefined) existingOnDate.rewardXP = rewardXP;
+            if (rewardBadgeId !== undefined) existingOnDate.rewardBadgeId = rewardBadgeId;
+            if (rewardItemId !== undefined) existingOnDate.rewardItemId = rewardItemId;
+            await existingOnDate.save();
+            await DailyChallenge.deleteOne({ _id: id });
+            return res.json({ ...existingOnDate.toObject(), merged: true });
+          }
+        } else {
+          updates.date = targetDate;
+        }
+      }
+    }
 
     const challenge = await DailyChallenge.findByIdAndUpdate(id, updates, { new: true });
     if (!challenge) return res.status(404).json({ message: 'Challenge not found' });
@@ -560,24 +941,81 @@ export const updateDailyChallenge = async (req, res) => {
  */
 export const getDailyChallengesAdmin = async (req, res) => {
   try {
-    const challenges = await DailyChallenge.find({}).sort({ date: -1 }).limit(30).lean();
+    const challenges = await DailyChallenge.find({}).sort({ date: -1 }).limit(40).lean();
     
     // OPTIMIZATION: Bulk fetch all questions in one query instead of N+1
-    const questionIds = [...new Set(challenges.map(c => c.compilerQuestionId).filter(Boolean))];
-    const questions = await CompilerQuestion.find({ questionId: { $in: questionIds } }).lean();
-    
-    // Create a lookup map for O(1) access
+    const questionIds = new Set();
+    challenges.forEach(c => {
+      if (c.compilerQuestionId) questionIds.add(c.compilerQuestionId);
+      if (c.tiers?.easy?.compilerQuestionId) questionIds.add(c.tiers.easy.compilerQuestionId);
+      if (c.tiers?.medium?.compilerQuestionId) questionIds.add(c.tiers.medium.compilerQuestionId);
+      if (c.tiers?.hard?.compilerQuestionId) questionIds.add(c.tiers.hard.compilerQuestionId);
+    });
+
+    const questions = await CompilerQuestion.find({ questionId: { $in: Array.from(questionIds) } }).lean();
     const questionMap = new Map(questions.map(q => [q.questionId, q]));
     
     // Populate using the map
-    const populated = challenges.map(c => ({
-      ...c,
-      question: questionMap.get(c.compilerQuestionId) || null
-    }));
+    const populated = challenges.map(c => {
+      const primaryQ = questionMap.get(c.compilerQuestionId) || null;
+      const populatedTiers = c.tiers ? {
+        easy: c.tiers.easy ? {
+          ...c.tiers.easy,
+          question: questionMap.get(c.tiers.easy.compilerQuestionId) || null
+        } : null,
+        medium: c.tiers.medium ? {
+          ...c.tiers.medium,
+          question: questionMap.get(c.tiers.medium.compilerQuestionId) || null
+        } : null,
+        hard: c.tiers.hard ? {
+          ...c.tiers.hard,
+          question: questionMap.get(c.tiers.hard.compilerQuestionId) || null
+        } : null
+      } : null;
+
+      return {
+        ...c,
+        question: primaryQ,
+        populatedTiers
+      };
+    });
 
     res.json(populated);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching challenges', error: error.message });
+  }
+};
+
+/**
+ * AI-generate a 3-tier daily challenge (Admin).
+ * Uses existing quizzes as reference context to generate 3 distinct difficulty tiers (Easy, Medium, Hard).
+ * Each tier has different rewards/gifts, and users can answer all 3.
+ * 
+ * @route POST /api/daily-challenge/admin/ai-generate
+ */
+export const generateAiDailyChallenge = async (req, res) => {
+  try {
+    const { date, referenceQuizId, language, customTopic, tierRewards, saveDirectly = true } = req.body;
+
+    const result = await generateThreeTierChallenges({
+      date: date || new Date(),
+      referenceQuizId,
+      language: language || 'javascript',
+      customTopic,
+      tierRewards: tierRewards || {},
+      saveDirectly
+    });
+
+    res.status(200).json({
+      message: saveDirectly ? 'Daily challenge with 3 tiers generated and scheduled!' : '3 tiers generated for preview',
+      ...result
+    });
+  } catch (error) {
+    console.error('AI Generate Daily Challenge Error:', error);
+    res.status(500).json({
+      message: error.message || 'Failed to generate 3-tier challenge with AI',
+      error: error.message
+    });
   }
 };
 
@@ -885,6 +1323,7 @@ export const claimDailyStreak = async (req, res) => {
     // Mark as claimed today
     user.lastStreakClaimDate = new Date();
     await user.save();
+    await evaluateAndAwardBadges(user.userId).catch(() => {});
 
     res.json({
       success: true,

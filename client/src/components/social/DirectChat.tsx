@@ -5,6 +5,7 @@ import type { UserData, DirectChatMessage } from '../../types';
 import { Swords, Clock } from 'lucide-react';
 import Avatar from '../Avatar';
 import { ChatWindow, type ChallengeAcceptData } from '../chat/ChatWindow';
+import { useUserProfileModal } from '../../context/UserProfileModalContext';
 
 interface DirectChatProps {
     currentUser: UserData;
@@ -32,11 +33,39 @@ interface ChallengeMessage extends DirectChatMessage {
 
 export const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onClose, onStartChallenge, onStartAsyncChallenge }) => {
     const { socket, isUserOnline, checkUserOnline } = useSocket();
+    const { openUserProfile } = useUserProfileModal();
     const navigate = useNavigate();
     const [messages, setMessages] = useState<ChallengeMessage[]>([]);
     const [loading] = useState(false);
     const [friendOnline, setFriendOnline] = useState(false);
     const [pendingChallengeMessageId, setPendingChallengeMessageId] = useState<string | null>(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Escape key listener for fullscreen / close
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                if (isFullscreen) {
+                    setIsFullscreen(false);
+                } else {
+                    onClose();
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isFullscreen, onClose]);
+
+    // Lock body scroll when fullscreen
+    useEffect(() => {
+        if (isFullscreen) {
+            const originalOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = originalOverflow;
+            };
+        }
+    }, [isFullscreen]);
 
     // Check friend's online status on mount and when isUserOnline cache changes
     useEffect(() => {
@@ -247,8 +276,12 @@ export const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onC
     }, [friendOnline]);
 
     const headerContent = (
-        <div className="flex items-center gap-3">
-            <div className={`relative p-0.5 rounded-full ${friendOnline
+        <div
+            onClick={() => openUserProfile(friend.userId)}
+            className="flex items-center gap-3 cursor-pointer group/header"
+            title={`View ${friend.name}'s profile`}
+        >
+            <div className={`relative p-0.5 rounded-full group-hover/header:scale-105 transition-transform ${friendOnline
                 ? 'bg-gradient-to-br from-emerald-400 via-green-400 to-teal-400 shadow-lg shadow-emerald-500/30'
                 : 'bg-white/20'}`}>
                 <div className="bg-gradient-to-br from-violet-600 to-indigo-600 p-0.5 rounded-full">
@@ -265,7 +298,7 @@ export const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onC
                 <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-violet-600 ${statusDisplay.dotClass} ${statusDisplay.animate ? 'animate-pulse' : ''}`} />
             </div>
             <div className="flex flex-col">
-                <h3 className="text-white font-bold text-lg leading-tight drop-shadow-sm">{friend.name}</h3>
+                <h3 className="text-white font-bold text-lg leading-tight drop-shadow-sm group-hover/header:underline">{friend.name}</h3>
                 <div className="flex items-center gap-1.5">
                     {!friendOnline && <Clock className="w-3 h-3 text-white/40" />}
                     <span className={`text-xs font-medium ${statusDisplay.textClass}`}>
@@ -301,10 +334,18 @@ export const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onC
 
     return (
         <div
-            className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-20 p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
+            className={`fixed inset-0 z-[9999] flex ${
+                isFullscreen
+                    ? 'items-stretch justify-stretch p-0 bg-black/85'
+                    : 'items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50'
+            } animate-in fade-in duration-200`}
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
-            <div className="w-full max-w-md h-[75vh] min-h-[450px] max-h-[650px] animate-in slide-in-from-bottom-4 zoom-in-95 duration-300">
+            <div className={`w-full flex flex-col ${
+                isFullscreen
+                    ? 'h-full max-w-none max-h-none rounded-none'
+                    : 'max-w-md h-[88vh] sm:h-[75vh] min-h-[380px] sm:min-h-[450px] max-h-[650px] rounded-t-3xl sm:rounded-2xl animate-in slide-in-from-bottom-4 zoom-in-95'
+            } duration-200 overflow-hidden`}>
                 <ChatWindow
                     currentUser={currentUser}
                     messages={messages}
@@ -314,6 +355,8 @@ export const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onC
                     headerContent={headerContent}
                     inputActions={inputActions}
                     loading={loading}
+                    isFullscreen={isFullscreen}
+                    onToggleFullscreen={() => setIsFullscreen(prev => !prev)}
                 />
             </div>
         </div>

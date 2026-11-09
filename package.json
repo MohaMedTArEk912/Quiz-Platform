@@ -12,6 +12,8 @@
     "seed:all": "node scripts/seedDatabase.js",
     "seed:admin": "node scripts/seedAdmin.js",
     "seed:local": "node scripts/seedLocalDatabase.js",
+    "db:copy:prod": "node scripts/copyProdToLocal.js",
+    "email:test": "node scripts/testEmail.js",
     "build": "npm --prefix client run build",
     "build:analyze": "ANALYZE=true npm --prefix client run build",
     "lint": "eslint .",

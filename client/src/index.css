@@ -643,10 +643,10 @@ button:active {
 /* Icon Wrapper */
 [data-layout="bento"] .lg\:col-span-7.glass-card .w-12,
 [data-theme="bento"] .lg\:col-span-7.glass-card .w-12 {
-  background: var(--bento-purple) !important;
+  background: var(--bento-yellow) !important;
   border: 2px solid #000000 !important;
   box-shadow: 2px 2px 0px #000000 !important;
-  color: #ffffff !important;
+  color: #000000 !important;
 }
 /* Progress Bar Track & Fill */
 [data-layout="bento"] .lg\:col-span-7.glass-card .w-full.h-2\.5,
@@ -745,11 +745,22 @@ button:active {
 /* Streak Claim Button */
 [data-layout="bento"] .grid.md\:grid-cols-2 > div:nth-child(1).glass-card .rounded-xl:last-child,
 [data-theme="bento"] .grid.md\:grid-cols-2 > div:nth-child(1).glass-card .rounded-xl:last-child {
-  background: var(--bento-purple) !important;
-  color: #ffffff !important;
+  background: var(--bento-green) !important;
+  color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 3px 3px 0px #000000 !important;
   font-weight: 800 !important;
+}
+
+[data-layout="bento"] .grid.md\:grid-cols-2 > div:nth-child(1).glass-card button:disabled,
+[data-theme="bento"] .grid.md\:grid-cols-2 > div:nth-child(1).glass-card button:disabled,
+[data-layout="bento"] .grid.md\:grid-cols-2 > div:nth-child(1).glass-card button.bg-purple-600,
+[data-theme="bento"] .grid.md\:grid-cols-2 > div:nth-child(1).glass-card button.bg-purple-600 {
+  background: #000000 !important;
+  color: var(--bento-green) !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  opacity: 1 !important;
 }
 
 /* Live Arena Card (Blue with Lime Action Button) */
@@ -846,13 +857,13 @@ button:active {
   font-weight: 800 !important;
   border-radius: 0.75rem !important;
 }
-[data-layout="bento"] header button:hover,
-[data-theme="bento"] header button:hover {
+[data-layout="bento"] header button:not(.btn-unstyled):not(nav button):hover,
+[data-theme="bento"] header button:not(.btn-unstyled):not(nav button):hover {
   transform: translate(-1px, -1px) !important;
   box-shadow: 3.5px 3.5px 0px #000000 !important;
 }
-[data-layout="bento"] header button:active,
-[data-theme="bento"] header button:active {
+[data-layout="bento"] header button:not(.btn-unstyled):not(nav button):active,
+[data-theme="bento"] header button:not(.btn-unstyled):not(nav button):active {
   transform: translate(1.5px, 1.5px) !important;
   box-shadow: 1px 1px 0px #000000 !important;
 }
@@ -860,8 +871,8 @@ button:active {
 /* Sign Up Button in Navbar */
 [data-layout="bento"] header .bg-indigo-600.hover\:bg-indigo-700,
 [data-theme="bento"] header .bg-indigo-600.hover\:bg-indigo-700 {
-  background: var(--bento-purple) !important;
-  color: #ffffff !important;
+  background: var(--bento-green) !important;
+  color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 3px 3px 0px #000000 !important;
   font-weight: 800 !important;
@@ -910,13 +921,15 @@ button:active {
   outline: none !important;
 }
 
-/* Primary Buttons across the app (LinkUp purple/green) */
+/* Primary Action Buttons across the app (Bento Lime/Green with black text) */
 [data-layout="bento"] button.bg-indigo-600,
 [data-theme="bento"] button.bg-indigo-600,
+[data-layout="bento"] button.bg-purple-600,
+[data-theme="bento"] button.bg-purple-600,
 [data-layout="bento"] button[type="submit"]:not(.btn-unstyled),
 [data-theme="bento"] button[type="submit"]:not(.btn-unstyled) {
-  background: var(--bento-purple) !important;
-  color: #ffffff !important;
+  background: var(--bento-green) !important;
+  color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 3.5px 3.5px 0px #000000 !important;
   font-weight: 800 !important;
@@ -924,6 +937,8 @@ button:active {
 }
 [data-layout="bento"] button.bg-indigo-600:hover,
 [data-theme="bento"] button.bg-indigo-600:hover,
+[data-layout="bento"] button.bg-purple-600:hover,
+[data-theme="bento"] button.bg-purple-600:hover,
 [data-layout="bento"] button[type="submit"]:not(.btn-unstyled):hover,
 [data-theme="bento"] button[type="submit"]:not(.btn-unstyled):hover {
   transform: translate(-1px, -1px) !important;
@@ -931,6 +946,8 @@ button:active {
 }
 [data-layout="bento"] button.bg-indigo-600:active,
 [data-theme="bento"] button.bg-indigo-600:active,
+[data-layout="bento"] button.bg-purple-600:active,
+[data-theme="bento"] button.bg-purple-600:active,
 [data-layout="bento"] button[type="submit"]:not(.btn-unstyled):active,
 [data-theme="bento"] button[type="submit"]:not(.btn-unstyled):active {
   transform: translate(2px, 2px) !important;
@@ -940,10 +957,10 @@ button:active {
 /* 11. Dropdown Menus, Modals & Dialogs (Solid White with Chunky Black Borders & Shadows) */
 [data-layout="bento"] [role="menu"],
 [data-theme="bento"] [role="menu"],
-[data-layout="bento"] [role="dialog"],
-[data-theme="bento"] [role="dialog"],
-[data-layout="bento"] .animate-in.fade-in.zoom-in-95,
-[data-theme="bento"] .animate-in.fade-in.zoom-in-95,
+[data-layout="bento"] [role="dialog"]:not(.fixed),
+[data-theme="bento"] [role="dialog"]:not(.fixed),
+[data-layout="bento"] .animate-in.fade-in.zoom-in-95:not(.fixed),
+[data-theme="bento"] .animate-in.fade-in.zoom-in-95:not(.fixed),
 [data-layout="bento"] .fixed.inset-0 > .relative.bg-white,
 [data-theme="bento"] .fixed.inset-0 > .relative.bg-white,
 [data-layout="bento"] .fixed.inset-0 > div:not(.fixed):not(.absolute),
@@ -954,6 +971,43 @@ button:active {
   border-radius: 1.5rem !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+/* Modals & Dialogs: outer fixed overlay must remain transparent */
+[data-layout="bento"] .fixed.inset-0,
+[data-theme="bento"] .fixed.inset-0 {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* Ensure ambient background is completely crisp and never blurred */
+.ambient-background,
+.ambient-background *,
+[data-layout="bento"] .ambient-background,
+[data-layout="bento"] .ambient-background *,
+[data-theme="bento"] .ambient-background,
+[data-theme="bento"] .ambient-background * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+/* Modals & Dialogs: backdrop overlay softly blurs page content beneath ONLY when modal is active */
+.modal-backdrop,
+[data-layout="bento"] .modal-backdrop,
+[data-theme="bento"] .modal-backdrop,
+[data-layout="bento"] .fixed[class*="z-"] > .modal-backdrop,
+[data-theme="bento"] .fixed[class*="z-"] > .modal-backdrop,
+[data-layout="bento"] .fixed[class*="z-"] > [class*="backdrop-blur"],
+[data-theme="bento"] .fixed[class*="z-"] > [class*="backdrop-blur"] {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  background-color: rgba(0, 0, 0, 0.45) !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
 
 /* Modal Headers & Footers in Bento Mode */
@@ -1043,7 +1097,7 @@ button:active {
   box-shadow: 1px 1px 0px #000000 !important;
 }
 
-/* Modals Backdrops & Panels */
+/* Modals Backdrops & Panels: transparent blur showing page content beneath */
 [data-layout="bento"] .fixed.inset-0.bg-black\/60,
 [data-theme="bento"] .fixed.inset-0.bg-black\/60,
 [data-layout="bento"] .fixed.inset-0.bg-black\/70,
@@ -1052,9 +1106,11 @@ button:active {
 [data-theme="bento"] .fixed.inset-0.bg-black\/80,
 [data-layout="bento"] .fixed.inset-0.bg-slate-900\/50,
 [data-theme="bento"] .fixed.inset-0.bg-slate-900\/50 {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background: rgba(0, 0, 0, 0.65) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* Universal Toast Notifications in Bento Mode */
@@ -1375,18 +1431,18 @@ button:active {
    ========================================================================== */
 
 /* Universal heavy stroke and crisp graphic linework for all Lucide SVG icons in Bento mode */
-[data-theme="bento"] svg,
+[data-theme="bento"] svg:not(.avatar-svg),
 [data-theme="bento"] svg.lucide,
-[data-layout="bento"] svg,
+[data-layout="bento"] svg:not(.avatar-svg),
 [data-layout="bento"] svg.lucide {
   stroke-width: 2.25px !important;
   stroke-linecap: round !important;
   stroke-linejoin: round !important;
 }
 
-[data-theme="bento"] button svg,
+[data-theme="bento"] button svg:not(.avatar-svg),
 [data-theme="bento"] button svg.lucide,
-[data-layout="bento"] button svg,
+[data-layout="bento"] button svg:not(.avatar-svg),
 [data-layout="bento"] button svg.lucide {
   stroke-width: 2.5px !important;
 }
@@ -1401,106 +1457,106 @@ button:active {
 }
 
 /* Transform all translucent and colored icon boxes across all components into punchy solid pop containers */
-[data-theme="bento"] [class*="bg-indigo-"]:has(> svg),
-[data-layout="bento"] [class*="bg-indigo-"]:has(> svg) {
+[data-theme="bento"] [class*="bg-indigo-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-indigo-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root) {
   background-color: #bef264 !important;
   color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 2.5px 2.5px 0px #000000 !important;
 }
 
-[data-theme="bento"] [class*="bg-blue-"]:has(> svg),
-[data-layout="bento"] [class*="bg-blue-"]:has(> svg) {
+[data-theme="bento"] [class*="bg-blue-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-blue-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root) {
   background-color: #93c5fd !important;
   color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 2.5px 2.5px 0px #000000 !important;
 }
 
-[data-theme="bento"] [class*="bg-sky-"]:has(> svg),
-[data-theme="bento"] [class*="bg-cyan-"]:has(> svg),
-[data-layout="bento"] [class*="bg-sky-"]:has(> svg),
-[data-layout="bento"] [class*="bg-cyan-"]:has(> svg) {
+[data-theme="bento"] [class*="bg-sky-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-theme="bento"] [class*="bg-cyan-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-sky-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-cyan-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root) {
   background-color: #7dd3fc !important;
   color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 2.5px 2.5px 0px #000000 !important;
 }
 
-[data-theme="bento"] [class*="bg-amber-"]:has(> svg),
-[data-theme="bento"] [class*="bg-yellow-"]:has(> svg),
-[data-layout="bento"] [class*="bg-amber-"]:has(> svg),
-[data-layout="bento"] [class*="bg-yellow-"]:has(> svg) {
+[data-theme="bento"] [class*="bg-amber-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-theme="bento"] [class*="bg-yellow-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-amber-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-yellow-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root) {
   background-color: #fde047 !important;
   color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 2.5px 2.5px 0px #000000 !important;
 }
 
-[data-theme="bento"] [class*="bg-emerald-"]:has(> svg),
-[data-theme="bento"] [class*="bg-green-"]:has(> svg),
-[data-theme="bento"] [class*="bg-lime-"]:has(> svg),
-[data-layout="bento"] [class*="bg-emerald-"]:has(> svg),
-[data-layout="bento"] [class*="bg-green-"]:has(> svg),
-[data-layout="bento"] [class*="bg-lime-"]:has(> svg) {
+[data-theme="bento"] [class*="bg-emerald-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-theme="bento"] [class*="bg-green-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-theme="bento"] [class*="bg-lime-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-emerald-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-green-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-lime-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root) {
   background-color: #bef264 !important;
   color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 2.5px 2.5px 0px #000000 !important;
 }
 
-[data-theme="bento"] [class*="bg-rose-"]:has(> svg),
-[data-theme="bento"] [class*="bg-red-"]:has(> svg),
-[data-layout="bento"] [class*="bg-rose-"]:has(> svg),
-[data-layout="bento"] [class*="bg-red-"]:has(> svg) {
+[data-theme="bento"] [class*="bg-rose-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-theme="bento"] [class*="bg-red-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-rose-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-red-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root) {
   background-color: #fecdd3 !important;
   color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 2.5px 2.5px 0px #000000 !important;
 }
 
-[data-theme="bento"] [class*="bg-purple-"]:has(> svg),
-[data-theme="bento"] [class*="bg-violet-"]:has(> svg),
-[data-theme="bento"] [class*="bg-fuchsia-"]:has(> svg),
-[data-layout="bento"] [class*="bg-purple-"]:has(> svg),
-[data-layout="bento"] [class*="bg-violet-"]:has(> svg),
-[data-layout="bento"] [class*="bg-fuchsia-"]:has(> svg) {
+[data-theme="bento"] [class*="bg-purple-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-theme="bento"] [class*="bg-violet-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-theme="bento"] [class*="bg-fuchsia-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-purple-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-violet-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-fuchsia-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root) {
   background-color: #ddd6fe !important;
   color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 2.5px 2.5px 0px #000000 !important;
 }
 
-[data-theme="bento"] [class*="bg-orange-"]:has(> svg),
-[data-layout="bento"] [class*="bg-orange-"]:has(> svg) {
+[data-theme="bento"] [class*="bg-orange-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-orange-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root) {
   background-color: #fed7aa !important;
   color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 2.5px 2.5px 0px #000000 !important;
 }
 
-[data-theme="bento"] [class*="bg-teal-"]:has(> svg),
-[data-layout="bento"] [class*="bg-teal-"]:has(> svg) {
+[data-theme="bento"] [class*="bg-teal-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-teal-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root) {
   background-color: #99f6e4 !important;
   color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 2.5px 2.5px 0px #000000 !important;
 }
 
-[data-theme="bento"] [class*="bg-pink-"]:has(> svg),
-[data-layout="bento"] [class*="bg-pink-"]:has(> svg) {
+[data-theme="bento"] [class*="bg-pink-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-pink-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root) {
   background-color: #fbcfe8 !important;
   color: #000000 !important;
   border: 2px solid #000000 !important;
   box-shadow: 2.5px 2.5px 0px #000000 !important;
 }
 
-[data-theme="bento"] [class*="bg-slate-"]:has(> svg),
-[data-theme="bento"] [class*="bg-gray-"]:has(> svg),
-[data-theme="bento"] [class*="bg-zinc-"]:has(> svg),
-[data-layout="bento"] [class*="bg-slate-"]:has(> svg),
-[data-layout="bento"] [class*="bg-gray-"]:has(> svg),
-[data-layout="bento"] [class*="bg-zinc-"]:has(> svg) {
+[data-theme="bento"] [class*="bg-slate-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-theme="bento"] [class*="bg-gray-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-theme="bento"] [class*="bg-zinc-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-slate-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-gray-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root),
+[data-layout="bento"] [class*="bg-zinc-"]:has(> svg:not(.avatar-svg)):not(button):not(a):not(.avatar-root) {
   background-color: #e2e8f0 !important;
   color: #000000 !important;
   border: 2px solid #000000 !important;
@@ -1508,46 +1564,46 @@ button:active {
 }
 
 /* Ensure SVG strokes inside colored containers stay pure crisp black, without overriding black/dark containers */
-[data-theme="bento"] [class*="bg-indigo-"] > svg,
-[data-theme="bento"] [class*="bg-blue-"] > svg,
-[data-theme="bento"] [class*="bg-sky-"] > svg,
-[data-theme="bento"] [class*="bg-cyan-"] > svg,
-[data-theme="bento"] [class*="bg-amber-"] > svg,
-[data-theme="bento"] [class*="bg-yellow-"] > svg,
-[data-theme="bento"] [class*="bg-emerald-"] > svg,
-[data-theme="bento"] [class*="bg-green-"] > svg,
-[data-theme="bento"] [class*="bg-lime-"] > svg,
-[data-theme="bento"] [class*="bg-rose-"] > svg,
-[data-theme="bento"] [class*="bg-red-"] > svg,
-[data-theme="bento"] [class*="bg-purple-"] > svg,
-[data-theme="bento"] [class*="bg-violet-"] > svg,
-[data-theme="bento"] [class*="bg-fuchsia-"] > svg,
-[data-theme="bento"] [class*="bg-orange-"] > svg,
-[data-theme="bento"] [class*="bg-teal-"] > svg,
-[data-theme="bento"] [class*="bg-pink-"] > svg,
-[data-theme="bento"] [class*="bg-slate-"] > svg,
-[data-theme="bento"] [class*="bg-gray-"] > svg,
-[data-theme="bento"] [class*="bg-zinc-"] > svg,
-[data-layout="bento"] [class*="bg-indigo-"] > svg,
-[data-layout="bento"] [class*="bg-blue-"] > svg,
-[data-layout="bento"] [class*="bg-sky-"] > svg,
-[data-layout="bento"] [class*="bg-cyan-"] > svg,
-[data-layout="bento"] [class*="bg-amber-"] > svg,
-[data-layout="bento"] [class*="bg-yellow-"] > svg,
-[data-layout="bento"] [class*="bg-emerald-"] > svg,
-[data-layout="bento"] [class*="bg-green-"] > svg,
-[data-layout="bento"] [class*="bg-lime-"] > svg,
-[data-layout="bento"] [class*="bg-rose-"] > svg,
-[data-layout="bento"] [class*="bg-red-"] > svg,
-[data-layout="bento"] [class*="bg-purple-"] > svg,
-[data-layout="bento"] [class*="bg-violet-"] > svg,
-[data-layout="bento"] [class*="bg-fuchsia-"] > svg,
-[data-layout="bento"] [class*="bg-orange-"] > svg,
-[data-layout="bento"] [class*="bg-teal-"] > svg,
-[data-layout="bento"] [class*="bg-pink-"] > svg,
-[data-layout="bento"] [class*="bg-slate-"] > svg,
-[data-layout="bento"] [class*="bg-gray-"] > svg,
-[data-layout="bento"] [class*="bg-zinc-"] > svg {
+[data-theme="bento"] [class*="bg-indigo-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-blue-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-sky-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-cyan-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-amber-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-yellow-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-emerald-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-green-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-lime-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-rose-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-red-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-purple-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-violet-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-fuchsia-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-orange-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-teal-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-pink-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-slate-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-gray-"] > svg:not(.avatar-svg),
+[data-theme="bento"] [class*="bg-zinc-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-indigo-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-blue-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-sky-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-cyan-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-amber-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-yellow-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-emerald-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-green-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-lime-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-rose-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-red-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-purple-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-violet-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-fuchsia-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-orange-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-teal-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-pink-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-slate-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-gray-"] > svg:not(.avatar-svg),
+[data-layout="bento"] [class*="bg-zinc-"] > svg:not(.avatar-svg) {
   color: #000000 !important;
   stroke: #000000 !important;
 }

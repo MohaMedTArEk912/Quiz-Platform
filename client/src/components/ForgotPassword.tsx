@@ -18,6 +18,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
     const { isBento } = useTheme();
     const [step, setStep] = useState<'email' | 'reset'>('email');
     const [email, setEmail] = useState('');
+    const [verificationCode, setVerificationCode] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -98,8 +99,9 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
         setLoading(true);
 
         try {
-            await api.forgotPassword(email);
-            setSuccess('Email verified! Please enter your new password.');
+            const res = await api.forgotPassword(email);
+            setSuccess('A 6-digit verification code was sent to ' + email + '!');
+            if (res && res.code) setVerificationCode(res.code);
             setStep('reset');
         } catch (err) {
             setError((err as Error).message);
@@ -131,7 +133,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
         setLoading(true);
 
         try {
-            await api.resetPassword(email, newPassword);
+            await api.resetPassword(email, newPassword, verificationCode);
             setSuccess('Password reset successfully! Redirecting to login...');
             setTimeout(() => {
                 onSuccess();
@@ -254,6 +256,28 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
                     </form>
                 ) : (
                     <form onSubmit={handleResetPassword} className="space-y-6">
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className={`block text-sm ${isBento ? 'font-black text-black' : 'font-semibold text-gray-700 dark:text-gray-300'}`}>
+                                    6-Digit Verification Code
+                                </label>
+                                <span className="text-[11px] text-purple-600 dark:text-purple-400 font-bold">Check your email</span>
+                            </div>
+                            <input
+                                type="text"
+                                maxLength={6}
+                                value={verificationCode}
+                                onChange={(e) => setVerificationCode(e.target.value.trim())}
+                                placeholder="Enter 6-digit code"
+                                className={`w-full px-4 py-3 rounded-xl tracking-widest font-mono text-center text-lg font-bold transition-all ${
+                                    isBento
+                                        ? 'border-2 border-black bg-white text-black placeholder-gray-400 shadow-[2px_2px_0px_#000] focus:outline-none focus:border-black'
+                                        : 'border-2 border-gray-200 dark:border-gray-700 focus:border-purple-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400'
+                                }`}
+                                required
+                            />
+                        </div>
+
                         <div>
                             <label className={`block text-sm mb-2 ${isBento ? 'font-black text-black' : 'font-semibold text-gray-700 dark:text-gray-300'}`}>New Password</label>
                             <div className="relative group">

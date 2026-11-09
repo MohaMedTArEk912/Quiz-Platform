@@ -4,12 +4,11 @@ import {
     Mail,
     Send,
     Sparkles,
-    Activity,
     LifeBuoy,
+    Loader2,
+    AlertCircle,
     CheckCircle2,
-    Clock,
-    ShieldCheck,
-    Loader2
+    BellRing
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useNotification } from '../context/NotificationContext';
@@ -25,7 +24,25 @@ const Footer: React.FC = () => {
     const { currentUser } = useAuth();
 
     const [emailInput, setEmailInput] = useState('');
-    const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'faq' | 'support' | 'status' | null>(null);
+    const [isSubscribing, setIsSubscribing] = useState(false);
+    const [isAlreadySubscribed, setIsAlreadySubscribed] = useState<boolean>(() => {
+        try {
+            const saved = localStorage.getItem('weekly_challenge_subscriber');
+            return saved ? JSON.parse(saved).subscribed === true : false;
+        } catch {
+            return false;
+        }
+    });
+    const [subscribedEmail, setSubscribedEmail] = useState<string>(() => {
+        try {
+            const saved = localStorage.getItem('weekly_challenge_subscriber');
+            return saved ? JSON.parse(saved).email || '' : '';
+        } catch {
+            return '';
+        }
+    });
+    const [isUnsubscribing, setIsUnsubscribing] = useState(false);
+    const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'faq' | 'support' | null>(null);
 
     // Support Form State
     const [supportEmail, setSupportEmail] = useState('');
@@ -33,6 +50,7 @@ const Footer: React.FC = () => {
     const [supportCategory, setSupportCategory] = useState<'technical' | 'bug' | 'scoring' | 'account' | 'feature' | 'general'>('general');
     const [supportSubject, setSupportSubject] = useState('');
     const [supportMessage, setSupportMessage] = useState('');
+    const [supportError, setSupportError] = useState('');
     const [isSubmittingSupport, setIsSubmittingSupport] = useState(false);
 
     // Auto-fill user credentials when opening support modal
@@ -46,6 +64,27 @@ const Footer: React.FC = () => {
             }
         }
     }, [activeModal, currentUser, supportEmail, supportName]);
+
+    // Check Weekly Challenges newsletter subscription status
+    useEffect(() => {
+        const checkSubscription = async () => {
+            try {
+                const emailToCheck = subscribedEmail || currentUser?.email;
+                if (!emailToCheck && !currentUser?.userId) return;
+
+                const status = await api.getNewsletterStatus(emailToCheck, currentUser?.userId);
+                if (status.subscribed) {
+                    setIsAlreadySubscribed(true);
+                    const verifiedEmail = status.email || emailToCheck || '';
+                    setSubscribedEmail(verifiedEmail);
+                    localStorage.setItem('weekly_challenge_subscriber', JSON.stringify({ email: verifiedEmail, subscribed: true }));
+                }
+            } catch {
+                // Silently ignore network fallback
+            }
+        };
+        checkSubscription();
+    }, [currentUser?.email, currentUser?.userId, subscribedEmail]);
 
     /**
      * Smoothly navigates to target path and scrolls the viewport to the top of the section/page.
@@ -95,20 +134,27 @@ const Footer: React.FC = () => {
 
     const handleSupportSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSupportError('');
         const trimmedEmail = supportEmail.trim();
         const trimmedSubject = supportSubject.trim();
         const trimmedMessage = supportMessage.trim();
 
         if (!trimmedEmail || !trimmedEmail.includes('@')) {
-            showNotification('error', 'Please provide a valid email address.');
+            const err = 'Please provide a valid email address.';
+            setSupportError(err);
+            showNotification('error', err);
             return;
         }
         if (trimmedSubject.length < 3) {
-            showNotification('error', 'Subject must be at least 3 characters.');
+            const err = 'Subject must be at least 3 characters.';
+            setSupportError(err);
+            showNotification('error', err);
             return;
         }
         if (trimmedMessage.length < 5) {
-            showNotification('error', 'Please provide a description of your issue (at least 5 characters).');
+            const err = 'Please provide a description of your issue (at least 5 characters).';
+            setSupportError(err);
+            showNotification('error', err);
             return;
         }
 
@@ -128,14 +174,14 @@ const Footer: React.FC = () => {
             );
             setSupportSubject('');
             setSupportMessage('');
+            setSupportError('');
             setActiveModal(null);
         } catch (error: unknown) {
             console.error('Failed to submit support ticket:', error);
             const err = error as Error;
-            showNotification(
-                'error',
-                err.message || 'Failed to dispatch ticket. You can email us directly at mohaamedtariq12@gmail.com.'
-            );
+            const msg = err.message || 'Failed to dispatch ticket. You can email us directly at mohaamedtariq12@gmail.com.';
+            setSupportError(msg);
+            showNotification('error', msg);
         } finally {
             setIsSubmittingSupport(false);
         }
@@ -143,15 +189,50 @@ const Footer: React.FC = () => {
 
     const currentYear = new Date().getFullYear();
 
-    const handleNewsletterSubmit = (e: React.FormEvent) => {
+    const handleNewsletterSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!emailInput || !emailInput.includes('@')) {
+        const email = emailInput.trim();
+        if (!email || !email.includes('@')) {
             showNotification('error', 'Please enter a valid email address.');
             return;
         }
-        showNotification('success', '🎉 Subscribed! You will receive new quiz releases and challenge updates.');
-        setEmailInput('');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        setIsSubscribing(true);
+        try {
+            const res = await api.subscribeNewsletter(email, currentUser?.name);
+            setIsAlreadySubscribed(true);
+            setSubscribedEmail(email);
+            localStorage.setItem('weekly_challenge_subscriber', JSON.stringify({ email, subscribed: true }));
+            setEmailInput('');
+            showNotification('success', res.message || '🎉 Subscribed! You will be notified automatically anytime challenges drop.');
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Failed to subscribe. Please try again.';
+            showNotification('error', msg);
+        } finally {
+            setIsSubscribing(false);
+        }
+    };
+
+    const handleUnsubscribe = async () => {
+        if (!subscribedEmail) {
+            setIsAlreadySubscribed(false);
+            localStorage.removeItem('weekly_challenge_subscriber');
+            return;
+        }
+
+        setIsUnsubscribing(true);
+        try {
+            const res = await api.unsubscribeNewsletter(subscribedEmail);
+            setIsAlreadySubscribed(false);
+            setSubscribedEmail('');
+            localStorage.removeItem('weekly_challenge_subscriber');
+            showNotification('success', res.message || 'You have unsubscribed from Weekly Challenges notifications.');
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Failed to unsubscribe.';
+            showNotification('error', msg);
+        } finally {
+            setIsUnsubscribing(false);
+        }
     };
 
     return (
@@ -311,35 +392,98 @@ const Footer: React.FC = () => {
                                 <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
                                 Weekly Challenges
                             </h4>
-                            <p className={`text-xs ${isBento ? 'text-slate-700 font-medium' : 'text-slate-400'}`}>
-                                Get notified when new algorithmic challenges and learning tracks drop.
-                            </p>
-                            <form onSubmit={handleNewsletterSubmit} className="space-y-2">
-                                <div className="relative">
-                                    <input
-                                        type="email"
-                                        value={emailInput}
-                                        onChange={(e) => setEmailInput(e.target.value)}
-                                        placeholder="Enter your email"
-                                        className={`w-full py-2 pl-3 pr-9 rounded-xl text-xs outline-none transition-all ${
-                                            isBento
-                                                ? 'bg-white border-2 border-black text-black font-bold focus:ring-2 focus:ring-black placeholder:text-slate-400'
-                                                : 'bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
-                                        }`}
-                                    />
-                                    <button
-                                        type="submit"
-                                        className={`absolute right-1 top-1 bottom-1 px-2.5 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
-                                            isBento
-                                                ? 'bg-[#bef264] text-black border border-black hover:bg-[#a3e635]'
-                                                : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                                        }`}
-                                        aria-label="Subscribe"
-                                    >
-                                        <Send className="w-3 h-3" />
-                                    </button>
+                            {isAlreadySubscribed ? (
+                                <div className={`p-4 rounded-2xl border transition-all animate-in fade-in duration-300 ${
+                                    isBento
+                                        ? 'bg-[#bef264] text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                }`}>
+                                    <div className="flex items-start gap-2.5">
+                                        <div className={`p-1.5 rounded-lg shrink-0 ${
+                                            isBento ? 'bg-black text-white' : 'bg-emerald-500/20 text-emerald-400'
+                                        }`}>
+                                            <BellRing className="w-4 h-4" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className={`text-xs font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-white'}`}>
+                                                    Notifications Active
+                                                </span>
+                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                            </div>
+                                            <p className={`text-[11px] leading-relaxed mt-1 ${
+                                                isBento ? 'text-black/80 font-semibold' : 'text-slate-300'
+                                            }`}>
+                                                You're subscribed! You'll be notified automatically anytime new algorithmic challenges and learning tracks drop.
+                                            </p>
+                                            {subscribedEmail && (
+                                                <div className={`mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold truncate max-w-full ${
+                                                    isBento
+                                                        ? 'bg-white text-black border border-black'
+                                                        : 'bg-black/40 text-emerald-300 border border-emerald-500/20'
+                                                }`}>
+                                                    <Mail className="w-3 h-3 shrink-0" />
+                                                    <span className="truncate">{subscribedEmail}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-3 pt-2.5 border-t border-black/10 dark:border-white/10 flex items-center justify-between text-[10px]">
+                                        <span className={`font-semibold ${isBento ? 'text-black/60' : 'text-slate-400'}`}>
+                                            VIP Challenge Alert
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={handleUnsubscribe}
+                                            disabled={isUnsubscribing}
+                                            className={`font-bold hover:underline transition-colors cursor-pointer ${
+                                                isBento ? 'text-red-700' : 'text-rose-400'
+                                            }`}
+                                        >
+                                            {isUnsubscribing ? 'Updating...' : 'Unsubscribe / Change'}
+                                        </button>
+                                    </div>
                                 </div>
-                            </form>
+                            ) : (
+                                <>
+                                    <p className={`text-xs ${isBento ? 'text-slate-700 font-medium' : 'text-slate-400'}`}>
+                                        Get notified when new algorithmic challenges and learning tracks drop.
+                                    </p>
+                                    <form onSubmit={handleNewsletterSubmit} className="space-y-2">
+                                        <div className="relative">
+                                            <input
+                                                type="email"
+                                                value={emailInput}
+                                                onChange={(e) => setEmailInput(e.target.value)}
+                                                placeholder="Enter your email"
+                                                disabled={isSubscribing}
+                                                className={`w-full py-2 pl-3 pr-9 rounded-xl text-xs outline-none transition-all ${
+                                                    isBento
+                                                        ? 'bg-white border-2 border-black text-black font-bold focus:ring-2 focus:ring-black placeholder:text-slate-400 disabled:opacity-50'
+                                                        : 'bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50'
+                                                }`}
+                                            />
+                                            <button
+                                                type="submit"
+                                                disabled={isSubscribing || !emailInput.trim()}
+                                                className={`absolute right-1 top-1 bottom-1 px-2.5 rounded-lg flex items-center justify-center transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                                                    isBento
+                                                        ? 'bg-[#bef264] text-black border border-black hover:bg-[#a3e635]'
+                                                        : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                                                }`}
+                                                aria-label="Subscribe"
+                                            >
+                                                {isSubscribing ? (
+                                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                                ) : (
+                                                    <Send className="w-3 h-3" />
+                                                )}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -383,14 +527,6 @@ const Footer: React.FC = () => {
                             >
                                 <LifeBuoy className="w-3.5 h-3.5 text-indigo-400" />
                                 Support
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setActiveModal('status')}
-                                className="hover:text-indigo-400 transition-colors cursor-pointer flex items-center gap-1.5 outline-none focus:outline-none border-0"
-                            >
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                System Status
                             </button>
                             <button
                                 type="button"
@@ -596,6 +732,17 @@ const Footer: React.FC = () => {
                             />
                         </div>
 
+                        {supportError && (
+                            <div className={`p-3 rounded-xl flex items-center gap-2 text-xs font-bold animate-in fade-in duration-150 ${
+                                isBento
+                                    ? 'bg-[#fee2e2] text-red-900 border-2 border-black shadow-[2px_2px_0px_#000]'
+                                    : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+                            }`}>
+                                <AlertCircle className="w-4 h-4 shrink-0" />
+                                <span>{supportError}</span>
+                            </div>
+                        )}
+
                         <div className="flex justify-end items-center gap-3 pt-3 pb-1">
                             <button
                                 type="button"
@@ -631,67 +778,6 @@ const Footer: React.FC = () => {
                             </button>
                         </div>
                     </form>
-                </div>
-            </Modal>
-
-            {/* System Status Modal */}
-            <Modal
-                isOpen={activeModal === 'status'}
-                onClose={() => setActiveModal(null)}
-                title="System Operational Status"
-                description="Live service health & performance metrics"
-                icon={<Activity className="w-5 h-5 text-emerald-500" />}
-                maxWidth="max-w-xl"
-            >
-                <div className="space-y-4 text-xs sm:text-sm leading-relaxed max-h-[65vh] overflow-y-auto pr-1">
-                    <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                            <div>
-                                <h4 className="font-bold text-slate-900 dark:text-white text-sm">All Systems Operational</h4>
-                                <p className="text-[11px] text-slate-600 dark:text-slate-300">99.98% uptime achieved across all regions over the last 90 days.</p>
-                            </div>
-                        </div>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                            Healthy
-                        </span>
-                    </div>
-
-                    <div className="space-y-2 pt-2">
-                        {[
-                            { name: 'Core API Gateway', status: 'Operational', latency: '42ms', uptime: '100%' },
-                            { name: 'MongoDB Database Cluster', status: 'Operational', latency: '12ms', uptime: '99.99%' },
-                            { name: 'Real-Time WebSocket Engine', status: 'Operational', latency: '28ms', uptime: '100%' },
-                            { name: 'AI Quiz Generation Engine (Groq)', status: 'Operational', latency: '180ms', uptime: '99.95%' },
-                            { name: 'Multi-Language Translation Proxy', status: 'Operational', latency: '65ms', uptime: '99.97%' },
-                            { name: 'Static CDN & Client Distribution', status: 'Operational', latency: '15ms', uptime: '100%' }
-                        ].map((service, idx) => (
-                            <div
-                                key={idx}
-                                className="p-3 rounded-xl border border-slate-200/80 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-between"
-                            >
-                                <div className="flex items-center gap-2.5">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs">{service.name}</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
-                                    <span className="hidden sm:inline font-mono text-[10px] text-slate-400">{service.latency}</span>
-                                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{service.status}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-200 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
-                        <div className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>Updated just now</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
-                            <span>TLS 1.3 Encryption Enforced</span>
-                        </div>
-                    </div>
                 </div>
             </Modal>
 

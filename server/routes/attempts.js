@@ -5,6 +5,7 @@ import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 router.post('/', attemptController.saveAttempt); // POST /api/attempts
+router.post('/email-result', verifyUser, attemptController.emailQuizResult); // POST /api/attempts/email-result
 router.get('/:attemptId/details', verifyUser, attemptController.getAttemptDetails); // GET /api/attempts/:attemptId/details
 router.get('/reviews/pending', verifyUser, verifyAdmin, attemptController.getPendingReviews); // GET /api/attempts/reviews/pending (Admin) 
 // NOTE: Original was /api/reviews/pending. We will mount this router at /api/attempts? 

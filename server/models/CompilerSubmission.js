@@ -77,6 +77,32 @@ compilerSubmissionSchema.statics.hasPassedToday = async function(userId, challen
 };
 
 /**
+ * Static method to check if user has passed a specific question today.
+ * Enables solving all 3 tiers (Easy, Medium, Hard) independently.
+ */
+compilerSubmissionSchema.statics.hasPassedQuestionToday = async function(userId, challengeDate, questionId) {
+  const submission = await this.findOne({
+    userId,
+    challengeDate,
+    questionId,
+    passed: true
+  }).lean();
+  return !!submission;
+};
+
+/**
+ * Static method to get all question IDs a user has passed today.
+ */
+compilerSubmissionSchema.statics.getPassedQuestionsToday = async function(userId, challengeDate) {
+  const submissions = await this.find({
+    userId,
+    challengeDate,
+    passed: true
+  }).select('questionId').lean();
+  return submissions.map(s => s.questionId);
+};
+
+/**
  * Static method to get user's submission history for a question.
  * @param {String} userId - User ID
  * @param {String} questionId - Question ID
