@@ -25,22 +25,8 @@ const Footer: React.FC = () => {
 
     const [emailInput, setEmailInput] = useState('');
     const [isSubscribing, setIsSubscribing] = useState(false);
-    const [isAlreadySubscribed, setIsAlreadySubscribed] = useState<boolean>(() => {
-        try {
-            const saved = localStorage.getItem('weekly_challenge_subscriber');
-            return saved ? JSON.parse(saved).subscribed === true : false;
-        } catch {
-            return false;
-        }
-    });
-    const [subscribedEmail, setSubscribedEmail] = useState<string>(() => {
-        try {
-            const saved = localStorage.getItem('weekly_challenge_subscriber');
-            return saved ? JSON.parse(saved).email || '' : '';
-        } catch {
-            return '';
-        }
-    });
+    const [isAlreadySubscribed, setIsAlreadySubscribed] = useState<boolean>(false);
+    const [subscribedEmail, setSubscribedEmail] = useState<string>('');
     const [isUnsubscribing, setIsUnsubscribing] = useState(false);
     const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'faq' | 'support' | null>(null);
 
@@ -65,26 +51,91 @@ const Footer: React.FC = () => {
         }
     }, [activeModal, currentUser, supportEmail, supportName]);
 
-    // Check Weekly Challenges newsletter subscription status
+    // Check Weekly Challenges newsletter subscription status tied to the current authenticated user
     useEffect(() => {
-        const checkSubscription = async () => {
-            try {
-                const emailToCheck = subscribedEmail || currentUser?.email;
-                if (!emailToCheck && !currentUser?.userId) return;
+        let isMounted = true;
 
-                const status = await api.getNewsletterStatus(emailToCheck, currentUser?.userId);
-                if (status.subscribed) {
-                    setIsAlreadySubscribed(true);
-                    const verifiedEmail = status.email || emailToCheck || '';
-                    setSubscribedEmail(verifiedEmail);
-                    localStorage.setItem('weekly_challenge_subscriber', JSON.stringify({ email: verifiedEmail, subscribed: true }));
+        const checkSubscription = async () => {
+            // Case 1: An authenticated user is logged in
+            if (currentUser?.email || currentUser?.userId) {
+                const targetEmail = currentUser?.email || '';
+                try {
+                    const status = await api.getNewsletterStatus(targetEmail, currentUser?.userId);
+                    if (!isMounted) return;
+
+                    if (status.subscribed) {
+                        const verified = status.email || targetEmail;
+                        setIsAlreadySubscribed(true);
+                        setSubscribedEmail(verified);
+                        localStorage.setItem('weekly_challenge_subscriber', JSON.stringify({
+                            email: verified,
+                            subscribed: true,
+                            userId: currentUser?.userId
+                        }));
+                    } else {
+                        setIsAlreadySubscribed(false);
+                        setSubscribedEmail('');
+                        localStorage.removeItem('weekly_challenge_subscriber');
+                    }
+                } catch {
+                    // Offline / fallback: only use cached subscription if it strictly matches this logged-in user
+                    if (!isMounted) return;
+                    try {
+                        const saved = localStorage.getItem('weekly_challenge_subscriber');
+                        if (saved) {
+                            const parsed = JSON.parse(saved);
+                            if (parsed.subscribed && targetEmail && parsed.email?.toLowerCase() === targetEmail.toLowerCase()) {
+                                setIsAlreadySubscribed(true);
+                                setSubscribedEmail(parsed.email);
+                                return;
+                            }
+                        }
+                    } catch {
+                        // ignore parse errors
+                    }
+                    setIsAlreadySubscribed(false);
+                    setSubscribedEmail('');
                 }
-            } catch {
-                // Silently ignore network fallback
+                return;
+            }
+
+            // Case 2: Visitor is NOT logged in (Guest or Logged Out)
+            // Immediately purge any stale user subscription from localStorage to prevent leaking other accounts' emails
+            localStorage.removeItem('weekly_challenge_subscriber');
+
+            // Only recognize subscription if an anonymous visitor explicitly subscribed in the current browser session
+            const anonSaved = sessionStorage.getItem('weekly_challenge_anon_subscriber');
+            if (anonSaved) {
+                try {
+                    const parsed = JSON.parse(anonSaved);
+                    if (parsed.subscribed && parsed.email) {
+                        const status = await api.getNewsletterStatus(parsed.email);
+                        if (!isMounted) return;
+                        if (status.subscribed) {
+                            setIsAlreadySubscribed(true);
+                            setSubscribedEmail(status.email || parsed.email);
+                            return;
+                        } else {
+                            sessionStorage.removeItem('weekly_challenge_anon_subscriber');
+                        }
+                    }
+                } catch {
+                    sessionStorage.removeItem('weekly_challenge_anon_subscriber');
+                }
+            }
+
+            if (isMounted) {
+                setIsAlreadySubscribed(false);
+                setSubscribedEmail('');
             }
         };
+
         checkSubscription();
-    }, [currentUser?.email, currentUser?.userId, subscribedEmail]);
+
+        return () => {
+            isMounted = false;
+        };
+    }, [currentUser?.email, currentUser?.userId]);
 
     /**
      * Smoothly navigates to target path and scrolls the viewport to the top of the section/page.
@@ -202,7 +253,18 @@ const Footer: React.FC = () => {
             const res = await api.subscribeNewsletter(email, currentUser?.name);
             setIsAlreadySubscribed(true);
             setSubscribedEmail(email);
-            localStorage.setItem('weekly_challenge_subscriber', JSON.stringify({ email, subscribed: true }));
+            if (currentUser) {
+                localStorage.setItem('weekly_challenge_subscriber', JSON.stringify({
+                    email,
+                    subscribed: true,
+                    userId: currentUser?.userId
+                }));
+            } else {
+                sessionStorage.setItem('weekly_challenge_anon_subscriber', JSON.stringify({
+                    email,
+                    subscribed: true
+                }));
+            }
             setEmailInput('');
             showNotification('success', res.message || '🎉 Subscribed! You will be notified automatically anytime challenges drop.');
         } catch (err: unknown) {
@@ -214,18 +276,22 @@ const Footer: React.FC = () => {
     };
 
     const handleUnsubscribe = async () => {
-        if (!subscribedEmail) {
+        const target = subscribedEmail || currentUser?.email;
+        if (!target) {
             setIsAlreadySubscribed(false);
+            setSubscribedEmail('');
             localStorage.removeItem('weekly_challenge_subscriber');
+            sessionStorage.removeItem('weekly_challenge_anon_subscriber');
             return;
         }
 
         setIsUnsubscribing(true);
         try {
-            const res = await api.unsubscribeNewsletter(subscribedEmail);
+            const res = await api.unsubscribeNewsletter(target);
             setIsAlreadySubscribed(false);
             setSubscribedEmail('');
             localStorage.removeItem('weekly_challenge_subscriber');
+            sessionStorage.removeItem('weekly_challenge_anon_subscriber');
             showNotification('success', res.message || 'You have unsubscribed from Weekly Challenges notifications.');
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Failed to unsubscribe.';

@@ -153,6 +153,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         sessionStorage.setItem('suppressRedirectAfterLogin', 'true');
         sessionStorage.removeItem('redirectAfterLogin');
         sessionStorage.removeItem('googleAuthData');
+        localStorage.removeItem('weekly_challenge_subscriber');
+        sessionStorage.removeItem('weekly_challenge_anon_subscriber');
         setCurrentUser(null);
         setIsAdmin(false);
         setToken(null);
