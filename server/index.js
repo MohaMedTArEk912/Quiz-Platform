@@ -992,14 +992,16 @@ app.get('{*path}', (req, res) => {
 });
 
 // Initialize DB
-// connectToDatabase(); // Removed to prevent cold-start crashes. Handled by middleware.
-
 if (!isServerless) {
   if (!httpServer) {
     console.warn('⚠️  httpServer not initialized; running serverless mode.');
   } else {
     httpServer.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      // Connect to MongoDB eagerly on startup so the connection is warm and ready
+      connectToDatabase().catch(err => {
+        console.error('❌ [Database] Initial connection error:', err.message);
+      });
       // Verify email configuration non-blocking
       verifyEmailService().catch(err => {
         console.warn('⚠️  [EmailService] Non-blocking startup check failed:', err.message);

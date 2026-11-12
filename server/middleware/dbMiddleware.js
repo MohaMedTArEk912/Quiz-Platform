@@ -71,19 +71,13 @@ export async function connectToDatabase() {
   const uri = getMongoUri();
 
   // 1 = connected, reuse existing connection
-  if (mongoose.connection.readyState === 1 && cachedConnection) {
-    return cachedConnection;
+  if (mongoose.connection && mongoose.connection.readyState === 1) {
+    return mongoose.connection;
   }
 
-  // 2 = connecting, wait on pending promise
-  if (mongoose.connection.readyState === 2 && cachedPromise) {
+  // 2 = connection attempt currently in-flight: reuse exact same promise
+  if (cachedPromise) {
     return cachedPromise;
-  }
-
-  // If disconnected or in broken state, clear stale cache
-  if (mongoose.connection.readyState === 0 || mongoose.connection.readyState === 3) {
-    cachedConnection = null;
-    cachedPromise = null;
   }
 
   if (!uri) {
@@ -93,12 +87,6 @@ export async function connectToDatabase() {
     err.code = 'ERR_NO_MONGODB_URI';
     throw err;
   }
-
-  // Prevent multiple connection attempts within 500ms
-  if (connectionAttemptTime && (Date.now() - connectionAttemptTime < 500)) {
-    if (cachedPromise) return cachedPromise;
-  }
-  connectionAttemptTime = Date.now();
 
   const isCloudDeployment = Boolean(
     process.env.VERCEL || 
@@ -122,7 +110,7 @@ export async function connectToDatabase() {
     heartbeatFrequencyMS: isServerless ? 30000 : 10000,
     // Avoid blocking serverless function cold starts on background index builds
     autoIndex: !isServerless,
-    bufferCommands: false
+    bufferCommands: true
   };
 
   const start = Date.now();
