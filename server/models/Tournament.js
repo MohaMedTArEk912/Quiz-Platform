@@ -4,7 +4,7 @@ const tournamentParticipantSchema = new mongoose.Schema({
   userId: { type: String, required: true },
   userName: { type: String, default: 'User' },
   userEmail: { type: String, default: '' },
-  userAvatar: { type: String, default: '' },
+  userAvatar: { type: mongoose.Schema.Types.Mixed, default: '' },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   requestedAt: { type: Date, default: Date.now },
   approvedAt: { type: Date },

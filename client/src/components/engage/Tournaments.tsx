@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type {
   Tournament,
@@ -28,12 +28,21 @@ import {
   History,
   ArrowRight,
   X,
-  Timer
+  Timer,
+  RefreshCw,
+  Globe
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useTheme } from '../../context/ThemeContext';
 import { useNotification } from '../../context/NotificationContext';
 import { useSocket } from '../../context/SocketContext';
+import {
+  getUserTimezoneInfo,
+  formatLocalizedTournamentDateTime,
+  formatLocalizedTimeOnly,
+  formatLocalizedTournamentWindow,
+  evaluateTournamentLiveTiming
+} from '../../utils/timezoneUtils';
 
 type TournamentTab = 'arenas' | 'leaderboards' | 'history';
 
@@ -55,6 +64,17 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'live' | 'upcoming' | 'completed'>('all');
   const [alertSubscribed, setAlertSubscribed] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // User local timezone and country information
+  const userTz = useMemo(() => getUserTimezoneInfo(), []);
+
+  // Live 1-second ticker for real-time opening detection and countdowns
+  const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Results Gating Holding Screen state
   const awaitingParamId = searchParams.get('awaiting');
@@ -99,13 +119,52 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
     loadTournaments();
   }, [loadTournaments]);
 
+  // Join tournament rooms on connect for real-time telemetry
+  useEffect(() => {
+    if (!socket || !userId || items.length === 0) return;
+    items.forEach(t => {
+      socket.emit('join_tournament', { tournamentId: t.tournamentId, isAdmin: false, user: { userId } });
+    });
+  }, [socket, userId, items]);
+
+  // Fast auto-poll fallback (3s) while user has any pending join requests
+  const hasPendingRequests = useMemo(() => {
+    return items.some(t => t.myStatus === 'pending');
+  }, [items]);
+
+  useEffect(() => {
+    if (!hasPendingRequests || !userId) return;
+    const pollInterval = setInterval(async () => {
+      try {
+        const fresh = await api.getTournaments(userId);
+        if (Array.isArray(fresh)) {
+          let newlyApprovedName = '';
+          fresh.forEach(freshT => {
+            const prevT = items.find(it => it.tournamentId === freshT.tournamentId);
+            if (prevT?.myStatus === 'pending' && freshT.myStatus === 'approved') {
+              newlyApprovedName = freshT.name;
+            }
+          });
+          setItems(fresh);
+          if (newlyApprovedName) {
+            confetti({ particleCount: 110, spread: 75, origin: { y: 0.6 } });
+            showNotification('success', `🎉 Your request to join "${newlyApprovedName}" has been approved!`);
+          }
+        }
+      } catch {
+        // silent polling fallback
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [hasPendingRequests, userId, items, showNotification]);
+
   // --- Socket Listener for Live Results Reveal & Approvals ---
   useEffect(() => {
     if (!socket) return;
 
     // Listen for global tournament result reveal event
     const handleResultsRevealed = (payload: { tournamentId: string; resultsRevealed: boolean }) => {
-      // Refresh tournaments list
       loadTournaments();
 
       // If user is currently waiting on this tournament's holding screen
@@ -122,11 +181,27 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
     };
 
     // Listen for join request approval status update
-    const handleRequestStatus = (payload: { tournamentId: string; status: string }) => {
+    const handleRequestStatus = (payload: { tournamentId: string; status: string; userId?: string; tournamentName?: string }) => {
+      if (payload.userId && payload.userId !== userId) return;
+
+      // Optimistically update tournament status in state immediately
+      setItems(prev => prev.map(t => {
+        if (t.tournamentId === payload.tournamentId) {
+          return {
+            ...t,
+            myStatus: payload.status as 'approved' | 'pending' | 'rejected'
+          };
+        }
+        return t;
+      }));
+
+      // Background sync to ensure full participant arrays are refreshed
       loadTournaments();
+
       if (payload.status === 'approved') {
-        showNotification('success', 'Congratulations! Your tournament join request was approved!');
-        confetti({ particleCount: 60, spread: 50, origin: { y: 0.7 } });
+        const nameText = payload.tournamentName ? ` for "${payload.tournamentName}"` : '';
+        showNotification('success', `🎉 Congratulations! Your tournament join request${nameText} was approved!`);
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
       } else if (payload.status === 'rejected') {
         showNotification('info', 'Your request to join the tournament was declined.');
       }
@@ -139,7 +214,7 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
       socket.off('tournament_results_revealed', handleResultsRevealed);
       socket.off('tournament_request_status', handleRequestStatus);
     };
-  }, [socket, awaitingTournament, loadTournaments, showNotification]);
+  }, [socket, userId, awaitingTournament, loadTournaments, showNotification]);
 
   // Periodic polling for awaiting holding screen (fallback if sockets are off)
   useEffect(() => {
@@ -217,6 +292,26 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
     }
   }, [activeTab]);
 
+  // --- Global Refresh Handler ---
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await loadTournaments();
+      if (activeTab === 'leaderboards') {
+        const targetId = selectedLeaderboardId || (items[0]?.tournamentId);
+        if (targetId) await loadLeaderboardData(targetId);
+      } else if (activeTab === 'history') {
+        const data = await api.getTournamentHistory().catch(() => []);
+        setHistoryItems(data);
+      }
+      showNotification('success', 'Tournament data refreshed!');
+    } catch {
+      showNotification('error', 'Failed to refresh tournaments');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // --- Request to Join Handler ---
   const handleRequestJoin = async (tournament: Tournament) => {
     if (!userId) {
@@ -293,53 +388,6 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
     };
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const formatTimeOnly = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  const getTournamentTimingInfo = (startsAt: string, endsAt: string) => {
-    const now = Date.now();
-    const start = new Date(startsAt).getTime();
-    const end = new Date(endsAt).getTime();
-
-    if (now < start) {
-      const diffMins = Math.max(1, Math.round((start - now) / 60000));
-      if (diffMins < 60) return { label: `Starts in ${diffMins}m`, state: 'upcoming' as const };
-      const diffHours = Math.floor(diffMins / 60);
-      const remMins = diffMins % 60;
-      return {
-        label: `Starts in ${diffHours}h${remMins > 0 ? ` ${remMins}m` : ''}`,
-        state: 'upcoming' as const
-      };
-    } else if (now >= start && now <= end) {
-      const remMins = Math.max(1, Math.round((end - now) / 60000));
-      if (remMins < 60) return { label: `Live • ${remMins}m left in window`, state: 'live' as const };
-      const diffHours = Math.floor(remMins / 60);
-      const subMins = remMins % 60;
-      return {
-        label: `Live • ${diffHours}h${subMins > 0 ? ` ${subMins}m` : ''} left`,
-        state: 'live' as const
-      };
-    } else {
-      return { label: 'Arena Concluded', state: 'ended' as const };
-    }
-  };
-
   const filteredItems = items.filter(t => {
     const s = t.status?.toLowerCase();
     if (filter === 'live') return s === 'active' || s === 'live';
@@ -392,6 +440,18 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
               <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base font-semibold max-w-xl">
                 Compete in live scheduled events, earn instructor approvals, and climb the seasonal bracket!
               </p>
+
+              {/* Local Timezone & Country Indicator */}
+              <div className="flex items-center gap-2 pt-1">
+                <div className={`px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-2 ${
+                  isBento
+                    ? 'bg-slate-100 text-black border border-black shadow-[1.5px_1.5px_0px_#000]'
+                    : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                }`}>
+                  <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <span>Times automatically synced to your country: <strong>{userTz.friendlyLabel}</strong></span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -416,54 +476,71 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
           </div>
         </div>
 
-        {/* Navigation Tabs (Arenas / Leaderboards / History) */}
-        <div className="flex items-center gap-2 mt-8 pt-6 border-t border-gray-100 dark:border-white/5 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('arenas')}
-            className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'arenas'
-                ? (isBento
-                  ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
-                  : 'bg-amber-500 text-white shadow-md shadow-amber-500/30')
-                : (isBento
-                  ? 'text-gray-700 hover:text-black font-bold'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-semibold')
-            }`}
-          >
-            <Swords className="w-4 h-4" />
-            Competitive Arenas
-          </button>
+        {/* Navigation Tabs (Arenas / Leaderboards / History) & Refresh Action */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-white/5">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            <button
+              onClick={() => setActiveTab('arenas')}
+              className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                activeTab === 'arenas'
+                  ? (isBento
+                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                    : 'bg-amber-500 text-white shadow-md shadow-amber-500/30')
+                  : (isBento
+                    ? 'text-gray-700 hover:text-black font-bold'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-semibold')
+              }`}
+            >
+              <Swords className="w-4 h-4" />
+              Competitive Arenas
+            </button>
+
+            <button
+              onClick={() => setActiveTab('leaderboards')}
+              className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                activeTab === 'leaderboards'
+                  ? (isBento
+                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                    : 'bg-amber-500 text-white shadow-md shadow-amber-500/30')
+                  : (isBento
+                    ? 'text-gray-700 hover:text-black font-bold'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-semibold')
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Tournament Leaderboards
+            </button>
+
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                activeTab === 'history'
+                  ? (isBento
+                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                    : 'bg-amber-500 text-white shadow-md shadow-amber-500/30')
+                  : (isBento
+                    ? 'text-gray-700 hover:text-black font-bold'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-semibold')
+              }`}
+            >
+              <History className="w-4 h-4" />
+              Past Archives & History
+            </button>
+          </div>
 
           <button
-            onClick={() => setActiveTab('leaderboards')}
-            className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'leaderboards'
-                ? (isBento
-                  ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
-                  : 'bg-amber-500 text-white shadow-md shadow-amber-500/30')
-                : (isBento
-                  ? 'text-gray-700 hover:text-black font-bold'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-semibold')
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing || loading}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 ${
+              isBento
+                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100 hover:shadow-[3px_3px_0px_#000]'
+                : 'bg-white/80 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border border-gray-200/80 dark:border-white/10'
             }`}
+            title="Refresh tournaments and live statuses"
           >
-            <FileSpreadsheet className="w-4 h-4" />
-            Tournament Leaderboards
-          </button>
-
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'history'
-                ? (isBento
-                  ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
-                  : 'bg-amber-500 text-white shadow-md shadow-amber-500/30')
-                : (isBento
-                  ? 'text-gray-700 hover:text-black font-bold'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-semibold')
-            }`}
-          >
-            <History className="w-4 h-4" />
-            Past Archives & History
+            <RefreshCw className={`w-3.5 h-3.5 text-indigo-500 ${isRefreshing || loading ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing || loading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
       </div>
@@ -530,14 +607,17 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
           {/* Tournaments Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {filteredItems.map(tournament => {
-              const statusInfo = getStatusBadge(tournament.status);
-              const isLive = ['active', 'live'].includes(tournament.status?.toLowerCase());
-              const isCompleted = tournament.status?.toLowerCase() === 'completed';
+              const timing = evaluateTournamentLiveTiming(tournament.startsAt, tournament.endsAt, tournament.status, currentTime);
+              const isLive = timing.isLive;
+              const isCompleted = timing.isEnded;
+              const isUpcoming = timing.isUpcoming;
+              const statusInfo = getStatusBadge(isCompleted ? 'completed' : (isLive ? 'live' : 'upcoming'));
               const isJoining = joiningId === tournament.tournamentId;
 
               const myStatus = tournament.myStatus || 'none';
               const hasSubmitted = tournament.hasSubmitted;
               const isRevealed = Boolean(tournament.resultsRevealed);
+              const windowInfo = formatLocalizedTournamentWindow(tournament.startsAt, tournament.endsAt);
 
               return (
                 <div
@@ -572,22 +652,17 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
                               {statusInfo.icon} {statusInfo.text}
                             </span>
 
-                            {/* Dynamic Live Timing Badge */}
-                            {(() => {
-                              const timing = getTournamentTimingInfo(tournament.startsAt, tournament.endsAt);
-                              return (
-                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
-                                  timing.state === 'live'
-                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 animate-pulse'
-                                    : timing.state === 'upcoming'
-                                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                                    : 'bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/5'
-                                }`}>
-                                  <Clock className="w-3 h-3 flex-shrink-0" />
-                                  <span>{timing.label}</span>
-                                </span>
-                              );
-                            })()}
+                            {/* Dynamic Live Timing Badge with Real-Time Countdown */}
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
+                              isLive
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 animate-pulse'
+                                : isUpcoming
+                                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                                : 'bg-gray-100 dark:bg-white/5 text-gray-500 border border-gray-200 dark:border-white/5'
+                            }`}>
+                              <Clock className="w-3 h-3 flex-shrink-0" />
+                              <span>{timing.statusLabel}</span>
+                            </span>
 
                             {tournament.requiresApproval && (
                               <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
@@ -611,7 +686,12 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
                         <div className="text-gray-500 text-[10px] font-black uppercase tracking-wider mb-0.5 flex items-center gap-1">
                           <Calendar className="w-3 h-3" /> Kickoff
                         </div>
-                        <div className="font-bold text-xs truncate">{formatDate(tournament.startsAt)}</div>
+                        <div className="font-bold text-xs truncate">
+                          {formatLocalizedTournamentDateTime(tournament.startsAt, false)}
+                        </div>
+                        <div className="text-[9px] font-medium text-gray-400 truncate">
+                          {userTz.cityName || 'Local Time'} ({userTz.offsetString})
+                        </div>
                       </div>
 
                       <div className={`rounded-xl p-3 flex flex-col justify-center ${
@@ -644,19 +724,27 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
                       </div>
                     </div>
 
-                    {/* Arena Window & Attempt Rule Explainer Banner */}
+                    {/* Arena Window & Local Timezone Explainer Banner */}
                     <div className={`p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs ${
                       isBento
                         ? 'bg-slate-100 text-black border-2 border-black'
                         : 'bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5 border border-blue-500/15'
                     }`}>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Calendar className="w-4 h-4 text-blue-500 flex-shrink-0" />
                         <span className="font-semibold text-gray-800 dark:text-gray-200">
-                          Window: <strong>{formatDate(tournament.startsAt)}</strong> → <strong>{formatTimeOnly(tournament.endsAt)}</strong>
+                          Window: <strong>{windowInfo.mainText}</strong>
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1 ${
+                          isBento
+                            ? 'bg-white text-black border border-black'
+                            : 'bg-blue-500/20 text-blue-700 dark:text-blue-300'
+                        }`}>
+                          <Globe className="w-2.5 h-2.5" />
+                          <span>{windowInfo.tzBadge}</span>
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-black uppercase text-[10px] tracking-wider">
+                      <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-black uppercase text-[10px] tracking-wider shrink-0">
                         <Timer className="w-3.5 h-3.5 flex-shrink-0" />
                         <span>
                           {tournament.durationMinutes && tournament.durationMinutes > 0
@@ -668,16 +756,41 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
 
                     {/* Participant Status Badges */}
                     {myStatus === 'pending' && (
-                      <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-bold">
-                        <Clock className="w-4 h-4 flex-shrink-0 animate-pulse" />
-                        <span>Join Request Submitted! Awaiting instructor approval.</span>
+                      <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-amber-600 dark:text-amber-400 text-xs font-bold">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 flex-shrink-0 animate-pulse" />
+                          <span>Join Request Submitted! Awaiting instructor approval (auto-refreshing live).</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRefresh}
+                          disabled={isRefreshing}
+                          className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer self-end sm:self-auto shrink-0 ${
+                            isBento
+                              ? 'bg-white text-black border border-black shadow-[1px_1px_0px_#000] hover:bg-amber-100'
+                              : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300'
+                          }`}
+                          title="Check approval status"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                          <span>Check Status</span>
+                        </button>
                       </div>
                     )}
 
                     {myStatus === 'approved' && !hasSubmitted && (
-                      <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-                        <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                        <span>Approved to Compete! {isLive ? 'Arena is open now!' : 'Waiting for event kickoff.'}</span>
+                      <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                          <span>
+                            Approved to Compete! {isLive ? 'Arena is open now!' : `Kickoff scheduled at ${formatLocalizedTimeOnly(tournament.startsAt)}.`}
+                          </span>
+                        </div>
+                        {isUpcoming && (
+                          <span className="text-[11px] font-black uppercase tracking-wider bg-emerald-500/20 px-2.5 py-0.5 rounded-lg self-start sm:self-auto">
+                            Opens in {timing.countdownLabel.replace(/^Starts in /, '')}
+                          </span>
+                        )}
                       </div>
                     )}
 
@@ -723,23 +836,24 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
                       </button>
                     )}
 
-                    {/* State 3: Approved and Live -> START QUIZ */}
+                    {/* State 3: Approved and Live -> START QUIZ (Immediately Accessible upon Opening Time) */}
                     {!hasSubmitted && myStatus === 'approved' && isLive && (
                       <button
                         onClick={() => handleStartTournamentQuiz(tournament)}
-                        className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 cursor-pointer animate-pulse transition-all"
+                        className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 cursor-pointer animate-pulse transition-all active:scale-95"
                       >
                         <Swords className="w-5 h-5" /> 🔥 ENTER ARENA / START QUIZ NOW
                       </button>
                     )}
 
-                    {/* State 4: Approved but Upcoming */}
+                    {/* State 4: Approved but Upcoming -> Live Countdown in User's Country Time */}
                     {!hasSubmitted && myStatus === 'approved' && !isLive && !isCompleted && (
                       <button
                         disabled
-                        className="w-full py-4 bg-blue-500/10 text-blue-500 border border-blue-500/30 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-not-allowed opacity-80"
+                        className="w-full py-4 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-not-allowed opacity-90 shadow-sm"
                       >
-                        <Clock className="w-4 h-4" /> APPROVED — WAITING FOR ARENA KICKOFF
+                        <Clock className="w-4 h-4 animate-spin" />
+                        <span>APPROVED — OPENS IN {timing.countdownLabel.replace(/^Starts in /, '')} (at {formatLocalizedTimeOnly(tournament.startsAt)} Local Time)</span>
                       </button>
                     )}
 
@@ -1059,14 +1173,46 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
               </p>
             </div>
 
-            {/* Live Status Pulse */}
-            <div className={`p-4 rounded-2xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-wider ${
-              isRevealedUnlock
-                ? 'bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20'
-                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-            }`}>
-              <Radio className={`w-4 h-4 ${isRevealedUnlock ? '' : 'animate-spin'}`} />
-              <span>{isRevealedUnlock ? 'Official Bracket Unlocked' : 'Listening for Teacher Reveal...'}</span>
+            {/* Live Status Pulse & Refresh */}
+            <div className="flex items-center gap-2">
+              <div className={`flex-1 p-4 rounded-2xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-wider ${
+                isRevealedUnlock
+                  ? 'bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20'
+                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+              }`}>
+                <Radio className={`w-4 h-4 ${isRevealedUnlock ? '' : 'animate-spin'}`} />
+                <span>{isRevealedUnlock ? 'Official Bracket Unlocked' : 'Listening for Teacher Reveal...'}</span>
+              </div>
+              {!isRevealedUnlock && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsRefreshing(true);
+                    try {
+                      const tourn = await api.getTournament(awaitingTournament.tournamentId, userId);
+                      if (tourn?.resultsRevealed) {
+                        setIsRevealedUnlock(true);
+                        showNotification('success', 'Official results are unlocked!');
+                      } else {
+                        showNotification('info', 'Results are still awaiting reveal.');
+                      }
+                    } catch {
+                      showNotification('error', 'Could not check reveal status');
+                    } finally {
+                      setIsRefreshing(false);
+                    }
+                  }}
+                  disabled={isRefreshing}
+                  className={`p-4 rounded-2xl transition-all flex items-center justify-center cursor-pointer ${
+                    isBento
+                      ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100'
+                      : 'bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-600 dark:text-amber-400'
+                  }`}
+                  title="Check if results were revealed"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </button>
+              )}
             </div>
 
             {/* Actions */}

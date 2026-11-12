@@ -1011,4 +1011,4 @@ if (!isServerless) {
 }
 
 export default app;
-// Reload trigger: port 5000 liberated and watcher restarted
+// Reload trigger: updated tournament participant schema with mixed avatar support

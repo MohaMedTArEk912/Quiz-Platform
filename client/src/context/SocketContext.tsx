@@ -109,7 +109,12 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             return;
         }
 
-        if (socketRef.current) return;
+        if (socketRef.current) {
+            if (socketRef.current.connected && userId) {
+                socketRef.current.emit('join_user', userId);
+            }
+            return;
+        }
 
         // Netlify Functions cannot hold WebSockets; allow production sockets only when explicitly enabled.
         const { url: socketUrl, path: socketPath, transports } = socketConfig;

@@ -1421,6 +1421,7 @@ export const requestJoinTournament = async (req, res) => {
       participant: newParticipant
     });
   } catch (error) {
+    console.error('❌ [requestJoinTournament] Error joining tournament:', error);
     res.status(500).json({ message: 'Error requesting to join tournament', error: error.message });
   }
 };
@@ -1471,11 +1472,20 @@ export const manageTournamentRequest = async (req, res) => {
     // Broadcast socket updates to users
     const io = req.app.get('io');
     if (io) {
+      const payloadStatus = action === 'approve' ? 'approved' : (action === 'reject' ? 'rejected' : 'removed');
       targetUserIds.forEach(uid => {
-        io.to(uid).emit('tournament_request_status', {
+        const payload = {
           tournamentId: id,
-          status: action === 'approve' ? 'approved' : (action === 'reject' ? 'rejected' : 'removed')
-        });
+          tournamentName: t.name,
+          userId: uid,
+          status: payloadStatus,
+          startsAt: t.startsAt,
+          endsAt: t.endsAt,
+          durationMinutes: t.durationMinutes
+        };
+        io.to(uid).emit('tournament_request_status', payload);
+        io.to(`tournament_${id}`).emit('tournament_request_status', payload);
+        io.emit('tournament_request_status', payload); // Universal broadcast filtered client-side by userId
       });
       io.to(`tournament_admin_${id}`).emit('tournament_requests_updated', {
         tournamentId: id,

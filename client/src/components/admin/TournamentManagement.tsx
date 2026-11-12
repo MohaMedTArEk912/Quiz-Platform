@@ -39,6 +39,7 @@ import MathRenderer from '../common/MathRenderer';
 import FlexibleDateTimePicker from './FlexibleDateTimePicker';
 import { useSocket } from '../../context/SocketContext';
 import { useTheme } from '../../context/ThemeContext';
+import { formatLocalizedTournamentDateTime, getUserTimezoneInfo } from '../../utils/timezoneUtils';
 import type {
     Tournament,
     Quiz,
@@ -780,6 +781,9 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
                             {currentView === 'editor' && 'In-Tab Tournament & Exam Architecture'}
                             {currentView === 'control' && 'Live Telemetry, Leaderboard & Teacher Session'}
                         </p>
+                        <div className="flex items-center gap-1.5 mt-1 text-[10px] font-semibold text-gray-500 dark:text-gray-400">
+                            <span>🌍 System Timezone: <strong>{getUserTimezoneInfo().friendlyLabel}</strong> (automatically converted to each student's country)</span>
+                        </div>
                     </div>
                 </div>
 
@@ -799,6 +803,23 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
 
                     {currentView === 'overview' && (
                         <>
+                            <button
+                                onClick={async () => {
+                                    await loadTournaments();
+                                    onNotificationRef.current('success', 'Tournaments reloaded!');
+                                }}
+                                disabled={isLoading}
+                                className={`px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100 hover:shadow-[3px_3px_0px_#000]'
+                                        : 'bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300'
+                                }`}
+                                title="Refresh tournament list and telemetry"
+                            >
+                                <RefreshCw className={`w-4 h-4 text-indigo-500 ${isLoading ? 'animate-spin' : ''}`} />
+                                <span>{isLoading ? 'Refreshing...' : 'Refresh'}</span>
+                            </button>
+
                             <button
                                 onClick={() => tournamentUploadRef.current?.click()}
                                 className={`px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
@@ -1072,8 +1093,8 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
                                                 }`}>
                                                     <Calendar className="w-3 h-3" /> Starts
                                                 </div>
-                                                <div className={`truncate ${isBento ? 'text-black font-mono' : 'text-gray-800 dark:text-gray-200'}`}>
-                                                    {new Date(tournament.startsAt).toLocaleDateString()} {new Date(tournament.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                <div className={`truncate ${isBento ? 'text-black font-mono' : 'text-gray-800 dark:text-gray-200'}`} title={formatLocalizedTournamentDateTime(tournament.startsAt, true)}>
+                                                    {formatLocalizedTournamentDateTime(tournament.startsAt, true)}
                                                 </div>
                                             </div>
 
@@ -2056,8 +2077,28 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
                             </button>
                         </div>
 
-                        {/* Quick Results Gating Toggle from Control Center */}
+                        {/* Quick Telemetry Refresh & Results Gating Toggle from Control Center */}
                         <div className="flex items-center gap-2">
+                            <button
+                                onClick={async () => {
+                                    await loadTournaments();
+                                    if (controlTab === 'live' && activeTournament) {
+                                        await loadLiveRoom(activeTournament.tournamentId);
+                                    }
+                                    onNotificationRef.current('success', 'Tournament telemetry refreshed!');
+                                }}
+                                disabled={isLoading || isRefreshingLive}
+                                className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all ${
+                                    isBento
+                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100 hover:shadow-[3px_3px_0px_#000]'
+                                        : 'bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300'
+                                }`}
+                                title="Refresh telemetry and participant statuses"
+                            >
+                                <RefreshCw className={`w-3.5 h-3.5 text-indigo-500 ${isLoading || isRefreshingLive ? 'animate-spin' : ''}`} />
+                                <span>Refresh</span>
+                            </button>
+
                             <button
                                 onClick={handleToggleResultsReveal}
                                 disabled={isTogglingReveal}
@@ -2227,32 +2268,52 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
                                             </p>
                                         </div>
 
-                                        {pending.length > 0 && (
-                                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                                                <button
-                                                    onClick={() => handleManageRequests('approve', pending.map(p => p.userId))}
-                                                    disabled={isProcessingRequests}
-                                                    className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all flex items-center gap-1.5 ${
-                                                        isBento
-                                                            ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
-                                                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
-                                                    }`}
-                                                >
-                                                    <Check className="w-3.5 h-3.5" /> Approve All ({pending.length})
-                                                </button>
-                                                <button
-                                                    onClick={() => handleManageRequests('reject', pending.map(p => p.userId))}
-                                                    disabled={isProcessingRequests}
-                                                    className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all ${
-                                                        isBento
-                                                            ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-rose-200'
-                                                            : 'bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white'
-                                                    }`}
-                                                >
-                                                    <X className="w-3.5 h-3.5" /> Reject All
-                                                </button>
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    await loadTournaments();
+                                                    onNotificationRef.current('success', 'Join requests reloaded!');
+                                                }}
+                                                disabled={isLoading}
+                                                className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all flex items-center gap-1.5 ${
+                                                    isBento
+                                                        ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100 hover:shadow-[3px_3px_0px_#000]'
+                                                        : 'bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200'
+                                                }`}
+                                                title="Check for new student join requests"
+                                            >
+                                                <RefreshCw className={`w-3.5 h-3.5 text-indigo-500 ${isLoading ? 'animate-spin' : ''}`} />
+                                                <span>Refresh</span>
+                                            </button>
+
+                                            {pending.length > 0 && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleManageRequests('approve', pending.map(p => p.userId))}
+                                                        disabled={isProcessingRequests}
+                                                        className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all flex items-center gap-1.5 ${
+                                                            isBento
+                                                                ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
+                                                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+                                                        }`}
+                                                    >
+                                                        <Check className="w-3.5 h-3.5" /> Approve All ({pending.length})
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleManageRequests('reject', pending.map(p => p.userId))}
+                                                        disabled={isProcessingRequests}
+                                                        className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all ${
+                                                            isBento
+                                                                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-rose-200'
+                                                                : 'bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white'
+                                                        }`}
+                                                    >
+                                                        <X className="w-3.5 h-3.5" /> Reject All
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {pending.length > 0 ? (

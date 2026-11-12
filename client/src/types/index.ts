@@ -406,7 +406,7 @@ export interface TournamentParticipant {
     userId: string;
     userName: string;
     userEmail?: string;
-    userAvatar?: string;
+    userAvatar?: string | AvatarConfig;
     status: 'pending' | 'approved' | 'rejected';
     requestedAt: string;
     approvedAt?: string;
