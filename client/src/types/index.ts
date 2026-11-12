@@ -30,8 +30,8 @@ export interface Quiz {
 
 export interface Question {
     id: number;
-    type?: 'multiple-choice' | 'text' | 'code-output' | 'ordering' | 'matching';
-    part: string;
+    type?: 'multiple-choice' | 'text' | 'code-output' | 'ordering' | 'matching' | string;
+    part?: string;
     question: string;
     options?: string[];
     correctAnswer?: string | number | string[] | Record<string, string> | unknown;
@@ -240,6 +240,7 @@ export interface AttemptData {
     userEmail: string;
     quizId: string;
     quizTitle: string;
+    tournamentId?: string;
     score: number;
     totalQuestions: number;
     percentage: number;
@@ -401,17 +402,162 @@ export interface SkillTrack {
     modules: SkillModule[];
 }
 
+export interface TournamentParticipant {
+    userId: string;
+    userName: string;
+    userEmail?: string;
+    userAvatar?: string;
+    status: 'pending' | 'approved' | 'rejected';
+    requestedAt: string;
+    approvedAt?: string;
+    attemptId?: string;
+    score?: number;
+    percentage?: number;
+    timeTaken?: number;
+    submittedAt?: string;
+}
+
+export interface TournamentCustomQuestion {
+    id: string;
+    text: string;
+    type?: string;
+    options: string[];
+    correctAnswer: string | number;
+    explanation?: string;
+    points?: number;
+    codeSnippet?: string;
+}
+
+export interface TournamentCustomQuiz {
+    title: string;
+    description?: string;
+    timeLimit?: number;
+    passingScore?: number;
+    questions: TournamentCustomQuestion[];
+}
+
 export interface Tournament {
     tournamentId: string;
     name: string;
     description?: string;
     startsAt: string;
     endsAt: string;
-    status: string;
+    durationMinutes?: number;
+    status: 'scheduled' | 'live' | 'completed' | string;
+    quizMode?: 'assigned' | 'custom';
     quizIds?: string[];
-    participants?: string[];
+    customQuiz?: TournamentCustomQuiz;
+    requiresApproval?: boolean;
+    resultsRevealed?: boolean;
+    revealedAt?: string;
+    participants?: (TournamentParticipant | string)[];
     rewardBadgeId?: string;
     rewardItemId?: string;
+    rewardCoins?: number;
+    rewardXp?: number;
+    createdAt?: string;
+    updatedAt?: string;
+    // Computed / aggregated fields from backend
+    participantsCount?: number;
+    approvedCount?: number;
+    pendingCount?: number;
+    submittedCount?: number;
+    myStatus?: 'none' | 'pending' | 'approved' | 'rejected' | string;
+    myParticipation?: TournamentParticipant | null;
+    hasSubmitted?: boolean;
+    myAttemptId?: string | null;
+}
+
+export interface TournamentLiveSession {
+    userId: string;
+    userName: string;
+    userEmail?: string;
+    userAvatar?: string;
+    currentQuestion: number;
+    totalQuestions: number;
+    score: number;
+    answersCount: number;
+    status: 'answering' | 'focus_lost' | 'submitted' | string;
+    timeElapsed: number;
+    lastActive: number;
+    submittedAt?: string;
+    percentage?: number;
+}
+
+export interface TournamentLeaderboardEntry {
+    rank: number;
+    userId: string;
+    userName: string;
+    userEmail?: string;
+    userAvatar?: string;
+    score: number;
+    percentage: number;
+    timeTaken: number;
+    submittedAt: string;
+    attemptId?: string;
+}
+
+export interface TournamentLeaderboardResponse {
+    resultsRevealed: boolean;
+    revealedAt?: string;
+    totalParticipants?: number;
+    submittedCount?: number;
+    message?: string;
+    leaderboard?: TournamentLeaderboardEntry[];
+    mySubmission?: {
+        submittedAt: string;
+        timeTaken?: number;
+    } | null;
+}
+
+export interface TournamentHistoryItem {
+    tournamentId: string;
+    name: string;
+    description?: string;
+    startsAt: string;
+    endsAt: string;
+    totalParticipants: number;
+    podium: {
+        rank: number;
+        userName: string;
+        userAvatar?: string;
+        score: number;
+        percentage: number;
+        timeTaken: number;
+    }[];
+    resultsRevealed?: boolean;
+    rewardBadgeId?: string;
+}
+
+export interface TeacherReviewQuestion {
+    index: number;
+    id: string;
+    text: string;
+    type: string;
+    options: string[];
+    codeSnippet?: string;
+    points: number;
+    correctAnswer: string | number;
+    studentAnswer: string | number | boolean | Record<string, unknown> | null | undefined;
+    isCorrect: boolean;
+    explanation: string;
+    feedback?: string;
+}
+
+export interface TeacherReviewData {
+    tournamentName: string;
+    tournamentId: string;
+    studentName: string;
+    studentEmail?: string;
+    studentId: string;
+    score: number;
+    percentage: number;
+    totalQuestions: number;
+    timeTaken: number;
+    completedAt: string;
+    passed?: boolean;
+    telemetry?: Record<string, unknown>;
+    questions: TeacherReviewQuestion[];
 }
 
 export interface DailyChallengeDef {
@@ -851,6 +997,7 @@ export interface QuestionAnalyticsItem {
     key: string;
     quizId: string;
     quizTitle: string;
+    tournamentId?: string;
     quizCategory: string;
     questionId: number | string;
     questionText: string;
@@ -973,6 +1120,7 @@ export interface LiveProctoringSession {
     userEmail: string;
     quizId: string;
     quizTitle: string;
+    tournamentId?: string;
     score: number;
     percentage: number;
     passed: boolean;

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import QuizTaking from '../components/QuizTaking';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,7 @@ import { saveAttemptWithOfflineFallback, initOfflineSyncListener } from '../lib/
 
 const QuizTakingPage: React.FC = () => {
     const { quizId: encodedQuizId } = useParams<{ quizId: string }>();
+    const [searchParams] = useSearchParams();
     const { availableQuizzes, userWithRank, refreshData } = useData();
     const { currentUser, updateUser } = useAuth();
     const { showNotification } = useNotification();
@@ -19,6 +20,7 @@ const QuizTakingPage: React.FC = () => {
 
     // Decode the quiz ID to handle special characters
     const quizId = encodedQuizId ? decodeURIComponent(encodedQuizId) : '';
+    const tournamentId = searchParams.get('tournamentId') || (quizId.startsWith('tournament-') ? quizId.replace('tournament-', '') : null);
 
     // Find base quiz from cache/DataContext
     const baseQuiz = availableQuizzes.find(q => q.id === quizId || q._id === quizId);
@@ -55,6 +57,44 @@ const QuizTakingPage: React.FC = () => {
 
         const loadSession = async () => {
             if (!quizId) return;
+
+            // Check if this is a tournament with an embedded custom quiz
+            if (tournamentId) {
+                try {
+                    const tourn = await api.getTournament(tournamentId, currentUser?.userId);
+                    if (tourn && tourn.quizMode === 'custom' && tourn.customQuiz?.questions?.length) {
+                        const customQuizObj: Quiz = {
+                            id: quizId,
+                            title: tourn.customQuiz.title || tourn.name,
+                            description: tourn.customQuiz.description || tourn.description || '',
+                            category: 'Tournament',
+                            difficulty: 'Medium',
+                            timeLimit: (tourn.durationMinutes || tourn.customQuiz.timeLimit || 45),
+                            passingScore: tourn.customQuiz.passingScore || 70,
+                            icon: '🏆',
+                            questions: tourn.customQuiz.questions.map((q, idx) => ({
+                                id: typeof q.id === 'number' ? q.id : idx + 1,
+                                part: 'Tournament',
+                                question: q.text,
+                                text: q.text,
+                                type: (q.type as 'multiple-choice' | 'text' | 'code-output' | 'ordering') || 'multiple-choice',
+                                options: q.options || [],
+                                correctAnswer: q.correctAnswer,
+                                explanation: q.explanation || '',
+                                points: q.points || 10,
+                                codeSnippet: q.codeSnippet
+                            }))
+                        };
+                        if (isMounted) {
+                            setSessionQuiz(customQuizObj);
+                            setIsLoadingSession(false);
+                            return;
+                        }
+                    }
+                } catch (tErr) {
+                    console.warn('⚠️ Could not load custom tournament quiz:', tErr);
+                }
+            }
 
             const resolvedQuiz = baseQuiz || { id: quizId, title: 'Quiz', description: '', category: '', difficulty: 'Medium', timeLimit: 0, passingScore: 70, icon: '📝', questions: [] } as Quiz;
             const isPool = Boolean(
@@ -99,7 +139,28 @@ const QuizTakingPage: React.FC = () => {
         return () => {
             isMounted = false;
         };
-    }, [quizId, baseQuiz, currentUser?.userId]);
+    }, [quizId, tournamentId, baseQuiz, currentUser?.userId]);
+
+    // Background telemetry heartbeat for live tournament proctoring
+    useEffect(() => {
+        if (!tournamentId || !currentUser) return;
+        const total = sessionQuiz?.questions?.length || 10;
+        const interval = setInterval(() => {
+            api.sendTournamentHeartbeat(tournamentId, {
+                currentQuestion: 1,
+                totalQuestions: total,
+                status: 'answering'
+            }, currentUser.userId);
+        }, 12000);
+
+        api.sendTournamentHeartbeat(tournamentId, {
+            currentQuestion: 1,
+            totalQuestions: total,
+            status: 'answering'
+        }, currentUser.userId);
+
+        return () => clearInterval(interval);
+    }, [tournamentId, currentUser, sessionQuiz]);
 
     const handlePowerUpUsed = (type: string) => {
         if (!currentUser) return;
@@ -144,6 +205,7 @@ const QuizTakingPage: React.FC = () => {
                 userEmail: currentUser.email,
                 quizId: resolvedQuizId,
                 quizTitle: activeQuiz.title,
+                tournamentId: tournamentId || undefined,
                 score: result.score,
                 totalQuestions: result.totalQuestions,
                 percentage: result.percentage,
@@ -206,13 +268,27 @@ const QuizTakingPage: React.FC = () => {
                 newBadges: savedAttempt.newBadges || []
             };
 
-            // 3. Navigate to results IMMEDIATELY with attempt questions, pool progress, and new badges
+            // 3. If this was a tournament attempt and results are locked, navigate to tournament holding screen
+            if (tournamentId) {
+                try {
+                    const tourn = await api.getTournament(tournamentId, currentUser.userId);
+                    if (!tourn.resultsRevealed) {
+                        navigate(`/tournaments?awaiting=${tournamentId}&attemptId=${savedAttempt?.attemptId || attempt.attemptId}`);
+                        return;
+                    }
+                } catch (tErr) {
+                    console.warn('Could not verify tournament results reveal status:', tErr);
+                }
+            }
+
+            // Navigate to results IMMEDIATELY with attempt questions, pool progress, and new badges
             navigate('/results', {
                 state: {
                     result: finalResult,
                     quizId: resolvedQuizId,
                     attemptQuestions: activeQuiz.questions,
-                    poolProgress: savedAttempt.poolProgress || poolProgress || undefined
+                    poolProgress: savedAttempt.poolProgress || poolProgress || undefined,
+                    tournamentId: tournamentId || undefined
                 }
             });
 

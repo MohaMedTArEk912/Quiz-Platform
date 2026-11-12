@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import { Quiz } from '../models/Quiz.js';
 import { SkillTrack } from '../models/SkillTrack.js';
 import { Tournament } from '../models/Tournament.js';
+import { Attempt } from '../models/Attempt.js';
+import { User } from '../models/User.js';
 
 import { DailyChallenge } from '../models/DailyChallenge.js';
 import { CompilerQuestion } from '../models/CompilerQuestion.js';
@@ -1193,74 +1195,649 @@ export const deleteSkillTrack = async (req, res) => {
   }
 };
 
+// In-memory telemetry cache for active tournament quiz-takers: tournamentId -> Map<userId, SessionData>
+const tournamentActiveSessions = new Map();
+
 // --- Tournaments ---
+
+/**
+ * Get all tournaments with user participation status and computed time state
+ */
 export const getTournaments = async (req, res) => {
   try {
     const now = new Date();
+    const currentUserId = req.user?.userId;
+    const isAdmin = req.user?.role === 'admin' || req.user?.isAdmin === true;
+
     const tournaments = await Tournament.find({}).sort({ startsAt: 1 }).lean();
-    // Compute live status based on time
+
     const mapped = tournaments.map(t => {
-      let status = t.status;
-      if (t.startsAt && t.endsAt) {
+      let status = t.status || 'scheduled';
+      if (status !== 'completed' && t.startsAt && t.endsAt) {
         if (now < new Date(t.startsAt)) status = 'scheduled';
         else if (now >= new Date(t.startsAt) && now <= new Date(t.endsAt)) status = 'live';
         else status = 'completed';
       }
-      return { ...t, status };
+
+      // Check current user's participation
+      const participants = t.participants || [];
+      const userParticipant = currentUserId ? participants.find(p => p.userId === currentUserId) : null;
+
+      // Sanitize other participants' scores/percentages if results are not yet revealed and requester is not admin
+      const isRevealed = Boolean(t.resultsRevealed);
+      const safeParticipants = participants.map(p => {
+        if (!isAdmin && !isRevealed && p.userId !== currentUserId) {
+          const { score, percentage, ...rest } = p;
+          return rest;
+        }
+        return p;
+      });
+
+      return {
+        ...t,
+        status,
+        participantsCount: participants.length,
+        approvedCount: participants.filter(p => p.status === 'approved').length,
+        pendingCount: participants.filter(p => p.status === 'pending').length,
+        submittedCount: participants.filter(p => p.submittedAt).length,
+        myStatus: userParticipant ? userParticipant.status : 'none',
+        myParticipation: userParticipant || null,
+        hasSubmitted: Boolean(userParticipant?.submittedAt),
+        myAttemptId: userParticipant?.attemptId || null,
+        participants: isAdmin ? participants : safeParticipants
+      };
     });
+
     res.json(mapped);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching tournaments', error: error.message });
   }
 };
 
-export const createTournament = async (req, res) => {
-    try {
-        const t = new Tournament(req.body);
-        if(!t.tournamentId) t.tournamentId = crypto.randomUUID();
-        await t.save();
-        res.status(201).json(t);
-    } catch (error) {
-        res.status(500).json({ message: 'Error creating tournament', error: error.message });
-    }
-};
-
-export const updateTournament = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const updates = req.body;
-        const t = await Tournament.findOneAndUpdate({ tournamentId: id }, updates, { new: true });
-        if (!t) return res.status(404).json({ message: 'Tournament not found' });
-        res.json(t);
-    } catch (error) {
-        res.status(500).json({ message: 'Error updating tournament', error: error.message });
-    }
-};
-
-export const deleteTournament = async (req, res) => {
-    try {
-        const { id } = req.params;
-        await Tournament.deleteOne({ tournamentId: id });
-        res.json({ message: 'Tournament deleted' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting tournament', error: error.message });
-    }
-};
-
-export const joinTournament = async (req, res) => {
+/**
+ * Get single tournament by tournamentId
+ */
+export const getTournamentById = async (req, res) => {
   try {
     const { id } = req.params;
+    const currentUserId = req.user?.userId;
+    const isAdmin = req.user?.role === 'admin' || req.user?.isAdmin === true;
+
+    const t = await Tournament.findOne({ tournamentId: id }).lean();
+    if (!t) return res.status(404).json({ message: 'Tournament not found' });
+
+    const now = new Date();
+    let status = t.status || 'scheduled';
+    if (status !== 'completed' && t.startsAt && t.endsAt) {
+      if (now < new Date(t.startsAt)) status = 'scheduled';
+      else if (now >= new Date(t.startsAt) && now <= new Date(t.endsAt)) status = 'live';
+      else status = 'completed';
+    }
+
+    const participants = t.participants || [];
+    const userParticipant = currentUserId ? participants.find(p => p.userId === currentUserId) : null;
+    const isRevealed = Boolean(t.resultsRevealed);
+
+    const safeParticipants = participants.map(p => {
+      if (!isAdmin && !isRevealed && p.userId !== currentUserId) {
+        const { score, percentage, ...rest } = p;
+        return rest;
+      }
+      return p;
+    });
+
+    res.json({
+      ...t,
+      status,
+      participantsCount: participants.length,
+      approvedCount: participants.filter(p => p.status === 'approved').length,
+      pendingCount: participants.filter(p => p.status === 'pending').length,
+      submittedCount: participants.filter(p => p.submittedAt).length,
+      myStatus: userParticipant ? userParticipant.status : 'none',
+      myParticipation: userParticipant || null,
+      hasSubmitted: Boolean(userParticipant?.submittedAt),
+      myAttemptId: userParticipant?.attemptId || null,
+      participants: isAdmin ? participants : safeParticipants
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching tournament', error: error.message });
+  }
+};
+
+/**
+ * Admin create tournament
+ */
+export const createTournament = async (req, res) => {
+  try {
+    const data = { ...req.body };
+    delete data._id; // Prevent Mongo duplicate or immutable _id error
+    if (!data.tournamentId) {
+      data.tournamentId = `tourn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    }
+    if (data.requiresApproval === undefined) {
+      data.requiresApproval = true;
+    }
+    if (data.resultsRevealed === undefined) {
+      data.resultsRevealed = false;
+    }
+
+    const t = new Tournament(data);
+    await t.save();
+    res.status(201).json(t);
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating tournament', error: error.message });
+  }
+};
+
+/**
+ * Admin update tournament
+ */
+export const updateTournament = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = { ...req.body, updatedAt: new Date() };
+    delete updates._id; // Prevent Mongo immutable field '_id' modification error
+
+    const t = await Tournament.findOneAndUpdate({ tournamentId: id }, updates, { new: true, runValidators: true });
+    if (!t) return res.status(404).json({ message: 'Tournament not found' });
+
+    res.json(t);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating tournament', error: error.message });
+  }
+};
+
+/**
+ * Admin delete tournament
+ */
+export const deleteTournament = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Tournament.deleteOne({ tournamentId: id });
+    tournamentActiveSessions.delete(id);
+    res.json({ message: 'Tournament deleted' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting tournament', error: error.message });
+  }
+};
+
+/**
+ * Student request to join tournament (or instant join if approval is not required)
+ */
+export const requestJoinTournament = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
     const t = await Tournament.findOne({ tournamentId: id });
     if (!t) return res.status(404).json({ message: 'Tournament not found' });
+
     if (!t.participants) t.participants = [];
-    if (t.participants.includes(req.user.userId)) {
-      return res.json({ message: 'Already joined' });
+
+    // Check if user is already registered
+    const existing = t.participants.find(p => p.userId === userId);
+    if (existing) {
+      return res.json({
+        message: existing.status === 'approved' ? 'Already approved to participate' : 'Request already submitted',
+        status: existing.status,
+        participant: existing
+      });
     }
-    t.participants.push(req.user.userId);
+
+    // Resolve user profile info
+    const userDoc = await User.findOne({ userId }).lean();
+    const userName = userDoc?.name || req.user.name || 'Student';
+    const userEmail = userDoc?.email || req.user.email || '';
+    const userAvatar = userDoc?.avatar || '';
+
+    // Auto-approve if tournament does not require approval
+    const status = t.requiresApproval ? 'pending' : 'approved';
+
+    const newParticipant = {
+      userId,
+      userName,
+      userEmail,
+      userAvatar,
+      status,
+      requestedAt: new Date(),
+      approvedAt: status === 'approved' ? new Date() : undefined
+    };
+
+    t.participants.push(newParticipant);
     await t.save();
-    res.json({ message: 'Joined', participants: t.participants.length });
+
+    // Notify admin via socket
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`tournament_admin_${id}`).emit('tournament_join_requested', {
+        tournamentId: id,
+        participant: newParticipant
+      });
+    }
+
+    res.json({
+      message: status === 'approved' ? 'Successfully joined the tournament!' : 'Join request submitted! Awaiting teacher/admin approval.',
+      status,
+      participant: newParticipant
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error joining tournament', error: error.message });
+    res.status(500).json({ message: 'Error requesting to join tournament', error: error.message });
+  }
+};
+
+// Alias for backwards compatibility
+export const joinTournament = requestJoinTournament;
+
+/**
+ * Admin approve or reject participant requests (supports single userId or array of userIds)
+ */
+export const manageTournamentRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userIds, userId, action } = req.body; // action: 'approve' | 'reject' | 'remove'
+
+    if (!['approve', 'reject', 'remove'].includes(action)) {
+      return res.status(400).json({ message: 'Action must be "approve", "reject", or "remove"' });
+    }
+
+    const targetUserIds = Array.isArray(userIds) ? userIds : (userId ? [userId] : []);
+    if (targetUserIds.length === 0) {
+      return res.status(400).json({ message: 'userIds array or userId is required' });
+    }
+
+    const t = await Tournament.findOne({ tournamentId: id });
+    if (!t) return res.status(404).json({ message: 'Tournament not found' });
+
+    if (!t.participants) t.participants = [];
+
+    if (action === 'remove') {
+      t.participants = t.participants.filter(p => !targetUserIds.includes(p.userId));
+    } else {
+      const now = new Date();
+      t.participants = t.participants.map(p => {
+        if (targetUserIds.includes(p.userId)) {
+          return {
+            ...p,
+            status: action === 'approve' ? 'approved' : 'rejected',
+            approvedAt: action === 'approve' ? now : undefined
+          };
+        }
+        return p;
+      });
+    }
+
+    await t.save();
+
+    // Broadcast socket updates to users
+    const io = req.app.get('io');
+    if (io) {
+      targetUserIds.forEach(uid => {
+        io.to(uid).emit('tournament_request_status', {
+          tournamentId: id,
+          status: action === 'approve' ? 'approved' : (action === 'reject' ? 'rejected' : 'removed')
+        });
+      });
+      io.to(`tournament_admin_${id}`).emit('tournament_requests_updated', {
+        tournamentId: id,
+        action,
+        userIds: targetUserIds
+      });
+    }
+
+    res.json({
+      message: `Successfully processed ${targetUserIds.length} request(s)`,
+      action,
+      updatedCount: targetUserIds.length
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error managing tournament requests', error: error.message });
+  }
+};
+
+/**
+ * Admin reveal or hide tournament results
+ */
+export const revealTournamentResults = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { resultsRevealed } = req.body;
+
+    const revealed = resultsRevealed !== undefined ? Boolean(resultsRevealed) : true;
+    const t = await Tournament.findOneAndUpdate(
+      { tournamentId: id },
+      {
+        resultsRevealed: revealed,
+        revealedAt: revealed ? new Date() : null,
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+
+    if (!t) return res.status(404).json({ message: 'Tournament not found' });
+
+    // Emit socket event to all students in the tournament room
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`tournament_${id}`).emit('tournament_results_revealed', {
+        tournamentId: id,
+        resultsRevealed: revealed,
+        revealedAt: t.revealedAt
+      });
+    }
+
+    res.json({
+      message: revealed ? 'Results revealed to all participants!' : 'Results locked. Students must wait for reveal.',
+      resultsRevealed: revealed,
+      revealedAt: t.revealedAt
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error toggling result reveal', error: error.message });
+  }
+};
+
+/**
+ * Get active live quiz takers for a tournament (Admin Live Room & Live Refresh)
+ */
+export const getTournamentLiveTakers = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const activeMap = tournamentActiveSessions.get(id) || new Map();
+    const now = Date.now();
+    const TWO_MINUTES = 2 * 60 * 1000;
+
+    const liveSessions = [];
+    for (const [userId, session] of activeMap.entries()) {
+      // Keep session if updated within the last 2 minutes
+      if (now - session.lastActive <= TWO_MINUTES) {
+        liveSessions.push(session);
+      } else {
+        activeMap.delete(userId);
+      }
+    }
+
+    // Also fetch participants from DB who have completed their submission
+    const t = await Tournament.findOne({ tournamentId: id }).lean();
+    const dbSubmissions = (t?.participants || [])
+      .filter(p => p.submittedAt)
+      .map(p => ({
+        userId: p.userId,
+        userName: p.userName,
+        userAvatar: p.userAvatar,
+        userEmail: p.userEmail,
+        status: 'submitted',
+        score: p.score,
+        percentage: p.percentage,
+        timeTaken: p.timeTaken,
+        submittedAt: p.submittedAt,
+        lastActive: new Date(p.submittedAt).getTime()
+      }));
+
+    res.json({
+      activeCount: liveSessions.length,
+      submittedCount: dbSubmissions.length,
+      liveTakers: liveSessions,
+      recentSubmissions: dbSubmissions
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching live tournament sessions', error: error.message });
+  }
+};
+
+/**
+ * Student heartbeat while on tournament quiz
+ */
+export const recordTournamentHeartbeat = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+    const { currentQuestion, totalQuestions, score, answersCount, status, timeElapsed } = req.body;
+
+    if (!tournamentActiveSessions.has(id)) {
+      tournamentActiveSessions.set(id, new Map());
+    }
+
+    const sessionMap = tournamentActiveSessions.get(id);
+    const userDoc = await User.findOne({ userId }).lean();
+
+    const sessionData = {
+      userId,
+      userName: userDoc?.name || req.user.name || 'Student',
+      userEmail: userDoc?.email || req.user.email || '',
+      userAvatar: userDoc?.avatar || '',
+      currentQuestion: Number(currentQuestion) || 1,
+      totalQuestions: Number(totalQuestions) || 10,
+      score: Number(score) || 0,
+      answersCount: Number(answersCount) || 0,
+      status: status || 'answering', // 'answering' | 'focus_lost' | 'submitted'
+      timeElapsed: Number(timeElapsed) || 0,
+      lastActive: Date.now()
+    };
+
+    sessionMap.set(userId, sessionData);
+
+    // Relay to admin live proctoring room via socket
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`tournament_admin_${id}`).emit('tournament_live_update', sessionData);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ message: 'Heartbeat error', error: error.message });
+  }
+};
+
+/**
+ * Get tournament leaderboard
+ */
+export const getTournamentLeaderboard = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentUserId = req.user?.userId;
+    const isAdmin = req.user?.role === 'admin' || req.user?.isAdmin === true;
+
+    const t = await Tournament.findOne({ tournamentId: id }).lean();
+    if (!t) return res.status(404).json({ message: 'Tournament not found' });
+
+    // Results Gating check
+    if (!isAdmin && !t.resultsRevealed) {
+      const myParticipant = currentUserId ? (t.participants || []).find(p => p.userId === currentUserId) : null;
+      return res.json({
+        resultsRevealed: false,
+        message: 'Tournament results have not been revealed by the instructor yet.',
+        submittedCount: (t.participants || []).filter(p => p.submittedAt).length,
+        mySubmission: myParticipant?.submittedAt ? {
+          submittedAt: myParticipant.submittedAt,
+          timeTaken: myParticipant.timeTaken
+        } : null
+      });
+    }
+
+    // Build leaderboard from participants with submissions
+    const participantsWithScores = (t.participants || [])
+      .filter(p => p.submittedAt !== undefined && p.score !== undefined)
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return (a.timeTaken || 0) - (b.timeTaken || 0);
+      });
+
+    const leaderboard = participantsWithScores.map((p, index) => ({
+      rank: index + 1,
+      userId: p.userId,
+      userName: p.userName || 'Student',
+      userEmail: isAdmin ? p.userEmail : undefined,
+      userAvatar: p.userAvatar || '',
+      score: p.score || 0,
+      percentage: p.percentage || 0,
+      timeTaken: p.timeTaken || 0,
+      submittedAt: p.submittedAt,
+      attemptId: p.attemptId
+    }));
+
+    res.json({
+      resultsRevealed: true,
+      revealedAt: t.revealedAt,
+      totalParticipants: t.participants?.length || 0,
+      submittedCount: leaderboard.length,
+      leaderboard
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching tournament leaderboard', error: error.message });
+  }
+};
+
+/**
+ * Get tournament history & past event archives
+ */
+export const getTournamentHistory = async (req, res) => {
+  try {
+    const completed = await Tournament.find({
+      $or: [
+        { status: 'completed' },
+        { endsAt: { $lt: new Date() } }
+      ]
+    }).sort({ endsAt: -1 }).lean();
+
+    const history = completed.map(t => {
+      const submitted = (t.participants || [])
+        .filter(p => p.submittedAt && p.score !== undefined)
+        .sort((a, b) => (b.score - a.score) || ((a.timeTaken || 0) - (b.timeTaken || 0)));
+
+      const podium = submitted.slice(0, 3).map((p, idx) => ({
+        rank: idx + 1,
+        userName: p.userName,
+        userAvatar: p.userAvatar,
+        score: p.score,
+        percentage: p.percentage,
+        timeTaken: p.timeTaken
+      }));
+
+      return {
+        tournamentId: t.tournamentId,
+        name: t.name,
+        description: t.description,
+        startsAt: t.startsAt,
+        endsAt: t.endsAt,
+        totalParticipants: t.participants?.length || 0,
+        podium,
+        resultsRevealed: t.resultsRevealed,
+        rewardBadgeId: t.rewardBadgeId
+      };
+    });
+
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching tournament history', error: error.message });
+  }
+};
+
+/**
+ * Admin: Get all attempts for a tournament
+ */
+export const getTournamentAttempts = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const attempts = await Attempt.find({ tournamentId: id }).sort({ completedAt: -1 }).lean();
+    res.json(attempts);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching tournament attempts', error: error.message });
+  }
+};
+
+/**
+ * Teacher / Session Review Mode: Get detailed answered exam to explain question-by-question
+ */
+export const getTournamentAttemptReview = async (req, res) => {
+  try {
+    const { id, attemptId } = req.params;
+    const currentUserId = req.user?.userId;
+    const isAdmin = req.user?.role === 'admin' || req.user?.isAdmin === true;
+
+    const t = await Tournament.findOne({ tournamentId: id }).lean();
+    if (!t) return res.status(404).json({ message: 'Tournament not found' });
+
+    // Look for attempt
+    let attempt = await Attempt.findOne({ attemptId }).lean();
+    if (!attempt) {
+      // Fallback: check if attemptId is in participant record
+      const participant = (t.participants || []).find(p => p.attemptId === attemptId || p.userId === attemptId);
+      if (participant?.attemptId) {
+        attempt = await Attempt.findOne({ attemptId: participant.attemptId }).lean();
+      }
+    }
+
+    if (!attempt) return res.status(404).json({ message: 'Attempt not found' });
+
+    // Permissions check: must be admin OR owner when results are revealed
+    if (!isAdmin) {
+      if (attempt.userId !== currentUserId) {
+        return res.status(403).json({ message: 'Not authorized to view this attempt review' });
+      }
+      if (!t.resultsRevealed) {
+        return res.status(403).json({ message: 'Results have not been revealed yet' });
+      }
+    }
+
+    // Resolve question source: from attempt questions, or tournament customQuiz, or assigned quiz
+    let questions = attempt.attemptQuestions;
+    if (!questions || questions.length === 0) {
+      if (t.quizMode === 'custom' && t.customQuiz?.questions?.length) {
+        questions = t.customQuiz.questions;
+      } else if (attempt.quizId) {
+        const quizDoc = await Quiz.findOne({ id: attempt.quizId }).lean();
+        questions = quizDoc?.questions || [];
+      }
+    }
+
+    // Build question-by-question teacher breakdown
+    const userAnswers = attempt.answers || {};
+    const questionReview = (questions || []).map((q, idx) => {
+      const qKey = q.id || idx;
+      const rawAns = userAnswers[qKey] !== undefined ? userAnswers[qKey] : userAnswers[idx];
+
+      let studentSelected = rawAns;
+      let isCorrect = false;
+
+      if (typeof rawAns === 'object' && rawAns !== null && 'selected' in rawAns) {
+        studentSelected = rawAns.selected;
+        isCorrect = Boolean(rawAns.isCorrect);
+      } else if (rawAns !== undefined && rawAns !== null) {
+        isCorrect = String(rawAns).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase();
+      }
+
+      return {
+        index: idx,
+        id: q.id || `q_${idx}`,
+        text: q.text || q.question || '',
+        type: q.type || 'multiple-choice',
+        options: q.options || [],
+        codeSnippet: q.codeSnippet || q.code || '',
+        points: q.points || 10,
+        correctAnswer: q.correctAnswer,
+        studentAnswer: studentSelected,
+        isCorrect,
+        explanation: q.explanation || 'No detailed explanation provided for this question.',
+        feedback: attempt.feedback?.[qKey] || ''
+      };
+    });
+
+    res.json({
+      tournamentName: t.name,
+      tournamentId: t.tournamentId,
+      studentName: attempt.userName,
+      studentEmail: attempt.userEmail,
+      studentId: attempt.userId,
+      score: attempt.score,
+      percentage: attempt.percentage,
+      totalQuestions: attempt.totalQuestions || questionReview.length,
+      timeTaken: attempt.timeTaken,
+      completedAt: attempt.completedAt,
+      passed: attempt.passed,
+      telemetry: attempt.telemetry,
+      questions: questionReview
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching teacher attempt review', error: error.message });
   }
 };
 

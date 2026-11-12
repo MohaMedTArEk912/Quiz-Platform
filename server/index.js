@@ -842,6 +842,40 @@ if (io) io.on('connection', (socket) => {
       }
     }
   });
+  // ========== TOURNAMENT LIVE ROOM & REAL-TIME EVENTS ==========
+  socket.on('join_tournament', ({ tournamentId, isAdmin, user }) => {
+    if (!tournamentId) return;
+    const room = isAdmin ? `tournament_admin_${tournamentId}` : `tournament_${tournamentId}`;
+    socket.join(room);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🏆 Socket ${socket.id} (${user?.name || 'User'}) joined tournament room ${room}`);
+    }
+  });
+
+  socket.on('leave_tournament', ({ tournamentId, isAdmin }) => {
+    if (!tournamentId) return;
+    const room = isAdmin ? `tournament_admin_${tournamentId}` : `tournament_${tournamentId}`;
+    socket.leave(room);
+  });
+
+  socket.on('tournament_progress_ping', ({ tournamentId, userId, userName, userAvatar, currentQuestion, totalQuestions, score, answersCount, status, timeElapsed }) => {
+    if (!tournamentId || !userId) return;
+    // Relay directly to admin live monitoring room
+    io.to(`tournament_admin_${tournamentId}`).emit('tournament_live_update', {
+      userId,
+      userName: userName || 'Student',
+      userAvatar: userAvatar || '',
+      currentQuestion: Number(currentQuestion) || 1,
+      totalQuestions: Number(totalQuestions) || 10,
+      score: Number(score) || 0,
+      answersCount: Number(answersCount) || 0,
+      status: status || 'answering',
+      timeElapsed: Number(timeElapsed) || 0,
+      lastActive: Date.now()
+    });
+  });
+  // ========== END TOURNAMENT ==========
+
   // ========== END CLAN CHAT ==========
   
   socket.on('disconnect', (reason) => {

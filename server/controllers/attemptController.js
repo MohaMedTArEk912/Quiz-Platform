@@ -1,6 +1,7 @@
 import { Attempt } from '../models/Attempt.js';
 import { User } from '../models/User.js';
 import { Quiz } from '../models/Quiz.js';
+import { Tournament } from '../models/Tournament.js';
 import { QuestionPoolProgress } from '../models/QuestionPoolProgress.js';
 import { SkillTrack } from '../models/SkillTrack.js';
 import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
@@ -150,6 +151,39 @@ export const saveAttempt = async (req, res) => {
         try {
             newAttempt = new Attempt(normalizedAttempt);
             await newAttempt.save();
+
+            // Synchronize tournament attempt if tournamentId is provided
+            if (normalizedAttempt.tournamentId) {
+                try {
+                    await Tournament.findOneAndUpdate(
+                        { tournamentId: normalizedAttempt.tournamentId, 'participants.userId': userId },
+                        {
+                            $set: {
+                                'participants.$.attemptId': newAttempt.attemptId,
+                                'participants.$.score': newAttempt.score,
+                                'participants.$.percentage': newAttempt.percentage,
+                                'participants.$.timeTaken': newAttempt.timeTaken,
+                                'participants.$.submittedAt': new Date(),
+                                'participants.$.status': 'approved'
+                            }
+                        }
+                    );
+                    const io = req.app.get('io');
+                    if (io) {
+                        io.to(`tournament_admin_${normalizedAttempt.tournamentId}`).emit('tournament_student_submitted', {
+                            tournamentId: normalizedAttempt.tournamentId,
+                            userId,
+                            userName: normalizedAttempt.userName,
+                            score: newAttempt.score,
+                            percentage: newAttempt.percentage,
+                            timeTaken: newAttempt.timeTaken,
+                            submittedAt: new Date()
+                        });
+                    }
+                } catch (tournErr) {
+                    console.error('Failed to sync tournament attempt:', tournErr);
+                }
+            }
         } catch (saveError) {
             // Gracefully handle duplicate submission retries using the same attemptId.
             if (saveError?.code === 11000 && saveError?.keyPattern?.attemptId) {

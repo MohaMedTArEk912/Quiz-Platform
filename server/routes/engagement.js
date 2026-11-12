@@ -1,6 +1,6 @@
 import express from 'express';
 import * as engagementController from '../controllers/engagementController.js';
-import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
+import { verifyUser, verifyAdmin, extractOptionalUser } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -37,10 +37,20 @@ router.put('/skill-tracks/:trackId', verifyUser, verifyAdmin, engagementControll
 router.delete('/skill-tracks/:trackId', verifyUser, verifyAdmin, engagementController.deleteSkillTrack);
 
 // Tournaments
-router.get('/tournaments', engagementController.getTournaments); // GET /api/tournaments
+router.get('/tournaments', extractOptionalUser, engagementController.getTournaments); // GET /api/tournaments
+router.get('/tournaments/history', extractOptionalUser, engagementController.getTournamentHistory); // GET /api/tournaments/history
+router.get('/tournaments/:id', extractOptionalUser, engagementController.getTournamentById); // GET /api/tournaments/:id
 router.post('/tournaments', verifyUser, verifyAdmin, engagementController.createTournament);
 router.put('/tournaments/:id', verifyUser, verifyAdmin, engagementController.updateTournament);
 router.delete('/tournaments/:id', verifyUser, verifyAdmin, engagementController.deleteTournament);
-router.post('/tournaments/:id/join', verifyUser, engagementController.joinTournament); // POST /api/tournaments/:id/join
+router.post('/tournaments/:id/request-join', verifyUser, engagementController.requestJoinTournament);
+router.post('/tournaments/:id/join', verifyUser, engagementController.requestJoinTournament); // alias
+router.post('/tournaments/:id/manage-request', verifyUser, verifyAdmin, engagementController.manageTournamentRequest);
+router.post('/tournaments/:id/reveal-results', verifyUser, verifyAdmin, engagementController.revealTournamentResults);
+router.get('/tournaments/:id/live', verifyUser, verifyAdmin, engagementController.getTournamentLiveTakers);
+router.post('/tournaments/:id/live-heartbeat', verifyUser, engagementController.recordTournamentHeartbeat);
+router.get('/tournaments/:id/leaderboard', extractOptionalUser, engagementController.getTournamentLeaderboard);
+router.get('/tournaments/:id/attempts', verifyUser, verifyAdmin, engagementController.getTournamentAttempts);
+router.get('/tournaments/:id/review/:attemptId', verifyUser, engagementController.getTournamentAttemptReview);
 
 export default router;

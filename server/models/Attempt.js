@@ -7,6 +7,7 @@ const attemptSchema = new mongoose.Schema({
   userEmail: { type: String, required: true },
   quizId: { type: String, required: true },
   quizTitle: { type: String, required: true },
+  tournamentId: { type: String, index: true },
   score: { type: Number, required: true },
   totalQuestions: { type: Number, required: true },
   percentage: { type: Number, required: true },

@@ -8,6 +8,12 @@ import type {
     ShopItem,
     SkillTrack,
     Tournament,
+    TournamentParticipant,
+    TournamentLiveSession,
+    TournamentLeaderboardEntry,
+    TournamentLeaderboardResponse,
+    TournamentHistoryItem,
+    TeacherReviewData,
     Clan,
     ClanLeaderboardEntry,
     ClanLogo,
@@ -45,6 +51,12 @@ export type {
     ShopItem,
     SkillTrack,
     Tournament,
+    TournamentParticipant,
+    TournamentLiveSession,
+    TournamentLeaderboardEntry,
+    TournamentLeaderboardResponse,
+    TournamentHistoryItem,
+    TeacherReviewData,
     Clan,
     ClanAnnouncement,
     DailyChallengeDef,
@@ -994,13 +1006,29 @@ export const api = {
     },
 
     // Tournaments
-    async getTournaments(): Promise<Tournament[]> {
-        const response = await fetchWithFallback('/tournaments');
+    async getTournaments(userId?: string): Promise<Tournament[]> {
+        const response = await fetchWithFallback('/tournaments', {
+            headers: userId ? getHeaders(userId) : undefined
+        });
         if (!response.ok) throw new Error('Failed to load tournaments');
         return response.json();
     },
 
-    async createTournament(data: Partial<Tournament>, adminId: string) {
+    async getTournament(id: string, userId?: string): Promise<Tournament> {
+        const response = await fetchWithFallback(`/tournaments/${id}`, {
+            headers: userId ? getHeaders(userId) : undefined
+        });
+        if (!response.ok) throw new Error('Failed to load tournament');
+        return response.json();
+    },
+
+    async getTournamentHistory(): Promise<TournamentHistoryItem[]> {
+        const response = await fetchWithFallback('/tournaments/history');
+        if (!response.ok) throw new Error('Failed to load tournament history');
+        return response.json();
+    },
+
+    async createTournament(data: Partial<Tournament>, adminId: string): Promise<Tournament> {
         const response = await fetchWithFallback('/tournaments', {
             method: 'POST',
             headers: getHeaders(adminId),
@@ -1010,7 +1038,7 @@ export const api = {
         return response.json();
     },
 
-    async updateTournament(id: string, data: Partial<Tournament>, adminId: string) {
+    async updateTournament(id: string, data: Partial<Tournament>, adminId: string): Promise<Tournament> {
         const response = await fetchWithFallback(`/tournaments/${id}`, {
             method: 'PUT',
             headers: getHeaders(adminId),
@@ -1020,7 +1048,7 @@ export const api = {
         return response.json();
     },
 
-    async deleteTournament(id: string, adminId: string) {
+    async deleteTournament(id: string, adminId: string): Promise<{ message: string }> {
         const response = await fetchWithFallback(`/tournaments/${id}`, {
             method: 'DELETE',
             headers: getHeaders(adminId)
@@ -1029,12 +1057,80 @@ export const api = {
         return response.json();
     },
 
-    async joinTournament(tournamentId: string, userId: string) {
-        const response = await fetchWithFallback(`/tournaments/${tournamentId}/join`, {
+    async requestJoinTournament(tournamentId: string, userId: string): Promise<{ message: string; status: string; participant: TournamentParticipant }> {
+        const response = await fetchWithFallback(`/tournaments/${tournamentId}/request-join`, {
             method: 'POST',
             headers: getHeaders(userId)
         });
-        if (!response.ok) throw new Error('Failed to join tournament');
+        if (!response.ok) throw new Error('Failed to submit join request');
+        return response.json();
+    },
+
+    async joinTournament(tournamentId: string, userId: string) {
+        return this.requestJoinTournament(tournamentId, userId);
+    },
+
+    async manageTournamentRequest(tournamentId: string, payload: { userIds?: string[]; userId?: string; action: 'approve' | 'reject' | 'remove' }, adminId: string) {
+        const response = await fetchWithFallback(`/tournaments/${tournamentId}/manage-request`, {
+            method: 'POST',
+            headers: getHeaders(adminId),
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error('Failed to process participant request');
+        return response.json();
+    },
+
+    async revealTournamentResults(tournamentId: string, resultsRevealed: boolean, adminId: string) {
+        const response = await fetchWithFallback(`/tournaments/${tournamentId}/reveal-results`, {
+            method: 'POST',
+            headers: getHeaders(adminId),
+            body: JSON.stringify({ resultsRevealed })
+        });
+        if (!response.ok) throw new Error('Failed to toggle tournament result reveal');
+        return response.json();
+    },
+
+    async getTournamentLiveTakers(tournamentId: string, adminId: string): Promise<{ activeCount: number; submittedCount: number; liveTakers: TournamentLiveSession[]; recentSubmissions: TournamentLiveSession[] }> {
+        const response = await fetchWithFallback(`/tournaments/${tournamentId}/live`, {
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) throw new Error('Failed to load live tournament takers');
+        return response.json();
+    },
+
+    async sendTournamentHeartbeat(tournamentId: string, payload: { currentQuestion: number; totalQuestions: number; score?: number; answersCount?: number; status?: string; timeElapsed?: number }, userId: string) {
+        try {
+            await fetchWithFallback(`/tournaments/${tournamentId}/live-heartbeat`, {
+                method: 'POST',
+                headers: getHeaders(userId),
+                body: JSON.stringify(payload)
+            });
+        } catch (err) {
+            console.warn('Tournament heartbeat failed:', err);
+        }
+    },
+
+    async getTournamentLeaderboard(tournamentId: string, userId?: string): Promise<TournamentLeaderboardResponse> {
+        const response = await fetchWithFallback(`/tournaments/${tournamentId}/leaderboard`, {
+            headers: userId ? getHeaders(userId) : undefined
+        });
+        if (!response.ok) throw new Error('Failed to load tournament leaderboard');
+        return response.json();
+    },
+
+    async getTournamentAttempts(tournamentId: string, adminId: string) {
+        const response = await fetchWithFallback(`/tournaments/${tournamentId}/attempts`, {
+            headers: getHeaders(adminId)
+        });
+        if (!response.ok) throw new Error('Failed to load tournament attempts');
+        return response.json();
+    },
+
+    async getTournamentAttemptReview(tournamentId: string, attemptId: string, userId: string): Promise<TeacherReviewData> {
+        const response = await fetchWithFallback(`/tournaments/${tournamentId}/review/${attemptId}`, {
+            headers: getHeaders(userId)
+        });
+        if (!response.ok) throw new Error('Failed to load teacher attempt review');
         return response.json();
     },
 
