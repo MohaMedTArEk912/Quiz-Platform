@@ -891,7 +891,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ quizzes, currentUser, onRefre
                     onPlay={(quiz) => {
                         const quizId = quiz.id || quiz._id;
                         if (quizId) {
-                            navigate(`/quiz/${encodeURIComponent(quizId)}`);
+                            navigate(`/admin/quiz/${encodeURIComponent(quizId)}/revision`);
                         }
                     }}
                     onHost={setLiveHostQuiz}

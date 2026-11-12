@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Edit2, Trash2, Share2, Play, RefreshCw, Eye, EyeOff, Check } from 'lucide-react';
+import { Download, Edit2, Trash2, Share2, Presentation, RefreshCw, Eye, EyeOff, Check } from 'lucide-react';
 import type { Quiz } from '../../types';
 import { getQuizIconOption } from '../../utils/quizIcons';
 import { useTheme } from '../../context/ThemeContext';
@@ -45,13 +45,13 @@ const QuizCard: React.FC<QuizCardProps> = ({
 
     const actionButtons = [
         onPlay ? {
-            label: 'Preview',
-            icon: Play,
+            label: 'Revision',
+            icon: Presentation,
             action: () => onPlay(quiz),
             style: isBento
                 ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000]'
                 : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-purple-500/20',
-            title: 'Play / Preview quiz in student view'
+            title: 'Teacher Revision Mode — View questions, reveal answers & explanations with students'
         } : null,
         onHost ? {
             label: 'Host',

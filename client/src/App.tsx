@@ -27,6 +27,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 
 // Admin pages
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
+const TeacherQuizRevisionPage = lazy(() => import('./pages/TeacherQuizRevisionPage'));
 
 // Feature pages - loaded on demand
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
@@ -106,6 +107,12 @@ const App: React.FC = () => {
                             <Route path="/admin" element={
                               <AdminRoute>
                                 <AdminDashboardPage />
+                              </AdminRoute>
+                            } />
+
+                            <Route path="/admin/quiz/:quizId/revision" element={
+                              <AdminRoute>
+                                <TeacherQuizRevisionPage />
                               </AdminRoute>
                             } />
 
