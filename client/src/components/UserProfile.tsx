@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import type { UserData, AttemptData, BadgeDefinition } from '../types/index.ts';
+import type { UserData, AttemptData, BadgeDefinition, Tournament } from '../types/index.ts';
+import { formatLocalizedTournamentDateTime } from '../utils/timezoneUtils';
 import {
     Trophy, Download, Award, Loader2, Star, Zap, Flame,
     Settings, Calendar, History, FileText, Eye,
@@ -202,6 +203,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
     const [badgeSearch, setBadgeSearch] = useState<string>('');
     const [isEvaluatingBadges, setIsEvaluatingBadges] = useState(false);
     const [isEquippingBadgeId, setIsEquippingBadgeId] = useState<string | null>(null);
+    const [joinedTournaments, setJoinedTournaments] = useState<Tournament[]>([]);
+    const [loadingTournaments, setLoadingTournaments] = useState(false);
 
     const streak = currentUser.streak || 0;
     const dailyChallengeStreak = currentUser.dailyChallengeStreak || 0;
@@ -252,6 +255,34 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
             onUserUpdate(updatedUser);
         }
     };
+
+    // Fetch tournaments the user has joined or requested to join
+    const fetchJoinedTournaments = React.useCallback(async () => {
+        if (!currentUser?.userId) return;
+        setLoadingTournaments(true);
+        try {
+            const all = await api.getTournaments(currentUser.userId);
+            if (!Array.isArray(all)) return;
+            const mine = all
+                .filter((t) =>
+                    (t.myStatus && t.myStatus !== 'none') ||
+                    (Array.isArray(t.participants) &&
+                        t.participants.some((p) =>
+                            typeof p === 'string' ? p === currentUser.userId : p.userId === currentUser.userId
+                        ))
+                )
+                .sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime());
+            setJoinedTournaments(mine);
+        } catch (err) {
+            console.error('Failed to fetch joined tournaments', err);
+        } finally {
+            setLoadingTournaments(false);
+        }
+    }, [currentUser.userId]);
+
+    useEffect(() => {
+        fetchJoinedTournaments();
+    }, [fetchJoinedTournaments]);
 
     // Fetch default catalog badges and auto-evaluate achievements on profile mount
     useEffect(() => {
@@ -1734,7 +1765,177 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, attempts, allUsers, onB
 
         {/* TAB 3: ACTIVITY & HISTORY */}
         {activeTab === 'history' && (
-            <div className="animate-in fade-in duration-200">
+            <div className="animate-in fade-in duration-200 space-y-6">
+                {/* Tournaments Joined History */}
+                <div className={`profile-section-card rounded-2xl overflow-hidden ${
+                    isBento
+                        ? 'bg-white border-2 border-black shadow-[4px_4px_0px_#000]'
+                        : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-none'
+                }`}>
+                    <div className={`p-6 sm:p-8 flex flex-wrap justify-between items-center gap-4 ${
+                        isBento
+                            ? 'border-b-2 border-black bg-[#fef08a]'
+                            : 'border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02]'
+                    }`}>
+                        <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black ${
+                                isBento
+                                    ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                            }`}>
+                                <Trophy className={`w-5 h-5 ${isBento ? 'text-black' : 'text-amber-600 dark:text-amber-400'}`} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">Tournaments Joined</h2>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 font-bold">
+                                    {joinedTournaments.length} Tournament{joinedTournaments.length === 1 ? '' : 's'} Joined
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                                type="button"
+                                onClick={fetchJoinedTournaments}
+                                disabled={loadingTournaments}
+                                className={`px-3.5 py-2 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 ${
+                                    isBento
+                                        ? 'bg-white !text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#fde047]'
+                                        : 'bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-white/10'
+                                }`}
+                                title="Refresh joined tournaments"
+                            >
+                                <RefreshCw className={`w-3.5 h-3.5 ${loadingTournaments ? 'animate-spin' : ''}`} />
+                                <span>Refresh</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => navigate('/tournaments')}
+                                className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                                    isBento
+                                        ? 'bg-white !text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#bef264]'
+                                        : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/20'
+                                }`}
+                            >
+                                <Swords className="w-4 h-4" />
+                                <span>Browse Arenas</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="p-6 sm:p-8">
+                        {loadingTournaments ? (
+                            <div className="flex items-center justify-center py-8 gap-2 text-sm font-bold text-gray-500">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Loading tournament history...</span>
+                            </div>
+                        ) : joinedTournaments.length === 0 ? (
+                            <div className="text-center py-8 space-y-2">
+                                <Trophy className="w-8 h-8 mx-auto text-gray-400 opacity-60" />
+                                <p className="text-sm font-bold text-gray-600 dark:text-gray-400">
+                                    You haven't joined any tournaments yet.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {joinedTournaments.map((t) => {
+                                    const rawParticipant = t.participants?.find((p) =>
+                                        typeof p === 'string' ? p === currentUser.userId : p.userId === currentUser.userId
+                                    );
+                                    const participant = rawParticipant && typeof rawParticipant !== 'string' ? rawParticipant : undefined;
+                                    const joinStatus = t.myStatus || participant?.status || 'pending';
+                                    const submitted = Boolean(t.hasSubmitted || participant?.submittedAt);
+                                    const nowMs = Date.now();
+                                    const startMs = new Date(t.startsAt).getTime();
+                                    const endMs = t.endsAt ? new Date(t.endsAt).getTime() : Infinity;
+                                    const isEnded = t.status === 'completed' || nowMs > endMs;
+                                    const isLive = !isEnded && (t.status === 'active' || t.status === 'live' || nowMs >= startMs);
+
+                                    const statusLabel =
+                                        joinStatus === 'approved' ? 'Approved'
+                                        : joinStatus === 'rejected' ? 'Rejected'
+                                        : 'Pending Approval';
+
+                                    const statusClasses =
+                                        joinStatus === 'approved'
+                                            ? isBento ? 'bg-[#bef264] text-black border border-black' : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                                            : joinStatus === 'rejected'
+                                                ? isBento ? 'bg-[#fecdd3] text-black border border-black' : 'bg-rose-500/15 text-rose-700 dark:text-rose-300'
+                                                : isBento ? 'bg-[#fef08a] text-black border border-black' : 'bg-amber-500/15 text-amber-700 dark:text-amber-300';
+
+                                    return (
+                                        <div
+                                            key={t.tournamentId}
+                                            className={`p-4 rounded-2xl flex flex-col justify-between gap-3 transition-all ${
+                                                isBento
+                                                    ? 'bg-slate-50 text-black border-2 border-black shadow-[3px_3px_0px_#000]'
+                                                    : 'bg-gray-50/80 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10'
+                                            }`}
+                                        >
+                                            <div className="space-y-2">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <h3 className="font-black text-sm sm:text-base text-gray-900 dark:text-white leading-snug">
+                                                        {t.name}
+                                                    </h3>
+                                                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase shrink-0 ${statusClasses}`}>
+                                                        {statusLabel}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+                                                    <span className="inline-flex items-center gap-1">
+                                                        <Calendar className="w-3.5 h-3.5" />
+                                                        {formatLocalizedTournamentDateTime(t.startsAt, false)}
+                                                    </span>
+                                                    <span>•</span>
+                                                    <span className={`px-2 py-0.5 rounded-md font-black uppercase text-[10px] ${
+                                                        isEnded
+                                                            ? isBento ? 'bg-slate-200 text-slate-700 border border-black' : 'bg-slate-500/15 text-slate-500 dark:text-slate-400'
+                                                            : isLive
+                                                                ? isBento ? 'bg-[#bef264] text-black border border-black' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                                                : isBento ? 'bg-[#93c5fd] text-black border border-black' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                                                    }`}>
+                                                        {isEnded ? 'Ended' : isLive ? 'Live Now' : 'Upcoming'}
+                                                    </span>
+                                                    {submitted && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span className="text-emerald-600 dark:text-emerald-400 font-black">
+                                                                {t.resultsRevealed && participant?.percentage !== undefined
+                                                                    ? `Score: ${Math.round(participant.percentage)}%`
+                                                                    : 'Submitted'}
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200/70 dark:border-white/10">
+                                                <span className="text-[11px] font-black text-amber-600 dark:text-amber-400">
+                                                    Prize: {t.rewardCoins || 1000} Coins
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => navigate(`/tournaments?invite=${encodeURIComponent(t.tournamentId)}`)}
+                                                    className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-all ${
+                                                        isBento
+                                                            ? 'bg-white !text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#fde047]'
+                                                            : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                                                    }`}
+                                                >
+                                                    <span>View Arena</span>
+                                                    <ArrowRight className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {/* Full Activity & History */}
                 <div className={`profile-section-card rounded-2xl overflow-hidden ${
                     isBento

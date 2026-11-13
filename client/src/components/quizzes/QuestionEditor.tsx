@@ -356,13 +356,10 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, index, onChan
             {/* --- 1. MULTIPLE CHOICE SUB-EDITOR --- */}
             {currentType === 'multiple-choice' && (
                 <div className="space-y-3 pt-2">
-                    {/* Shuffle Options Card */}
+                    {/* Shuffle Options Card (Always Enforced) */}
                     <div
-                        onClick={() => onChange({ ...question, shuffleOptions: question.shuffleOptions === false ? true : false })}
-                        className={`p-3 rounded-xl border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-between gap-3 cursor-pointer transition-all select-none ${
-                            question.shuffleOptions !== false
-                                ? isBento ? 'bg-[#fef08a]' : 'bg-indigo-50 dark:bg-indigo-900/30'
-                                : 'bg-white dark:bg-black/20 opacity-75'
+                        className={`p-3 rounded-xl border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-between gap-3 select-none ${
+                            isBento ? 'bg-[#fef08a]' : 'bg-indigo-50 dark:bg-indigo-900/30'
                         }`}
                     >
                         <div className="flex items-center gap-2.5">
@@ -371,16 +368,14 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, index, onChan
                             </div>
                             <div>
                                 <div className="text-xs font-black uppercase tracking-wider text-black dark:text-white">
-                                    Shuffle Options Randomly
+                                    Shuffle Options Randomly (Always On)
                                 </div>
                                 <div className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
-                                    Turn off if options contain "Both A and B" or "All of the above"
+                                    Answer options are always shuffled across the entire platform
                                 </div>
                             </div>
                         </div>
-                        <div className={`w-6 h-6 rounded-lg border-2 border-black flex items-center justify-center font-black text-xs ${
-                            question.shuffleOptions !== false ? 'bg-[#bef264] text-black' : 'bg-white text-transparent'
-                        }`}>
+                        <div className="w-6 h-6 rounded-lg border-2 border-black flex items-center justify-center font-black text-xs bg-[#bef264] text-black">
                             ✓
                         </div>
                     </div>

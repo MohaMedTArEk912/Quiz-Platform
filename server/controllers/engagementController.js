@@ -10,11 +10,14 @@ import { CompilerQuestion } from '../models/CompilerQuestion.js';
 import { CompilerSubmission } from '../models/CompilerSubmission.js';
 import { SkillTrackProgress } from '../models/SkillTrackProgress.js';
 import { checkAndUnlockBadges } from './badgeNodeController.js';
+import { createAndSendNotification } from './notificationController.js';
+import { sendTournamentInviteEmail } from '../services/emailService.js';
 import { evaluateAndAwardBadges } from '../services/badgeService.js';
 import { completeSpecificModule } from '../services/progressService.js';
 import { evaluateSubmission, getPassThreshold } from '../services/compilerEvaluationService.js';
 import { generateThreeTierChallenges } from '../services/dailyChallengeAiService.js';
 import { syncClanXp } from '../utils/xpSync.js';
+import { enforceQuizShuffleFlags } from '../utils/shuffle.js';
 
 // --- Daily Compiler Challenge ---
 
@@ -1288,6 +1291,7 @@ export const getTournamentById = async (req, res) => {
 
     res.json({
       ...t,
+      customQuiz: t.customQuiz ? enforceQuizShuffleFlags(t.customQuiz) : t.customQuiz,
       status,
       participantsCount: participants.length,
       approvedCount: participants.filter(p => p.status === 'approved').length,
@@ -1320,6 +1324,9 @@ export const createTournament = async (req, res) => {
     if (data.resultsRevealed === undefined) {
       data.resultsRevealed = false;
     }
+    if (data.customQuiz) {
+      data.customQuiz = enforceQuizShuffleFlags(data.customQuiz);
+    }
 
     const t = new Tournament(data);
     await t.save();
@@ -1337,6 +1344,9 @@ export const updateTournament = async (req, res) => {
     const { id } = req.params;
     const updates = { ...req.body, updatedAt: new Date() };
     delete updates._id; // Prevent Mongo immutable field '_id' modification error
+    if (updates.customQuiz) {
+      updates.customQuiz = enforceQuizShuffleFlags(updates.customQuiz);
+    }
 
     const t = await Tournament.findOneAndUpdate({ tournamentId: id }, updates, { new: true, runValidators: true });
     if (!t) return res.status(404).json({ message: 'Tournament not found' });
@@ -1956,5 +1966,227 @@ export const getStreakStatus = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error checking streak status', error: error.message });
+  }
+};
+
+/**
+ * Invite specific users (or all users if admin) to a tournament via in-app notification
+ * @route POST /api/tournaments/:id/invite
+ */
+export const inviteToTournament = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { targetUserId, targetUserIds, inviteAll, note, sendEmail } = req.body || {};
+
+    const senderId = req.user?.userId;
+    if (!senderId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const tournament = await Tournament.findOne({ tournamentId: id });
+    if (!tournament) {
+      return res.status(404).json({ success: false, message: 'Tournament not found' });
+    }
+
+    const senderName = req.user?.name || req.user?.email?.split('@')[0] || 'A competitor';
+    const inviteLink = `/tournaments?invite=${encodeURIComponent(tournament.tournamentId)}`;
+    const cleanNote = typeof note === 'string' ? note.trim().slice(0, 240) : '';
+
+    if (inviteAll === true) {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Only admins can broadcast invites to all users.' });
+      }
+
+      await createAndSendNotification(req.app, {
+        recipientId: 'all',
+        senderId,
+        senderName,
+        type: 'tournament_invite',
+        title: `Tournament Invite: ${tournament.name}`,
+        message: `${senderName} invited everyone to join "${tournament.name}"!`,
+        note: cleanNote,
+        link: inviteLink,
+        metadata: {
+          tournamentId: tournament.tournamentId,
+          tournamentName: tournament.name,
+          startsAt: tournament.startsAt,
+          invitedBy: senderId
+        }
+      });
+
+      return res.json({
+        success: true,
+        invitedCount: 'all',
+        message: 'Broadcast tournament invite sent to all users!'
+      });
+    }
+
+    const rawIds = Array.isArray(targetUserIds)
+      ? targetUserIds
+      : targetUserId
+        ? [targetUserId]
+        : [];
+
+    const recipients = Array.from(
+      new Set(
+        rawIds
+          .map(uid => (typeof uid === 'string' ? uid.trim() : ''))
+          .filter(uid => uid && uid !== senderId)
+      )
+    );
+
+    if (recipients.length === 0) {
+      return res.status(400).json({ success: false, message: 'Please select at least one user to invite.' });
+    }
+
+    await Promise.all(
+      recipients.map((recipientId) =>
+        createAndSendNotification(req.app, {
+          recipientId,
+          senderId,
+          senderName,
+          type: 'tournament_invite',
+          title: `Tournament Invite: ${tournament.name}`,
+          message: `${senderName} invited you to join "${tournament.name}"!`,
+          note: cleanNote,
+          link: inviteLink,
+          metadata: {
+            tournamentId: tournament.tournamentId,
+            tournamentName: tournament.name,
+            startsAt: tournament.startsAt,
+            invitedBy: senderId
+          }
+        })
+      )
+    );
+
+    let emailedCount = 0;
+    if (sendEmail === true) {
+      const targetUsers = await User.find({ userId: { $in: recipients } })
+        .select('userId name email')
+        .lean();
+
+      const emailTasks = targetUsers
+        .filter((u) => typeof u.email === 'string' && u.email.includes('@'))
+        .map((u) =>
+          sendTournamentInviteEmail({
+            email: u.email,
+            recipientName: u.name || 'Competitor',
+            inviterName: senderName,
+            tournamentName: tournament.name,
+            tournamentId: tournament.tournamentId,
+            startsAt: tournament.startsAt,
+            note: cleanNote
+          })
+        );
+
+      const emailResults = await Promise.allSettled(emailTasks);
+      emailedCount = emailResults.filter((r) => r.status === 'fulfilled').length;
+    }
+
+    const emailSuffix = sendEmail === true && emailedCount > 0
+      ? ` and emailed ${emailedCount}`
+      : '';
+
+    res.json({
+      success: true,
+      invitedCount: recipients.length,
+      emailedCount,
+      message: `Sent tournament invite to ${recipients.length} user${recipients.length === 1 ? '' : 's'}${emailSuffix}!`
+    });
+  } catch (error) {
+    console.error('❌ [inviteToTournament] Error sending tournament invite:', error);
+    res.status(500).json({ success: false, message: 'Error sending tournament invite', error: error.message });
+  }
+};
+
+/**
+ * Serves Open Graph / WhatsApp link preview HTML for a tournament invite link (/t/:id)
+ * and redirects human visitors to /tournaments?invite=:id
+ * @route GET /api/tournaments/:id/preview
+ */
+export const getTournamentInvitePreview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const escapeHtml = (str = '') =>
+      String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0].trim();
+    const host = (req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
+    const fallbackOrigin = (process.env.CLIENT_URL || 'https://quiz-platform-dun.vercel.app').replace(/\/+$/, '');
+    const origin = host ? `${proto}://${host}` : fallbackOrigin;
+
+    const tournament = await Tournament.findOne({ tournamentId: id }).lean();
+    const targetPath = `/tournaments?invite=${encodeURIComponent(id)}`;
+    const targetUrl = `${origin}${targetPath}`;
+    const previewUrl = `${origin}/t/${encodeURIComponent(id)}`;
+    const imageUrl = `${origin}/og-image.png`;
+
+    let title = '🏆 Tournament Invite — Quiz Platform';
+    let description = 'You are invited to compete in a live Quiz Platform tournament arena!';
+
+    if (tournament) {
+      title = `🏆 ${tournament.name} — Quiz Tournament`;
+      const prize = tournament.rewardCoins ? `${tournament.rewardCoins} Coins Prize` : 'Competitive Arena';
+      const kickoff = tournament.startsAt
+        ? new Date(tournament.startsAt).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'UTC',
+            timeZoneName: 'short'
+          })
+        : 'Scheduled';
+      const shortDesc = tournament.description
+        ? tournament.description.replace(/\s+/g, ' ').trim().slice(0, 110)
+        : '';
+      description = `${prize} • ${kickoff}${shortDesc ? ` — ${shortDesc}` : ''}`;
+    }
+
+    const safeTitle = escapeHtml(title);
+    const safeDesc = escapeHtml(description);
+    const safePreviewUrl = escapeHtml(previewUrl);
+    const safeImageUrl = escapeHtml(imageUrl);
+    const safeTargetPath = escapeHtml(targetPath);
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=60');
+    res.send(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${safeTitle}</title>
+  <meta name="description" content="${safeDesc}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Quiz Platform" />
+  <meta property="og:title" content="${safeTitle}" />
+  <meta property="og:description" content="${safeDesc}" />
+  <meta property="og:url" content="${safePreviewUrl}" />
+  <meta property="og:image" content="${safeImageUrl}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${safeTitle}" />
+  <meta name="twitter:description" content="${safeDesc}" />
+  <meta name="twitter:image" content="${safeImageUrl}" />
+  <meta http-equiv="refresh" content="0;url=${safeTargetPath}" />
+  <script>window.location.replace(${JSON.stringify(targetUrl)});</script>
+</head>
+<body style="font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f8fafc;color:#0f172a;">
+  <div style="text-align:center;padding:24px;max-width:420px;background:#fff;border:2px solid #000;border-radius:16px;box-shadow:4px 4px 0 #000;">
+    <h1 style="font-size:18px;margin:0 0 8px;">${safeTitle}</h1>
+    <p style="font-size:13px;color:#475569;margin:0 0 16px;">${safeDesc}</p>
+    <a href="${safeTargetPath}" style="display:inline-block;padding:10px 20px;background:#bef264;color:#000;font-weight:800;text-decoration:none;border:2px solid #000;border-radius:10px;">Open Tournament →</a>
+  </div>
+</body>
+</html>`);
+  } catch (error) {
+    console.error('❌ [getTournamentInvitePreview] Error:', error);
+    res.redirect(`/tournaments?invite=${encodeURIComponent(req.params.id || '')}`);
   }
 };

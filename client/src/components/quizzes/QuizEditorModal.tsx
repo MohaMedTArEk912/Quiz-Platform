@@ -59,13 +59,16 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
     const [enableBulkPoints, setEnableBulkPoints] = useState(false);
     const [enableBulkPart, setEnableBulkPart] = useState(false);
     const [enableBulkType, setEnableBulkType] = useState(false);
-    const [bulkShuffleOptions, setBulkShuffleOptions] = useState(true);
-    const [enableBulkShuffleOptions, setEnableBulkShuffleOptions] = useState(false);
 
     useEffect(() => {
         if (quiz) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
-            setEditingQuiz({ ...quiz, icon: quiz.icon || DEFAULT_QUIZ_ICON, questions: quiz.questions || [] });
+            setEditingQuiz({
+                ...quiz,
+                shuffleQuestions: true,
+                icon: quiz.icon || DEFAULT_QUIZ_ICON,
+                questions: (quiz.questions || []).map(q => ({ ...q, shuffleOptions: true }))
+            });
             setActiveModalTab('general');
             setEditingQuestion(null);
             setSelectedQuestionIds([]);
@@ -125,7 +128,11 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
             return;
         }
 
-        onSave(editingQuiz);
+        onSave({
+            ...editingQuiz,
+            shuffleQuestions: true,
+            questions: (editingQuiz.questions || []).map(q => ({ ...q, shuffleOptions: true }))
+        });
     };
 
     const handleQuestionUpdate = (updatedQuestion: Question) => {
@@ -194,7 +201,7 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                         ...(enableBulkPoints ? { points: Number(bulkQuestionPoints) } : {}),
                         ...(enableBulkPart ? { part: bulkQuestionPart } : {}),
                         ...(enableBulkType ? { type: bulkQuestionType } : {}),
-                        ...(enableBulkShuffleOptions ? { shuffleOptions: bulkShuffleOptions } : {})
+                        shuffleOptions: true
                     };
                 }
                 return q;
@@ -668,13 +675,10 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                             </div>
                         </div>
 
-                        {/* Shuffle Questions */}
+                        {/* Shuffle Questions (Always Enforced) */}
                         <div 
-                            onClick={() => setEditingQuiz({ ...editingQuiz, shuffleQuestions: editingQuiz.shuffleQuestions === false ? true : false })}
-                            className={`p-3.5 rounded-xl border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-between gap-3 cursor-pointer select-none transition-all ${
-                                editingQuiz.shuffleQuestions !== false
-                                    ? isBento ? 'bg-[#fef08a]' : 'bg-orange-50 dark:bg-orange-900/20'
-                                    : 'bg-white dark:bg-black/20 opacity-70'
+                            className={`p-3.5 rounded-xl border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-between gap-3 select-none ${
+                                isBento ? 'bg-[#fef08a]' : 'bg-orange-50 dark:bg-orange-900/20'
                             }`}
                         >
                             <div className="flex items-center gap-3">
@@ -683,16 +687,14 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                                 </div>
                                 <div>
                                     <div className="text-xs font-black uppercase tracking-wider text-black">
-                                        Shuffle Questions Order
+                                        Shuffle Questions Order (Always On)
                                     </div>
                                     <div className="text-[11px] font-bold text-gray-700">
-                                        Randomize question sequence for each attempt. Uncheck to maintain a fixed order.
+                                        Question order is always randomized for every quiz attempt across the platform.
                                     </div>
                                 </div>
                             </div>
-                            <div className={`w-6 h-6 rounded-lg border-2 border-black flex items-center justify-center font-black text-xs ${
-                                editingQuiz.shuffleQuestions !== false ? 'bg-[#bef264] text-black' : 'bg-white text-transparent'
-                            }`}>
+                            <div className="w-6 h-6 rounded-lg border-2 border-black flex items-center justify-center font-black text-xs bg-[#bef264] text-black">
                                 ✓
                             </div>
                         </div>
@@ -1065,38 +1067,16 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({
                         )}
                     </div>
 
-                    {/* Shuffle Answer Options */}
-                    <div className={`p-3 rounded-xl border ${isBento ? 'bg-white border-2 border-black shadow-[2px_2px_0px_#000]' : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10'}`}>
-                        <label onClick={() => setEnableBulkShuffleOptions(!enableBulkShuffleOptions)} className="flex items-center gap-2 cursor-pointer mb-2">
-                            <input type="checkbox" checked={enableBulkShuffleOptions} onChange={() => {}} className="cursor-pointer" />
+                    {/* Shuffle Answer Options (Always Enforced) */}
+                    <div className={`p-3 rounded-xl border ${isBento ? 'bg-[#fef9c3]/50 border-2 border-black shadow-[2px_2px_0px_#000]' : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10'}`}>
+                        <div className="flex items-center justify-between gap-2">
                             <span className="text-xs font-black uppercase">Shuffle Answer Options</span>
-                        </label>
-                        {enableBulkShuffleOptions && (
-                            <div className="flex gap-2 pl-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setBulkShuffleOptions(true)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase cursor-pointer ${
-                                        bulkShuffleOptions
-                                            ? isBento ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-purple-600 text-white'
-                                            : isBento ? 'bg-white text-black border border-black' : 'bg-gray-100 dark:bg-white/10'
-                                    }`}
-                                >
-                                    Shuffle Options: Yes
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setBulkShuffleOptions(false)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase cursor-pointer ${
-                                        !bulkShuffleOptions
-                                            ? isBento ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-rose-600 text-white'
-                                            : isBento ? 'bg-white text-black border border-black' : 'bg-gray-100 dark:bg-white/10'
-                                    }`}
-                                >
-                                    Fixed Order: No
-                                </button>
-                            </div>
-                        )}
+                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${
+                                isBento ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-purple-600 text-white'
+                            }`}>
+                                Always Enabled
+                            </span>
+                        </div>
                     </div>
                 </div>
             </Modal>

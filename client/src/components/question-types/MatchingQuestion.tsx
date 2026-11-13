@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
+import { shuffleArray } from '../../utils/shuffle';
 import { useTheme } from '../../context/ThemeContext';
 
 export interface MatchingPair {
@@ -15,14 +16,8 @@ interface MatchingQuestionProps {
     readOnly?: boolean;
 }
 
-const shuffleRightSide = (pairsList: MatchingPair[]) => {
-    const rightSide = pairsList.map(p => p.right);
-    for (let i = rightSide.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [rightSide[i], rightSide[j]] = [rightSide[j], rightSide[i]];
-    }
-    return rightSide;
-};
+const shuffleRightSide = (pairsList: MatchingPair[]) => shuffleArray(pairsList.map(p => p.right));
+const shuffleLeftSide = (pairsList: MatchingPair[]) => shuffleArray(pairsList.map(p => p.left));
 
 const PAIR_COLORS = [
     'border-indigo-500 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500/40',
@@ -49,14 +44,15 @@ export const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
     readOnly = false
 }) => {
     const { theme, isBento } = useTheme();
-    const leftItems = pairs.map(p => p.left);
     const [prevPairs, setPrevPairs] = useState(pairs);
+    const [leftItems, setLeftItems] = useState<string[]>(() => shuffleLeftSide(pairs));
     const [shuffledRightItems, setShuffledRightItems] = useState<string[]>(() => shuffleRightSide(pairs));
     const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
     const [matches, setMatches] = useState<Record<string, string>>({}); // { [left]: right }
 
     if (prevPairs !== pairs) {
         setPrevPairs(pairs);
+        setLeftItems(shuffleLeftSide(pairs));
         setShuffledRightItems(shuffleRightSide(pairs));
         setSelectedLeft(null);
         setMatches({});

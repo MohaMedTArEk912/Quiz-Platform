@@ -13,8 +13,7 @@ import {
   Clock, 
   Crown, 
   Medal, 
-  CheckCircle2, 
-  Siren, 
+  CheckCircle2,
   Sparkles, 
   Shield, 
   Zap, 
@@ -30,12 +29,14 @@ import {
   X,
   Timer,
   RefreshCw,
-  Globe
+  Globe,
+  Share2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useTheme } from '../../context/ThemeContext';
 import { useNotification } from '../../context/NotificationContext';
 import { useSocket } from '../../context/SocketContext';
+import TournamentInviteModal from './TournamentInviteModal';
 import {
   getUserTimezoneInfo,
   formatLocalizedTournamentDateTime,
@@ -65,6 +66,7 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
   const [filter, setFilter] = useState<'all' | 'live' | 'upcoming' | 'completed'>('all');
   const [alertSubscribed, setAlertSubscribed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(() => new Date());
 
   // User local timezone and country information
   const userTz = useMemo(() => getUserTimezoneInfo(), []);
@@ -78,8 +80,23 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
 
   // Results Gating Holding Screen state
   const awaitingParamId = searchParams.get('awaiting');
+  const inviteParamId = searchParams.get('invite');
   const [awaitingTournament, setAwaitingTournament] = useState<Tournament | null>(null);
   const [isRevealedUnlock, setIsRevealedUnlock] = useState(false);
+  const [inviteModalTournament, setInviteModalTournament] = useState<Tournament | null>(null);
+
+  useEffect(() => {
+    if (!inviteParamId || items.length === 0) return;
+    setActiveTab('arenas');
+    setFilter('all');
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`tournament-card-${inviteParamId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [inviteParamId, items.length]);
 
   // Leaderboards tab state
   const [selectedLeaderboardId, setSelectedLeaderboardId] = useState<string>('');
@@ -295,6 +312,7 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
   // --- Global Refresh Handler ---
   const handleRefresh = async () => {
     setIsRefreshing(true);
+    setCurrentTime(Date.now());
     try {
       await loadTournaments();
       if (activeTab === 'leaderboards') {
@@ -304,6 +322,7 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
         const data = await api.getTournamentHistory().catch(() => []);
         setHistoryItems(data);
       }
+      setLastRefreshedAt(new Date());
       showNotification('success', 'Tournament data refreshed!');
     } catch {
       showNotification('error', 'Failed to refresh tournaments');
@@ -311,6 +330,16 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
       setIsRefreshing(false);
     }
   };
+
+  // Silent periodic background refresh every 30s while tab is visible
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadTournaments().then(() => setLastRefreshedAt(new Date())).catch(() => {});
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [loadTournaments]);
 
   // --- Request to Join Handler ---
   const handleRequestJoin = async (tournament: Tournament) => {
@@ -366,33 +395,37 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
     const s = status.toLowerCase();
     if (s === 'active' || s === 'live') {
       return {
-        bentoClass: 'bg-[#ff6b6b] text-white border-2 border-black shadow-[2px_2px_0px_#000]',
-        regularClass: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400',
+        bentoClass: 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]',
+        regularClass: 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400',
         text: 'LIVE NOW',
-        icon: <Siren className="w-3.5 h-3.5 animate-pulse" />
+        icon: <Radio className="w-3.5 h-3.5 animate-pulse" />
       };
     }
     if (s === 'scheduled' || s === 'upcoming') {
       return {
         bentoClass: 'bg-[#93c5fd] text-black border-2 border-black shadow-[2px_2px_0px_#000]',
-        regularClass: 'bg-blue-500/10 border border-blue-500/20 text-blue-400',
+        regularClass: 'bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400',
         text: 'UPCOMING',
         icon: <Clock className="w-3.5 h-3.5" />
       };
     }
     return {
-      bentoClass: 'bg-slate-200 text-black border-2 border-black',
-      regularClass: 'bg-gray-500/10 border border-gray-500/20 text-gray-400',
+      bentoClass: 'bg-slate-200 text-slate-700 border-2 border-black',
+      regularClass: 'bg-slate-500/10 border border-slate-500/20 text-slate-500 dark:text-slate-400',
       text: 'COMPLETED',
       icon: <CheckCircle2 className="w-3.5 h-3.5" />
     };
   };
 
+  const liveCount = items.filter(t => evaluateTournamentLiveTiming(t.startsAt, t.endsAt, t.status, currentTime).isLive).length;
+  const upcomingCount = items.filter(t => evaluateTournamentLiveTiming(t.startsAt, t.endsAt, t.status, currentTime).isUpcoming).length;
+  const completedCount = items.filter(t => evaluateTournamentLiveTiming(t.startsAt, t.endsAt, t.status, currentTime).isEnded).length;
+
   const filteredItems = items.filter(t => {
-    const s = t.status?.toLowerCase();
-    if (filter === 'live') return s === 'active' || s === 'live';
-    if (filter === 'upcoming') return s === 'scheduled' || s === 'upcoming';
-    if (filter === 'completed') return s === 'completed';
+    const timing = evaluateTournamentLiveTiming(t.startsAt, t.endsAt, t.status, currentTime);
+    if (filter === 'live') return timing.isLive;
+    if (filter === 'upcoming') return timing.isUpcoming;
+    if (filter === 'completed') return timing.isEnded;
     return true;
   });
 
@@ -478,7 +511,7 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
 
         {/* Navigation Tabs (Arenas / Leaderboards / History) & Refresh Action */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-white/5">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-2.5 overflow-x-auto px-1 pt-1 pb-2.5">
             <button
               onClick={() => setActiveTab('arenas')}
               className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
@@ -528,20 +561,25 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={isRefreshing || loading}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 ${
-              isBento
-                ? 'bg-white text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-slate-100 hover:shadow-[3px_3px_0px_#000]'
-                : 'bg-white/80 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border border-gray-200/80 dark:border-white/10'
-            }`}
-            title="Refresh tournaments and live statuses"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-indigo-500 ${isRefreshing || loading ? 'animate-spin' : ''}`} />
-            <span>{isRefreshing || loading ? 'Refreshing...' : 'Refresh'}</span>
-          </button>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <span className="hidden md:inline text-[11px] font-bold text-gray-500 dark:text-gray-400">
+              Updated {lastRefreshedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isRefreshing || loading}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 ${
+                isBento
+                  ? 'bg-[#fde047] !text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#bef264] hover:shadow-[3px_3px_0px_#000] disabled:opacity-60'
+                  : 'bg-white/80 dark:bg-white/5 hover:bg-indigo-50 dark:hover:bg-white/10 text-gray-800 dark:text-gray-200 border border-gray-200/80 dark:border-white/10 disabled:opacity-60'
+              }`}
+              title="Refresh tournaments and live statuses"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isBento ? 'text-black' : 'text-indigo-500'} ${isRefreshing || loading ? 'animate-spin' : ''}`} />
+              <span>{isRefreshing || loading ? 'Refreshing...' : 'Refresh'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -572,6 +610,41 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
       {/* ============================================================== */}
       {activeTab === 'arenas' && (
         <div className="space-y-8">
+          {/* Invited Tournament Banner (from ?invite=<tournamentId> link or notification) */}
+          {inviteParamId && (() => {
+            const invitedTournament = items.find(t => t.tournamentId === inviteParamId);
+            if (!invitedTournament) return null;
+            return (
+              <div className={`p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                isBento
+                  ? 'bg-[#fef08a] text-black border-2 border-black shadow-[4px_4px_0px_#000]'
+                  : 'bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <div className="text-xs sm:text-sm font-bold">
+                    You were invited to <span className="font-black">{invitedTournament.name}</span>!
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = new URLSearchParams(searchParams);
+                    next.delete('invite');
+                    setSearchParams(next);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider cursor-pointer self-end sm:self-auto ${
+                    isBento
+                      ? 'bg-white text-black border-2 border-black hover:bg-slate-100'
+                      : 'bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20'
+                  }`}
+                >
+                  Dismiss
+                </button>
+              </div>
+            );
+          })()}
+
           {/* Filter Sub-nav */}
           {items.length > 0 && (
             <div className={`flex items-center gap-1.5 p-1.5 rounded-2xl max-w-xl mx-auto ${
@@ -581,9 +654,9 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
             }`}>
               {([
                 { id: 'all', label: `All (${items.length})` },
-                { id: 'live', label: `Live (${items.filter(i => ['active', 'live'].includes(i.status?.toLowerCase())).length})` },
-                { id: 'upcoming', label: `Upcoming (${items.filter(i => ['scheduled', 'upcoming'].includes(i.status?.toLowerCase())).length})` },
-                { id: 'completed', label: `Completed (${items.filter(i => i.status?.toLowerCase() === 'completed').length})` }
+                { id: 'live', label: `Live (${liveCount})` },
+                { id: 'upcoming', label: `Upcoming (${upcomingCount})` },
+                { id: 'completed', label: `Completed (${completedCount})` }
               ] as const).map(({ id, label }) => (
                 <button
                   key={id}
@@ -619,19 +692,34 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
               const isRevealed = Boolean(tournament.resultsRevealed);
               const windowInfo = formatLocalizedTournamentWindow(tournament.startsAt, tournament.endsAt);
 
+              const isInvitedHighlight = inviteParamId === tournament.tournamentId;
+
               return (
                 <div
                   key={tournament.tournamentId}
+                  id={`tournament-card-${tournament.tournamentId}`}
                   className={`group relative rounded-[2.5rem] p-8 transition-all duration-300 hover:-translate-y-1 overflow-hidden flex flex-col justify-between ${
                     isBento
-                      ? 'bg-white text-black border-3 border-black shadow-[5px_5px_0px_#000] hover:shadow-[7px_7px_0px_#000]'
-                      : 'bg-white dark:bg-[#13141f] border border-gray-200 dark:border-white/10 shadow-xl'
+                      ? `text-black border-3 border-black shadow-[5px_5px_0px_#000] hover:shadow-[7px_7px_0px_#000] ${
+                          isCompleted
+                            ? 'bg-slate-50 opacity-90'
+                            : isLive
+                              ? 'bg-white border-t-[8px] border-t-[#22c55e]'
+                              : 'bg-white border-t-[8px] border-t-[#3b82f6]'
+                        } ${isInvitedHighlight ? 'ring-4 ring-[#fde047] ring-offset-2' : ''}`
+                      : `bg-white dark:bg-[#13141f] border shadow-xl ${
+                          isCompleted
+                            ? 'border-gray-200/80 dark:border-white/5 opacity-85'
+                            : isLive
+                              ? 'border-emerald-500/50 dark:border-emerald-400/40 shadow-emerald-500/10'
+                              : 'border-blue-500/30 dark:border-blue-400/20'
+                        } ${isInvitedHighlight ? 'ring-4 ring-amber-500/30' : ''}`
                   }`}
                 >
                   <div className="relative z-10 space-y-6">
                     {/* Header */}
                     <div className="flex justify-between items-start gap-4">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${
                           isBento
                             ? 'bg-[#fde047] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
@@ -641,7 +729,7 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
                         }`}>
                           <Crown className="w-7 h-7" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-gray-900 dark:text-white">
                             {tournament.name}
                           </h3>
@@ -672,6 +760,20 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
                           </div>
                         </div>
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setInviteModalTournament(tournament)}
+                        title="Share invite link or notify a player"
+                        className={`px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 cursor-pointer transition-all ${
+                          isBento
+                            ? 'bg-white !text-black border-2 border-black shadow-[2px_2px_0px_#000] hover:bg-[#fde047] hover:-translate-y-0.5'
+                            : 'bg-gray-100 dark:bg-white/5 hover:bg-amber-500/15 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-white/10'
+                        }`}
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Invite</span>
+                      </button>
                     </div>
 
                     <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-semibold leading-relaxed line-clamp-2">
@@ -756,7 +858,11 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
 
                     {/* Participant Status Badges */}
                     {myStatus === 'pending' && (
-                      <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-amber-600 dark:text-amber-400 text-xs font-bold">
+                      <div className={`p-3 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs font-bold ${
+                        isBento
+                          ? 'bg-[#fef08a] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                          : 'bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300'
+                      }`}>
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4 flex-shrink-0 animate-pulse" />
                           <span>Join Request Submitted! Awaiting instructor approval (auto-refreshing live).</span>
@@ -767,7 +873,7 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
                           disabled={isRefreshing}
                           className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer self-end sm:self-auto shrink-0 ${
                             isBento
-                              ? 'bg-white text-black border border-black shadow-[1px_1px_0px_#000] hover:bg-amber-100'
+                              ? 'bg-white !text-black border-2 border-black shadow-[1px_1px_0px_#000] hover:bg-amber-100'
                               : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300'
                           }`}
                           title="Check approval status"
@@ -778,8 +884,23 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
                       </div>
                     )}
 
+                    {myStatus === 'rejected' && (
+                      <div className={`p-3 rounded-2xl flex items-center gap-2 text-xs font-bold ${
+                        isBento
+                          ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                          : 'bg-rose-500/15 border border-rose-500/40 text-rose-700 dark:text-rose-300'
+                      }`}>
+                        <X className="w-4 h-4 flex-shrink-0" />
+                        <span>Join request was declined by the instructor.</span>
+                      </div>
+                    )}
+
                     {myStatus === 'approved' && !hasSubmitted && (
-                      <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                      <div className={`p-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-bold ${
+                        isBento
+                          ? 'bg-[#bef264] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                          : 'bg-emerald-500/15 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300'
+                      }`}>
                         <div className="flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                           <span>
@@ -787,7 +908,9 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
                           </span>
                         </div>
                         {isUpcoming && (
-                          <span className="text-[11px] font-black uppercase tracking-wider bg-emerald-500/20 px-2.5 py-0.5 rounded-lg self-start sm:self-auto">
+                          <span className={`text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-lg self-start sm:self-auto ${
+                            isBento ? 'bg-white text-black border border-black' : 'bg-emerald-500/20'
+                          }`}>
                             Opens in {timing.countdownLabel.replace(/^Starts in /, '')}
                           </span>
                         )}
@@ -797,8 +920,12 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
                     {hasSubmitted && (
                       <div className={`p-3 rounded-2xl flex items-center justify-between text-xs font-bold ${
                         isRevealed
-                          ? 'bg-purple-500/10 border border-purple-500/30 text-purple-600 dark:text-purple-300'
-                          : 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-300'
+                          ? isBento
+                            ? 'bg-[#99f6e4] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                            : 'bg-teal-500/15 border border-teal-500/40 text-teal-700 dark:text-teal-300'
+                          : isBento
+                            ? 'bg-[#ddd6fe] text-black border-2 border-black shadow-[2px_2px_0px_#000]'
+                            : 'bg-purple-500/15 border border-purple-500/40 text-purple-700 dark:text-purple-300'
                       }`}>
                         <div className="flex items-center gap-2">
                           <Sparkles className="w-4 h-4 flex-shrink-0" />
@@ -1244,6 +1371,15 @@ const Tournaments: React.FC<{ userId?: string }> = ({ userId }) => {
           </div>
         </div>
       )}
+
+      {/* Tournament Invite Link & Notification Modal */}
+      <TournamentInviteModal
+        tournament={inviteModalTournament}
+        isOpen={Boolean(inviteModalTournament)}
+        onClose={() => setInviteModalTournament(null)}
+        isAdmin={false}
+        currentUserId={userId}
+      />
     </div>
   );
 };

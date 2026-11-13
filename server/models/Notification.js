@@ -7,7 +7,7 @@ const notificationSchema = new mongoose.Schema({
   senderName: { type: String, default: 'System' },
   type: {
     type: String,
-    enum: ['new_quiz', 'request_approved', 'request_rejected', 're_request', 'system', 'challenge', 'badge'],
+    enum: ['new_quiz', 'request_approved', 'request_rejected', 're_request', 'system', 'challenge', 'badge', 'tournament_invite'],
     default: 'system',
     index: true
   },

@@ -11,6 +11,7 @@ import { sounds } from '../lib/soundEffects';
 import MediaPromptPlayer from './common/MediaPromptPlayer';
 import OrderingQuestion from './question-types/OrderingQuestion';
 import MatchingQuestion from './question-types/MatchingQuestion';
+import { generateShuffledIndices as buildShuffledIndices } from '../utils/shuffle';
 import CodeOutputQuestion from './question-types/CodeOutputQuestion';
 import TextQuestion from './question-types/TextQuestion';
 import { useTheme } from '../context/ThemeContext';
@@ -356,21 +357,13 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
     const isUnlimitedTime = (quiz.timeLimit === 0 && !countUpTimer);
 
-    // --- LOGIC: Shuffling ---
+    // --- LOGIC: Forced Shuffling (questions and options are always shuffled) ---
     const generateShuffledIndices = useCallback((length: number) => {
-        const indices = Array.from({ length }, (_, i) => i);
-        for (let i = length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [indices[i], indices[j]] = [indices[j], indices[i]];
-        }
-        return indices;
+        return buildShuffledIndices(length);
     }, []);
 
     const [questionOrder, setQuestionOrder] = useState<number[]>(() => {
         const len = quiz.questions ? quiz.questions.length : 0;
-        if (quiz.shuffleQuestions === false) {
-            return Array.from({ length: len }, (_, i) => i);
-        }
         return generateShuffledIndices(len);
     });
 
@@ -381,14 +374,11 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
         const newOptionsOrder: Record<number, number[]> = {};
         quiz.questions.forEach((q, index) => {
             if (q.options && q.options.length > 0) {
-                if (q.shuffleOptions === false) {
-                    newOptionsOrder[index] = Array.from({ length: q.options.length }, (_, i) => i);
-                } else {
-                    newOptionsOrder[index] = generateShuffledIndices(q.options.length);
-                }
+                newOptionsOrder[index] = generateShuffledIndices(q.options.length);
             }
         });
         setOptionsOrder(newOptionsOrder);
+        setQuestionOrder(prev => prev.length === quiz.questions.length ? prev : generateShuffledIndices(quiz.questions.length));
     }, [quiz.questions, generateShuffledIndices]);
 
     // Update local states if props change
@@ -444,8 +434,10 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             setCurrentQuestion(savedState.currentQuestion);
             setAnswers(savedState.answers);
             setTimeLeft(savedState.timeLeft);
-            if (savedState.questionOrder) {
+            if (savedState.questionOrder && savedState.questionOrder.length === quiz.questions.length) {
                 setQuestionOrder(savedState.questionOrder);
+            } else {
+                setQuestionOrder(generateShuffledIndices(quiz.questions.length));
             }
             if (savedState.submittedQuestions) {
                 setSubmittedQuestions(savedState.submittedQuestions);
@@ -463,9 +455,14 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
 
     const handleStartNew = () => {
         const len = quiz.questions.length;
-        setQuestionOrder(quiz.shuffleQuestions === false
-            ? Array.from({ length: len }, (_, i) => i)
-            : generateShuffledIndices(len));
+        setQuestionOrder(generateShuffledIndices(len));
+        const freshOptionsOrder: Record<number, number[]> = {};
+        quiz.questions.forEach((q, index) => {
+            if (q.options && q.options.length > 0) {
+                freshOptionsOrder[index] = generateShuffledIndices(q.options.length);
+            }
+        });
+        setOptionsOrder(freshOptionsOrder);
         sessionStorage.removeItem(storageKey);
         setSavedState(null);
         setSubmittedAnswers({});
@@ -1834,21 +1831,23 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                                                     onClick={() => goToQuestion(position)}
                                                     className={`relative h-9 rounded-lg text-xs font-black border-2 cursor-pointer transition-all ${
                                                         position === currentQuestion
-                                                            ? 'bg-indigo-600 text-white border-indigo-700 shadow-[2px_2px_0px_#000]'
+                                                            ? isBento
+                                                                ? 'bg-[#bef264] !text-black border-black shadow-[2px_2px_0px_#000]'
+                                                                : 'bg-indigo-600 text-white border-indigo-700 shadow-[2px_2px_0px_#000]'
                                                             : showReviewColors
                                                                 ? isMenuCorrect
                                                                     ? 'bg-emerald-100 text-emerald-900 border-emerald-600 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-500'
                                                                     : 'bg-rose-100 text-rose-900 border-rose-600 hover:bg-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-500'
                                                                 : isMenuSub
                                                                     ? isBento
-                                                                        ? 'bg-[#ddd6fe] text-black border-black font-black hover:bg-[#c4b5fd]'
+                                                                        ? 'bg-[#ddd6fe] !text-black border-black font-black hover:bg-[#c4b5fd]'
                                                                         : 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-900 dark:text-indigo-200 border-indigo-500 hover:border-indigo-600'
                                                                     : hasMenuChanged
                                                                         ? isBento
-                                                                            ? 'bg-[#fef08a] text-black border-black font-black hover:bg-[#fde047]'
+                                                                            ? 'bg-[#fef08a] !text-black border-black font-black hover:bg-[#fde047]'
                                                                             : 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border-amber-500 hover:border-amber-600'
                                                                         : isBento
-                                                                            ? 'bg-slate-50 text-black border-black hover:bg-purple-100'
+                                                                            ? 'bg-slate-50 !text-black border-black hover:bg-[#f3e8ff]'
                                                                             : 'bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:border-indigo-400'
                                                     }`}
                                                 >
@@ -2316,6 +2315,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
                             <CodeOutputQuestion
                                 codeSnippet={q.codeSnippet}
                                 options={activeTranslation?.options || q.options}
+                                optionOrder={optionsOrder[actualIndex]}
                                 correctAnswer={q.correctAnswer as string | number}
                                 submitted={isReviewModeSubmitted}
                                 userAnswer={answers[actualIndex] as string | number | undefined}
@@ -2437,7 +2437,7 @@ const QuizTaking: React.FC<QuizTakingProps> = ({
             </div>
 
             {/* Bottom Action Footer (Docked neatly inside the elevated card) */}
-            <div className={`sticky bottom-0 pb-safe flex-none px-4 sm:px-6 py-3 sm:py-3.5 z-20 w-full flex items-center justify-between pointer-events-auto ${
+            <div className={`sticky bottom-0 flex-none px-4 sm:px-6 pt-3.5 sm:pt-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] z-20 w-full flex items-center justify-between pointer-events-auto ${
                 isBento
                     ? 'bg-white dark:bg-[#0f172a] border-t-2 border-black dark:border-white/20 shadow-[0px_-4px_12px_rgba(0,0,0,0.04)]'
                     : 'bg-white/95 dark:bg-[#0c101c]/95 border-t border-slate-200/80 dark:border-white/10 shadow-[0px_-4px_16px_rgba(15,23,42,0.03)] backdrop-blur-xl'

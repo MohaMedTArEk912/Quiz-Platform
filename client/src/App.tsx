@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { SocketProvider } from './context/SocketContext';
@@ -28,6 +28,11 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 // Admin pages
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
 const TeacherQuizRevisionPage = lazy(() => import('./pages/TeacherQuizRevisionPage'));
+
+const TournamentInviteRedirect: React.FC = () => {
+    const { tournamentId } = useParams<{ tournamentId: string }>();
+    return <Navigate to={tournamentId ? `/tournaments?invite=${encodeURIComponent(tournamentId)}` : '/tournaments'} replace />;
+};
 
 // Feature pages - loaded on demand
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
@@ -127,6 +132,7 @@ const App: React.FC = () => {
                               <Route path="/study" element={<StudyModePage />} />
                               <Route path="/study-cards" element={<StudyModePage />} />
                               <Route path="/tournaments" element={<TournamentsPage />} />
+                              <Route path="/t/:tournamentId" element={<TournamentInviteRedirect />} />
                               <Route path="/badge-tree/:treeId" element={<BadgeTreeDetailPage />} />
                               <Route path="/classroom" element={<ClassroomPage />} />
                               <Route path="/profile/:userId" element={<ProfilePage />} />

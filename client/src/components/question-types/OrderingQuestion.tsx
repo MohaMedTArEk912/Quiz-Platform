@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowUp, ArrowDown, Check, X } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
 import { useTheme } from '../../context/ThemeContext';
+import { shuffleOrderingItems } from '../../utils/shuffle';
 
 interface OrderingQuestionProps {
     items: string[];
@@ -20,25 +21,11 @@ export const OrderingQuestion: React.FC<OrderingQuestionProps> = ({
 }) => {
     const { theme, isBento } = useTheme();
 
-    // Helper to shuffle items if they arrive in the exact correct order
+    // Helper to force-shuffle items on presentation so the question never starts in solved order
     const getInitialOrder = (items: string[]) => {
         if (!items || items.length <= 1) return items || [];
         if (submitted) return items; // Keep submitted order
-        
-        // If items are in correct order, shuffle them so student has a challenge
-        if (correctOrder && items.length === correctOrder.length && items.every((val, i) => val === correctOrder[i])) {
-            const shuffled = [...items];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            // If shuffle accidentally yielded the original order, swap first two
-            if (shuffled.every((val, i) => val === correctOrder[i]) && shuffled.length >= 2) {
-                [shuffled[0], shuffled[1]] = [shuffled[1], shuffled[0]];
-            }
-            return shuffled;
-        }
-        return items;
+        return shuffleOrderingItems(items, correctOrder);
     };
 
     const [prevInitialItems, setPrevInitialItems] = useState(initialItems);

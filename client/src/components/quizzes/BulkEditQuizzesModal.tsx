@@ -63,7 +63,6 @@ const BulkEditQuizzesModal: React.FC<BulkEditQuizzesModalProps> = ({
     const [passingScore, setPassingScore] = useState(70);
     const [subjectId, setSubjectId] = useState<string>('');
     const [isVisible, setIsVisible] = useState(true);
-    const [shuffleQuestions, setShuffleQuestions] = useState(true);
     const [reviewMode, setReviewMode] = useState(true);
     const [questionsPerAttempt, setQuestionsPerAttempt] = useState(10);
     const [coinsReward, setCoinsReward] = useState(10);
@@ -103,7 +102,7 @@ const BulkEditQuizzesModal: React.FC<BulkEditQuizzesModalProps> = ({
         if (enablePassingScore) updates.passingScore = Number(passingScore);
         if (enableSubject) updates.subjectId = subjectId || undefined;
         if (enableVisibility) updates.isVisible = isVisible;
-        if (enableShuffle) updates.shuffleQuestions = shuffleQuestions;
+        if (enableShuffle) updates.shuffleQuestions = true;
         if (enableReview) updates.reviewMode = reviewMode;
         if (enablePoolCount) updates.questionsPerAttempt = Number(questionsPerAttempt);
         if (enableRewards) {
@@ -680,7 +679,7 @@ const BulkEditQuizzesModal: React.FC<BulkEditQuizzesModalProps> = ({
 
                 {/* 7. Question Shuffling & Instant Review */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Shuffle Questions */}
+                    {/* Shuffle Questions (Always Enforced) */}
                     <div className={cardClass(enableShuffle)}>
                         <div className="flex items-center justify-between mb-2">
                             <label 
@@ -691,34 +690,17 @@ const BulkEditQuizzesModal: React.FC<BulkEditQuizzesModalProps> = ({
                                     {enableShuffle && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                                 </div>
                                 <span className={`text-xs font-black uppercase tracking-wider ${isBento ? 'text-black' : 'text-gray-900 dark:text-white'}`}>
-                                    Shuffle Questions
+                                    Shuffle Questions (Enforced)
                                 </span>
                             </label>
                         </div>
                         {enableShuffle && (
-                            <div className="flex gap-2 pl-7 pt-1 animate-in fade-in duration-200">
-                                <button
-                                    type="button"
-                                    onClick={() => setShuffleQuestions(true)}
-                                    className={`flex-1 py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                                        shuffleQuestions
-                                            ? isBento ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-purple-600 text-white'
-                                            : isBento ? 'bg-white text-black border border-black' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400'
-                                    }`}
-                                >
-                                    Enabled
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setShuffleQuestions(false)}
-                                    className={`flex-1 py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                                        !shuffleQuestions
-                                            ? isBento ? 'bg-[#fecdd3] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-rose-600 text-white'
-                                            : isBento ? 'bg-white text-black border border-black' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400'
-                                    }`}
-                                >
-                                    Fixed
-                                </button>
+                            <div className="pl-7 pt-1 animate-in fade-in duration-200">
+                                <span className={`inline-block py-1 px-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                                    isBento ? 'bg-[#bef264] text-black border-2 border-black shadow-[1.5px_1.5px_0px_#000]' : 'bg-purple-600 text-white'
+                                }`}>
+                                    Always Enabled (Platform Policy)
+                                </span>
                             </div>
                         )}
                     </div>

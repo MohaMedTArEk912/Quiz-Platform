@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import mongoose from 'mongoose';
+import { enforceQuizShuffleFlags } from '../utils/shuffle.js';
 import { Subject } from '../models/Subject.js';
 import { SkillTrack } from '../models/SkillTrack.js';
 import { Quiz } from '../models/Quiz.js';
@@ -405,12 +406,12 @@ export const importRoadmapBundle = async (req, res) => {
 
                     try {
                         const sanitizedQuestions = sanitizeQuestions(quiz.questions || [], quiz.id);
-                        const cleanQuiz = {
+                        const cleanQuiz = enforceQuizShuffleFlags({
                             ...quiz,
                             questions: sanitizedQuestions,
                             subjectId: targetSubject._id.toString(),
                             linkedTrackId: targetTrack ? targetTrack.trackId : quiz.linkedTrackId
-                        };
+                        });
                         delete cleanQuiz._id;
                         delete cleanQuiz.__v;
 
@@ -444,10 +445,10 @@ export const importRoadmapBundle = async (req, res) => {
 
             try {
                 const sanitizedQuestions = sanitizeQuestions(quiz.questions || [], quiz.id);
-                const cleanQuiz = {
+                const cleanQuiz = enforceQuizShuffleFlags({
                     ...quiz,
                     questions: sanitizedQuestions
-                };
+                });
                 delete cleanQuiz._id;
                 delete cleanQuiz.__v;
 

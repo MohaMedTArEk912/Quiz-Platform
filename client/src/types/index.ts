@@ -20,7 +20,7 @@ export interface Quiz {
     linkedTrackId?: string;
     linkedModuleId?: string;
     reviewMode?: boolean;
-    shuffleQuestions?: boolean; // Default: true. Set to false to disable question shuffling.
+    shuffleQuestions?: boolean; // Enforced true across the platform (questions are always shuffled).
     isProctored?: boolean; // Enable strict proctoring mode
     requireFullscreen?: boolean; // Force fullscreen during quiz
     disableCopyPaste?: boolean; // Block clipboard copy/paste and right-click
@@ -46,7 +46,7 @@ export interface Question {
     matchingPairs?: { left: string; right: string }[];
     isCompiler?: boolean;
     compilerConfig?: CompilerConfig;
-    shuffleOptions?: boolean;
+    shuffleOptions?: boolean; // Enforced true across the platform (answer options are always shuffled).
 }
 
 export interface CompilerConfig {
@@ -974,7 +974,7 @@ export interface AppNotification {
     recipientId: string;
     senderId?: string;
     senderName?: string;
-    type: 'new_quiz' | 'request_approved' | 'request_rejected' | 're_request' | 'system' | 'challenge' | 'badge';
+    type: 'new_quiz' | 'request_approved' | 'request_rejected' | 're_request' | 'system' | 'challenge' | 'badge' | 'tournament_invite';
     title: string;
     message: string;
     note?: string;

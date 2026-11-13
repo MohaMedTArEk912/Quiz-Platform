@@ -39,12 +39,14 @@ router.delete('/skill-tracks/:trackId', verifyUser, verifyAdmin, engagementContr
 // Tournaments
 router.get('/tournaments', extractOptionalUser, engagementController.getTournaments); // GET /api/tournaments
 router.get('/tournaments/history', extractOptionalUser, engagementController.getTournamentHistory); // GET /api/tournaments/history
+router.get('/tournaments/:id/preview', engagementController.getTournamentInvitePreview);
 router.get('/tournaments/:id', extractOptionalUser, engagementController.getTournamentById); // GET /api/tournaments/:id
 router.post('/tournaments', verifyUser, verifyAdmin, engagementController.createTournament);
 router.put('/tournaments/:id', verifyUser, verifyAdmin, engagementController.updateTournament);
 router.delete('/tournaments/:id', verifyUser, verifyAdmin, engagementController.deleteTournament);
 router.post('/tournaments/:id/request-join', verifyUser, engagementController.requestJoinTournament);
 router.post('/tournaments/:id/join', verifyUser, engagementController.requestJoinTournament); // alias
+router.post('/tournaments/:id/invite', verifyUser, engagementController.inviteToTournament);
 router.post('/tournaments/:id/manage-request', verifyUser, verifyAdmin, engagementController.manageTournamentRequest);
 router.post('/tournaments/:id/reveal-results', verifyUser, verifyAdmin, engagementController.revealTournamentResults);
 router.get('/tournaments/:id/live', verifyUser, verifyAdmin, engagementController.getTournamentLiveTakers);

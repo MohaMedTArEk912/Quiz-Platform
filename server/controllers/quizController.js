@@ -1,6 +1,7 @@
 import { Quiz } from '../models/Quiz.js';
 import { QuestionPoolProgress } from '../models/QuestionPoolProgress.js';
 import { createAndSendNotification } from './notificationController.js';
+import { enforceQuizShuffleFlags, shuffleArray } from '../utils/shuffle.js';
 import { readdir, readFile } from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
@@ -131,26 +132,8 @@ export const sanitizeQuestions = (questions, quizId = 'unknown') => {
         }));
     }
 
-    // Auto-detect non-shuffleable patterns
-    if (question.options && Array.isArray(question.options) && question.shuffleOptions !== false) {
-      const nonShufflePatterns = [
-        /both.*(and|&)/i,
-        /all of the above/i,
-        /none of the above/i,
-        /neither.*nor/i,
-        /options?.*(and|&)/i,
-        /choices?.*(and|&)/i,
-        /^[a-z]\s*(and|&)\s*[a-z]$/i
-      ];
-
-      const hasNonShufflePattern = question.options.some(opt => 
-        typeof opt === 'string' && nonShufflePatterns.some(p => p.test(opt))
-      );
-
-      if (hasNonShufflePattern) {
-        question.shuffleOptions = false;
-      }
-    }
+    // Force option shuffling on every question across the platform
+    question.shuffleOptions = true;
 
     return question;
   });
@@ -200,7 +183,7 @@ export const getQuizzes = async (req, res) => {
         return titleA.localeCompare(titleB, undefined, { numeric: true, sensitivity: 'base' });
     });
 
-    const normalized = quizzes.map((quiz) => ({
+    const normalized = quizzes.map((quiz) => enforceQuizShuffleFlags({
       ...quiz,
       questions: Array.isArray(quiz.questions) ? quiz.questions : [],
       id: quiz.id || quiz._id?.toString()
@@ -212,7 +195,7 @@ export const getQuizzes = async (req, res) => {
     try {
       const fallbackQuizzes = await loadStaticQuizzes();
       if (fallbackQuizzes.length > 0) {
-        const normalizedFallback = fallbackQuizzes.map((quiz) => ({
+        const normalizedFallback = fallbackQuizzes.map((quiz) => enforceQuizShuffleFlags({
           ...quiz,
           questions: Array.isArray(quiz.questions) ? quiz.questions : [],
           id: quiz.id || quiz._id?.toString()
@@ -250,6 +233,9 @@ export const createQuiz = async (req, res) => {
     if (existing) {
       return res.status(400).json({ message: 'Quiz ID already exists' });
     }
+
+    // Force quiz-level question shuffling
+    quizData.shuffleQuestions = true;
 
     // Validate and sanitize questions
     if (quizData.questions && Array.isArray(quizData.questions)) {
@@ -332,7 +318,7 @@ export const importQuizzes = async (req, res) => {
         quiz.xpReward = Number.isFinite(Number(quiz.xpReward)) ? Number(quiz.xpReward) : 50;
         quiz.quizType = quiz.quizType || (quiz.isQuestionPool ? 'pool' : 'quiz');
         quiz.questionsPerAttempt = Number.isFinite(Number(quiz.questionsPerAttempt)) ? Number(quiz.questionsPerAttempt) : 10;
-        quiz.shuffleQuestions = quiz.shuffleQuestions !== false;
+        quiz.shuffleQuestions = true;
 
         // Validate and sanitize questions before import
         if (quiz.questions && Array.isArray(quiz.questions)) {
@@ -395,7 +381,7 @@ export const updateQuiz = async (req, res) => {
       return res.status(400).json({ message: 'Invalid quiz id' });
     }
     
-    const updates = req.body;
+    const updates = { ...req.body, shuffleQuestions: true };
     
     // Validate and sanitize questions if they're being updated
     if (updates.questions && Array.isArray(updates.questions)) {
@@ -472,11 +458,11 @@ export const getQuizSession = async (req, res) => {
 
     if (!isPool || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
       return res.json({
-        quiz: {
+        quiz: enforceQuizShuffleFlags({
           ...quiz,
           id: quiz.id || quiz._id?.toString(),
           questions: Array.isArray(quiz.questions) ? quiz.questions : []
-        },
+        }),
         isQuestionPool: false,
         totalPoolQuestions: quiz.questions?.length || 0,
         questionsInAttempt: quiz.questions?.length || 0
@@ -488,14 +474,14 @@ export const getQuizSession = async (req, res) => {
 
     // If no userId (guest mode), return a random batch
     if (!userId) {
-      const shuffled = [...quiz.questions].sort(() => 0.5 - Math.random());
+      const shuffled = shuffleArray(quiz.questions);
       const selected = shuffled.slice(0, batchSize);
       return res.json({
-        quiz: {
+        quiz: enforceQuizShuffleFlags({
           ...quiz,
           id: quiz.id || quiz._id?.toString(),
           questions: selected
-        },
+        }),
         isQuestionPool: true,
         totalPoolQuestions: totalPoolSize,
         seenCount: 0,
@@ -540,16 +526,16 @@ export const getQuizSession = async (req, res) => {
     }
 
     // Shuffle unseen questions to select a random batch
-    const shuffledUnseen = [...unseenQuestions].sort(() => 0.5 - Math.random());
+    const shuffledUnseen = shuffleArray(unseenQuestions);
     // If unseenQuestions has fewer items than batchSize (e.g. last 5 questions), serve all remaining
     const selectedQuestions = shuffledUnseen.slice(0, batchSize);
 
     res.json({
-      quiz: {
+      quiz: enforceQuizShuffleFlags({
         ...quiz,
         id: quiz.id || quiz._id?.toString(),
         questions: selectedQuestions
-      },
+      }),
       isQuestionPool: true,
       totalPoolQuestions: totalPoolSize,
       seenCount: seenSet.size,

@@ -770,6 +770,76 @@ export async function sendClanInviteEmail({ email, recipientName, inviterName, c
 }
 
 /**
+ * Sends a Tournament Invitation email to an invited user
+ */
+export async function sendTournamentInviteEmail({
+  email,
+  recipientName,
+  inviterName,
+  tournamentName,
+  tournamentId,
+  startsAt,
+  note
+}) {
+  const safeRecipient = escapeHtml(recipientName || 'Competitor');
+  const safeInviter = escapeHtml(inviterName || 'A competitor');
+  const safeTournament = escapeHtml(tournamentName || 'Tournament Arena');
+  const safeNote = note ? escapeHtml(note) : '';
+  const appUrl = (process.env.APP_URL || 'http://localhost:5173').replace(/\/+$/, '');
+  const inviteUrl = `${appUrl}/tournaments?invite=${encodeURIComponent(tournamentId)}`;
+  const kickoffStr = startsAt ? new Date(startsAt).toUTCString() : 'Scheduled';
+  const subject = `🏆 ${safeInviter} invited you to "${safeTournament}"!`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 24px; }
+          .card { max-width: 540px; margin: 0 auto; background: #ffffff; border: 2.5px solid #000000; border-radius: 16px; box-shadow: 6px 6px 0px #000000; overflow: hidden; }
+          .header { background: #fde047; padding: 24px; border-bottom: 2.5px solid #000000; color: #000000; text-align: center; }
+          .content { padding: 24px; line-height: 1.6; text-align: center; }
+          .arena-badge { display: inline-block; background: #fef9c3; border: 2px solid #000; border-radius: 12px; padding: 12px 24px; font-weight: 900; font-size: 18px; margin: 14px 0; box-shadow: 3px 3px 0px #000; }
+          .note-box { background: #f1f5f9; border: 2px solid #000; border-radius: 10px; padding: 10px 14px; font-size: 13px; margin: 12px 0; font-style: italic; }
+          .btn { display: inline-block; background: #bef264; color: #000 !important; text-decoration: none; font-weight: 900; font-size: 14px; padding: 12px 28px; border-radius: 12px; border: 2px solid #000; box-shadow: 3px 3px 0px #000; margin-top: 14px; }
+          .footer { background: #f1f5f9; padding: 14px 20px; border-top: 2px solid #000; font-size: 12px; color: #64748b; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="header">
+            <h1 style="margin: 0; font-size: 22px; font-weight: 900;">Tournament Invitation! 🏆</h1>
+          </div>
+          <div class="content">
+            <p>Hey <strong>${safeRecipient}</strong>,</p>
+            <p><strong>${safeInviter}</strong> has invited you to compete in:</p>
+            <div class="arena-badge">${safeTournament}</div>
+            <p style="font-size: 13px; color: #475569; margin: 6px 0;">
+              <strong>Kickoff (UTC):</strong> ${escapeHtml(kickoffStr)}
+            </p>
+            ${safeNote ? `<div class="note-box">"${safeNote}"</div>` : ''}
+            <div>
+              <a href="${inviteUrl}" class="btn">View & Join Tournament →</a>
+            </div>
+          </div>
+          <div class="footer">
+            Quiz Platform Competitive Arenas
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return dispatchMail({
+    to: email,
+    subject,
+    text: `Hey ${safeRecipient},\n\n${safeInviter} invited you to compete in "${safeTournament}"!\nKickoff (UTC): ${kickoffStr}${safeNote ? `\nNote: "${safeNote}"` : ''}\n\nJoin here: ${inviteUrl}`,
+    html
+  });
+}
+
+/**
  * Sends a Quiz Result scorecard email
  */
 export async function sendQuizResultEmail({

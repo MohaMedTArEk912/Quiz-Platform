@@ -10,7 +10,8 @@ import {
     Trash2,
     X,
     Swords,
-    Users
+    Users,
+    Trophy
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { AppNotification } from '../types';
@@ -259,6 +260,12 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                         <Users className="w-4.5 h-4.5" />
                     </div>
                 );
+            case 'tournament_invite':
+                return (
+                    <div className="w-9 h-9 rounded-2xl bg-amber-500/15 dark:bg-amber-500/25 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-inner">
+                        <Trophy className="w-4.5 h-4.5" />
+                    </div>
+                );
             default:
                 return (
                     <div className="w-9 h-9 rounded-2xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-500 flex items-center justify-center shrink-0 shadow-inner">
@@ -497,7 +504,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                                     <div className={`mt-2 flex items-center gap-1 text-[10px] font-black uppercase tracking-wider group-hover:translate-x-0.5 transition-transform ${
                                         isBento ? 'text-black underline' : 'text-indigo-600 dark:text-indigo-400'
                                     }`}>
-                                        <span>View details</span>
+                                        <span>{notif.type === 'tournament_invite' ? 'View & Join Tournament' : 'View details'}</span>
                                         <ExternalLink className="w-3 h-3" />
                                     </div>
                                 )}

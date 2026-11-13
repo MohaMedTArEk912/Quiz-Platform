@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { generateShuffledIndices } from '../../utils/shuffle';
 
 interface CodeOutputQuestionProps {
     codeSnippet?: string;
     options?: string[];
+    optionOrder?: number[];
     correctAnswer?: string | number;
     submitted?: boolean;
     userAnswer?: string | number;
@@ -15,6 +17,7 @@ interface CodeOutputQuestionProps {
 export const CodeOutputQuestion: React.FC<CodeOutputQuestionProps> = ({
     codeSnippet,
     options,
+    optionOrder,
     correctAnswer,
     submitted = false,
     userAnswer,
@@ -23,6 +26,14 @@ export const CodeOutputQuestion: React.FC<CodeOutputQuestionProps> = ({
 }) => {
     const { theme, isBento } = useTheme();
     const [typedOutput, setTypedOutput] = useState<string>(typeof userAnswer === 'string' ? userAnswer : '');
+
+    const displayIndices = useMemo(() => {
+        if (!options || options.length === 0) return [];
+        if (optionOrder && optionOrder.length === options.length) {
+            return optionOrder;
+        }
+        return generateShuffledIndices(options.length);
+    }, [optionOrder, options]);
 
     const handleTextChange = (val: string) => {
         setTypedOutput(val);
@@ -65,10 +76,11 @@ export const CodeOutputQuestion: React.FC<CodeOutputQuestionProps> = ({
                         Select the predicted console output:
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        {options.map((opt, optIdx) => {
-                            const isSelected = userAnswer === optIdx || String(userAnswer) === String(opt) || String(userAnswer) === String(optIdx);
+                        {displayIndices.map((originalIndex) => {
+                            const opt = options[originalIndex];
+                            const isSelected = userAnswer === originalIndex || String(userAnswer) === String(opt) || String(userAnswer) === String(originalIndex);
                             const isCorrect = submitted && (
-                                optIdx === Number(correctAnswer) || 
+                                originalIndex === Number(correctAnswer) ||
                                 String(correctAnswer).trim() === String(opt).trim()
                             );
                             const isWrong = submitted && isSelected && !isCorrect;
@@ -93,10 +105,10 @@ export const CodeOutputQuestion: React.FC<CodeOutputQuestionProps> = ({
 
                             return (
                                 <button
-                                    key={optIdx}
+                                    key={originalIndex}
                                     type="button"
                                     disabled={readOnly || submitted}
-                                    onClick={() => onChange(optIdx)}
+                                    onClick={() => onChange(originalIndex)}
                                     className={`p-4 rounded-2xl font-mono text-xs sm:text-sm text-left border transition-all flex items-center justify-between gap-3 cursor-pointer ${buttonClass}`}
                                 >
                                     <div className="flex items-center gap-2 truncate">

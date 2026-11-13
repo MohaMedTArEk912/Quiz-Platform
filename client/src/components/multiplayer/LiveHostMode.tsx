@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { shuffleQuestionsWithOptions } from '../../utils/shuffle';
 import {
     Users,
     Trophy,
@@ -80,7 +81,7 @@ export const LiveHostMode: React.FC<LiveHostModeProps> = ({
     const [copiedPin, setCopiedPin] = useState(false);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const questions = useMemo(() => quiz.questions || [], [quiz.questions]);
+    const questions = useMemo(() => shuffleQuestionsWithOptions(quiz.questions || []), [quiz]);
     const currentQ: Question | undefined = questions[currentQuestionIndex];
 
     const activePlayer = players.find(p => p.id === currentTurnUserId) || players[0];

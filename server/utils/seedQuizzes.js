@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Quiz } from '../models/Quiz.js';
 import { fileURLToPath } from 'url';
+import { enforceQuizShuffleFlags } from './shuffle.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,7 +28,7 @@ export async function seedQuizzes() {
       const filePath = path.join(quizzesDir, file);
       const content = fs.readFileSync(filePath, 'utf-8');
       try {
-        const quiz = JSON.parse(content);
+        const quiz = enforceQuizShuffleFlags(JSON.parse(content));
         // Upsert: Update if exists, Insert if not
         await Quiz.findOneAndUpdate(
           { id: quiz.id },

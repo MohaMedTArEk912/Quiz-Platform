@@ -1070,6 +1070,20 @@ export const api = {
         return this.requestJoinTournament(tournamentId, userId);
     },
 
+    async inviteToTournament(
+        tournamentId: string,
+        payload: { targetUserId?: string; targetUserIds?: string[]; inviteAll?: boolean; note?: string; sendEmail?: boolean }
+    ): Promise<{ success: boolean; invitedCount: number | 'all'; emailedCount?: number; message: string }> {
+        const response = await fetchWithFallback(`/tournaments/${encodeURIComponent(tournamentId)}/invite`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || 'Failed to send tournament invite');
+        return data;
+    },
+
     async manageTournamentRequest(tournamentId: string, payload: { userIds?: string[]; userId?: string; action: 'approve' | 'reject' | 'remove' }, adminId: string) {
         const response = await fetchWithFallback(`/tournaments/${tournamentId}/manage-request`, {
             method: 'POST',

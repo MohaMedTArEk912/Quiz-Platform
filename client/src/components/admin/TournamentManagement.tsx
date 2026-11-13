@@ -32,11 +32,13 @@ import {
     Flame,
     Timer,
     Minus,
-    AlertTriangle
+    AlertTriangle,
+    Share2
 } from 'lucide-react';
 import ConfirmDialog from '../ConfirmDialog';
 import MathRenderer from '../common/MathRenderer';
 import FlexibleDateTimePicker from './FlexibleDateTimePicker';
+import TournamentInviteModal from '../engage/TournamentInviteModal';
 import { useSocket } from '../../context/SocketContext';
 import { useTheme } from '../../context/ThemeContext';
 import { formatLocalizedTournamentDateTime, getUserTimezoneInfo } from '../../utils/timezoneUtils';
@@ -88,6 +90,7 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'live' | 'scheduled' | 'completed'>('all');
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; id: string } | null>(null);
+    const [inviteModalTournament, setInviteModalTournament] = useState<Tournament | null>(null);
 
     // Editor Form state (In-tab creation & editing)
     const [formTournament, setFormTournament] = useState<Partial<Tournament>>({
@@ -1047,6 +1050,18 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
 
                                             {/* Action Dropdown / Quick Edit */}
                                             <div className="flex items-center gap-1.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setInviteModalTournament(tournament)}
+                                                    title="Share Invite Link or Notify Users"
+                                                    className={`p-2 rounded-xl transition-all cursor-pointer ${
+                                                        isBento
+                                                            ? 'bg-slate-100 text-black border-2 border-black hover:bg-[#fde047] shadow-[1px_1px_0px_#000]'
+                                                            : 'hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-amber-500'
+                                                    }`}
+                                                >
+                                                    <Share2 className="w-4 h-4" />
+                                                </button>
                                                 <button
                                                     onClick={() => {
                                                         setFormTournament(tournament);
@@ -2853,6 +2868,15 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
                 confirmText="Delete"
                 cancelText="Cancel"
                 type="danger"
+            />
+
+            {/* Tournament Invite Link & Notification Modal */}
+            <TournamentInviteModal
+                tournament={inviteModalTournament}
+                isOpen={Boolean(inviteModalTournament)}
+                onClose={() => setInviteModalTournament(null)}
+                isAdmin={true}
+                currentUserId={currentUser.userId}
             />
         </div>
     );
